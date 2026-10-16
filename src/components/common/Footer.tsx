@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, Cpu, Truck, Mail, Phone, MapPin } from 'lucide-react';
+import { Layers, Shield, Wifi, Server, Mail, Phone, MapPin, Lock } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -19,12 +19,12 @@ export const Footer: React.FC = () => {
                   NEXALUS INNOVATIONS LLP
                 </span>
                 <span className="text-[10px] font-semibold text-sky-400 tracking-wider uppercase mt-1">
-                  Technology &amp; Distribution Conglomerate
+                  Internet, Network &amp; CCTV Services
                 </span>
               </div>
             </Link>
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
-              Nexalus Innovations LLP governs two premier commercial operating companies: <strong>Nexalus Innovations</strong> (CCTV Surveillance, Gigabit Fiber Internet &amp; Enterprise IT Networking) and <strong>A.M. Distributors Chiplun</strong> (Regional Logistics Hub for Packaged Mineral Water, Commercial Ice Cream &amp; Complete Dairy Distribution).
+              Your trusted enterprise technology infrastructure partner across Maharashtra. Providing turnkey solutions in AI CCTV surveillance grids, symmetrical optical fiber leased lines, managed Layer-2/3 switching, and certified AMC maintenance.
             </p>
             <div className="space-y-2 text-xs pt-2">
               <div className="flex items-start gap-2.5">
@@ -42,87 +42,85 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Operating Company 1: Nexalus Innovations */}
+          {/* Core Services */}
           <div>
             <h5 className="font-bold text-sky-400 text-xs uppercase tracking-wider mb-4 flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5" /> Nexalus Innovations
+              <Shield className="w-3.5 h-3.5" /> Core Services
             </h5>
             <ul className="space-y-2.5 text-xs">
               <li>
-                <Link to="/brands/nexalus-innovations" className="hover:text-white transition-colors font-semibold text-white">
-                  Visit Division Website →
-                </Link>
+                <Link to="/services" className="hover:text-white transition-colors">4K AI CCTV Surveillance</Link>
               </li>
               <li>
-                <Link to="/brands/nexalus-innovations" className="hover:text-white transition-colors">4K AI CCTV Surveillance</Link>
+                <Link to="/services" className="hover:text-white transition-colors">Gigabit Optical Fiber Internet</Link>
               </li>
               <li>
-                <Link to="/brands/nexalus-innovations" className="hover:text-white transition-colors">Gigabit Optical Fiber Internet</Link>
+                <Link to="/services" className="hover:text-white transition-colors">Layer-2/3 Managed PoE+ Switching</Link>
               </li>
               <li>
-                <Link to="/brands/nexalus-innovations" className="hover:text-white transition-colors">Layer-2/3 Managed PoE+ Switches</Link>
+                <Link to="/services" className="hover:text-white transition-colors">Server Rack Cabling &amp; Setup</Link>
               </li>
               <li>
-                <Link to="/brands/nexalus-innovations" className="hover:text-white transition-colors">Pure Copper Cat6A Structured Cabling</Link>
+                <Link to="/services" className="hover:text-white transition-colors">Cat6A Fluke Structured Cabling</Link>
               </li>
               <li>
-                <Link to="/brands/nexalus-innovations" className="hover:text-white transition-colors">Annual Maintenance Contracts (AMC)</Link>
+                <Link to="/services" className="hover:text-white transition-colors">Annual Maintenance Contracts (AMC)</Link>
               </li>
             </ul>
           </div>
 
-          {/* Operating Company 2: A.M. Distributors Chiplun */}
+          {/* Hardware Catalog */}
           <div>
-            <h5 className="font-bold text-teal-400 text-xs uppercase tracking-wider mb-4 flex items-center gap-1.5">
-              <Truck className="w-3.5 h-3.5" /> A.M. Distributors
+            <h5 className="font-bold text-blue-400 text-xs uppercase tracking-wider mb-4 flex items-center gap-1.5">
+              <Server className="w-3.5 h-3.5" /> Hardware Products
             </h5>
             <ul className="space-y-2.5 text-xs">
               <li>
-                <Link to="/brands/am-distributors" className="hover:text-white transition-colors font-semibold text-white">
-                  Visit Division Website →
-                </Link>
+                <Link to="/products" className="hover:text-white transition-colors">4K IP Bullet &amp; Dome Cameras</Link>
               </li>
               <li>
-                <Link to="/brands/am-distributors" className="hover:text-white transition-colors">Packaged Mineral Water (20L Jars)</Link>
+                <Link to="/products" className="hover:text-white transition-colors">Gigabit Fiber ONT &amp; Routers</Link>
               </li>
               <li>
-                <Link to="/brands/am-distributors" className="hover:text-white transition-colors">Commercial Ice Cream (-18°C Fleet)</Link>
+                <Link to="/products" className="hover:text-white transition-colors">Managed PoE+ Gigabit Switches</Link>
               </li>
               <li>
-                <Link to="/brands/am-distributors" className="hover:text-white transition-colors">Farm-Fresh Milk &amp; Dairy Supply</Link>
+                <Link to="/products" className="hover:text-white transition-colors">Next-Gen UTM Firewalls</Link>
               </li>
               <li>
-                <Link to="/brands/am-distributors" className="hover:text-white transition-colors">Butter, Ghee &amp; Milk Products</Link>
+                <Link to="/products" className="hover:text-white transition-colors">Multi-Bay High-Capacity NVRs</Link>
               </li>
               <li>
-                <Link to="/brands/am-distributors" className="hover:text-white transition-colors">Chiplun Regional Cold-Chain Depot</Link>
+                <Link to="/products" className="hover:text-white transition-colors font-semibold text-sky-400">View All Products →</Link>
               </li>
             </ul>
           </div>
 
-          {/* Corporate Quick Links */}
+          {/* Quick Links */}
           <div>
             <h5 className="font-bold text-indigo-400 text-xs uppercase tracking-wider mb-4 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5" /> Corporate Desk
+              <Wifi className="w-3.5 h-3.5" /> Corporate Desk
             </h5>
             <ul className="space-y-2.5 text-xs">
               <li>
                 <Link to="/about" className="hover:text-white transition-colors">About Nexalus LLP</Link>
               </li>
               <li>
-                <Link to="/brands" className="hover:text-white transition-colors">Operating Divisions</Link>
+                <Link to="/services" className="hover:text-white transition-colors">Engineering Services</Link>
               </li>
               <li>
-                <Link to="/products" className="hover:text-white transition-colors">Commercial Catalog</Link>
+                <Link to="/products" className="hover:text-white transition-colors">Commercial Hardware</Link>
               </li>
               <li>
-                <Link to="/services" className="hover:text-white transition-colors">Engineering &amp; Logistics Services</Link>
-              </li>
-              <li>
-                <Link to="/quote" className="hover:text-white transition-colors text-blue-400 font-semibold">Request Commercial Quotation</Link>
+                <Link to="/quote" className="hover:text-white transition-colors text-blue-400 font-semibold">Request Quotation</Link>
               </li>
               <li>
                 <Link to="/contact" className="hover:text-white transition-colors">Contact Central Office</Link>
+              </li>
+              <li>
+                <Link to="/admin/login" className="hover:text-white transition-colors flex items-center gap-1 text-slate-400">
+                  <Lock className="w-3 h-3" /> Admin Portal
+                </Link>
               </li>
             </ul>
           </div>
@@ -131,18 +129,20 @@ export const Footer: React.FC = () => {
         {/* Corporate Legal & Links */}
         <div className="mt-12 pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           <p className="text-slate-500 text-center sm:text-left">
-            © {new Date().getFullYear()} <strong className="text-slate-400">Nexalus Innovations LLP</strong>. All rights reserved. Operating companies: <strong className="text-sky-400">Nexalus Innovations</strong> &amp; <strong className="text-teal-400">A.M. Distributors Chiplun</strong>.
+            © {new Date().getFullYear()} <strong className="text-slate-300">Nexalus Innovations LLP</strong>. All rights reserved. Professional Internet, Network &amp; CCTV Services in Maharashtra.
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            <Link to="/brands/nexalus-innovations" className="text-sky-400 hover:text-sky-300 font-semibold">Nexalus Innovations</Link>
+            <Link to="/" className="text-slate-400 hover:text-white font-medium">Home</Link>
             <span className="text-slate-700">•</span>
-            <Link to="/brands/am-distributors" className="text-teal-400 hover:text-teal-300 font-semibold">A.M. Distributors Chiplun</Link>
+            <Link to="/about" className="text-slate-400 hover:text-white font-medium">About Us</Link>
             <span className="text-slate-700">•</span>
-            <Link to="/quote" className="text-blue-400 hover:text-blue-300 font-semibold">Request Quotation</Link>
+            <Link to="/services" className="text-slate-400 hover:text-white font-medium">Services</Link>
             <span className="text-slate-700">•</span>
-            <Link to="/contact" className="text-slate-500 hover:text-slate-300">Contact Us</Link>
+            <Link to="/products" className="text-slate-400 hover:text-white font-medium">Products</Link>
             <span className="text-slate-700">•</span>
-            <Link to="/admin/login" className="text-slate-400 hover:text-white font-semibold flex items-center gap-1">🔒 Admin Login</Link>
+            <Link to="/quote" className="text-blue-400 hover:text-blue-300 font-semibold">Get a Quote</Link>
+            <span className="text-slate-700">•</span>
+            <Link to="/contact" className="text-slate-400 hover:text-white">Contact</Link>
           </div>
         </div>
       </div>

@@ -90,35 +90,35 @@ function App() {
               <Route path="/contact" element={<ContactPage />} />
             </Route>
 
-            {/* Sub-Website 1: Nexalus Innovations Dedicated Brand Portal */}
-            <Route element={<NexalusInnovationsLayout />}>
-              <Route path="/brands/nexalus-innovations" element={<NexalusInnovationsPage />} />
-              <Route path="/brands/nexalus-innovations/about" element={<NexalusInnovationsAboutPage />} />
-              <Route path="/brands/nexalus-innovations/products" element={<NexalusInnovationsProductsPage />} />
-              <Route path="/brands/nexalus-innovations/services" element={<NexalusInnovationsServicesPage />} />
-              <Route path="/brands/nexalus-innovations/contact" element={<NexalusInnovationsContactPage />} />
+            {/* Nexalus Innovations Sub-Website Portal */}
+            <Route path="/brands/nexalus-innovations" element={<NexalusInnovationsLayout />}>
+              <Route index element={<NexalusInnovationsPage />} />
+              <Route path="about" element={<NexalusInnovationsAboutPage />} />
+              <Route path="products" element={<NexalusInnovationsProductsPage />} />
+              <Route path="services" element={<NexalusInnovationsServicesPage />} />
+              <Route path="contact" element={<NexalusInnovationsContactPage />} />
             </Route>
 
-            {/* Sub-Website 2: A.M. Distributors Chiplun Dedicated Brand Portal */}
-            <Route element={<AmDistributorsLayout />}>
-              <Route path="/brands/am-distributors" element={<AmDistributorsPage />} />
-              <Route path="/brands/am-distributors/about" element={<AmDistributorsAboutPage />} />
-              <Route path="/brands/am-distributors/products" element={<AmDistributorsProductsPage />} />
-              <Route path="/brands/am-distributors/services" element={<AmDistributorsServicesPage />} />
-              <Route path="/brands/am-distributors/contact" element={<AmDistributorsContactPage />} />
+            {/* A.M. Distributors Chiplun Sub-Website Portal */}
+            <Route path="/brands/am-distributors" element={<AmDistributorsLayout />}>
+              <Route index element={<AmDistributorsPage />} />
+              <Route path="about" element={<AmDistributorsAboutPage />} />
+              <Route path="products" element={<AmDistributorsProductsPage />} />
+              <Route path="services" element={<AmDistributorsServicesPage />} />
+              <Route path="contact" element={<AmDistributorsContactPage />} />
             </Route>
 
-            {/* Shorthand Navigation Aliases */}
+            {/* Sub-Website Direct Route Aliases */}
             <Route path="/nexalus-innovations" element={<Navigate to="/brands/nexalus-innovations" replace />} />
             <Route path="/nexalus-innovations/*" element={<Navigate to="/brands/nexalus-innovations" replace />} />
+            <Route path="/divisions/nexalus-innovations" element={<Navigate to="/brands/nexalus-innovations" replace />} />
             <Route path="/am-distributors" element={<Navigate to="/brands/am-distributors" replace />} />
             <Route path="/am-distributors/*" element={<Navigate to="/brands/am-distributors" replace />} />
-            <Route path="/divisions/nexalus-innovations" element={<Navigate to="/brands/nexalus-innovations" replace />} />
             <Route path="/divisions/am-distributors" element={<Navigate to="/brands/am-distributors" replace />} />
-            <Route path="/cp-plus/*" element={<Navigate to="/brands/nexalus-innovations" replace />} />
-            <Route path="/one-broadband/*" element={<Navigate to="/brands/nexalus-innovations" replace />} />
-            <Route path="/networking/*" element={<Navigate to="/brands/nexalus-innovations" replace />} />
-            <Route path="/itti-networking/*" element={<Navigate to="/brands/nexalus-innovations" replace />} />
+            <Route path="/cp-plus/*" element={<Navigate to="/brands/nexalus-innovations/products" replace />} />
+            <Route path="/one-broadband/*" element={<Navigate to="/brands/nexalus-innovations/services" replace />} />
+            <Route path="/networking/*" element={<Navigate to="/brands/nexalus-innovations/services" replace />} />
+            <Route path="/itti-networking/*" element={<Navigate to="/brands/nexalus-innovations/services" replace />} />
 
             {/* Admin Authentication */}
             <Route path="/admin/login" element={<AdminLoginPage />} />

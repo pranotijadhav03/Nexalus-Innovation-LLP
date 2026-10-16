@@ -27,11 +27,26 @@ export const ContactPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      const effectiveWebsiteId = division === 'am-distributors'
+        ? 'am-distributors'
+        : division === 'nexalus-innovations'
+        ? 'nexalus-innovations'
+        : 'corporate';
+
+      const effectiveWebsiteName = effectiveWebsiteId === 'am-distributors'
+        ? 'A.M. Distributors Chiplun'
+        : effectiveWebsiteId === 'nexalus-innovations'
+        ? 'Nexalus Innovations'
+        : 'Nexalus Innovations LLP';
+
       const res = await submitEnquiry({
         customerName: name,
         phone,
         email,
         brandId: division as any,
+        websiteId: effectiveWebsiteId,
+        websiteName: effectiveWebsiteName,
+        sourcePage: 'Corporate Parent Contact Page',
         enquiryType: 'general',
         location: location || 'Not specified',
         pincode: pincode || undefined,
@@ -65,7 +80,7 @@ export const ContactPage: React.FC = () => {
             Contact Nexalus Innovations LLP
           </h1>
           <p className="text-base text-slate-600 mt-4 leading-relaxed">
-            Reach out to our corporate office, Nexalus Innovations technology team, or A.M. Distributors Chiplun regional depot.
+            Reach out to our corporate office, technical support team, or enterprise sales engineers for solutions across Maharashtra.
           </p>
         </div>
       </section>
@@ -108,27 +123,27 @@ export const ContactPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Division Desks */}
+            {/* Specialized Desks */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-5 rounded-2xl bg-sky-50/70 border border-sky-200/70 space-y-2">
-                <div className="flex items-center gap-2 text-sky-800 font-bold text-xs">
-                  <Cpu className="w-4 h-4 text-sky-600" />
-                  Nexalus Innovations Desk
+              <div className="p-5 rounded-2xl bg-blue-50/70 border border-blue-200/70 space-y-2">
+                <div className="flex items-center gap-2 text-blue-800 font-bold text-xs">
+                  <Cpu className="w-4 h-4 text-blue-600" />
+                  Technical Support Desk
                 </div>
                 <div className="text-[11px] text-slate-600 space-y-1 pt-1">
                   <div>+91 9158886444</div>
-                  <div className="truncate">innovations@nexalusinnovations.com</div>
+                  <div className="truncate">support@nexalusinnovations.com</div>
                 </div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-teal-50/70 border border-teal-200/70 space-y-2">
-                <div className="flex items-center gap-2 text-teal-800 font-bold text-xs">
-                  <Truck className="w-4 h-4 text-teal-600" />
-                  A.M. Distributors Chiplun
+              <div className="p-5 rounded-2xl bg-sky-50/70 border border-sky-200/70 space-y-2">
+                <div className="flex items-center gap-2 text-sky-800 font-bold text-xs">
+                  <Mail className="w-4 h-4 text-sky-600" />
+                  Enterprise Sales Desk
                 </div>
                 <div className="text-[11px] text-slate-600 space-y-1 pt-1">
                   <div>+91 9822334455</div>
-                  <div className="truncate">amdistributors.chiplun@nexalusinnovations.com</div>
+                  <div className="truncate">sales@nexalusinnovations.com</div>
                 </div>
               </div>
             </div>
@@ -188,13 +203,15 @@ export const ContactPage: React.FC = () => {
                       required
                     />
                     <Select
-                      label="Relevant Operating Company"
+                      label="Service Requirement"
                       value={division}
                       onChange={e => setDivision(e.target.value)}
                       options={[
-                        { value: 'general', label: 'Nexalus Innovations LLP (Corporate Desk)' },
-                        { value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Fiber & Networking)' },
-                        { value: 'am-distributors', label: 'A.M. Distributors Chiplun (Mineral Water & Dairy)' }
+                        { value: 'general', label: 'Nexalus Innovations LLP (General Inquiry)' },
+                        { value: 'cctv', label: 'AI CCTV Surveillance & Security Setup' },
+                        { value: 'fiber', label: 'High-Speed Optical Fiber Internet' },
+                        { value: 'networking', label: 'Enterprise IT Networking & Server Infrastructure' },
+                        { value: 'amc', label: 'Annual Maintenance Contract (AMC)' }
                       ]}
                     />
                   </div>

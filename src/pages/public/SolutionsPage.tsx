@@ -67,11 +67,11 @@ export const SolutionsPage: React.FC = () => {
               onClick={() => setSelectedBrandFilter('one-broadband')}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedBrandFilter === 'one-broadband'
-                  ? 'bg-teal-600 text-white shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-sm'
                   : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <Wifi className="w-3.5 h-3.5 text-teal-500" />
+              <Wifi className="w-3.5 h-3.5 text-blue-500" />
               Fiber Internet Services
             </button>
             <button
@@ -173,8 +173,8 @@ export const SolutionsPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-teal-50/60 border border-teal-100 space-y-2">
-              <div className="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-xs">
+            <div className="p-5 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
+              <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
                 LAN
               </div>
               <h4 className="font-bold text-sm text-slate-900">Campus-Wide Wi-Fi</h4>
@@ -228,7 +228,7 @@ export const SolutionsPage: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />
               <div className="absolute bottom-5 left-6 right-6 text-white space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-teal-600">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-600">
                   Optical Backbone
                 </span>
                 <h3 className="text-lg font-bold">Precision Fiber Splicing & Testing</h3>

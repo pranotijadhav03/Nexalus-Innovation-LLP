@@ -28,11 +28,26 @@ export const QuotePage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      const effectiveWebsiteId = division === 'am-distributors'
+        ? 'am-distributors'
+        : division === 'nexalus-innovations'
+        ? 'nexalus-innovations'
+        : 'corporate';
+
+      const effectiveWebsiteName = effectiveWebsiteId === 'am-distributors'
+        ? 'A.M. Distributors Chiplun'
+        : effectiveWebsiteId === 'nexalus-innovations'
+        ? 'Nexalus Innovations'
+        : 'Nexalus Innovations LLP';
+
       const res = await submitEnquiry({
         customerName: name,
         phone,
         email,
         brandId: division as any,
+        websiteId: effectiveWebsiteId,
+        websiteName: effectiveWebsiteName,
+        sourcePage: 'Corporate Parent Quote Page',
         enquiryType: 'quote',
         productOrServiceName: serviceCategory,
         location: location || 'Not specified',
@@ -117,13 +132,14 @@ export const QuotePage: React.FC = () => {
                   required
                 />
                 <Select
-                  label="Select Brand Division"
+                  label="Service Scope"
                   value={division}
                   onChange={e => setDivision(e.target.value)}
                   options={[
-                    { value: 'general', label: 'Nexalus Innovations LLP (Corporate Desk)' },
-                    { value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Fiber Internet & Networking)' },
-                    { value: 'am-distributors', label: 'A.M. Distributors Chiplun (Mineral Water, Ice Cream & Dairy)' }
+                    { value: 'general', label: 'Nexalus Innovations LLP (Corporate Proposal)' },
+                    { value: 'cctv', label: 'AI CCTV Surveillance & Security Systems' },
+                    { value: 'fiber', label: 'High-Speed Optical Fiber Internet & Leased Lines' },
+                    { value: 'networking', label: 'Enterprise IT Networking & Server Racks' }
                   ]}
                 />
               </div>

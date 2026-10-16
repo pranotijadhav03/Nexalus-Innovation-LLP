@@ -67,7 +67,7 @@ export const NexalusInnovationsAboutPage: React.FC = () => {
           <div className="lg:col-span-6">
             <div className="rounded-3xl overflow-hidden shadow-lg border border-slate-200">
               <img
-                src="/images/projects/nexalus-innovations-division.jpg"
+                src="/images/tony-webster-datacenter-racks.jpg"
                 alt="Nexalus Innovations Commercial Technology Facility"
                 className="w-full h-96 object-cover"
               />

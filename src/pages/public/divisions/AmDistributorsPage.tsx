@@ -6,6 +6,7 @@ import {
   IceCream,
   Milk,
   ArrowRight,
+  ArrowLeft,
   CheckCircle2,
   Phone,
   Mail,
@@ -35,7 +36,7 @@ export const AmDistributorsPage: React.FC = () => {
       <section className="relative overflow-hidden bg-slate-950 text-white pt-20 pb-24 border-b border-slate-800">
         <div className="absolute inset-0">
           <img
-            src="/images/projects/am-distributors-chiplun.jpg"
+            src="/images/projects/real-warehouse-distribution.jpg"
             alt="A.M. Distributors Chiplun Regional Logistics Hub"
             className="w-full h-full object-cover opacity-35 filter brightness-95"
           />
@@ -43,9 +44,18 @@ export const AmDistributorsPage: React.FC = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 text-center max-w-4xl">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-900/60 text-teal-300 text-xs font-semibold border border-teal-700/50 backdrop-blur-sm">
-            <span className="w-2 h-2 rounded-full bg-teal-400 inline-block animate-pulse" />
-            <span>Operating Company — Nexalus Innovations LLP</span>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-teal-200 hover:text-white font-bold text-xs sm:text-sm border border-teal-500/40 shadow-xs transition-all group backdrop-blur-md"
+            >
+              <ArrowLeft className="w-4 h-4 text-teal-400 group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Main Website (Nexalus Innovations LLP)</span>
+            </Link>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-900/60 text-teal-300 text-xs font-semibold border border-teal-700/50 backdrop-blur-sm">
+              <span className="w-2 h-2 rounded-full bg-teal-400 inline-block animate-pulse" />
+              <span>Operating Company — Nexalus Innovations LLP</span>
+            </div>
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
@@ -269,7 +279,7 @@ export const AmDistributorsPage: React.FC = () => {
           <div className="lg:col-span-6">
             <div className="rounded-2xl overflow-hidden border border-slate-700 shadow-xl">
               <img
-                src="/images/projects/am-distributors-chiplun.jpg"
+                src="/images/projects/real-warehouse-distribution.jpg"
                 alt="A.M. Distributors Chiplun Logistics Depot"
                 className="w-full h-80 object-cover"
               />

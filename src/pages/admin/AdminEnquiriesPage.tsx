@@ -58,16 +58,43 @@ export const AdminEnquiriesPage: React.FC = () => {
   // Delete State
   const [deleteCandidate, setDeleteCandidate] = useState<Enquiry | null>(null);
 
+  const [allEnquiriesRaw, setAllEnquiriesRaw] = useState<Enquiry[]>([]);
+
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const scope = isSuperAdmin ? (brandFilter as any) : (brandScope as any);
       const [allEnqs, allUsers] = await Promise.all([
-        getEnquiries(scope, statusFilter),
+        getEnquiries('all'),
         getUsers()
       ]);
-      setEnquiries(allEnqs);
+      setAllEnquiriesRaw(allEnqs);
       setUsers(allUsers);
+
+      // Now filter based on scope & status
+      let filteredEnqs = allEnqs;
+      const scope = isSuperAdmin ? brandFilter : (brandScope as string);
+
+      if (scope && scope !== 'all') {
+        if (scope === 'corporate' || scope === 'general') {
+          filteredEnqs = filteredEnqs.filter(e => e.websiteId === 'corporate' || e.brandId === 'general');
+        } else if (scope === 'nexalus-innovations') {
+          filteredEnqs = filteredEnqs.filter(e =>
+            e.websiteId === 'nexalus-innovations' ||
+            e.brandId === 'nexalus-innovations' ||
+            e.brandId === 'cp-plus' ||
+            e.brandId === 'one-broadband' ||
+            e.brandId === 'itti-networking'
+          );
+        } else if (scope === 'am-distributors') {
+          filteredEnqs = filteredEnqs.filter(e => e.websiteId === 'am-distributors' || e.brandId === 'am-distributors');
+        }
+      }
+
+      if (statusFilter && statusFilter !== 'all') {
+        filteredEnqs = filteredEnqs.filter(e => e.status === statusFilter);
+      }
+
+      setEnquiries(filteredEnqs);
     } finally {
       setIsLoading(false);
     }
@@ -125,6 +152,17 @@ export const AdminEnquiriesPage: React.FC = () => {
     }
   };
 
+  // Counts for each website
+  const corporateCount = allEnquiriesRaw.filter(e => e.websiteId === 'corporate' || e.brandId === 'general').length;
+  const innovationsCount = allEnquiriesRaw.filter(e =>
+    e.websiteId === 'nexalus-innovations' ||
+    e.brandId === 'nexalus-innovations' ||
+    e.brandId === 'cp-plus' ||
+    e.brandId === 'one-broadband' ||
+    e.brandId === 'itti-networking'
+  ).length;
+  const amCount = allEnquiriesRaw.filter(e => e.websiteId === 'am-distributors' || e.brandId === 'am-distributors').length;
+
   const filtered = enquiries.filter(e => {
     const query = search.toLowerCase();
     return (
@@ -132,6 +170,8 @@ export const AdminEnquiriesPage: React.FC = () => {
       e.customerName.toLowerCase().includes(query) ||
       e.phone.toLowerCase().includes(query) ||
       e.email.toLowerCase().includes(query) ||
+      (e.sourcePage && e.sourcePage.toLowerCase().includes(query)) ||
+      (e.productOrServiceName && e.productOrServiceName.toLowerCase().includes(query)) ||
       (e.location && e.location.toLowerCase().includes(query))
     );
   });
@@ -141,18 +181,113 @@ export const AdminEnquiriesPage: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-          Enquiry & Lead CRM Pipeline
+          Website Inquiries &amp; Customer CRM
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          Process customer quote requests, CCTV site inquiries, and fiber connections through the official sales stages.
+          Real-time inquiries, quote requests, and orders organized across all 3 operating websites with full page tracking.
         </p>
+      </div>
+
+      {/* 3 WEBSITE SELECTOR CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* All Portals Card */}
+        <button
+          onClick={() => setBrandFilter('all')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            brandFilter === 'all'
+              ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-900/30'
+              : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider opacity-75">All Websites</span>
+            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${brandFilter === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700'}`}>
+              {allEnquiriesRaw.length}
+            </span>
+          </div>
+          <div className="mt-3">
+            <div className="font-black text-sm">Combined Inquiries</div>
+            <div className={`text-[11px] mt-0.5 ${brandFilter === 'all' ? 'text-slate-300' : 'text-slate-500'}`}>
+              Master consolidated stream
+            </div>
+          </div>
+        </button>
+
+        {/* Website 1: Corporate Parent */}
+        <button
+          onClick={() => setBrandFilter('corporate')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            brandFilter === 'corporate'
+              ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-600/30'
+              : 'bg-white hover:bg-blue-50/50 text-slate-700 border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider opacity-85">Corporate Portal</span>
+            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${brandFilter === 'corporate' ? 'bg-blue-700 text-white' : 'bg-blue-50 text-blue-700'}`}>
+              {corporateCount}
+            </span>
+          </div>
+          <div className="mt-3">
+            <div className="font-black text-sm">Nexalus Innovations LLP</div>
+            <div className={`text-[11px] mt-0.5 ${brandFilter === 'corporate' ? 'text-blue-100' : 'text-slate-500'}`}>
+              Holding company &amp; group contracts
+            </div>
+          </div>
+        </button>
+
+        {/* Website 2: Nexalus Innovations Tech */}
+        <button
+          onClick={() => setBrandFilter('nexalus-innovations')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            brandFilter === 'nexalus-innovations'
+              ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-600/30'
+              : 'bg-white hover:bg-indigo-50/50 text-slate-700 border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider opacity-85">Tech &amp; Security</span>
+            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${brandFilter === 'nexalus-innovations' ? 'bg-indigo-700 text-white' : 'bg-indigo-50 text-indigo-700'}`}>
+              {innovationsCount}
+            </span>
+          </div>
+          <div className="mt-3">
+            <div className="font-black text-sm">Nexalus Innovations</div>
+            <div className={`text-[11px] mt-0.5 ${brandFilter === 'nexalus-innovations' ? 'text-indigo-100' : 'text-slate-500'}`}>
+              CCTV, Optical Fiber &amp; Switches
+            </div>
+          </div>
+        </button>
+
+        {/* Website 3: A.M. Distributors Chiplun */}
+        <button
+          onClick={() => setBrandFilter('am-distributors')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            brandFilter === 'am-distributors'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-600/30'
+              : 'bg-white hover:bg-emerald-50/50 text-slate-700 border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider opacity-85">Chiplun Depot</span>
+            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${brandFilter === 'am-distributors' ? 'bg-emerald-700 text-white' : 'bg-emerald-50 text-emerald-700'}`}>
+              {amCount}
+            </span>
+          </div>
+          <div className="mt-3">
+            <div className="font-black text-sm">A.M. Distributors Chiplun</div>
+            <div className={`text-[11px] mt-0.5 ${brandFilter === 'am-distributors' ? 'text-emerald-100' : 'text-slate-500'}`}>
+              Mineral Water, Ice Cream &amp; Dairy
+            </div>
+          </div>
+        </button>
       </div>
 
       {/* Filter and Search Bar */}
       <div className="p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
-        <div className="w-full md:w-80">
+        <div className="w-full md:w-96">
           <Input
-            placeholder="Search by ID, name, phone, or email..."
+            placeholder="Search by customer, phone, website, or page..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
@@ -160,25 +295,12 @@ export const AdminEnquiriesPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
-          {isSuperAdmin && (
-            <select
-              className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700"
-              value={brandFilter}
-              onChange={e => setBrandFilter(e.target.value)}
-            >
-              <option value="all">All Operating Companies</option>
-              <option value="nexalus-innovations">Nexalus Innovations (CCTV, Internet, Network)</option>
-              <option value="am-distributors">A.M. Distributors Chiplun (Cold-Chain)</option>
-              <option value="general">Nexalus LLP Corporate</option>
-            </select>
-          )}
-
           <select
-            className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700"
+            className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700 font-medium"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
           >
-            <option value="all">All Statuses</option>
+            <option value="all">All Statuses ({filtered.length})</option>
             <option value="new">New (Uncontacted)</option>
             <option value="contacted">Contacted</option>
             <option value="in_progress">In Progress</option>
@@ -195,80 +317,129 @@ export const AdminEnquiriesPage: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
               <tr>
-                <th className="py-3.5 px-4">Ticket ID</th>
-                <th className="py-3.5 px-4">Customer Details</th>
-                <th className="py-3.5 px-4">Brand Division</th>
-                <th className="py-3.5 px-4">Subject / Location</th>
-                <th className="py-3.5 px-4">Workflow Status</th>
+                <th className="py-3.5 px-4">Ticket</th>
+                <th className="py-3.5 px-4">Customer</th>
+                <th className="py-3.5 px-4">Origin Website &amp; Page</th>
+                <th className="py-3.5 px-4">Requirement / Location</th>
+                <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map(enq => (
-                <tr key={enq.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                    #{enq.id}
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <div className="font-bold text-slate-900">{enq.customerName}</div>
-                    <div className="text-[11px] text-slate-500">{enq.phone} • {enq.email}</div>
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <BrandBadge brandId={enq.brandId} size="sm" />
-                  </td>
-
-                  <td className="py-3.5 px-4 max-w-xs">
-                    <div className="font-semibold text-slate-800 truncate">
-                      {enq.productOrServiceName || 'General Enquiry'}
-                    </div>
-                    <div className="text-[11px] text-slate-500 truncate">
-                      {enq.location || 'Location unlisted'}
-                    </div>
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                        enq.status === 'new'
-                          ? 'bg-amber-50 text-amber-800 border-amber-200'
-                          : enq.status === 'contacted'
-                          ? 'bg-blue-50 text-blue-800 border-blue-200'
-                          : enq.status === 'in_progress'
-                          ? 'bg-purple-50 text-purple-800 border-purple-200'
-                          : enq.status === 'quotation_sent'
-                          ? 'bg-cyan-50 text-cyan-800 border-cyan-200'
-                          : enq.status === 'converted'
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                          : 'bg-slate-100 text-slate-600 border-slate-300'
-                      }`}
-                    >
-                      {enq.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => openDetailModal(enq)}
-                        icon={<Eye className="w-3.5 h-3.5" />}
-                      >
-                        Inspect
-                      </Button>
-                      <button
-                        onClick={() => setDeleteCandidate(enq)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"
-                        title="Delete Lead"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                    No inquiries found matching this website or status filter.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map(enq => {
+                  const isAmDist = enq.websiteId === 'am-distributors' || enq.brandId === 'am-distributors';
+                  const isNexTech = enq.websiteId === 'nexalus-innovations' || enq.brandId === 'nexalus-innovations' || enq.brandId === 'cp-plus' || enq.brandId === 'one-broadband' || enq.brandId === 'itti-networking';
+
+                  const websiteDisplay = isAmDist
+                    ? 'A.M. Distributors Chiplun'
+                    : isNexTech
+                    ? 'Nexalus Innovations'
+                    : 'Nexalus Innovations LLP';
+
+                  return (
+                    <tr key={enq.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                        #{enq.id}
+                        <div className="text-[10px] text-slate-400 font-sans font-normal">
+                          {new Date(enq.createdAt).toLocaleDateString()}
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-slate-900">{enq.customerName}</div>
+                        <div className="text-[11px] text-slate-500 font-mono">{enq.phone}</div>
+                        <div className="text-[10px] text-slate-400 truncate max-w-[160px]">{enq.email}</div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-col gap-1 items-start">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                              isAmDist
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : isNexTech
+                                ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                                : 'bg-blue-50 text-blue-800 border-blue-200'
+                            }`}
+                          >
+                            {websiteDisplay}
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            {enq.sourcePage || 'General Form'}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <div className="font-semibold text-slate-800 truncate">
+                          {enq.productOrServiceName || 'General Enquiry'}
+                        </div>
+                        <div className="text-[11px] text-slate-500 truncate">
+                          {enq.location || 'Location unlisted'} {enq.pincode ? `• PIN ${enq.pincode}` : ''}
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            enq.status === 'new'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : enq.status === 'contacted'
+                              ? 'bg-blue-50 text-blue-800 border-blue-200'
+                              : enq.status === 'in_progress'
+                              ? 'bg-purple-50 text-purple-800 border-purple-200'
+                              : enq.status === 'quotation_sent'
+                              ? 'bg-cyan-50 text-cyan-800 border-cyan-200'
+                              : enq.status === 'converted'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : 'bg-slate-100 text-slate-600 border-slate-300'
+                          }`}
+                        >
+                          {enq.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {enq.phone && (
+                            <a
+                              href={`https://wa.me/${enq.phone.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                              title="Chat on WhatsApp"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => openDetailModal(enq)}
+                            icon={<Eye className="w-3.5 h-3.5" />}
+                          >
+                            Inspect
+                          </Button>
+                          <button
+                            onClick={() => setDeleteCandidate(enq)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                            title="Delete Lead"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -284,6 +455,22 @@ export const AdminEnquiriesPage: React.FC = () => {
       >
         {selectedEnquiry && (
           <div className="space-y-6">
+            {/* Origin Website & Source Page Banner */}
+            <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-indigo-900 uppercase text-[10px]">Origin Website:</span>
+                <span className="font-black text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-200">
+                  {selectedEnquiry.websiteName || (selectedEnquiry.brandId === 'am-distributors' ? 'A.M. Distributors Chiplun' : selectedEnquiry.brandId === 'nexalus-innovations' ? 'Nexalus Innovations' : 'Nexalus Innovations LLP')}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-500 uppercase text-[10px]">Submitted On Page:</span>
+                <span className="font-semibold text-slate-800 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                  {selectedEnquiry.sourcePage || 'Contact / Quote Modal'}
+                </span>
+              </div>
+            </div>
+
             {/* Customer Details Box */}
             <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
@@ -291,8 +478,24 @@ export const AdminEnquiriesPage: React.FC = () => {
                 <span className="font-bold text-slate-900 text-sm">{selectedEnquiry.customerName}</span>
               </div>
               <div>
-                <span className="font-bold text-slate-400 uppercase text-[10px] block">Phone & Mobile</span>
-                <span className="font-semibold text-slate-800">{selectedEnquiry.phone}</span>
+                <span className="font-bold text-slate-400 uppercase text-[10px] block">Phone &amp; Mobile</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="font-semibold text-slate-800">{selectedEnquiry.phone}</span>
+                  <a
+                    href={`https://wa.me/${selectedEnquiry.phone.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-500 transition-colors"
+                  >
+                    WhatsApp
+                  </a>
+                  <a
+                    href={`tel:${selectedEnquiry.phone}`}
+                    className="px-2 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[10px] hover:bg-blue-500 transition-colors"
+                  >
+                    Call
+                  </a>
+                </div>
               </div>
               <div>
                 <span className="font-bold text-slate-400 uppercase text-[10px] block">Email Address</span>

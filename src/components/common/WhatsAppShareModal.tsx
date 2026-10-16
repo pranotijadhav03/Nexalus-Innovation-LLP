@@ -21,10 +21,7 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
   const [customerPhone, setCustomerPhone] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const brandName =
-    product.brandId === 'am-distributors'
-      ? 'A.M. Distributors Chiplun'
-      : 'Nexalus Innovations';
+  const brandName = 'Nexalus Innovations LLP';
 
   // Format specifications bullet points
   const specLines = Object.entries(product.specifications || {})

@@ -45,7 +45,7 @@ import {
 } from '../data/initialData';
 
 // Storage Keys for resilient local state
-const DATA_VERSION = 'v8_';
+const DATA_VERSION = 'v9_';
 const STORAGE_KEYS = {
   BRANDS: DATA_VERSION + 'nexalus_store_brands',
   CATEGORIES: DATA_VERSION + 'nexalus_store_categories',
@@ -79,10 +79,14 @@ function getLocalItem<T>(key: string, defaultValue: T): T {
 function setLocalItem<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-    // Dispatch local update event for reactivity
-    window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key } }));
   } catch (err) {
     console.error('Failed to save to localStorage:', err);
+  }
+}
+
+export function notifyDataUpdate(key?: string): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key } }));
   }
 }
 
@@ -108,7 +112,6 @@ export async function addAuditLog(
   if (isFirebaseConfigured && db) {
     try {
       await setDoc(doc(db, 'auditLogs', newLog.id), newLog);
-      return;
     } catch (e) {
       console.warn('Firestore addAuditLog error:', e);
     }
@@ -124,7 +127,9 @@ export async function getAuditLogs(): Promise<AuditLog[]> {
       const q = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'));
       const snapshot = await getDocs(q);
       if (!snapshot.empty) {
-        return snapshot.docs.map(d => d.data() as AuditLog);
+        const logs = snapshot.docs.map(d => d.data() as AuditLog);
+        setLocalItem(STORAGE_KEYS.AUDIT_LOGS, logs);
+        return logs;
       }
     } catch (e) {
       console.warn('Firestore getAuditLogs error:', e);
@@ -141,7 +146,9 @@ export async function getBrands(): Promise<Brand[]> {
     try {
       const snapshot = await getDocs(collection(db, 'brands'));
       if (!snapshot.empty) {
-        return snapshot.docs.map(d => d.data() as Brand);
+        const brands = snapshot.docs.map(d => d.data() as Brand);
+        setLocalItem(STORAGE_KEYS.BRANDS, brands);
+        return brands;
       }
     } catch (e) {
       console.warn('Firestore getBrands error:', e);
@@ -159,6 +166,31 @@ export async function getBrandById(id: BrandId): Promise<Brand | undefined> {
 // PRODUCT CATEGORIES
 // ----------------------------------------------------
 export async function getCategories(brandId?: BrandId): Promise<ProductCategory[]> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const snapshot = await getDocs(collection(db, 'categories'));
+      if (!snapshot.empty) {
+        let categories = snapshot.docs.map(d => d.data() as ProductCategory);
+        setLocalItem(STORAGE_KEYS.CATEGORIES, categories);
+        if (brandId) {
+          if (brandId === 'nexalus-innovations') {
+            categories = categories.filter(c =>
+              c.brandId === 'nexalus-innovations' ||
+              c.brandId === 'cp-plus' ||
+              c.brandId === 'one-broadband' ||
+              c.brandId === 'itti-networking'
+            );
+          } else {
+            categories = categories.filter(c => c.brandId === brandId);
+          }
+        }
+        return categories;
+      }
+    } catch (e) {
+      console.warn('Firestore getCategories error:', e);
+    }
+  }
+
   let categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
   if (brandId) {
     if (brandId === 'nexalus-innovations') {
@@ -180,6 +212,15 @@ export async function createCategory(cat: Omit<ProductCategory, 'id'>): Promise<
     ...cat,
     id: 'cat-' + Date.now()
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'categories', newCat.id), newCat);
+    } catch (e) {
+      console.warn('Firestore createCategory error:', e);
+    }
+  }
+
   const categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
   const updated = [...categories, newCat];
   setLocalItem(STORAGE_KEYS.CATEGORIES, updated);
@@ -190,6 +231,15 @@ export async function createCategory(cat: Omit<ProductCategory, 'id'>): Promise<
 export async function deleteCategory(id: string): Promise<void> {
   const categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
   const target = categories.find(c => c.id === id);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await deleteDoc(doc(db, 'categories', id));
+    } catch (e) {
+      console.warn('Firestore deleteCategory error:', e);
+    }
+  }
+
   const updated = categories.filter(c => c.id !== id);
   setLocalItem(STORAGE_KEYS.CATEGORIES, updated);
   if (target) {
@@ -203,15 +253,26 @@ export async function deleteCategory(id: string): Promise<void> {
 export async function getProducts(brandId?: BrandId, publishedOnly = false): Promise<Product[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const constraints: any[] = [];
-      if (brandId) constraints.push(where('brandId', '==', brandId));
-      if (publishedOnly) constraints.push(where('published', '==', true));
-      const q = constraints.length > 0
-        ? query(collection(db, 'products'), ...constraints)
-        : collection(db, 'products');
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(collection(db, 'products'));
       if (!snapshot.empty) {
-        return snapshot.docs.map(d => d.data() as Product);
+        let products = snapshot.docs.map(d => d.data() as Product);
+        setLocalItem(STORAGE_KEYS.PRODUCTS, products);
+        if (brandId) {
+          if (brandId === 'nexalus-innovations') {
+            products = products.filter(p =>
+              p.brandId === 'nexalus-innovations' ||
+              p.brandId === 'cp-plus' ||
+              p.brandId === 'one-broadband' ||
+              p.brandId === 'itti-networking'
+            );
+          } else {
+            products = products.filter(p => p.brandId === brandId);
+          }
+        }
+        if (publishedOnly) {
+          products = products.filter(p => p.published);
+        }
+        return products;
       }
     } catch (e) {
       console.warn('Firestore getProducts error:', e);
@@ -351,14 +412,14 @@ export async function deleteProduct(id: string): Promise<boolean> {
 export async function getInternetPlans(publishedOnly = false): Promise<InternetPlan[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const constraints: any[] = [];
-      if (publishedOnly) constraints.push(where('published', '==', true));
-      const q = constraints.length > 0
-        ? query(collection(db, 'plans'), ...constraints)
-        : collection(db, 'plans');
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(collection(db, 'plans'));
       if (!snapshot.empty) {
-        return snapshot.docs.map(d => d.data() as InternetPlan);
+        let plans = snapshot.docs.map(d => d.data() as InternetPlan);
+        setLocalItem(STORAGE_KEYS.PLANS, plans);
+        if (publishedOnly) {
+          plans = plans.filter(p => p.published);
+        }
+        return plans.sort((a, b) => a.speedNumeric - b.speedNumeric);
       }
     } catch (e) {
       console.warn('Firestore getPlans error:', e);
@@ -366,7 +427,6 @@ export async function getInternetPlans(publishedOnly = false): Promise<InternetP
   }
 
   let plans = getLocalItem<InternetPlan[]>(STORAGE_KEYS.PLANS, initialInternetPlans);
-  // Auto-heal: Ensure plans match latest tariffs from user specifications
   const needsSync = !plans.some(p => p.id === 'plan-60') || plans.some(p => !p.originalPrice);
   if (needsSync) {
     plans = initialInternetPlans;
@@ -451,6 +511,25 @@ export async function deleteInternetPlan(id: string): Promise<boolean> {
 // SERVICES
 // ----------------------------------------------------
 export async function getServices(brandId?: BrandId | 'nexalus', publishedOnly = false): Promise<Service[]> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const snapshot = await getDocs(collection(db, 'services'));
+      if (!snapshot.empty) {
+        let services = snapshot.docs.map(d => d.data() as Service);
+        setLocalItem(STORAGE_KEYS.SERVICES, services);
+        if (brandId) {
+          services = services.filter(s => s.brandId === brandId);
+        }
+        if (publishedOnly) {
+          services = services.filter(s => s.published);
+        }
+        return services;
+      }
+    } catch (e) {
+      console.warn('Firestore getServices error:', e);
+    }
+  }
+
   let services = getLocalItem<Service[]>(STORAGE_KEYS.SERVICES, initialServices);
   if (brandId) {
     services = services.filter(s => s.brandId === brandId);
@@ -471,6 +550,14 @@ export async function createService(serviceData: Omit<Service, 'id' | 'createdAt
     updatedAt: now
   };
 
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'services', id), newService);
+    } catch (e) {
+      console.warn('Firestore createService error:', e);
+    }
+  }
+
   const services = getLocalItem<Service[]>(STORAGE_KEYS.SERVICES, initialServices);
   setLocalItem(STORAGE_KEYS.SERVICES, [newService, ...services]);
   await addAuditLog('CREATE_SERVICE', `Created service: ${newService.title}`, newService.brandId === 'nexalus' ? 'general' : newService.brandId);
@@ -478,15 +565,25 @@ export async function createService(serviceData: Omit<Service, 'id' | 'createdAt
 }
 
 export async function updateService(id: string, updates: Partial<Service>): Promise<Service | null> {
+  const now = new Date().toISOString();
   const services = getLocalItem<Service[]>(STORAGE_KEYS.SERVICES, initialServices);
   const index = services.findIndex(s => s.id === id);
   if (index === -1) return null;
 
-  const updated = {
+  const updated: Service = {
     ...services[index],
     ...updates,
-    updatedAt: new Date().toISOString()
+    updatedAt: now
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await updateDoc(doc(db, 'services', id), { ...updates, updatedAt: now });
+    } catch (e) {
+      console.warn('Firestore updateService error:', e);
+    }
+  }
+
   services[index] = updated;
   setLocalItem(STORAGE_KEYS.SERVICES, services);
   await addAuditLog('UPDATE_SERVICE', `Updated service: ${updated.title}`, updated.brandId === 'nexalus' ? 'general' : updated.brandId);
@@ -498,6 +595,14 @@ export async function deleteService(id: string): Promise<boolean> {
   const target = services.find(s => s.id === id);
   if (!target) return false;
 
+  if (isFirebaseConfigured && db) {
+    try {
+      await deleteDoc(doc(db, 'services', id));
+    } catch (e) {
+      console.warn('Firestore deleteService error:', e);
+    }
+  }
+
   const updated = services.filter(s => s.id !== id);
   setLocalItem(STORAGE_KEYS.SERVICES, updated);
   await addAuditLog('DELETE_SERVICE', `Deleted service: ${target.title}`, target.brandId === 'nexalus' ? 'general' : target.brandId);
@@ -508,12 +613,26 @@ export async function deleteService(id: string): Promise<boolean> {
 // PROJECTS
 // ----------------------------------------------------
 export async function getProjects(brandId?: BrandId | 'nexalus', publishedOnly = false): Promise<Project[]> {
-  let projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
-  const needsSync = projects.some(p => p.images?.[0]?.includes('unsplash.com'));
-  if (needsSync) {
-    projects = initialProjects;
-    setLocalItem(STORAGE_KEYS.PROJECTS, initialProjects);
+  if (isFirebaseConfigured && db) {
+    try {
+      const snapshot = await getDocs(collection(db, 'projects'));
+      if (!snapshot.empty) {
+        let projects = snapshot.docs.map(d => d.data() as Project);
+        setLocalItem(STORAGE_KEYS.PROJECTS, projects);
+        if (brandId) {
+          projects = projects.filter(p => p.brandId === brandId);
+        }
+        if (publishedOnly) {
+          projects = projects.filter(p => p.published);
+        }
+        return projects;
+      }
+    } catch (e) {
+      console.warn('Firestore getProjects error:', e);
+    }
   }
+
+  let projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
   if (brandId) {
     projects = projects.filter(p => p.brandId === brandId);
   }
@@ -533,6 +652,14 @@ export async function createProject(projectData: Omit<Project, 'id' | 'createdAt
     updatedAt: now
   };
 
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'projects', id), newProject);
+    } catch (e) {
+      console.warn('Firestore createProject error:', e);
+    }
+  }
+
   const projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
   setLocalItem(STORAGE_KEYS.PROJECTS, [newProject, ...projects]);
   await addAuditLog('CREATE_PROJECT', `Created project: ${newProject.title}`, newProject.brandId === 'nexalus' ? 'general' : newProject.brandId);
@@ -540,15 +667,25 @@ export async function createProject(projectData: Omit<Project, 'id' | 'createdAt
 }
 
 export async function updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
+  const now = new Date().toISOString();
   const projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
   const index = projects.findIndex(p => p.id === id);
   if (index === -1) return null;
 
-  const updated = {
+  const updated: Project = {
     ...projects[index],
     ...updates,
-    updatedAt: new Date().toISOString()
+    updatedAt: now
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await updateDoc(doc(db, 'projects', id), { ...updates, updatedAt: now });
+    } catch (e) {
+      console.warn('Firestore updateProject error:', e);
+    }
+  }
+
   projects[index] = updated;
   setLocalItem(STORAGE_KEYS.PROJECTS, projects);
   await addAuditLog('UPDATE_PROJECT', `Updated project: ${updated.title}`, updated.brandId === 'nexalus' ? 'general' : updated.brandId);
@@ -560,6 +697,14 @@ export async function deleteProject(id: string): Promise<boolean> {
   const target = projects.find(p => p.id === id);
   if (!target) return false;
 
+  if (isFirebaseConfigured && db) {
+    try {
+      await deleteDoc(doc(db, 'projects', id));
+    } catch (e) {
+      console.warn('Firestore deleteProject error:', e);
+    }
+  }
+
   const updated = projects.filter(p => p.id !== id);
   setLocalItem(STORAGE_KEYS.PROJECTS, updated);
   await addAuditLog('DELETE_PROJECT', `Deleted project: ${target.title}`, target.brandId === 'nexalus' ? 'general' : target.brandId);
@@ -569,59 +714,108 @@ export async function deleteProject(id: string): Promise<boolean> {
 // ----------------------------------------------------
 // ENQUIRIES & LEADS
 // ----------------------------------------------------
-export async function getEnquiries(brandScope?: BrandId | 'all', statusFilter?: string): Promise<Enquiry[]> {
+export async function getEnquiries(scope?: string, statusFilter?: string): Promise<Enquiry[]> {
+  let allEnquiries: Enquiry[] = [];
+
   if (isFirebaseConfigured && db) {
     try {
-      const constraints: any[] = [];
-      if (brandScope && brandScope !== 'all') {
-        constraints.push(where('brandId', '==', brandScope));
-      }
-      if (statusFilter && statusFilter !== 'all') {
-        constraints.push(where('status', '==', statusFilter));
-      }
-      const q = constraints.length > 0
-        ? query(collection(db, 'enquiries'), ...constraints)
-        : collection(db, 'enquiries');
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(collection(db, 'enquiries'));
       if (!snapshot.empty) {
-        return snapshot.docs.map(d => d.data() as Enquiry);
+        allEnquiries = snapshot.docs.map(d => d.data() as Enquiry);
       }
     } catch (e) {
       console.warn('Firestore getEnquiries error:', e);
     }
   }
 
-  let enquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
-  if (brandScope && brandScope !== 'all') {
-    if (brandScope === 'nexalus-innovations') {
+  if (allEnquiries.length === 0) {
+    allEnquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
+  } else {
+    // Merge local items with Firestore to prevent losing submissions, deduping by id
+    const local = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
+    const seen = new Set(allEnquiries.map(e => e.id));
+    for (const item of local) {
+      if (!seen.has(item.id)) {
+        allEnquiries.push(item);
+        seen.add(item.id);
+      }
+    }
+    setLocalItem(STORAGE_KEYS.ENQUIRIES, allEnquiries);
+  }
+
+  // Deduplicate completely by id
+  const uniqueMap = new Map<string, Enquiry>();
+  for (const item of allEnquiries) {
+    if (!uniqueMap.has(item.id)) {
+      uniqueMap.set(item.id, item);
+    }
+  }
+  let enquiries = Array.from(uniqueMap.values());
+
+  // Scope filter: support websiteId ('corporate', 'nexalus-innovations', 'am-distributors') OR brandId
+  if (scope && scope !== 'all') {
+    if (scope === 'corporate' || scope === 'general') {
+      enquiries = enquiries.filter(e => e.websiteId === 'corporate' || e.brandId === 'general');
+    } else if (scope === 'nexalus-innovations') {
       enquiries = enquiries.filter(e =>
+        e.websiteId === 'nexalus-innovations' ||
         e.brandId === 'nexalus-innovations' ||
         e.brandId === 'cp-plus' ||
         e.brandId === 'one-broadband' ||
         e.brandId === 'itti-networking'
       );
+    } else if (scope === 'am-distributors') {
+      enquiries = enquiries.filter(e => e.websiteId === 'am-distributors' || e.brandId === 'am-distributors');
     } else {
-      enquiries = enquiries.filter(e => e.brandId === brandScope);
+      enquiries = enquiries.filter(e => e.brandId === (scope as any) || e.websiteId === scope);
     }
   }
+
   if (statusFilter && statusFilter !== 'all') {
     enquiries = enquiries.filter(e => e.status === statusFilter);
   }
+
   return enquiries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function submitEnquiry(
   data: Omit<Enquiry, 'id' | 'status' | 'createdAt' | 'updatedAt'>
 ): Promise<{ success: boolean; id: string; message: string }> {
-  // Normalize & validate
   if (!data.customerName.trim() || !data.phone.trim() || !data.email.trim()) {
     throw new Error('Please provide name, phone and valid email.');
   }
+
+  // Derive websiteId and websiteName cleanly
+  let websiteId = data.websiteId;
+  let websiteName = data.websiteName;
+
+  if (!websiteId) {
+    if (data.brandId === 'am-distributors') {
+      websiteId = 'am-distributors';
+      websiteName = 'A.M. Distributors Chiplun';
+    } else if (
+      data.brandId === 'nexalus-innovations' ||
+      data.brandId === 'cp-plus' ||
+      data.brandId === 'one-broadband' ||
+      data.brandId === 'itti-networking'
+    ) {
+      websiteId = 'nexalus-innovations';
+      websiteName = 'Nexalus Innovations';
+    } else {
+      websiteId = 'corporate';
+      websiteName = 'Nexalus Innovations LLP';
+    }
+  }
+
+  const sourcePage = data.sourcePage || (data.enquiryType === 'quote' ? 'Quick Quote Modal' : 'Website Form');
 
   const id = 'enq-' + Math.floor(100000 + Math.random() * 900000);
   const now = new Date().toISOString();
   const newEnquiry: Enquiry = {
     ...data,
+    websiteId,
+    websiteName,
+    sourcePage,
     id,
     status: 'new',
     createdAt: now,
@@ -630,17 +824,24 @@ export async function submitEnquiry(
 
   if (isFirebaseConfigured && db) {
     try {
+      // 1. Primary enquiries collection
       await setDoc(doc(db, 'enquiries', id), newEnquiry);
+      // 2. Mirror into websites collection: websites/{websiteId}/enquiries/{id}
+      await setDoc(doc(db, 'websites', websiteId, 'enquiries', id), newEnquiry);
     } catch (e) {
       console.warn('Firestore submitEnquiry error:', e);
     }
   }
 
   const enquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
-  setLocalItem(STORAGE_KEYS.ENQUIRIES, [newEnquiry, ...enquiries]);
+  // Ensure no duplicate IDs in local storage
+  const deduped = [newEnquiry, ...enquiries.filter(e => e.id !== id)];
+  setLocalItem(STORAGE_KEYS.ENQUIRIES, deduped);
+  notifyDataUpdate(STORAGE_KEYS.ENQUIRIES);
+
   await addAuditLog(
     'NEW_ENQUIRY_RECEIVED',
-    `Received enquiry #${id} from ${newEnquiry.customerName} (${newEnquiry.phone})`,
+    `[${websiteName}] Received enquiry #${id} from ${newEnquiry.customerName} (${newEnquiry.phone}) on ${sourcePage}`,
     newEnquiry.brandId === 'general' ? undefined : newEnquiry.brandId
   );
 
@@ -657,6 +858,7 @@ export async function updateEnquiryStatus(
   internalNotes?: string,
   assignedTo?: string
 ): Promise<Enquiry | null> {
+  const now = new Date().toISOString();
   const enquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
   const index = enquiries.findIndex(e => e.id === id);
   if (index === -1) return null;
@@ -667,7 +869,7 @@ export async function updateEnquiryStatus(
     status,
     internalNotes: internalNotes !== undefined ? internalNotes : current.internalNotes,
     assignedTo: assignedTo !== undefined ? assignedTo : current.assignedTo,
-    updatedAt: new Date().toISOString()
+    updatedAt: now
   };
 
   if (isFirebaseConfigured && db) {
@@ -676,7 +878,7 @@ export async function updateEnquiryStatus(
         status,
         internalNotes: updated.internalNotes,
         assignedTo: updated.assignedTo,
-        updatedAt: updated.updatedAt
+        updatedAt: now
       });
     } catch (e) {
       console.warn('Firestore updateEnquiryStatus error:', e);
@@ -698,6 +900,14 @@ export async function deleteEnquiry(id: string): Promise<boolean> {
   const target = enquiries.find(e => e.id === id);
   if (!target) return false;
 
+  if (isFirebaseConfigured && db) {
+    try {
+      await deleteDoc(doc(db, 'enquiries', id));
+    } catch (e) {
+      console.warn('Firestore deleteEnquiry error:', e);
+    }
+  }
+
   const updated = enquiries.filter(e => e.id !== id);
   setLocalItem(STORAGE_KEYS.ENQUIRIES, updated);
   await addAuditLog('DELETE_ENQUIRY', `Removed enquiry record #${id}`, target.brandId === 'general' ? undefined : target.brandId);
@@ -708,6 +918,18 @@ export async function deleteEnquiry(id: string): Promise<boolean> {
 // SERVICE AREAS (One Broadband Coverage Check)
 // ----------------------------------------------------
 export async function getServiceAreas(): Promise<ServiceArea[]> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const snapshot = await getDocs(collection(db, 'serviceAreas'));
+      if (!snapshot.empty) {
+        const areas = snapshot.docs.map(d => d.data() as ServiceArea);
+        setLocalItem(STORAGE_KEYS.SERVICE_AREAS, areas);
+        return areas;
+      }
+    } catch (e) {
+      console.warn('Firestore getServiceAreas error:', e);
+    }
+  }
   return getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
 }
 
@@ -756,6 +978,15 @@ export async function createServiceArea(area: Omit<ServiceArea, 'id' | 'updatedA
     id: 'sa-' + Date.now(),
     updatedAt: new Date().toISOString()
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'serviceAreas', newArea.id), newArea);
+    } catch (e) {
+      console.warn('Firestore createServiceArea error:', e);
+    }
+  }
+
   const areas = getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
   setLocalItem(STORAGE_KEYS.SERVICE_AREAS, [...areas, newArea]);
   await addAuditLog('CREATE_SERVICE_AREA', `Added coverage zone: ${newArea.locality} (${newArea.pincode})`, 'one-broadband');
@@ -763,6 +994,7 @@ export async function createServiceArea(area: Omit<ServiceArea, 'id' | 'updatedA
 }
 
 export async function updateServiceArea(id: string, updates: Partial<ServiceArea>): Promise<ServiceArea | null> {
+  const now = new Date().toISOString();
   const areas = getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
   const index = areas.findIndex(a => a.id === id);
   if (index === -1) return null;
@@ -770,8 +1002,17 @@ export async function updateServiceArea(id: string, updates: Partial<ServiceArea
   const updated: ServiceArea = {
     ...areas[index],
     ...updates,
-    updatedAt: new Date().toISOString()
+    updatedAt: now
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await updateDoc(doc(db, 'serviceAreas', id), { ...updates, updatedAt: now });
+    } catch (e) {
+      console.warn('Firestore updateServiceArea error:', e);
+    }
+  }
+
   areas[index] = updated;
   setLocalItem(STORAGE_KEYS.SERVICE_AREAS, areas);
   await addAuditLog('UPDATE_SERVICE_AREA', `Updated coverage zone: ${updated.locality}`, 'one-broadband');
@@ -783,6 +1024,14 @@ export async function deleteServiceArea(id: string): Promise<boolean> {
   const target = areas.find(a => a.id === id);
   if (!target) return false;
 
+  if (isFirebaseConfigured && db) {
+    try {
+      await deleteDoc(doc(db, 'serviceAreas', id));
+    } catch (e) {
+      console.warn('Firestore deleteServiceArea error:', e);
+    }
+  }
+
   const updated = areas.filter(a => a.id !== id);
   setLocalItem(STORAGE_KEYS.SERVICE_AREAS, updated);
   await addAuditLog('DELETE_SERVICE_AREA', `Deleted coverage zone: ${target.locality}`, 'one-broadband');
@@ -793,6 +1042,25 @@ export async function deleteServiceArea(id: string): Promise<boolean> {
 // FAQS
 // ----------------------------------------------------
 export async function getFaqs(brandId?: BrandId | 'nexalus', publishedOnly = false): Promise<FAQ[]> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const snapshot = await getDocs(collection(db, 'faqs'));
+      if (!snapshot.empty) {
+        let faqs = snapshot.docs.map(d => d.data() as FAQ);
+        setLocalItem(STORAGE_KEYS.FAQS, faqs);
+        if (brandId) {
+          faqs = faqs.filter(f => f.brandId === brandId);
+        }
+        if (publishedOnly) {
+          faqs = faqs.filter(f => f.published);
+        }
+        return faqs.sort((a, b) => a.order - b.order);
+      }
+    } catch (e) {
+      console.warn('Firestore getFaqs error:', e);
+    }
+  }
+
   let faqs = getLocalItem<FAQ[]>(STORAGE_KEYS.FAQS, initialFaqs);
   if (brandId) {
     faqs = faqs.filter(f => f.brandId === brandId);
@@ -808,6 +1076,15 @@ export async function createFaq(faq: Omit<FAQ, 'id'>): Promise<FAQ> {
     ...faq,
     id: 'faq-' + Date.now()
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'faqs', newFaq.id), newFaq);
+    } catch (e) {
+      console.warn('Firestore createFaq error:', e);
+    }
+  }
+
   const faqs = getLocalItem<FAQ[]>(STORAGE_KEYS.FAQS, initialFaqs);
   setLocalItem(STORAGE_KEYS.FAQS, [...faqs, newFaq]);
   await addAuditLog('CREATE_FAQ', `Added FAQ: ${newFaq.question.substring(0, 40)}...`, newFaq.brandId === 'nexalus' ? 'general' : newFaq.brandId);
@@ -815,6 +1092,14 @@ export async function createFaq(faq: Omit<FAQ, 'id'>): Promise<FAQ> {
 }
 
 export async function updateFaq(id: string, updates: Partial<FAQ>): Promise<FAQ | null> {
+  if (isFirebaseConfigured && db) {
+    try {
+      await updateDoc(doc(db, 'faqs', id), updates);
+    } catch (e) {
+      console.warn('Firestore updateFaq error:', e);
+    }
+  }
+
   const faqs = getLocalItem<FAQ[]>(STORAGE_KEYS.FAQS, initialFaqs);
   const index = faqs.findIndex(f => f.id === id);
   if (index === -1) return null;
@@ -826,6 +1111,14 @@ export async function updateFaq(id: string, updates: Partial<FAQ>): Promise<FAQ 
 }
 
 export async function deleteFaq(id: string): Promise<boolean> {
+  if (isFirebaseConfigured && db) {
+    try {
+      await deleteDoc(doc(db, 'faqs', id));
+    } catch (e) {
+      console.warn('Firestore deleteFaq error:', e);
+    }
+  }
+
   const faqs = getLocalItem<FAQ[]>(STORAGE_KEYS.FAQS, initialFaqs);
   const updated = faqs.filter(f => f.id !== id);
   setLocalItem(STORAGE_KEYS.FAQS, updated);
@@ -836,6 +1129,22 @@ export async function deleteFaq(id: string): Promise<boolean> {
 // BANNERS
 // ----------------------------------------------------
 export async function getBanners(brandId?: BrandId | 'nexalus'): Promise<SiteBanner[]> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const snapshot = await getDocs(collection(db, 'banners'));
+      if (!snapshot.empty) {
+        let banners = snapshot.docs.map(d => d.data() as SiteBanner);
+        setLocalItem(STORAGE_KEYS.BANNERS, banners);
+        if (brandId) {
+          banners = banners.filter(b => b.brandId === brandId);
+        }
+        return banners;
+      }
+    } catch (e) {
+      console.warn('Firestore getBanners error:', e);
+    }
+  }
+
   let banners = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
   if (brandId) {
     banners = banners.filter(b => b.brandId === brandId);
@@ -844,6 +1153,14 @@ export async function getBanners(brandId?: BrandId | 'nexalus'): Promise<SiteBan
 }
 
 export async function updateBanner(id: string, updates: Partial<SiteBanner>): Promise<SiteBanner | null> {
+  if (isFirebaseConfigured && db) {
+    try {
+      await updateDoc(doc(db, 'banners', id), updates);
+    } catch (e) {
+      console.warn('Firestore updateBanner error:', e);
+    }
+  }
+
   const banners = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
   const index = banners.findIndex(b => b.id === id);
   if (index === -1) return null;
@@ -859,11 +1176,23 @@ export async function updateBanner(id: string, updates: Partial<SiteBanner>): Pr
 // USERS & ROLES
 // ----------------------------------------------------
 export async function getUsers(): Promise<AdminUser[]> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const snapshot = await getDocs(collection(db, 'users'));
+      if (!snapshot.empty) {
+        const users = snapshot.docs.map(d => d.data() as AdminUser);
+        setLocalItem(STORAGE_KEYS.USERS, users);
+        return users;
+      }
+    } catch (e) {
+      console.warn('Firestore getUsers error:', e);
+    }
+  }
+
   let users = getLocalItem<AdminUser[]>(STORAGE_KEYS.USERS, initialUsers);
   const initialMap = new Map(initialUsers.map(u => [u.email.toLowerCase(), u]));
   let hasUpdates = false;
 
-  // Sync initial users passwords and roles
   users = users.map(u => {
     const init = initialMap.get(u.email.toLowerCase());
     if (init && (!u.password || u.password !== init.password)) {
@@ -873,7 +1202,6 @@ export async function getUsers(): Promise<AdminUser[]> {
     return u;
   });
 
-  // Ensure all initial users exist
   const existingEmails = new Set(users.map(u => u.email.toLowerCase()));
   for (const init of initialUsers) {
     if (!existingEmails.has(init.email.toLowerCase())) {
@@ -882,7 +1210,6 @@ export async function getUsers(): Promise<AdminUser[]> {
     }
   }
 
-  // Remove legacy cpplus placeholder if present in storage
   if (users.some(u => u.email === 'cpplus.admin@nexalusinnovations.com')) {
     users = users.filter(u => u.email !== 'cpplus.admin@nexalusinnovations.com');
     hasUpdates = true;
@@ -895,6 +1222,14 @@ export async function getUsers(): Promise<AdminUser[]> {
 }
 
 export async function updateUser(uid: string, updates: Partial<AdminUser>): Promise<AdminUser | null> {
+  if (isFirebaseConfigured && db) {
+    try {
+      await updateDoc(doc(db, 'users', uid), updates);
+    } catch (e) {
+      console.warn('Firestore updateUser error:', e);
+    }
+  }
+
   const users = getLocalItem<AdminUser[]>(STORAGE_KEYS.USERS, initialUsers);
   const index = users.findIndex(u => u.uid === uid);
   if (index === -1) return null;
@@ -913,6 +1248,15 @@ export async function createUser(user: Omit<AdminUser, 'uid' | 'createdAt'>): Pr
     uid,
     createdAt: new Date().toISOString()
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'users', uid), newUser);
+    } catch (e) {
+      console.warn('Firestore createUser error:', e);
+    }
+  }
+
   const users = getLocalItem<AdminUser[]>(STORAGE_KEYS.USERS, initialUsers);
   setLocalItem(STORAGE_KEYS.USERS, [...users, newUser]);
   await addAuditLog('CREATE_USER', `Created admin account: ${newUser.email} (${newUser.role})`);
@@ -923,12 +1267,33 @@ export async function createUser(user: Omit<AdminUser, 'uid' | 'createdAt'>): Pr
 // SEO SETTINGS
 // ----------------------------------------------------
 export async function getSeoSettings(): Promise<SeoSettings> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const snap = await getDoc(doc(db, 'seoSettings', 'default'));
+      if (snap.exists()) {
+        const data = snap.data() as SeoSettings;
+        setLocalItem(STORAGE_KEYS.SEO, data);
+        return data;
+      }
+    } catch (e) {
+      console.warn('Firestore getSeoSettings error:', e);
+    }
+  }
   return getLocalItem<SeoSettings>(STORAGE_KEYS.SEO, initialSeoSettings);
 }
 
 export async function updateSeoSettings(updates: Partial<SeoSettings>): Promise<SeoSettings> {
   const current = getLocalItem<SeoSettings>(STORAGE_KEYS.SEO, initialSeoSettings);
   const updated = { ...current, ...updates };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'seoSettings', 'default'), updated, { merge: true });
+    } catch (e) {
+      console.warn('Firestore updateSeoSettings error:', e);
+    }
+  }
+
   setLocalItem(STORAGE_KEYS.SEO, updated);
   await addAuditLog('UPDATE_SEO', 'Updated website SEO configuration & metadata');
   return updated;

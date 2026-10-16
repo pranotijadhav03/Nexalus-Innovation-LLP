@@ -29,6 +29,9 @@ export const NexalusInnovationsContactPage: React.FC = () => {
     try {
       await submitEnquiry({
         brandId: 'nexalus-innovations',
+        websiteId: 'nexalus-innovations',
+        websiteName: 'Nexalus Innovations',
+        sourcePage: 'Nexalus Innovations Contact Desk',
         customerName: formData.name,
         phone: formData.phone,
         email: formData.email,

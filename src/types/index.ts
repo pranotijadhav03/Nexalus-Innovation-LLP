@@ -111,6 +111,9 @@ export interface Enquiry {
   phone: string;
   email: string;
   brandId: BrandId | 'general';
+  websiteId?: 'corporate' | 'nexalus-innovations' | 'am-distributors' | string;
+  websiteName?: string;
+  sourcePage?: string;
   enquiryType: 'product' | 'service' | 'plan' | 'quote' | 'coverage' | 'general';
   productOrServiceId?: string;
   productOrServiceName?: string;

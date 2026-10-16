@@ -33,6 +33,9 @@ export const AmDistributorsContactPage: React.FC = () => {
     try {
       await submitEnquiry({
         brandId: 'am-distributors',
+        websiteId: 'am-distributors',
+        websiteName: 'A.M. Distributors Chiplun',
+        sourcePage: 'AM Distributors Depot Contact',
         customerName: formData.name,
         phone: formData.phone,
         email: formData.email,

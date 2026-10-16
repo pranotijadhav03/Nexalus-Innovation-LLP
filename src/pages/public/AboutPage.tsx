@@ -3,340 +3,278 @@ import { Link } from 'react-router-dom';
 import {
   Building2,
   Cpu,
-  Truck,
   Shield,
   Wifi,
   Server,
   ArrowRight,
-  ExternalLink,
   CheckCircle2,
   Target,
   Compass,
   Award,
+  Sparkles,
   Layers,
-  Sparkles
+  Wrench,
+  Check
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 
 export const AboutPage: React.FC = () => {
   return (
-    <div className="space-y-16 sm:space-y-24 pb-20">
-      {/* 1. HERO HEADER */}
-      <section className="bg-gradient-to-b from-blue-900/10 via-slate-50 to-white py-16 sm:py-24 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
-            Corporate Profile
+    <div className="flex flex-col w-full">
+      {/* =========================================================================
+          SLIDE 1: HERO HEADER (DEEP SLATE & SERVER SCENE)
+          ========================================================================= */}
+      <section className="relative w-full overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white py-20 sm:py-28 border-b border-slate-800">
+        <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] opacity-15 [background-size:24px_24px] pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-cyan-300 text-xs font-black uppercase tracking-wider mb-4 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Corporate Profile</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mt-2">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">
             About Nexalus Innovations LLP
           </h1>
-          <p className="text-base text-slate-600 mt-4 leading-relaxed">
-            A premier technology enterprise operating across Maharashtra, providing end-to-end solutions in AI CCTV surveillance, high-speed optical fiber internet, and enterprise IT networking infrastructure.
+          <p className="text-base sm:text-lg text-slate-300 mt-5 leading-relaxed font-normal">
+            A premier technology enterprise providing end-to-end turnkey solutions in AI CCTV surveillance, high-speed optical fiber internet, and enterprise IT networking infrastructure.
           </p>
         </div>
       </section>
 
-      {/* 2. CORPORATE ENTITY OVERVIEW */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6 space-y-5">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
-              Parent Entity
+      {/* =========================================================================
+          SLIDE 2: CORPORATE OVERVIEW & ENGINEERING RELIABILITY (LUMINOUS DAYLIGHT)
+          ========================================================================= */}
+      <section className="w-full bg-white py-16 sm:py-24 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-6 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-wider border border-blue-200">
+                <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                <span>Engineering Excellence</span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 leading-tight tracking-tight">
+                Unified Technology Governance &amp; Reliable Infrastructure
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+                <strong className="text-slate-900">Nexalus Innovations LLP</strong> was established to provide structured, accountable corporate backing to critical technology infrastructure. Rather than dealing with multiple fragmented vendors for surveillance cameras, internet connectivity, and office switching, we provide a unified single-window solution.
+              </p>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+                Our engineering team delivers genuine OEM certified hardware, Fluke-tested structured cabling, 24/7 network monitoring, and guaranteed response SLAs for residential societies, commercial offices, industrial tech parks, and institutions.
+              </p>
+
+              <div className="pt-2 flex flex-wrap items-center gap-4">
+                <Link to="/services">
+                  <Button variant="primary" size="md" className="font-bold shadow-md shadow-blue-500/20" icon={<ArrowRight className="w-4 h-4" />}>
+                    Explore Our Services
+                  </Button>
+                </Link>
+                <Link to="/contact">
+                  <Button variant="outline" size="md" className="font-bold">
+                    Contact Corporate Desk
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            <div className="lg:col-span-6">
+              <div className="rounded-3xl bg-slate-900 text-white p-8 sm:p-10 shadow-2xl border border-slate-800 space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">
+                      <Layers className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white leading-tight">
+                        Nexalus Innovations LLP
+                      </h3>
+                      <span className="text-xs text-sky-400 font-semibold uppercase tracking-wider">
+                        Enterprise Technology Standards
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] bg-blue-900/60 text-blue-300 border border-blue-700/50 px-2.5 py-1 rounded-full font-bold">
+                    Corporate HQ
+                  </span>
+                </div>
+
+                {/* 4 Infrastructure Pillars Reference */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1.5 hover:border-blue-500 transition-colors">
+                    <div className="flex items-center gap-2 text-xs font-bold text-blue-400">
+                      <Shield className="w-4 h-4 text-blue-400" />
+                      <span>AI CCTV Surveillance</span>
+                    </div>
+                    <div className="text-xs text-slate-300 leading-relaxed">
+                      Commercial 4K network IP cameras, smart AI detection, and central command monitoring.
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1.5 hover:border-sky-500 transition-colors">
+                    <div className="flex items-center gap-2 text-xs font-bold text-sky-400">
+                      <Wifi className="w-4 h-4 text-sky-400" />
+                      <span>Optical Fiber Internet</span>
+                    </div>
+                    <div className="text-xs text-slate-300 leading-relaxed">
+                      Symmetrical gigabit leased lines and high-speed FTTH broadband with 99.9% uptime.
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1.5 hover:border-indigo-500 transition-colors">
+                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-400">
+                      <Server className="w-4 h-4 text-indigo-400" />
+                      <span>Enterprise IT Switching</span>
+                    </div>
+                    <div className="text-xs text-slate-300 leading-relaxed">
+                      Layer-2/3 managed PoE+ switching, hardware firewalls, and server rack integration.
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1.5 hover:border-cyan-500 transition-colors">
+                    <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
+                      <Wrench className="w-4 h-4 text-cyan-400" />
+                      <span>Turnkey AMC Maintenance</span>
+                    </div>
+                    <div className="text-xs text-slate-300 leading-relaxed">
+                      Fluke-tested structured cabling, proactive audits, and rapid onsite restoration SLAs.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-blue-950/40 border border-blue-900/40 flex items-center justify-between text-xs text-slate-300">
+                  <span className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-sky-400" />
+                    Direct OEM Certified Hardware Integrator
+                  </span>
+                  <span className="text-sky-400 font-bold">Maharashtra</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+      {/* =========================================================================
+          SLIDE 4: VISION & MISSION (COOL AMBIENT SKY & SLATE SLIDE THEME)
+          ========================================================================= */}
+      <section className="w-full bg-gradient-to-b from-blue-50/70 via-white to-slate-50 py-16 sm:py-24 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-black text-blue-600 uppercase tracking-widest">
+              Strategic Blueprint
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-snug">
-              Unified Technology Governance &amp; Engineering Reliability
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              Our Vision &amp; Purpose
             </h2>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Nexalus Innovations LLP was established to provide structured, accountable corporate backing to critical technology infrastructure. Rather than dealing with fragmented vendors for CCTV, internet, and office switching, we provide a unified single-window contract.
-            </p>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Our engineering divisions deliver OEM certified hardware, Fluke-tested structured cabling, 24/7 network monitoring, and guaranteed response SLAs for residential societies, commercial offices, industrial tech parks, and institutions.
-            </p>
+          </div>
 
-            <div className="pt-2 flex items-center gap-4">
-              <Link to="/brands">
-                <Button variant="primary" size="md" icon={<ArrowRight className="w-4 h-4" />}>
-                  Explore Our Divisions
-                </Button>
-              </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-8 sm:p-10 rounded-3xl bg-white border border-slate-200 shadow-md space-y-4 hover:shadow-xl hover:border-blue-300 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold shadow-xs">
+                <Compass className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Our Vision</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                To be Maharashtra&apos;s benchmark technology infrastructure enterprise, recognized for unmatched engineering excellence in AI CCTV surveillance, high-speed optical fiber connectivity, and resilient enterprise IT networks.
+              </p>
+            </div>
+
+            <div className="p-8 sm:p-10 rounded-3xl bg-white border border-slate-200 shadow-md space-y-4 hover:shadow-xl hover:border-sky-300 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center font-bold shadow-xs">
+                <Target className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Our Mission</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                To empower corporate offices, industrial hubs, residential townships, and institutions with dependable turnkey technology solutions backed by authentic OEM hardware, transparent engineering, and certified onsite support.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SLIDE 5: CORE CORPORATE VALUES (EXECUTIVE WHITE CARD GRID)
+          ========================================================================= */}
+      <section className="w-full bg-white py-16 sm:py-24 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <span className="text-xs font-black text-blue-600 uppercase tracking-widest">
+              Operating Principles
+            </span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
+              Our Core Corporate Values
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-white hover:border-blue-300 hover:shadow-lg transition-all space-y-2">
+              <div className="text-blue-600 font-black text-xl">01</div>
+              <h4 className="font-bold text-slate-900 text-sm">Authentic OEM Hardware</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                100% genuine 4K CCTV cameras, carrier-grade optical fiber equipment, and certified enterprise switches with direct manufacturer warranty.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-white hover:border-sky-300 hover:shadow-lg transition-all space-y-2">
+              <div className="text-sky-600 font-black text-xl">02</div>
+              <h4 className="font-bold text-slate-900 text-sm">Rapid Onsite Deployment</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Fast 24-48 hour turnaround on fiber broadband installations and prompt same-day emergency CCTV camera support.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-white hover:border-indigo-300 hover:shadow-lg transition-all space-y-2">
+              <div className="text-indigo-600 font-black text-xl">03</div>
+              <h4 className="font-bold text-slate-900 text-sm">Fluke-Tested Cabling</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Rigorous Fluke channel certification on all pure copper Cat6A and optical fiber patch installations with zero packet loss.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-white hover:border-blue-400 hover:shadow-lg transition-all space-y-2">
+              <div className="text-blue-700 font-black text-xl">04</div>
+              <h4 className="font-bold text-slate-900 text-sm">Rigorous SLA Commitment</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                99.9% uptime leased lines, proactive quarterly CCTV maintenance audits, and dedicated enterprise account engineers.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          SLIDE 6: CTA BANNER (ROYAL NAVY GRADIENT THEME)
+          ========================================================================= */}
+      <section className="w-full py-14 sm:py-20 bg-gradient-to-b from-slate-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-indigo-950 text-white p-8 sm:p-14 shadow-2xl overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 border border-blue-900/50">
+            <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] opacity-15 [background-size:20px_20px] pointer-events-none" />
+
+            <div className="relative space-y-3 text-center md:text-left max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-900/60 text-sky-400 text-xs font-bold border border-blue-700/50 backdrop-blur-xs">
+                <span className="w-2 h-2 rounded-full bg-sky-400 inline-block animate-pulse" />
+                <span>Free Engineering Consultation</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+                Ready to Partner with Nexalus Innovations LLP?
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Contact our engineering desk today for an onsite survey, customized optical network proposal, or CCTV quotation.
+              </p>
+            </div>
+
+            <div className="relative flex flex-col sm:flex-row items-center gap-3 shrink-0">
               <Link to="/contact">
-                <Button variant="outline" size="md">
-                  Contact Corporate Desk
+                <Button
+                  variant="white"
+                  size="lg"
+                  className="px-8 py-4 font-black shadow-xl shadow-blue-950/40 hover:scale-[1.03] active:scale-95 transition-all text-slate-950 bg-white hover:bg-sky-50"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                >
+                  Contact Sales Desk
                 </Button>
               </Link>
             </div>
-          </div>
-
-          <div className="lg:col-span-6">
-            <div className="rounded-3xl bg-slate-900 text-white p-8 sm:p-10 shadow-xl border border-slate-800 space-y-6">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-blue-400" /> Corporate Entity Structure
-              </h3>
-
-              <div className="p-4.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-2">
-                <div className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                  Parent LLP Entity
-                </div>
-                <div className="text-lg font-black text-white">NEXALUS INNOVATIONS LLP</div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Headquartered in Maharashtra. Manages executive operations, quality assurance, strategic partnerships, centralized logistics contracts, and platform administration.
-                </p>
-              </div>
-
-              {/* 2 Child Companies Quick Reference */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-blue-950/60 border border-blue-800/60 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-sky-400">
-                    <Cpu className="w-4 h-4" /> Nexalus Innovations
-                  </div>
-                  <div className="text-xs text-slate-300">
-                    Electronics Material, CCTV Sales &amp; Networking, Fiber Internet &amp; Infrastructure.
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-teal-950/60 border border-teal-800/60 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-teal-400">
-                    <Truck className="w-4 h-4" /> A.M. Distributors Chiplun
-                  </div>
-                  <div className="text-xs text-slate-300">
-                    Chiplun Regional Hub: Packaged Mineral Water, Ice Cream, Milk, Butter &amp; Dairy Distribution.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. OUR OPERATING COMPANIES (WITH VISIT WEBSITE BUTTONS) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
-          <span className="text-xs font-extrabold text-blue-600 uppercase tracking-widest">
-            Operating Divisions
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Our Operating Companies &amp; Specializations
-          </h2>
-          <p className="text-sm text-slate-600">
-            Click &ldquo;Visit&rdquo; to open the dedicated website portal and explore the comprehensive catalogue and service details for each company.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Operating Company 1: Nexalus Innovations */}
-          <div className="rounded-3xl bg-white border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-xl hover:border-blue-300 transition-all duration-300">
-            <div className="relative h-64 overflow-hidden bg-slate-100">
-              <img
-                src="/images/projects/nexalus-innovations-division.jpg"
-                alt="Nexalus Innovations Commercial Technology Facility"
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute top-4 left-4">
-                <span className="px-3.5 py-1 rounded-full bg-blue-600 text-white text-xs font-bold shadow-md">
-                  Technology &amp; Electronics
-                </span>
-              </div>
-            </div>
-
-            <div className="p-8 space-y-5 flex-1 flex flex-col justify-between">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-2xl font-black text-slate-900">Nexalus Innovations</h3>
-                  <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mt-1">
-                    Electronics, CCTV, Fiber Internet &amp; Networking Division
-                  </p>
-                </div>
-
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Nexalus Innovations operates as our dedicated technical systems and network infrastructure arm. Serving corporate complexes, tech parks, retailers, and institutions with genuine OEM hardware and professional engineering.
-                </p>
-
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Official Division Scope:
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
-                    <div className="flex items-center gap-2 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>Electronics Material &amp; Hardware</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>Sales &amp; Networking (CCTV)</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>High-Speed Optical Fiber Internet</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>Enterprise Switches &amp; Server Racks</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Interactive Visit Website Button */}
-              <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <Link to="/brands/nexalus-innovations" className="w-full sm:w-auto">
-                  <Button
-                    variant="primary"
-                    size="md"
-                    className="w-full sm:w-auto"
-                    icon={<ExternalLink className="w-4 h-4" />}
-                  >
-                    Visit
-                  </Button>
-                </Link>
-                <span className="text-xs text-slate-400 font-medium">
-                  5 Commercial Catalog Items
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Operating Company 2: A.M. Distributors Chiplun */}
-          <div className="rounded-3xl bg-white border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-xl hover:border-teal-300 transition-all duration-300">
-            <div className="relative h-64 overflow-hidden bg-slate-100">
-              <img
-                src="/images/projects/am-distributors-chiplun.jpg"
-                alt="A.M. Distributors Chiplun Regional Logistics Hub"
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute top-4 left-4">
-                <span className="px-3.5 py-1 rounded-full bg-teal-600 text-white text-xs font-bold shadow-md">
-                  Cold-Chain &amp; Logistics
-                </span>
-              </div>
-            </div>
-
-            <div className="p-8 space-y-5 flex-1 flex flex-col justify-between">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-2xl font-black text-slate-900">A.M. Distributors Chiplun</h3>
-                  <p className="text-xs font-semibold text-teal-600 uppercase tracking-wider mt-1">
-                    Cold-Chain Dairy &amp; Packaged Goods Logistics Hub
-                  </p>
-                </div>
-
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  A.M. Distributors is our regional distribution powerhouse based in Chiplun, Maharashtra. Equipped with temperature-controlled warehousing, reefer fleet, and daily morning distribution routes for retail outlets and hospitality.
-                </p>
-
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Official Division Scope:
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
-                    <div className="flex items-center gap-2 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                      <span>Chiplun Distribution Hub</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                      <span>Packaged Mineral Water Distribution</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                      <span>Ice Cream Distributor (-18°C Fleet)</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                      <span>Milk, Butter &amp; All Dairy Products</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Interactive Read More / Open Website Button */}
-              <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <Link to="/brands/am-distributors" className="w-full sm:w-auto">
-                  <Button
-                    variant="teal"
-                    size="md"
-                    className="w-full sm:w-auto"
-                    icon={<ExternalLink className="w-4 h-4" />}
-                  >
-                    Visit
-                  </Button>
-                </Link>
-                <span className="text-xs text-slate-400 font-medium">
-                  4 Cold-Chain Catalog Items
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. VISION & MISSION */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="p-8 sm:p-10 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Compass className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900">Our Vision</h3>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              To be Maharashtra&apos;s benchmark commercial enterprise known for excellence in both advanced technology infrastructure (CCTV, fiber internet, and enterprise networking via Nexalus Innovations) and regional cold-chain distribution (pure water and dairy logistics via A.M. Distributors Chiplun).
-            </p>
-          </div>
-
-          <div className="p-8 sm:p-10 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center">
-              <Target className="w-6 h-6" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900">Our Mission</h3>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              To deliver certified OEM hardware, turnkey security surveillance, high-speed optical fiber, and dependable regional cold-chain supply backed by transparent practices, punctual morning dispatch, and uncompromising quality standards.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. CORE VALUES */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto space-y-3 mb-10">
-          <span className="text-xs font-extrabold text-blue-600 uppercase tracking-widest">
-            Operating Principles
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Our Core Corporate Values
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
-            <div className="text-blue-600 font-black text-xl">01</div>
-            <h4 className="font-bold text-slate-900 text-sm">Authentic OEM Hardware</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              100% genuine 4K CCTV cameras, carrier-grade optical fiber equipment, and certified enterprise switches with manufacturer warranty.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
-            <div className="text-sky-600 font-black text-xl">02</div>
-            <h4 className="font-bold text-slate-900 text-sm">Rapid Onsite Deployment</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Fast 24-48 hour turnaround on fiber broadband installations and prompt same-day emergency CCTV support.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
-            <div className="text-teal-600 font-black text-xl">03</div>
-            <h4 className="font-bold text-slate-900 text-sm">Fluke-Tested Cabling</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Rigorous Fluke channel certification on all pure copper Cat6A and optical fiber patch installations.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
-            <div className="text-purple-600 font-black text-xl">04</div>
-            <h4 className="font-bold text-slate-900 text-sm">Rigorous SLA Commitment</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              99.9% uptime leased lines, proactive quarterly CCTV maintenance audits, and dedicated enterprise account executives.
-            </p>
           </div>
         </div>
       </section>

@@ -11,6 +11,9 @@ interface QuoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   brandId?: BrandId | 'general';
+  websiteId?: 'corporate' | 'nexalus-innovations' | 'am-distributors' | string;
+  websiteName?: string;
+  sourcePage?: string;
   itemName?: string;
   itemType?: 'product' | 'service' | 'plan' | 'quote' | 'general';
 }
@@ -19,6 +22,9 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   isOpen,
   onClose,
   brandId = 'general',
+  websiteId,
+  websiteName,
+  sourcePage,
   itemName,
   itemType = 'quote'
 }) => {
@@ -41,11 +47,33 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Determine website info
+      const effectiveWebsiteId = websiteId || (
+        selectedBrand === 'am-distributors'
+          ? 'am-distributors'
+          : (selectedBrand === 'nexalus-innovations' || selectedBrand === 'cp-plus' || selectedBrand === 'one-broadband' || selectedBrand === 'itti-networking')
+          ? 'nexalus-innovations'
+          : 'corporate'
+      );
+
+      const effectiveWebsiteName = websiteName || (
+        effectiveWebsiteId === 'am-distributors'
+          ? 'A.M. Distributors Chiplun'
+          : effectiveWebsiteId === 'nexalus-innovations'
+          ? 'Nexalus Innovations'
+          : 'Nexalus Innovations LLP'
+      );
+
+      const effectiveSource = sourcePage || (itemName ? `Quote Modal (${itemName})` : 'Quick Quote Modal');
+
       await submitEnquiry({
         customerName: name,
         phone,
         email,
         brandId: selectedBrand as any,
+        websiteId: effectiveWebsiteId,
+        websiteName: effectiveWebsiteName,
+        sourcePage: effectiveSource,
         enquiryType: itemType,
         productOrServiceName: itemName,
         location: location || 'Not specified',
@@ -122,13 +150,14 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
               required
             />
             <Select
-              label="Solution Division"
+              label="Solution Requirement"
               value={selectedBrand}
               onChange={e => setSelectedBrand(e.target.value)}
               options={[
-                { value: 'general', label: 'Nexalus Innovations LLP (Corporate General Proposal)' },
-                { value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Fiber Internet & Enterprise Networking)' },
-                { value: 'am-distributors', label: 'A.M. Distributors Chiplun (Mineral Water, Ice Cream & Dairy Supply)' }
+                { value: 'general', label: 'Nexalus Innovations LLP (Turnkey Technology Solutions)' },
+                { value: 'cctv', label: 'AI CCTV Surveillance & Security Setup' },
+                { value: 'fiber', label: 'High-Speed Optical Fiber Internet' },
+                { value: 'networking', label: 'Enterprise IT Networking & Server Infrastructure' }
               ]}
             />
           </div>

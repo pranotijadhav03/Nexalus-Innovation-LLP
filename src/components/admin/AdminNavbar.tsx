@@ -1,29 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { AdminConsoleMode } from './AdminLayout';
-import { consoleOptions } from './CompanyConsoleDropdown';
 import {
   Menu,
-  ExternalLink,
-  Shield,
   Layers,
-  Building,
   LogOut,
   ChevronDown,
+  ExternalLink,
+  ShieldCheck,
+  Database,
+  Shield,
+  Building,
   Check,
-  Sparkles
+  Sparkles,
+  LayoutDashboard
 } from 'lucide-react';
 
 interface AdminNavbarProps {
   onMenuToggle: () => void;
-  activeConsole: AdminConsoleMode;
-  onConsoleChange: (mode: AdminConsoleMode) => void;
+  activeConsole?: AdminConsoleMode;
+  onConsoleChange?: (mode: AdminConsoleMode) => void;
 }
 
 export const AdminNavbar: React.FC<AdminNavbarProps> = ({
   onMenuToggle,
-  activeConsole,
+  activeConsole = 'master',
   onConsoleChange
 }) => {
   const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, currentUser, logout } = useAuth();
@@ -55,17 +56,16 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
     };
   }, [isDropdownOpen]);
 
-  const currentOption = consoleOptions.find(opt => opt.id === activeConsole) || consoleOptions[0];
-
   const handleConsoleSelect = (mode: AdminConsoleMode) => {
-    onConsoleChange(mode);
-    setIsDropdownOpen(false);
+    if (onConsoleChange) {
+      onConsoleChange(mode);
+    }
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs h-16 flex items-center justify-between px-4 sm:px-6">
-      {/* Left Menu & Current Operating Console Status */}
-      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+    <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs h-16 flex items-center justify-between px-3 sm:px-6 gap-2">
+      {/* Left Menu & Corporate Console Branding */}
+      <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
         <button
           onClick={onMenuToggle}
           className="lg:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 shrink-0 cursor-pointer"
@@ -74,66 +74,57 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">
-            Active Scope:
-          </span>
-          <span
-            className={`text-xs font-extrabold px-3 py-1 rounded-lg border flex items-center gap-1.5 ${
-              activeConsole === 'am-distributors'
-                ? 'bg-teal-50 text-teal-800 border-teal-200'
-                : activeConsole === 'nexalus-innovations'
-                ? 'bg-blue-50 text-blue-800 border-blue-200'
-                : 'bg-indigo-50 text-indigo-900 border-indigo-200'
-            }`}
-          >
-            {activeConsole === 'am-distributors' ? (
-              <Building className="w-3.5 h-3.5 text-teal-600" />
-            ) : activeConsole === 'nexalus-innovations' ? (
-              <Shield className="w-3.5 h-3.5 text-blue-600" />
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-700 via-indigo-600 to-cyan-500 text-white flex items-center justify-center shadow-xs shrink-0">
+            {activeConsole === 'nexalus-innovations' ? (
+              <Shield className="w-4 h-4 text-white" />
+            ) : activeConsole === 'am-distributors' ? (
+              <Building className="w-4 h-4 text-white" />
             ) : (
-              <Layers className="w-3.5 h-3.5 text-indigo-600" />
+              <Layers className="w-4 h-4 text-white" />
             )}
-            <span>
-              {activeConsole === 'am-distributors'
-                ? 'A.M. Distributors Chiplun'
-                : activeConsole === 'nexalus-innovations'
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs sm:text-sm font-black text-slate-900 leading-tight truncate">
+              {activeConsole === 'nexalus-innovations'
                 ? 'Nexalus Innovations'
-                : 'Nexalus Innovations LLP (Master)'}
-            </span>
-          </span>
-          {!isSuperAdmin && (
-            <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">(Locked)</span>
-          )}
+                : activeConsole === 'am-distributors'
+                ? 'A.M. Distributors Chiplun'
+                : 'Nexalus Innovations LLP'}
+            </div>
+            <div className="text-[10px] text-slate-500 font-semibold flex items-center gap-1.5 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>
+                {activeConsole === 'nexalus-innovations'
+                  ? 'Tech & Fiber Admin Panel'
+                  : activeConsole === 'am-distributors'
+                  ? 'Chiplun Depot Admin Panel'
+                  : 'Corporate Master Admin'}
+              </span>
+              <span className="text-slate-300 hidden sm:inline">•</span>
+              <span className="text-indigo-600 font-bold hidden sm:flex items-center gap-0.5">
+                <Database className="w-2.5 h-2.5" /> Firestore Online
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Right Controls: Public Site Link & Dashboard/User Profile Dropdown with Sign Out */}
-      <div className="flex items-center gap-3 sm:gap-4">
-        <Link
-          to="/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors border border-slate-200"
-          title="Open Nexalus Corporate Main Website"
-        >
-          <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
-          <span>Main Website</span>
-        </Link>
 
-        {/* Dashboard Switcher & Profile Dropdown */}
+      {/* Right Controls: User Profile Dropdown with Consoles & Live Websites */}
+      <div className="flex items-center gap-2 sm:gap-4">
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             aria-expanded={isDropdownOpen}
             aria-haspopup="true"
-            className={`flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border transition-all text-left cursor-pointer shadow-2xs group ${
+            className={`flex items-center gap-2 sm:gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border transition-all text-left cursor-pointer shadow-2xs group ${
               isDropdownOpen
                 ? 'bg-blue-50/90 border-blue-400 ring-2 ring-blue-500/10'
                 : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300'
             }`}
-            title="Switch Dashboard or Manage Session"
+            title="Manage Admin Session & Portals"
           >
             {/* Admin Avatar */}
             <div
@@ -144,10 +135,10 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
 
             {/* Admin Name & Email */}
             <div className="text-left hidden sm:block min-w-0">
-              <div className="text-xs font-black text-slate-900 leading-tight truncate max-w-[200px]">
-                {currentUser?.displayName || 'Nexalus Corporate Master Admin'}
+              <div className="text-xs font-black text-slate-900 leading-tight truncate max-w-[180px]">
+                {currentUser?.displayName || 'Nexalus Master Admin'}
               </div>
-              <div className="text-[10px] text-slate-500 font-medium truncate max-w-[200px]">
+              <div className="text-[10px] text-slate-500 font-medium truncate max-w-[180px]">
                 {currentUser?.email}
               </div>
             </div>
@@ -162,7 +153,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
 
           {/* Dropdown Menu Modal / Popover */}
           {isDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 p-2.5 space-y-2 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 p-3 space-y-2.5 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
               {/* Account Identity Header */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
@@ -170,7 +161,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-black text-slate-900 truncate">
-                    {currentUser?.displayName || 'Nexalus Corporate Master Admin'}
+                    {currentUser?.displayName || 'Nexalus Master Admin'}
                   </div>
                   <div className="text-[11px] text-slate-500 font-medium truncate">
                     {currentUser?.email}
@@ -189,120 +180,151 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
                 </div>
               </div>
 
-              {/* Dashboard Switcher Section */}
-              <div className="space-y-1">
-                <div className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-blue-600" />
-                    <span>Select Dashboard</span>
-                  </div>
-                  <span className="text-[9px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-full">
-                    3 Portals
-                  </span>
+              {/* Operating Admin Panels Switcher */}
+              <div className="p-2.5 bg-slate-50/80 rounded-xl space-y-1.5 border border-slate-100">
+                <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                  <span>Switch Admin Dashboard</span>
+                  <span className="text-[9px] text-blue-600 font-black">3 Consoles</span>
                 </div>
 
-                {consoleOptions.map(option => {
-                  const isSelected = option.id === activeConsole;
-                  const isDisabled = !isSuperAdmin && option.id !== activeConsole;
-
-                  return (
-                    <div
-                      key={option.id}
-                      onClick={() => {
-                        if (!isDisabled) {
-                          handleConsoleSelect(option.id);
-                        }
-                      }}
-                      className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between gap-3 ${
-                        isDisabled
-                          ? 'opacity-40 cursor-not-allowed border-transparent'
-                          : isSelected
-                          ? 'bg-blue-50/90 border-blue-200 shadow-2xs cursor-pointer'
-                          : 'border-transparent hover:border-slate-200 hover:bg-slate-50 cursor-pointer group'
-                      }`}
-                      title={
-                        isDisabled
-                          ? 'Not assigned to your role'
-                          : `Switch to ${option.name}`
-                      }
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${option.iconGradient} flex items-center justify-center text-white shrink-0 shadow-xs`}
-                        >
-                          {option.icon}
+                <div className="space-y-1">
+                  {/* Super Admin Console */}
+                  <button
+                    type="button"
+                    disabled={!isSuperAdmin}
+                    onClick={() => {
+                      handleConsoleSelect('master');
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${
+                      activeConsole === 'master'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : isSuperAdmin
+                        ? 'hover:bg-white text-slate-700 hover:text-blue-600'
+                        : 'opacity-40 cursor-not-allowed text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Layers className="w-4 h-4 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate">Super Admin Panel (Corporate)</div>
+                        <div className={`text-[10px] truncate ${activeConsole === 'master' ? 'text-blue-100' : 'text-slate-400'}`}>
+                          All brands & consolidated group data
                         </div>
-
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={`text-xs font-black truncate leading-tight ${
-                                isSelected ? 'text-blue-950 font-black' : 'text-slate-900'
-                              }`}
-                            >
-                              {option.name}
-                            </span>
-                            <span
-                              className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded border shrink-0 ${option.tagColor}`}
-                            >
-                              {option.tag}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5 max-w-[210px]">
-                            {option.desc}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {isSelected ? (
-                          <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </span>
-                        ) : !isDisabled ? (
-                          <span className="text-xs font-bold text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all">
-                            →
-                          </span>
-                        ) : null}
                       </div>
                     </div>
-                  );
-                })}
+                    {activeConsole === 'master' && <Check className="w-4 h-4 shrink-0 stroke-[3]" />}
+                  </button>
+
+                  {/* Nexalus Innovations Console */}
+                  <button
+                    type="button"
+                    disabled={!isSuperAdmin && !isInnovationsAdmin}
+                    onClick={() => {
+                      handleConsoleSelect('nexalus-innovations');
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${
+                      activeConsole === 'nexalus-innovations'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : isSuperAdmin || isInnovationsAdmin
+                        ? 'hover:bg-white text-slate-700 hover:text-blue-600'
+                        : 'opacity-40 cursor-not-allowed text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Shield className="w-4 h-4 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate">Nexalus Innovations Admin</div>
+                        <div className={`text-[10px] truncate ${activeConsole === 'nexalus-innovations' ? 'text-blue-100' : 'text-slate-400'}`}>
+                          CCTV, Optical Fiber & Networking
+                        </div>
+                      </div>
+                    </div>
+                    {activeConsole === 'nexalus-innovations' && <Check className="w-4 h-4 shrink-0 stroke-[3]" />}
+                  </button>
+
+                  {/* A.M. Distributors Console */}
+                  <button
+                    type="button"
+                    disabled={!isSuperAdmin && !isAmAdmin}
+                    onClick={() => {
+                      handleConsoleSelect('am-distributors');
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${
+                      activeConsole === 'am-distributors'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : isSuperAdmin || isAmAdmin
+                        ? 'hover:bg-white text-slate-700 hover:text-blue-600'
+                        : 'opacity-40 cursor-not-allowed text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Building className="w-4 h-4 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold truncate">A.M. Distributors Admin</div>
+                        <div className={`text-[10px] truncate ${activeConsole === 'am-distributors' ? 'text-blue-100' : 'text-slate-400'}`}>
+                          Mineral Water, Dairy & Cold-Chain
+                        </div>
+                      </div>
+                    </div>
+                    {activeConsole === 'am-distributors' && <Check className="w-4 h-4 shrink-0 stroke-[3]" />}
+                  </button>
+                </div>
               </div>
 
-              {/* Direct Live Website Links */}
-              <div className="pt-1 border-t border-slate-100 space-y-0.5">
-                <a
-                  href="/"
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
-                    Open Corporate Main Website
-                  </span>
-                  <span className="text-[10px] text-slate-400">↗</span>
-                </a>
-                {currentOption.id !== 'master' && (
+              {/* Quick Website Links (The 3 Live Portals) */}
+              <div className="p-2.5 bg-slate-50/80 rounded-xl space-y-1.5 border border-slate-100">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                  Live Websites &amp; Portals
+                </div>
+                <div className="space-y-1">
+                  {/* Main Corporate Portal */}
                   <a
-                    href={currentOption.liveUrl}
+                    href="/"
                     target="_blank"
                     rel="noreferrer"
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:text-blue-600 transition-colors"
                   >
-                    <span className="flex items-center gap-2">
-                      <ExternalLink className="w-3 h-3 text-slate-400" />
-                      Open {currentOption.shortName} Portal
-                    </span>
-                    <span className="text-[10px] text-slate-400">↗</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                      <span className="truncate">Nexalus Innovations LLP (Corporate)</span>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   </a>
-                )}
+
+                  {/* Child Portal 1: Nexalus Innovations */}
+                  <a
+                    href="/brands/nexalus-innovations"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:text-blue-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                      <span className="truncate">Nexalus Innovations (Tech Portal)</span>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  </a>
+
+                  {/* Child Portal 2: A.M. Distributors Chiplun */}
+                  <a
+                    href="/brands/am-distributors"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:text-teal-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-teal-500"></div>
+                      <span className="truncate">A.M. Distributors Chiplun (Depot Portal)</span>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  </a>
+                </div>
               </div>
 
-              {/* Sign Out Button INSIDE the Dropdown */}
+              {/* Sign Out Button */}
               <div className="pt-1 border-t border-slate-100">
                 <button
                   type="button"
