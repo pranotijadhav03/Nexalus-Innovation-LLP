@@ -20,7 +20,7 @@ export const CpPlusServicesPage: React.FC = () => {
       <BrandHeader
         brandId="cp-plus"
         title="CP PLUS Surveillance Services"
-        subtitle="Professional turnkey CCTV installation, surveillance layout optimization, AI video analytics setup, and annual maintenance contracts (AMC)."
+        subtitle="Professional turnkey CCTV installation, surveillance layout optimization, automated video analytics setup, and annual maintenance contracts (AMC)."
         breadcrumbs={[{ label: 'Services' }]}
       />
 

@@ -31,7 +31,7 @@ export const BrandsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. Division 1: AI CCTV Surveillance */}
+      {/* 2. Division 1: Commercial CCTV Surveillance */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl bg-white border border-slate-200 shadow-sm p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center hover:shadow-xl hover:border-blue-300 transition-all">
           <div className="lg:col-span-7 space-y-5">
@@ -44,13 +44,13 @@ export const BrandsPage: React.FC = () => {
                   Security &amp; Surveillance Division
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-                  AI CCTV Surveillance Solutions
+                  Commercial CCTV Surveillance Solutions
                 </h2>
               </div>
             </div>
 
             <p className="text-sm text-slate-600 leading-relaxed">
-              Delivering commercial 4K AI video surveillance grids, high-definition IP cameras, automated vehicle number plate recognition (ANPR), Starlight night vision, and centralized multi-screen command room integration for corporate and residential facilities.
+              Delivering commercial 4K video surveillance grids, high-definition IP cameras, automated vehicle number plate recognition (ANPR), Starlight night vision, and centralized multi-screen command room integration for corporate and residential facilities.
             </p>
 
             <div className="space-y-1.5 pt-2">
@@ -60,7 +60,7 @@ export const BrandsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {[
                   '4K Ultra-HD Network IP Bullet & Dome Cameras',
-                  'AI Face Recognition & Vehicle ANPR Detection',
+                  'Facial Recognition & Vehicle ANPR Detection',
                   'High-Capacity RAID Network Video Recorders (NVR)',
                   'Centralized Multi-Screen Video Operations Console',
                   'Starlight Zero-Lux Color Night Vision',
@@ -92,7 +92,7 @@ export const BrandsPage: React.FC = () => {
             <div className="rounded-2xl overflow-hidden shadow-lg border border-slate-200">
               <img
                 src="/images/simple-cctv-camera.jpg"
-                alt="AI CCTV Surveillance by Nexalus Innovations LLP"
+                alt="Commercial CCTV Surveillance by Nexalus Innovations LLP"
                 className="w-full h-80 object-cover hover:scale-105 transition-transform duration-500"
               />
             </div>

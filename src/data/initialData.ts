@@ -19,7 +19,7 @@ export const initialBrands: Brand[] = [
     name: 'Nexalus Innovations',
     tagline: 'Turnkey CCTV Surveillance, High-Speed Optical Fiber Internet & Enterprise Networking',
     shortDescription: 'Premier technology and enterprise infrastructure provider under Nexalus Innovations LLP, delivering certified CCTV security systems, high-speed optical fiber internet, and enterprise networking hardware.',
-    fullDescription: 'Nexalus Innovations operates as a premier multi-sector technology and enterprise infrastructure provider under Nexalus Innovations LLP. Our technical portfolio encompasses high-performance AI CCTV surveillance systems, high-speed Gigabit optical fiber broadband, and enterprise IT networking infrastructure.',
+    fullDescription: 'Nexalus Innovations operates as a premier multi-sector technology and enterprise infrastructure provider under Nexalus Innovations LLP. Our technical portfolio encompasses high-performance commercial CCTV surveillance systems, high-speed Gigabit optical fiber broadband, and enterprise IT networking infrastructure.',
     slug: 'nexalus-innovations',
     primaryColor: '#0284c7', // Sky / Navy
     accentColor: '#0369a1',
@@ -28,7 +28,7 @@ export const initialBrands: Brand[] = [
     websitePath: '/brands/nexalus-innovations',
     published: true,
     features: [
-      '4K AI CCTV Surveillance Systems & NVR Storage',
+      '4K Commercial CCTV Surveillance Systems & NVR Storage',
       'High-Speed Gigabit Optical Fiber Internet (FTTH)',
       'Enterprise Managed Switches & UTM Firewalls',
       'Server Racks & Structured Cat6/Fiber Cabling',
@@ -62,7 +62,7 @@ export const initialBrands: Brand[] = [
 
 export const initialCategories: ProductCategory[] = [
   // Nexalus Innovations Categories (CCTV, Internet, Networking, Cabling)
-  { id: 'cat-nex-cctv', brandId: 'nexalus-innovations', name: 'AI CCTV & Surveillance Systems', slug: 'cctv-surveillance', description: 'Commercial 4K CCTV surveillance cameras, NVR servers, and video monitoring hardware.' },
+  { id: 'cat-nex-cctv', brandId: 'nexalus-innovations', name: 'CCTV & Video Surveillance Systems', slug: 'cctv-surveillance', description: 'Commercial 4K CCTV surveillance cameras, NVR servers, and video monitoring hardware.' },
   { id: 'cat-nex-internet', brandId: 'nexalus-innovations', name: 'High-Speed Fiber Internet & Routers', slug: 'fiber-internet', description: 'Gigabit fiber optical terminal routers, mesh Wi-Fi, and broadband equipment.' },
   { id: 'cat-nex-networking', brandId: 'nexalus-innovations', name: 'Enterprise Networking & Switches', slug: 'networking-switches', description: 'Layer-2/Layer-3 managed PoE+ switches, firewalls, and server racks.' },
   { id: 'cat-nex-electronics', brandId: 'nexalus-innovations', name: 'Structured Cabling & Hardware', slug: 'cabling-hardware', description: 'Pure copper Cat6A drums, patch panels, connectors, and precision tools.' },
@@ -78,19 +78,19 @@ export const initialProducts: Product[] = [
   {
     id: 'prod-nex-1',
     brandId: 'nexalus-innovations',
-    name: '4K Ultra-HD AI Network CCTV Surveillance Dome Camera',
-    slug: 'nex-4k-ai-cctv-dome',
+    name: '4K Ultra-HD Network CCTV Surveillance Dome Camera',
+    slug: 'nex-4k-cctv-dome',
     modelNumber: 'NEX-CCTV-4K-DOME',
     categoryId: 'cat-nex-cctv',
     categoryName: 'Sales & Networking (CCTV)',
-    description: 'Commercial 4K Ultra-HD surveillance dome camera with Starlight full-color night vision, AI tripwire perimeter detection, built-in mic, and motorized optical zoom.',
+    description: 'Commercial 4K Ultra-HD surveillance dome camera with Starlight full-color night vision, perimeter intrusion detection, built-in mic, and motorized optical zoom.',
     specifications: {
       'Category': 'Sales & Networking (CCTV)',
       'Resolution': '4K Ultra-HD (3840 × 2160) @ 30fps',
       'Night Vision': 'Starlight Full Color up to 40m',
       'Protection': 'IP67 Weatherproof & IK10 Vandal-Proof',
       'Power': 'PoE+ (802.3at) / 12V DC',
-      'Analytics': 'AI Human/Vehicle Classification'
+      'Detection': 'Human & Vehicle Motion Classification'
     },
     images: ['/images/products/cp-dome.jpg'],
     price: 5400,
@@ -179,17 +179,17 @@ export const initialProducts: Product[] = [
   {
     id: 'prod-nex-5',
     brandId: 'nexalus-innovations',
-    name: 'Enterprise 32-Channel 4K AI Network Video Recorder (NVR)',
-    slug: 'nex-32ch-4k-ai-nvr-server',
+    name: 'Enterprise 32-Channel 4K Network Video Recorder (NVR)',
+    slug: 'nex-32ch-4k-nvr-server',
     modelNumber: 'NEX-NVR-4K-32CH',
     categoryId: 'cat-nex-cctv',
-    categoryName: 'AI CCTV & Surveillance Systems',
-    description: 'Commercial 32-Channel 4K Ultra HD AI Network Video Recorder supporting up to 4x 10TB SATA hard drives, dual HDMI outputs, face recognition, and remote smartphone monitoring.',
+    categoryName: 'CCTV & Video Surveillance Systems',
+    description: 'Commercial 32-Channel 4K Ultra HD Network Video Recorder supporting up to 4x 10TB SATA hard drives, dual HDMI outputs, face recognition, and remote smartphone monitoring.',
     specifications: {
       'Channels': '32 IP Channels up to 12MP/4K decoding',
       'Storage': '4 SATA III ports (up to 40TB total RAID support)',
       'Bandwidth': '384 Mbps incoming recording bandwidth',
-      'AI Capabilities': 'Facial recognition, vehicle ANPR, perimeter tripwire',
+      'Smart Analytics': 'Facial recognition, vehicle ANPR, perimeter tripwire',
       'Outputs': '2 × HDMI (4K Ultra-HD) + 1 × VGA'
     },
     images: ['/images/products/cp-nvr.jpg'],
@@ -385,7 +385,7 @@ export const initialProducts: Product[] = [
     modelNumber: 'CP-UNC-TA41ZL4-MDS',
     categoryId: 'cat-bullet',
     categoryName: 'Bullet Cameras',
-    description: 'High-performance 4 Megapixel outdoor network bullet camera featuring motorized varifocal lens, Starlight low-light sensitivity, and AI perimeter intrusion detection.',
+    description: 'High-performance 4 Megapixel outdoor network bullet camera featuring motorized varifocal lens, Starlight low-light sensitivity, and perimeter intrusion detection.',
     specifications: {
       'Resolution': '4 Megapixel (2560 × 1440) @ 30fps',
       'Lens': '2.7mm–13.5mm Motorized Varifocal',
@@ -469,7 +469,7 @@ export const initialProducts: Product[] = [
     slug: 'cp-v34g-4g-smart-pt-camera',
     modelNumber: 'CP-V34G',
     categoryId: 'cat-ip',
-    categoryName: 'IP & Smart AI Cameras',
+    categoryName: 'IP & Network Cameras',
     description: 'Standalone 4G SIM-card enabled wireless pan-tilt camera with solar support, motion tracking, siren alert, and two-way voice communication for remote sites.',
     specifications: {
       'Connectivity': '4G LTE SIM Card slot (No Wi-Fi needed)',
@@ -548,7 +548,7 @@ export const initialProducts: Product[] = [
   {
     id: 'prod-cp-7',
     brandId: 'cp-plus',
-    name: 'CP-UNR-432T4-V2 32-Channel 4K Enterprise AI Network Video Recorder',
+    name: 'CP-UNR-432T4-V2 32-Channel 4K Enterprise Network Video Recorder',
     slug: 'cp-unr-432t4-v2-32ch-enterprise-nvr',
     modelNumber: 'CP-UNR-432T4-V2',
     categoryId: 'cat-nvr',
@@ -557,7 +557,7 @@ export const initialProducts: Product[] = [
     specifications: {
       'Channels': '32 IP Channels up to 12MP decoding',
       'HDD Capacity': '4 SATA ports (up to 10TB per HDD, 40TB total)',
-      'AI Processing': 'Facial recognition & vehicle ANPR supported',
+      'Smart Processing': 'Facial recognition & vehicle ANPR supported',
       'Bandwidth': '256 Mbps incoming bandwidth',
       'Redundancy': 'RAID 0/1/5/6/10 support'
     },
@@ -579,7 +579,7 @@ export const initialProducts: Product[] = [
     slug: 'cp-e25a-2mp-smart-pt-camera',
     modelNumber: 'CP-E25A',
     categoryId: 'cat-ip',
-    categoryName: 'IP & Smart AI Cameras',
+    categoryName: 'IP & Network Cameras',
     description: 'Affordable wireless smart camera with 360° panoramic view, human body detection, two-way voice call, privacy mode, and Amazon Alexa / Google Assistant integration.',
     specifications: {
       'Resolution': '1080P Full HD (1920 × 1080)',
@@ -1238,10 +1238,10 @@ export const initialServices: Service[] = [
   {
     id: 'srv-cp-3',
     brandId: 'cp-plus',
-    title: 'Industrial & AI Video Analytics Setup',
-    slug: 'industrial-ai-video-analytics',
+    title: 'Industrial Video Analytics & Perimeter Monitoring',
+    slug: 'industrial-video-analytics',
     shortDescription: 'Smart automated surveillance featuring license plate recognition (ANPR), perimeter breach alerts, and facial verification.',
-    fullDescription: 'Elevate passive recording to active prevention. We deploy edge-computing AI surveillance solutions that instantly trigger alarms upon detecting unauthorized entry, fire hazard indicators, vehicle registration matches, and queue congestion.',
+    fullDescription: 'Elevate passive recording to active prevention. We deploy automated surveillance solutions that instantly trigger alarms upon detecting unauthorized entry, fire hazard indicators, vehicle registration matches, and queue congestion.',
     iconName: 'Cpu',
     features: [
       'Automatic Number Plate Recognition (ANPR)',
@@ -1332,9 +1332,9 @@ export const initialProjects: Project[] = [
     clientType: 'Enterprise',
     location: 'Electronic City, Bengaluru',
     description: 'Turnkey deployment of redundant 1 Gbps fiber leased connectivity paired with an enterprise 128-camera CP PLUS 4K surveillance grid across 4 interconnected office towers.',
-    solutionProvided: 'Nexalus engineered a dual-ring fiber backbone, deployed 24-port PoE switching arrays, and installed AI-enabled perimeter dome and bullet cameras tied into a central security command center.',
+    solutionProvided: 'Nexalus engineered a dual-ring fiber backbone, deployed 24-port PoE switching arrays, and installed certified perimeter dome and bullet cameras tied into a central security command center.',
     scope: [
-      '128 × CP PLUS 4MP & 4K AI Cameras',
+      '128 × CP PLUS 4MP & 4K Starlight Cameras',
       'Redundant 1 Gbps Symmetrical Leased Line by One Broadband',
       '4 × 32-Channel Enterprise NVRs with 80TB RAID Storage',
       'Whole-Campus Managed Wi-Fi with 45 Cloud APs',
@@ -1485,7 +1485,7 @@ export const initialBanners: SiteBanner[] = [
     id: 'ban-2',
     brandId: 'cp-plus',
     title: 'Smart Surveillance & Perimeter Defense',
-    subtitle: 'High-definition 4K cameras, AI human tracking, and industrial CCTV recording systems installed by certified security engineers.',
+    subtitle: 'High-definition 4K cameras, optical zoom tracking, and industrial CCTV recording systems installed by certified security engineers.',
     ctaText: 'Browse CCTV Products',
     ctaLink: '/brands/cp-plus/products',
     active: true,
@@ -1583,7 +1583,7 @@ export const initialEnquiries: Enquiry[] = [
     websiteName: 'Nexalus Innovations',
     sourcePage: 'Hardware Catalog (CCTV Inquire)',
     enquiryType: 'quote',
-    productOrServiceName: '4K Commercial AI CCTV Surveillance Grid + 16CH NVR',
+    productOrServiceName: '4K Commercial CCTV Surveillance Grid + 16CH NVR',
     location: 'Koramangala 4th Block, Bengaluru',
     pincode: '560034',
     message: 'We require a 12-camera CCTV upgrade for our software engineering office premises. Need quotation including installation and warranty.',

@@ -267,7 +267,7 @@ export const AdminServicesPage: React.FC = () => {
                 { value: 'Wrench', label: 'Wrench (Maintenance/AMC)' },
                 { value: 'Building2', label: 'Building (Enterprise)' },
                 { value: 'Server', label: 'Server (Data & Network)' },
-                { value: 'Cpu', label: 'Cpu (AI Analytics)' }
+                { value: 'Cpu', label: 'Cpu (Hardware & Systems)' }
               ]}
             />
           </div>

@@ -4,7 +4,7 @@ import { Product } from '../../types';
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
 import { WhatsAppShareModal } from '../common/WhatsAppShareModal';
-import { Shield, Sparkles, Check, ArrowRight, Share2, MessageCircle, Camera } from 'lucide-react';
+import { ArrowRight, Camera } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -71,37 +71,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             />
           )}
 
-          {/* CCTV AI Optical Reticle on Hover */}
-          {isCctv && (
-            <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-md bg-slate-950/85 text-cyan-300 border border-cyan-400/50 flex items-center gap-1 shadow-md">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                AI 4K OPTICS
-              </span>
-            </div>
-          )}
-
-          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-white/95 text-slate-800 shadow-xs backdrop-blur-xs">
-              {product.categoryName}
-            </span>
-            {product.featured && (
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500 text-white flex items-center gap-1 shadow-xs">
-                <Sparkles className="w-3 h-3" /> Featured
-              </span>
-            )}
-          </div>
-          <div className="absolute bottom-3 right-3 z-10">
-            <span
-              className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border shadow-xs ${
-                product.availability === 'in_stock'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : 'bg-slate-100 text-slate-700 border-slate-300'
-              }`}
-            >
-              {product.availability === 'in_stock' ? 'In Stock' : 'On Order'}
-            </span>
-          </div>
         </Link>
 
         {/* Content Body */}

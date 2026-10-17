@@ -184,7 +184,7 @@ export const CpPlusLayout: React.FC = () => {
               </div>
 
               <p className="text-xs sm:text-sm text-slate-400 max-w-sm leading-relaxed">
-                Complete electronic surveillance and physical security ecosystem. High-definition 4K AI edge cameras, multi-channel NVR hardware, smart intercoms, and certified installations.
+                Complete electronic surveillance and physical security ecosystem. High-definition 4K network cameras, multi-channel NVR hardware, smart intercoms, and certified installations.
               </p>
 
               <div className="pt-2 text-xs text-slate-400 space-y-1">
@@ -210,7 +210,7 @@ export const CpPlusLayout: React.FC = () => {
             <div className="space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-white">Product Categories</h4>
               <ul className="space-y-2 text-xs text-slate-400">
-                <li><Link to="/brands/cp-plus/products" className="hover:text-sky-400 transition-colors">4K AI Dome Cameras</Link></li>
+                <li><Link to="/brands/cp-plus/products" className="hover:text-sky-400 transition-colors">4K Network Dome Cameras</Link></li>
                 <li><Link to="/brands/cp-plus/products" className="hover:text-sky-400 transition-colors">Starlight Bullet Cameras</Link></li>
                 <li><Link to="/brands/cp-plus/products" className="hover:text-sky-400 transition-colors">PTZ 32x Speed Domes</Link></li>
                 <li><Link to="/brands/cp-plus/products" className="hover:text-sky-400 transition-colors">16/32-Channel NVR Recorders</Link></li>

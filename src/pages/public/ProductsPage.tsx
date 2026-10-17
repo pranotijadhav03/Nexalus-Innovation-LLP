@@ -331,7 +331,7 @@ export const ProductsPage: React.FC = () => {
                       <span>CATEGORY 01 — CCTV SURVEILLANCE</span>
                     </div>
                     <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                      Commercial 4K AI CCTV Video Surveillance Equipment
+                      Commercial 4K CCTV Video Surveillance Equipment
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
                       High-definition Sony Starvis IP cameras, 32x optical zoom PTZ tracking domes, smart video door stations, and commercial NVR recording arrays with 4K clarity.

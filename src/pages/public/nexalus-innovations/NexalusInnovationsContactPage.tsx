@@ -215,7 +215,7 @@ export const NexalusInnovationsContactPage: React.FC = () => {
                       onChange={e => setFormData({ ...formData, serviceType: e.target.value })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-600 bg-white"
                     >
-                      <option value="cctv_surveillance">4K Commercial AI CCTV Surveillance System</option>
+                      <option value="cctv_surveillance">4K Commercial CCTV Surveillance System</option>
                       <option value="fiber_leased_line">Optical Fiber High-Speed Internet Leased Line</option>
                       <option value="managed_switching">Enterprise Layer-2/3 Managed Switches &amp; Racks</option>
                       <option value="cctv_network_amc">Preventive CCTV &amp; Network AMC Contract</option>

@@ -137,7 +137,7 @@ export const QuotePage: React.FC = () => {
                   onChange={e => setDivision(e.target.value)}
                   options={[
                     { value: 'general', label: 'Nexalus Innovations LLP (Corporate Proposal)' },
-                    { value: 'cctv', label: 'AI CCTV Surveillance & Security Systems' },
+                    { value: 'cctv', label: 'Commercial CCTV Surveillance & Security Systems' },
                     { value: 'fiber', label: 'High-Speed Optical Fiber Internet & Leased Lines' },
                     { value: 'networking', label: 'Enterprise IT Networking & Server Racks' }
                   ]}

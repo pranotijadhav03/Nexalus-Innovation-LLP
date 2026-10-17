@@ -129,7 +129,7 @@ export const HomePage: React.FC = () => {
         <div className="absolute inset-0">
           <img
             src="/images/fermilab-blue-racks-real.jpg"
-            alt="Nexalus Innovations LLP Enterprise Server Rack, Optical Fiber & AI CCTV Surveillance Infrastructure"
+            alt="Nexalus Innovations LLP Enterprise Server Rack, Optical Fiber & CCTV Surveillance Infrastructure"
             className="w-full h-full object-cover object-[75%_center] lg:object-[82%_center]"
           />
         </div>
@@ -152,7 +152,7 @@ export const HomePage: React.FC = () => {
             </p>
 
             <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-xl pt-1">
-              Your trusted technology infrastructure partner. Operating under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>, we engineer ultra-fast <strong className="text-white font-bold">gigabit optical fiber</strong> leased lines, managed Layer-2/3 network switching, and certified AI-powered <strong className="text-white font-bold">video surveillance</strong> systems to empower local businesses.
+              Your trusted technology infrastructure partner. Operating under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>, we engineer ultra-fast <strong className="text-white font-bold">gigabit optical fiber</strong> leased lines, managed Layer-2/3 network switching, and certified <strong className="text-white font-bold">video surveillance</strong> systems to empower local businesses.
             </p>
 
             {/* CTA Action Buttons */}

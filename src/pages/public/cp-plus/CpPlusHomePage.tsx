@@ -67,7 +67,7 @@ export const CpPlusHomePage: React.FC = () => {
                 </div>
 
                 <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white">
-                  Next-Generation <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-400">AI Video Surveillance</span> Systems
+                  Next-Generation <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-400">4K Video Surveillance</span> Systems
                 </h1>
 
                 <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
@@ -80,7 +80,7 @@ export const CpPlusHomePage: React.FC = () => {
                     <CheckCircle2 className="w-4 h-4 text-sky-400" /> 4K Ultra HD Forensic Video
                   </div>
                   <div className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700/80 backdrop-blur-sm">
-                    <CheckCircle2 className="w-4 h-4 text-sky-400" /> AI Human & Vehicle Tracking
+                    <CheckCircle2 className="w-4 h-4 text-sky-400" /> Human &amp; Vehicle Tracking
                   </div>
                   <div className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700/80 backdrop-blur-sm">
                     <CheckCircle2 className="w-4 h-4 text-sky-400" /> Zero Blind-Spot Layout
@@ -140,7 +140,7 @@ export const CpPlusHomePage: React.FC = () => {
               Certified CCTV Installation & Precision Security Engineering
             </h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              We specialize in end-to-end electronic security solutions. Our certified team analyzes spatial parameters, ambient lux levels, and line-of-sight angles to recommend the ideal mix of Dome, Bullet, 4K PTZ Speed Domes, and AI-enabled IP cameras.
+              We specialize in end-to-end electronic security solutions. Our certified team analyzes spatial parameters, ambient lux levels, and line-of-sight angles to recommend the ideal mix of Dome, Bullet, 4K PTZ Speed Domes, and high-resolution IP cameras.
             </p>
             <div className="pt-2">
               <Link

@@ -117,9 +117,9 @@ export const CpPlusAboutPage: React.FC = () => {
               <div className="w-12 h-12 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center border border-sky-500/30">
                 <Cpu className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold">Intelligent Edge AI</h3>
+              <h3 className="text-lg font-bold">Intelligent Edge Processing</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Deep learning target classification that filters out false alarms from animals, shadows, and rain.
+                Smart target classification that filters out false alarms from animals, shadows, and rain.
               </p>
             </div>
 
@@ -180,7 +180,7 @@ export const CpPlusAboutPage: React.FC = () => {
             {
               step: '04',
               title: 'Camera Calibration',
-              desc: 'Positioning, angle focusing, AI motion tripwires, and mobile cloud app pairing.'
+              desc: 'Positioning, angle focusing, precision motion tripwires, and mobile cloud app pairing.'
             },
             {
               step: '05',

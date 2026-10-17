@@ -246,7 +246,7 @@ export const NexalusInnovationsLayout: React.FC = () => {
                 </div>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Operating as the dedicated technology division under Nexalus Innovations LLP. Authorized contractor for 4K AI CCTV surveillance grids, high-speed optical fiber internet, managed switching, and certified AMC maintenance.
+                Operating as the dedicated technology division under Nexalus Innovations LLP. Authorized contractor for 4K CCTV surveillance grids, high-speed optical fiber internet, managed switching, and certified AMC maintenance.
               </p>
               <div className="text-xs text-slate-400 pt-1">
                 Parent Entity: <strong className="text-slate-200">Nexalus Innovations LLP</strong>

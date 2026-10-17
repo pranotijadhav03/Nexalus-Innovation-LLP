@@ -31,7 +31,7 @@ export const NexalusInnovationsProductsPage: React.FC = () => {
             Commercial Hardware Catalog
           </h1>
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Authentic commercial-grade 4K AI CCTV cameras, optical fiber Wi-Fi 6 ONT gateways, managed Layer-2/3 PoE+ switches, and certified structured cabling accessories.
+            Authentic commercial-grade 4K CCTV cameras, optical fiber Wi-Fi 6 ONT gateways, managed Layer-2/3 PoE+ switches, and certified structured cabling accessories.
           </p>
         </div>
       </section>
@@ -59,7 +59,7 @@ export const NexalusInnovationsProductsPage: React.FC = () => {
             }`}
           >
             <Shield className="w-3.5 h-3.5 text-sky-500" />
-            AI CCTV Surveillance
+            CCTV Surveillance
           </button>
           <button
             onClick={() => setFilter('internet')}

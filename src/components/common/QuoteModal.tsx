@@ -155,7 +155,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
               onChange={e => setSelectedBrand(e.target.value)}
               options={[
                 { value: 'general', label: 'Nexalus Innovations LLP (Turnkey Technology Solutions)' },
-                { value: 'cctv', label: 'AI CCTV Surveillance & Security Setup' },
+                { value: 'cctv', label: 'Commercial CCTV Surveillance & Security Setup' },
                 { value: 'fiber', label: 'High-Speed Optical Fiber Internet' },
                 { value: 'networking', label: 'Enterprise IT Networking & Server Infrastructure' }
               ]}

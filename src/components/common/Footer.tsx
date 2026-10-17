@@ -24,7 +24,7 @@ export const Footer: React.FC = () => {
               </div>
             </Link>
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
-              Your trusted enterprise technology infrastructure partner across Maharashtra. Providing turnkey solutions in AI CCTV surveillance grids, symmetrical optical fiber leased lines, managed Layer-2/3 switching, and certified AMC maintenance.
+              Your trusted enterprise technology infrastructure partner across Maharashtra. Providing turnkey solutions in 4K CCTV surveillance grids, symmetrical optical fiber leased lines, managed Layer-2/3 switching, and certified AMC maintenance.
             </p>
             <div className="space-y-2 text-xs pt-2">
               <div className="flex items-start gap-2.5">
@@ -49,7 +49,7 @@ export const Footer: React.FC = () => {
             </h5>
             <ul className="space-y-2.5 text-xs">
               <li>
-                <Link to="/services" className="hover:text-white transition-colors">4K AI CCTV Surveillance</Link>
+                <Link to="/services" className="hover:text-white transition-colors">4K Commercial CCTV Surveillance</Link>
               </li>
               <li>
                 <Link to="/services" className="hover:text-white transition-colors">Gigabit Optical Fiber Internet</Link>

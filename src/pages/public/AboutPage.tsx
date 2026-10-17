@@ -35,7 +35,7 @@ export const AboutPage: React.FC = () => {
             About Nexalus Innovations LLP
           </h1>
           <p className="text-base sm:text-lg text-slate-300 mt-5 leading-relaxed font-normal">
-            A premier technology enterprise providing end-to-end turnkey solutions in AI CCTV surveillance, high-speed optical fiber internet, and enterprise IT networking infrastructure.
+            A premier technology enterprise providing end-to-end turnkey solutions in commercial CCTV surveillance, high-speed optical fiber internet, and enterprise IT networking infrastructure.
           </p>
         </div>
       </section>
@@ -101,10 +101,10 @@ export const AboutPage: React.FC = () => {
                   <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1.5 hover:border-blue-500 transition-colors">
                     <div className="flex items-center gap-2 text-xs font-bold text-blue-400">
                       <Shield className="w-4 h-4 text-blue-400" />
-                      <span>AI CCTV Surveillance</span>
+                      <span>CCTV Video Surveillance</span>
                     </div>
                     <div className="text-xs text-slate-300 leading-relaxed">
-                      Commercial 4K network IP cameras, smart AI detection, and central command monitoring.
+                      Commercial 4K network IP cameras, perimeter motion detection, and central command monitoring.
                     </div>
                   </div>
 
@@ -175,7 +175,7 @@ export const AboutPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-slate-900">Our Vision</h3>
               <p className="text-sm text-slate-600 leading-relaxed">
-                To be Maharashtra&apos;s benchmark technology infrastructure enterprise, recognized for unmatched engineering excellence in AI CCTV surveillance, high-speed optical fiber connectivity, and resilient enterprise IT networks.
+                To be Maharashtra&apos;s benchmark technology infrastructure enterprise, recognized for unmatched engineering excellence in commercial CCTV surveillance, high-speed optical fiber connectivity, and resilient enterprise IT networks.
               </p>
             </div>
 

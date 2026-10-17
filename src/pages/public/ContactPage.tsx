@@ -208,7 +208,7 @@ export const ContactPage: React.FC = () => {
                       onChange={e => setDivision(e.target.value)}
                       options={[
                         { value: 'general', label: 'Nexalus Innovations LLP (General Inquiry)' },
-                        { value: 'cctv', label: 'AI CCTV Surveillance & Security Setup' },
+                        { value: 'cctv', label: 'Commercial CCTV Surveillance & Security Setup' },
                         { value: 'fiber', label: 'High-Speed Optical Fiber Internet' },
                         { value: 'networking', label: 'Enterprise IT Networking & Server Infrastructure' },
                         { value: 'amc', label: 'Annual Maintenance Contract (AMC)' }

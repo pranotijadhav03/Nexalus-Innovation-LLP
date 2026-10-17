@@ -133,7 +133,7 @@ export const SolutionsPage: React.FC = () => {
               Surveillance and Broadband are Naturally Symbiotic
             </h2>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Modern CCTV cameras don't just record locally — they stream 4K video to mobile phones, sync footage to cloud vaults, and run off-site AI analytics. Without a high-speed, uncontended fiber internet connection, remote surveillance lags and buffers.
+              Modern CCTV cameras don't just record locally — they stream 4K video to mobile phones, sync footage to cloud vaults, and run off-site video analytics. Without a high-speed, uncontended fiber internet connection, remote surveillance lags and buffers.
             </p>
             <p className="text-sm text-slate-600 leading-relaxed">
               Nexalus Innovations LLP optimizes bandwidth allocation between business internet and video streams, builds redundant power backup racks, and maintains everything under a single Annual Maintenance Contract.
@@ -167,7 +167,7 @@ export const SolutionsPage: React.FC = () => {
               <div className="w-9 h-9 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold text-xs">
                 SEC
               </div>
-              <h4 className="font-bold text-sm text-slate-900">Perimeter AI Defense</h4>
+              <h4 className="font-bold text-sm text-slate-900">Perimeter Intrusion Defense</h4>
               <p className="text-xs text-slate-600">
                 Intelligent tripwire, human detection, and number plate logging at all entry barriers.
               </p>

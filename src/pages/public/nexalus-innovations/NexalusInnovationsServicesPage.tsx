@@ -19,9 +19,9 @@ export const NexalusInnovationsServicesPage: React.FC = () => {
   const services = [
     {
       icon: <Shield className="w-6 h-6 text-sky-600" />,
-      title: 'Turnkey 4K AI CCTV Installation',
+      title: 'Turnkey 4K Commercial CCTV Installation',
       description: 'End-to-end commercial surveillance deployment including camera positioning analysis, PoE switch cabling, NVR rack setup, and remote view mobile configuration.',
-      features: ['Starlight Color Night Vision', 'AI Tripwire & Vehicle ANPR', 'Redundant NVR Storage', 'Fluke Tested PoE Drops']
+      features: ['Starlight Color Night Vision', 'Perimeter Tripwire & Vehicle ANPR', 'Redundant NVR Storage', 'Fluke Tested PoE Drops']
     },
     {
       icon: <Wifi className="w-6 h-6 text-teal-600" />,
