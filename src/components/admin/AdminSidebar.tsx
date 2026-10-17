@@ -138,6 +138,68 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
           </div>
 
+          {/* Child Website Portals Quick Switcher (Super Admin) */}
+          {isSuperAdmin && onConsoleChange && (
+            <div>
+              <div className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
+                <span>Child Portals</span>
+                <span className="text-[9px] text-blue-600 font-bold">2 Consoles</span>
+              </div>
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onConsoleChange('nexalus-innovations');
+                    onClose();
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                    activeConsole === 'nexalus-innovations'
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                      : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 truncate">
+                    <Shield className={`w-4 h-4 shrink-0 ${activeConsole === 'nexalus-innovations' ? 'text-white' : 'text-blue-600'}`} />
+                    <span className="truncate">Nexalus Innovations</span>
+                  </div>
+                  {activeConsole === 'nexalus-innovations' && <span className="w-2 h-2 rounded-full bg-white shrink-0" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onConsoleChange('am-distributors');
+                    onClose();
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                    activeConsole === 'am-distributors'
+                      ? 'bg-teal-600 text-white shadow-sm shadow-teal-500/20'
+                      : 'text-slate-600 hover:bg-teal-50 hover:text-teal-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 truncate">
+                    <Building className={`w-4 h-4 shrink-0 ${activeConsole === 'am-distributors' ? 'text-white' : 'text-teal-600'}`} />
+                    <span className="truncate">A.M. Distributors</span>
+                  </div>
+                  {activeConsole === 'am-distributors' && <span className="w-2 h-2 rounded-full bg-white shrink-0" />}
+                </button>
+
+                {activeConsole !== 'master' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onConsoleChange('master');
+                      onClose();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer mt-1"
+                  >
+                    <span>&larr; Back to Super Admin</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Operations & CRM */}
           <div>
             <div className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
