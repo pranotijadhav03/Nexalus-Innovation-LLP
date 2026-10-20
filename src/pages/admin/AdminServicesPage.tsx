@@ -296,17 +296,22 @@ export const AdminServicesPage: React.FC = () => {
             onChange={e => setTargetAudience(e.target.value)}
           />
 
-          <div className="pt-2 flex items-center justify-between border-t border-slate-100">
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+          <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 hover:text-slate-900">
               <input
                 type="checkbox"
                 checked={published}
                 onChange={e => setPublished(e.target.checked)}
-                className="rounded text-blue-600 w-4 h-4"
+                className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
               />
               Published to Public Site
             </label>
-            <Button type="submit" variant="primary" isLoading={isSaving}>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isSaving}
+              className="w-full sm:w-auto justify-center font-bold px-6 py-2.5 shadow-md shadow-blue-600/20"
+            >
               Save Service
             </Button>
           </div>

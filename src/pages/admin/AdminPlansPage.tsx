@@ -366,30 +366,35 @@ export const AdminPlansPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Flags */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-4 text-xs font-semibold text-slate-700">
-              <label className="flex items-center gap-2 cursor-pointer">
+          {/* Flags & Action Footer */}
+          <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-5 text-xs font-semibold text-slate-700">
+              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-900">
                 <input
                   type="checkbox"
                   checked={popular}
                   onChange={e => setPopular(e.target.checked)}
-                  className="rounded text-teal-600 w-4 h-4"
+                  className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4"
                 />
                 Popular Badge
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-900">
                 <input
                   type="checkbox"
                   checked={published}
                   onChange={e => setPublished(e.target.checked)}
-                  className="rounded text-teal-600 w-4 h-4"
+                  className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4"
                 />
                 Published
               </label>
             </div>
 
-            <Button type="submit" variant="teal" isLoading={isSaving}>
+            <Button
+              type="submit"
+              variant="teal"
+              isLoading={isSaving}
+              className="w-full sm:w-auto justify-center font-bold px-6 py-2.5 shadow-md shadow-teal-600/20"
+            >
               Save Internet Plan
             </Button>
           </div>

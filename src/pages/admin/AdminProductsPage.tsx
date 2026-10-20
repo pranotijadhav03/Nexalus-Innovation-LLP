@@ -539,10 +539,10 @@ export const AdminProductsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Visibility Controls */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-6 text-xs">
-              <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
+          {/* Visibility Controls & Action Footer */}
+          <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-5 text-xs font-semibold text-slate-700">
+              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-900">
                 <input
                   type="checkbox"
                   checked={published}
@@ -552,7 +552,7 @@ export const AdminProductsPage: React.FC = () => {
                 Published to Public Site
               </label>
 
-              <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
+              <label className="flex items-center gap-2 cursor-pointer hover:text-slate-900">
                 <input
                   type="checkbox"
                   checked={featured}
@@ -563,7 +563,12 @@ export const AdminProductsPage: React.FC = () => {
               </label>
             </div>
 
-            <Button type="submit" variant="primary" isLoading={isSaving}>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isSaving}
+              className="w-full sm:w-auto justify-center font-bold px-6 py-2.5 shadow-md shadow-blue-600/20"
+            >
               Save Product Record
             </Button>
           </div>

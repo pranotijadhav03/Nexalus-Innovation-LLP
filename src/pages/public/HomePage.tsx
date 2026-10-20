@@ -403,7 +403,7 @@ export const HomePage: React.FC = () => {
       {/* =========================================================================
           SECTION: OUR TEAM (SLIDING FOCUS SLIDER)
           ========================================================================= */}
-      <OurTeamSection division="all" />
+      <OurTeamSection division="corporate" />
 
       {/* =========================================================================
           SECTION 3: INTEGRATED TECHNOLOGY INFRASTRUCTURE (3 PILLARS - RICH CORPORATE BLUE)

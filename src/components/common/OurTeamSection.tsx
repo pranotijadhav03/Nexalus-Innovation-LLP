@@ -6,7 +6,7 @@ import { initialTeamMembers } from '../../data/initialData';
 import { BlurZoomReveal } from './BlurZoomReveal';
 
 interface OurTeamSectionProps {
-  division?: 'all' | 'nexalus-innovations' | 'am-distributors';
+  division?: 'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors';
   bgClassName?: string;
 }
 
@@ -57,17 +57,22 @@ export const OurTeamSection: React.FC<OurTeamSectionProps> = ({
 
   const isAm = division === 'am-distributors';
   const isNex = division === 'nexalus-innovations';
+  const isCorp = division === 'corporate';
 
   const subtitle = isAm
     ? 'Chiplun Cold-Chain Leadership, Depot Specialists & Logistics Fleet'
     : isNex
     ? 'Certified Network Engineers, CCTV Specialists & Technical Architects'
+    : isCorp
+    ? 'Enterprise Leadership, Operations Directorate & Strategic Core'
     : 'Enterprise Leadership, Technical Specialists & Cold-Chain Operations';
 
   const badgeText = isAm
     ? 'Chiplun Depot Team'
     : isNex
     ? 'Engineering Team'
+    : isCorp
+    ? 'Corporate Leadership'
     : 'Our Team';
 
   const badgeClass = isAm

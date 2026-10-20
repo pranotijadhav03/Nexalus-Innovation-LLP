@@ -175,8 +175,8 @@ export const AdminCategoriesPage: React.FC = () => {
             onChange={e => setDescription(e.target.value)}
           />
 
-          <div className="pt-2 flex justify-end">
-            <Button type="submit" variant="primary" isLoading={isSaving}>
+          <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <Button type="submit" variant="primary" isLoading={isSaving} className="w-full sm:w-auto justify-center font-bold">
               Save Category
             </Button>
           </div>

@@ -210,7 +210,7 @@ export interface TeamMember {
   role: string;
   department: string;
   deptType: 'tech' | 'logistics' | 'leadership' | 'operations';
-  division?: 'all' | 'nexalus-innovations' | 'am-distributors';
+  division?: 'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors';
   image: string;
   specialty: string;
   tag: string;

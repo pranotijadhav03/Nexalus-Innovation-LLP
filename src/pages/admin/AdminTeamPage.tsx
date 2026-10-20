@@ -136,7 +136,7 @@ export const AdminTeamPage: React.FC = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterDivision, setFilterDivision] = useState<'all' | 'nexalus-innovations' | 'am-distributors'>('all');
+  const [filterDivision, setFilterDivision] = useState<'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors'>('all');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -149,7 +149,7 @@ export const AdminTeamPage: React.FC = () => {
   const [role, setRole] = useState('');
   const [department, setDepartment] = useState('');
   const [deptType, setDeptType] = useState<'leadership' | 'tech' | 'logistics' | 'operations'>('leadership');
-  const [division, setDivision] = useState<'all' | 'nexalus-innovations' | 'am-distributors'>('all');
+  const [division, setDivision] = useState<'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors'>('all');
   const [image, setImage] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [tag, setTag] = useState('');
@@ -285,7 +285,13 @@ export const AdminTeamPage: React.FC = () => {
     const matchesDivision =
       filterDivision === 'all'
         ? true
-        : m.division === filterDivision || m.division === 'all';
+        : filterDivision === 'corporate'
+        ? m.division === 'corporate' || m.division === 'all'
+        : filterDivision === 'nexalus-innovations'
+        ? m.division === 'nexalus-innovations' || m.division === 'all'
+        : filterDivision === 'am-distributors'
+        ? m.division === 'am-distributors' || m.division === 'all'
+        : true;
 
     const matchesSearch =
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -298,9 +304,9 @@ export const AdminTeamPage: React.FC = () => {
   });
 
   const totalMembers = members.length;
+  const parentMembers = members.filter(m => m.division === 'corporate' || m.division === 'all').length;
   const nexalusMembers = members.filter(m => m.division === 'nexalus-innovations' || m.division === 'all').length;
   const amMembers = members.filter(m => m.division === 'am-distributors' || m.division === 'all').length;
-  const leadershipMembers = members.filter(m => m.deptType === 'leadership').length;
 
   return (
     <div className="space-y-6">
@@ -316,7 +322,7 @@ export const AdminTeamPage: React.FC = () => {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Manage circular photo cards, matched colored glow shadows, and team members across all 3 websites.
+            Manage circular photo cards, colored glow shadows, and team members across Parent &amp; both Child websites.
           </p>
         </div>
 
@@ -324,13 +330,13 @@ export const AdminTeamPage: React.FC = () => {
           variant="primary"
           onClick={openCreateModal}
           icon={<Plus className="w-4 h-4" />}
-          className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 font-bold shrink-0"
+          className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 font-bold shrink-0 w-full sm:w-auto justify-center"
         >
           Add Team Member
         </Button>
       </div>
 
-      {/* Summary KPI Badges */}
+      {/* Summary KPI Badges (Parent + 2 Child Sites + Total) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
@@ -344,10 +350,20 @@ export const AdminTeamPage: React.FC = () => {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">
+            Parent: Nexalus LLP
+          </p>
+          <div className="flex items-baseline gap-2 mt-2">
+            <span className="text-3xl font-black text-blue-600">{parentMembers}</span>
+            <span className="text-xs font-bold text-slate-400">Corporate HQ</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
+          <p className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">
             Nexalus Innovations
           </p>
           <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-3xl font-black text-blue-600">{nexalusMembers}</span>
+            <span className="text-3xl font-black text-indigo-600">{nexalusMembers}</span>
             <span className="text-xs font-bold text-slate-400">Tech &amp; Fiber</span>
           </div>
         </div>
@@ -361,16 +377,6 @@ export const AdminTeamPage: React.FC = () => {
             <span className="text-xs font-bold text-slate-400">Chiplun Logistics</span>
           </div>
         </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
-          <p className="text-[11px] font-extrabold uppercase tracking-wider text-amber-600">
-            Leadership &amp; Heads
-          </p>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-3xl font-black text-amber-600">{leadershipMembers}</span>
-            <span className="text-xs font-bold text-slate-400">Strategic Leads</span>
-          </div>
-        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -379,7 +385,7 @@ export const AdminTeamPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
           <button
             onClick={() => setFilterDivision('all')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
               filterDivision === 'all'
                 ? 'bg-slate-900 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -388,26 +394,37 @@ export const AdminTeamPage: React.FC = () => {
             All Divisions ({totalMembers})
           </button>
           <button
-            onClick={() => setFilterDivision('nexalus-innovations')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              filterDivision === 'nexalus-innovations'
+            onClick={() => setFilterDivision('corporate')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              filterDivision === 'corporate'
                 ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
+            <Layers className="w-3.5 h-3.5" />
+            Parent: Nexalus LLP ({parentMembers})
+          </button>
+          <button
+            onClick={() => setFilterDivision('nexalus-innovations')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              filterDivision === 'nexalus-innovations'
+                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
             <Shield className="w-3.5 h-3.5" />
-            Nexalus Innovations
+            Nexalus Innovations ({nexalusMembers})
           </button>
           <button
             onClick={() => setFilterDivision('am-distributors')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               filterDivision === 'am-distributors'
                 ? 'bg-teal-600 text-white shadow-sm shadow-teal-500/20'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
             <Building className="w-3.5 h-3.5" />
-            A.M. Distributors
+            A.M. Distributors ({amMembers})
           </button>
         </div>
 
@@ -457,17 +474,21 @@ export const AdminTeamPage: React.FC = () => {
               <div className="flex items-center justify-between w-full mb-4">
                 <span
                   className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${
-                    member.division === 'nexalus-innovations'
+                    member.division === 'corporate'
                       ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : member.division === 'nexalus-innovations'
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                       : member.division === 'am-distributors'
                       ? 'bg-teal-50 text-teal-700 border-teal-200'
                       : 'bg-purple-50 text-purple-700 border-purple-200'
                   }`}
                 >
-                  {member.division === 'nexalus-innovations'
-                    ? 'Nexalus Tech'
+                  {member.division === 'corporate'
+                    ? 'Parent (Nexalus LLP)'
+                    : member.division === 'nexalus-innovations'
+                    ? 'Nexalus Innovations'
                     : member.division === 'am-distributors'
-                    ? 'A.M. Chiplun'
+                    ? 'A.M. Distributors'
                     : 'All Websites'}
                 </span>
 
@@ -676,9 +697,10 @@ export const AdminTeamPage: React.FC = () => {
               value={division}
               onChange={e => setDivision(e.target.value as any)}
               options={[
-                { value: 'all', label: 'All Websites (Home + Both Child Sites)' },
-                { value: 'nexalus-innovations', label: 'Nexalus Innovations Only (Tech/Fiber/CCTV)' },
-                { value: 'am-distributors', label: 'A.M. Distributors Only (Chiplun Depot)' },
+                { value: 'all', label: 'All 3 Websites (Parent + Both Child Websites)' },
+                { value: 'corporate', label: 'Parent Website Only (Nexalus Innovations LLP Corporate)' },
+                { value: 'nexalus-innovations', label: 'Child Site 1: Nexalus Innovations (Tech/Fiber/CCTV)' },
+                { value: 'am-distributors', label: 'Child Site 2: A.M. Distributors (Chiplun FMCG Depot)' },
               ]}
             />
             <Input
@@ -729,12 +751,13 @@ export const AdminTeamPage: React.FC = () => {
           />
 
           {/* Footer Buttons */}
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsModalOpen(false)}
               disabled={isSaving}
+              className="w-full sm:w-auto justify-center"
             >
               Cancel
             </Button>
@@ -742,7 +765,7 @@ export const AdminTeamPage: React.FC = () => {
               type="submit"
               variant="primary"
               disabled={isSaving}
-              className="bg-blue-600 hover:bg-blue-700 font-bold"
+              className="w-full sm:w-auto justify-center bg-blue-600 hover:bg-blue-700 font-bold shadow-md shadow-blue-500/20"
             >
               {isSaving ? 'Saving...' : editingMember ? 'Update Member' : 'Add Team Member'}
             </Button>

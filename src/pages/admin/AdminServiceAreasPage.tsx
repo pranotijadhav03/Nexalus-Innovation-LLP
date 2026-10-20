@@ -267,8 +267,8 @@ export const AdminServiceAreasPage: React.FC = () => {
             onChange={e => setNotes(e.target.value)}
           />
 
-          <div className="pt-2 flex justify-end">
-            <Button type="submit" variant="teal" isLoading={isSaving}>
+          <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <Button type="submit" variant="teal" isLoading={isSaving} className="w-full sm:w-auto justify-center font-bold">
               Save Service Area
             </Button>
           </div>
