@@ -175,7 +175,7 @@ export const HomePage: React.FC = () => {
       {/* =========================================================================
           SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER (DEEP MIDNIGHT & SERVER MESH)
           ========================================================================= */}
-      <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 min-h-0 sm:min-h-[calc(100vh-5rem)] flex items-start sm:items-center">
+      <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 min-h-[calc(100svh-4rem)] sm:min-h-[calc(100vh-5rem)] flex flex-col justify-between">
         {/* Photographic background image showcasing authentic enterprise server rack */}
         <div className="absolute inset-0">
           <img
@@ -189,8 +189,8 @@ export const HomePage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/98 via-[#0f2444]/90 via-45% md:via-40% to-transparent pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/80 via-transparent to-[#0a1628]/50 pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-14 sm:py-16 lg:py-20 flex items-center w-full">
-          <div className="max-w-4xl lg:max-w-5xl space-y-4 sm:space-y-5 text-white mr-auto">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-7 pb-6 sm:py-16 lg:py-20 flex flex-col justify-between min-h-[calc(100svh-4rem)] sm:min-h-0 w-full flex-1">
+          <div className="max-w-4xl lg:max-w-5xl space-y-4 sm:space-y-5 text-white mr-auto my-auto">
             <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white min-h-[1.25em] flex items-center">
               <span className="inline-flex items-center flex-wrap sm:flex-nowrap break-words">
                 <span className="break-words">{typedTitle}</span>
@@ -202,12 +202,12 @@ export const HomePage: React.FC = () => {
               Internet, Network &amp; CCTV Services
             </p>
 
-            <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-xl pt-1">
+            <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-xl pt-0.5 sm:pt-1">
               Your trusted technology infrastructure partner. Operating under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>, we engineer ultra-fast <strong className="text-white font-bold">gigabit optical fiber</strong> leased lines, managed Layer-2/3 network switching, and certified <strong className="text-white font-bold">video surveillance</strong> systems to empower local businesses.
             </p>
 
             {/* CTA Action Buttons */}
-            <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+            <div className="pt-2 sm:pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
               <Button
                 variant="primary"
                 size="lg"
@@ -227,6 +227,17 @@ export const HomePage: React.FC = () => {
                 </Button>
               </Link>
             </div>
+          </div>
+
+          {/* Mobile Bottom Status Cue: Anchors the bottom of the viewport gracefully */}
+          <div className="sm:hidden pt-4 pb-1 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/60 mt-auto">
+            <span className="flex items-center gap-1.5 font-medium text-cyan-300">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span>Technology &amp; Security Engineering</span>
+            </span>
+            <span className="text-slate-400 flex items-center gap-1">
+              Scroll to explore ↓
+            </span>
           </div>
         </div>
       </section>
