@@ -33,12 +33,12 @@ export const Input: React.FC<InputProps> = ({
         )}
         <input
           id={inputId}
-          className={`block w-full rounded-lg border text-sm transition-colors duration-150 py-2.5 ${
+          className={`block w-full rounded-xl border text-base sm:text-sm transition-all duration-200 py-2.5 ${
             icon ? 'pl-10' : 'pl-3.5'
           } pr-3.5 ${
             error
               ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-              : 'border-slate-300 bg-white text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
+              : 'border-slate-300 bg-white text-slate-900 hover:border-blue-400 hover:shadow-md hover:shadow-blue-500/10 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:shadow-md focus:shadow-blue-500/15'
           } ${className}`}
           {...props}
         />
@@ -76,10 +76,10 @@ export const TextArea: React.FC<TextAreaProps> = ({
       <textarea
         id={inputId}
         rows={rows}
-        className={`block w-full rounded-lg border text-sm transition-colors duration-150 px-3.5 py-2.5 ${
+        className={`block w-full rounded-xl border text-base sm:text-sm transition-all duration-200 px-3.5 py-2.5 ${
           error
             ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-            : 'border-slate-300 bg-white text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
+            : 'border-slate-300 bg-white text-slate-900 hover:border-blue-400 hover:shadow-md hover:shadow-blue-500/10 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:shadow-md focus:shadow-blue-500/15'
         } ${className}`}
         {...props}
       />
@@ -114,10 +114,10 @@ export const Select: React.FC<SelectProps> = ({
       )}
       <select
         id={inputId}
-        className={`block w-full rounded-lg border text-sm transition-colors duration-150 px-3.5 py-2.5 bg-white ${
+        className={`block w-full rounded-xl border text-base sm:text-sm transition-all duration-200 px-3.5 py-2.5 bg-white cursor-pointer ${
           error
             ? 'border-rose-400 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-            : 'border-slate-300 text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
+            : 'border-slate-300 text-slate-900 hover:border-blue-400 hover:shadow-md hover:shadow-blue-500/10 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:shadow-md focus:shadow-blue-500/15'
         } ${className}`}
         {...props}
       >

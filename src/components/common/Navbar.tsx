@@ -48,7 +48,7 @@ export const Navbar: React.FC = () => {
             <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
               <Link
                 to="/"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-3 xl:px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
                   isActive('/') && location.pathname === '/'
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -58,7 +58,7 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link
                 to="/about"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-3 xl:px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
                   isActive('/about')
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -71,7 +71,7 @@ export const Navbar: React.FC = () => {
               <div className="relative group">
                 <Link
                   to="/brands"
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-3 xl:px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
                     isActive('/brands')
                       ? 'text-blue-600 bg-blue-50/80'
                       : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -130,9 +130,16 @@ export const Navbar: React.FC = () => {
                 </div>
               </div>
 
+              <a
+                href="/#our-team"
+                className="px-3 xl:px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors text-slate-700 hover:text-blue-600 hover:bg-slate-50 whitespace-nowrap"
+              >
+                Our Team
+              </a>
+
               <Link
                 to="/services"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-3 xl:px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
                   isActive('/services')
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -142,7 +149,7 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link
                 to="/products"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-3 xl:px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
                   isActive('/products')
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -152,7 +159,7 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link
                 to="/contact"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-3 xl:px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
                   isActive('/contact')
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -231,6 +238,14 @@ export const Navbar: React.FC = () => {
                 <span>A.M. Distributors Chiplun (FMCG Logistics)</span>
               </Link>
             </div>
+
+            <a
+              href="/#our-team"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-base font-semibold text-slate-800 hover:bg-slate-50"
+            >
+              Our Team
+            </a>
 
             <Link
               to="/services"

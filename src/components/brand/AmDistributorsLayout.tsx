@@ -11,12 +11,10 @@ import {
   ChevronRight,
   ArrowLeft,
   ArrowRight,
-  ShieldCheck,
   Building2,
   CheckCircle2,
   Mail,
   MapPin,
-  Clock,
   Sparkles
 } from 'lucide-react';
 import { Button } from '../common/Button';
@@ -36,12 +34,16 @@ export const AmDistributorsLayout: React.FC = () => {
     { label: 'About Depot', path: '/brands/am-distributors/about' },
     { label: 'Products & Supplies', path: '/brands/am-distributors/products' },
     { label: 'Cold-Chain & Fleet', path: '/brands/am-distributors/services' },
-    { label: 'Depot Contact & Wholesale', path: '/brands/am-distributors/contact' }
+    { label: 'Our Team', path: '/brands/am-distributors#our-team' },
+    { label: 'Contact Depot', path: '/brands/am-distributors/contact' }
   ];
 
   const isCurrent = (path: string) => {
+    if (path.includes('#')) {
+      return location.pathname === path.split('#')[0] && location.hash === `#${path.split('#')[1]}`;
+    }
     if (path === '/brands/am-distributors') {
-      return location.pathname === '/brands/am-distributors';
+      return location.pathname === '/brands/am-distributors' && !location.hash;
     }
     return location.pathname.startsWith(path);
   };
@@ -64,25 +66,14 @@ export const AmDistributorsLayout: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 hover:text-white border border-emerald-800/60 font-semibold transition-all shadow-xs group text-xs"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 hover:text-white border border-emerald-800/60 font-semibold transition-all shadow-xs group text-xs shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-amber-400 group-hover:-translate-x-1 transition-transform" />
-              <span>← Back to Nexalus Innovations LLP</span>
+              <span>Back to Nexalus Innovations LLP</span>
             </Link>
             <span className="hidden md:inline text-slate-600">•</span>
             <span className="hidden md:inline text-emerald-200 font-medium">
               Chiplun Regional Cold-Chain &amp; Logistics Hub
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4 text-[11px] text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Dispatch: Daily 4:00 AM Morning Route</span>
-            </span>
-            <span className="flex items-center gap-1 text-amber-400 font-medium">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>FSSAI Compliant Depot</span>
             </span>
           </div>
         </div>
@@ -90,34 +81,34 @@ export const AmDistributorsLayout: React.FC = () => {
 
       {/* Dedicated Brand Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2 sm:gap-4">
           {/* Brand Identity */}
           <Link
             to="/brands/am-distributors"
-            className="flex items-center gap-3 group focus:outline-none"
+            className="flex items-center gap-2.5 sm:gap-3 group focus:outline-none shrink-0"
           >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform border border-emerald-400/30">
-              <Truck className="w-6 h-6 text-amber-300" />
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform border border-emerald-400/30 shrink-0">
+              <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300" />
             </div>
-            <div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none group-hover:text-emerald-700 transition-colors">
+            <div className="shrink-0">
+              <div className="text-base sm:text-xl xl:text-2xl font-black text-slate-900 tracking-tight leading-none group-hover:text-emerald-700 transition-colors">
                 A.M. DISTRIBUTORS
               </div>
-              <div className="text-[10px] font-extrabold text-emerald-700 tracking-wider uppercase mt-1">
+              <div className="hidden md:block text-[10px] font-extrabold text-emerald-700 tracking-wider uppercase mt-1">
                 Chiplun Depot • Mineral Water • Ice Cream • Dairy
               </div>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1">
+          {/* Desktop Navigation Links - Single line guaranteed with whitespace-nowrap */}
+          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 shrink-0">
             {navLinks.map((item) => {
               const active = isCurrent(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  className={`px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all whitespace-nowrap ${
                     active
                       ? 'bg-emerald-50 text-emerald-700 font-bold shadow-xs border border-emerald-100'
                       : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-100/80'
@@ -130,12 +121,12 @@ export const AmDistributorsLayout: React.FC = () => {
           </nav>
 
           {/* Right Header Action Button */}
-          <div className="hidden sm:flex items-center gap-2.5">
+          <div className="hidden sm:flex items-center gap-2.5 shrink-0">
             <Button
               variant="teal"
               size="md"
               onClick={() => setIsQuoteOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 font-bold shadow-md shadow-emerald-600/20"
+              className="bg-emerald-600 hover:bg-emerald-500 font-bold shadow-md shadow-emerald-600/20 whitespace-nowrap text-xs xl:text-sm px-3 xl:px-4 py-2"
             >
               Inquire Wholesale Supply
             </Button>
@@ -159,7 +150,7 @@ export const AmDistributorsLayout: React.FC = () => {
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-emerald-300 font-bold text-sm shadow-xs mb-3 border border-emerald-900"
             >
               <ArrowLeft className="w-4 h-4 text-amber-400" />
-              <span>← Back to Nexalus Innovations LLP</span>
+              <span>Back to Nexalus Innovations LLP</span>
             </Link>
             {navLinks.map((item) => (
               <Link
@@ -321,7 +312,7 @@ export const AmDistributorsLayout: React.FC = () => {
                   variant="outline-white"
                   size="sm"
                   onClick={() => setIsQuoteOpen(true)}
-                  className="w-full text-xs font-semibold"
+                  className="w-full text-xs font-semibold hover:shadow-lg hover:shadow-teal-500/20 hover:border-teal-400 transition-all"
                 >
                   Book Bulk Order / Wholesale
                 </Button>

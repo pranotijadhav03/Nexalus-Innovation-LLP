@@ -27,7 +27,8 @@ import {
   AdminUser,
   AuditLog,
   SiteBanner,
-  SeoSettings
+  SeoSettings,
+  TeamMember
 } from '../types';
 import {
   initialBrands,
@@ -41,7 +42,8 @@ import {
   initialBanners,
   initialUsers,
   initialEnquiries,
-  initialSeoSettings
+  initialSeoSettings,
+  initialTeamMembers
 } from '../data/initialData';
 
 // Storage Keys for resilient local state
@@ -59,7 +61,8 @@ const STORAGE_KEYS = {
   BANNERS: DATA_VERSION + 'nexalus_store_banners',
   USERS: DATA_VERSION + 'nexalus_store_users',
   AUDIT_LOGS: DATA_VERSION + 'nexalus_store_audit_logs',
-  SEO: DATA_VERSION + 'nexalus_store_seo'
+  SEO: DATA_VERSION + 'nexalus_store_seo',
+  TEAM: DATA_VERSION + 'nexalus_store_team'
 };
 
 // Generic Local Storage Helpers
@@ -88,6 +91,13 @@ export function notifyDataUpdate(key?: string): void {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key } }));
   }
+}
+
+export function withTimeout<T>(promise: Promise<T>, ms = 2500): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`Firestore request timed out after ${ms}ms`)), ms))
+  ]);
 }
 
 // ----------------------------------------------------
@@ -1178,14 +1188,14 @@ export async function updateBanner(id: string, updates: Partial<SiteBanner>): Pr
 export async function getUsers(): Promise<AdminUser[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const snapshot = await getDocs(collection(db, 'users'));
+      const snapshot = await withTimeout(getDocs(collection(db, 'users')), 2500);
       if (!snapshot.empty) {
         const users = snapshot.docs.map(d => d.data() as AdminUser);
         setLocalItem(STORAGE_KEYS.USERS, users);
         return users;
       }
     } catch (e) {
-      console.warn('Firestore getUsers error:', e);
+      console.warn('Firestore getUsers error (falling back to local cache):', e);
     }
   }
 
@@ -1324,3 +1334,102 @@ export async function uploadImageFile(file: File, folder = 'products'): Promise<
     reader.readAsDataURL(file);
   });
 }
+
+// ----------------------------------------------------
+// TEAM MEMBERS (Firestore / Resilient Local Storage)
+// ----------------------------------------------------
+export async function getTeamMembers(division?: string): Promise<TeamMember[]> {
+  let members = getLocalItem<TeamMember[]>(STORAGE_KEYS.TEAM, initialTeamMembers);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = query(collection(db, 'team_members'), orderBy('createdAt', 'desc'));
+      const snapshot = await withTimeout(getDocs(q), 2000);
+      if (!snapshot.empty) {
+        members = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as TeamMember));
+        setLocalItem(STORAGE_KEYS.TEAM, members);
+      }
+    } catch (e) {
+      console.warn('Firestore getTeamMembers error, using local fallback:', e);
+    }
+  }
+
+  if (division && division !== 'all') {
+    return members.filter(m => !m.division || m.division === 'all' || m.division === division);
+  }
+  return members;
+}
+
+export async function createTeamMember(memberData: Omit<TeamMember, 'id' | 'createdAt' | 'updatedAt'>): Promise<TeamMember> {
+  const newId = `team-${Date.now()}`;
+  const now = new Date().toISOString();
+  const newMember: TeamMember = {
+    ...memberData,
+    id: newId,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const current = getLocalItem<TeamMember[]>(STORAGE_KEYS.TEAM, initialTeamMembers);
+  const updated = [newMember, ...current];
+  setLocalItem(STORAGE_KEYS.TEAM, updated);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'team_members', newId), newMember), 2500);
+    } catch (e) {
+      console.warn('Firestore createTeamMember error:', e);
+    }
+  }
+
+  await addAuditLog('CREATE_TEAM_MEMBER', `Added new team member: ${newMember.name} (${newMember.role})`);
+  notifyDataUpdate('team');
+  return newMember;
+}
+
+export async function updateTeamMember(id: string, updates: Partial<TeamMember>): Promise<TeamMember> {
+  const current = getLocalItem<TeamMember[]>(STORAGE_KEYS.TEAM, initialTeamMembers);
+  const idx = current.findIndex(m => m.id === id);
+  if (idx === -1) throw new Error('Team member not found');
+
+  const updatedMember: TeamMember = {
+    ...current[idx],
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+
+  current[idx] = updatedMember;
+  setLocalItem(STORAGE_KEYS.TEAM, current);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(updateDoc(doc(db, 'team_members', id), updates), 2500);
+    } catch (e) {
+      console.warn('Firestore updateTeamMember error:', e);
+    }
+  }
+
+  await addAuditLog('UPDATE_TEAM_MEMBER', `Updated team member: ${updatedMember.name}`);
+  notifyDataUpdate('team');
+  return updatedMember;
+}
+
+export async function deleteTeamMember(id: string): Promise<boolean> {
+  const current = getLocalItem<TeamMember[]>(STORAGE_KEYS.TEAM, initialTeamMembers);
+  const member = current.find(m => m.id === id);
+  const updated = current.filter(m => m.id !== id);
+  setLocalItem(STORAGE_KEYS.TEAM, updated);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(deleteDoc(doc(db, 'team_members', id)), 2500);
+    } catch (e) {
+      console.warn('Firestore deleteTeamMember error:', e);
+    }
+  }
+
+  await addAuditLog('DELETE_TEAM_MEMBER', `Deleted team member: ${member?.name || id}`);
+  notifyDataUpdate('team');
+  return true;
+}
+

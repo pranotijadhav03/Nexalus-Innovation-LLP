@@ -35,12 +35,16 @@ export const NexalusInnovationsLayout: React.FC = () => {
     { label: 'About Us', path: '/brands/nexalus-innovations/about' },
     { label: 'Hardware Catalog', path: '/brands/nexalus-innovations/products' },
     { label: 'Services & AMC', path: '/brands/nexalus-innovations/services' },
-    { label: 'Contact & Sales Desk', path: '/brands/nexalus-innovations/contact' }
+    { label: 'Our Team', path: '/brands/nexalus-innovations#our-team' },
+    { label: 'Contact & Sales', path: '/brands/nexalus-innovations/contact' }
   ];
 
   const isCurrent = (path: string) => {
+    if (path.includes('#')) {
+      return location.pathname === path.split('#')[0] && location.hash === `#${path.split('#')[1]}`;
+    }
     if (path === '/brands/nexalus-innovations') {
-      return location.pathname === '/brands/nexalus-innovations';
+      return location.pathname === '/brands/nexalus-innovations' && !location.hash;
     }
     return location.pathname.startsWith(path);
   };
@@ -63,10 +67,10 @@ export const NexalusInnovationsLayout: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 hover:text-white border border-indigo-800/60 font-semibold transition-all shadow-xs group text-xs"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 hover:text-white border border-indigo-800/60 font-semibold transition-all shadow-xs group text-xs shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-cyan-400 group-hover:-translate-x-1 transition-transform" />
-              <span>← Back to Nexalus Innovations LLP</span>
+              <span>Back to Nexalus Innovations LLP</span>
             </Link>
             <span className="hidden md:inline text-slate-600">•</span>
             <span className="hidden md:inline text-indigo-200 font-medium">
@@ -88,34 +92,34 @@ export const NexalusInnovationsLayout: React.FC = () => {
 
       {/* Dedicated Brand Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-indigo-100 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2 sm:gap-4">
           {/* Brand Identity */}
           <Link
             to="/brands/nexalus-innovations"
-            className="flex items-center gap-3 group focus:outline-none"
+            className="flex items-center gap-2.5 sm:gap-3 group focus:outline-none shrink-0"
           >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 text-white flex items-center justify-center shadow-md shadow-indigo-600/30 group-hover:scale-105 transition-transform border border-indigo-400/30">
-              <Cpu className="w-6 h-6 text-cyan-300" />
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 text-white flex items-center justify-center shadow-md shadow-indigo-600/30 group-hover:scale-105 transition-transform border border-indigo-400/30 shrink-0">
+              <Cpu className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-300" />
             </div>
-            <div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none group-hover:text-indigo-600 transition-colors">
+            <div className="shrink-0">
+              <div className="text-base sm:text-xl xl:text-2xl font-black text-slate-900 tracking-tight leading-none group-hover:text-indigo-600 transition-colors">
                 NEXALUS INNOVATIONS
               </div>
-              <div className="text-[10px] font-extrabold text-indigo-600 tracking-wider uppercase mt-1">
+              <div className="hidden md:block text-[10px] font-extrabold text-indigo-600 tracking-wider uppercase mt-1">
                 CCTV • Fiber Internet • Enterprise IT Networking
               </div>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1">
+          {/* Desktop Navigation Links - Single line guaranteed with whitespace-nowrap */}
+          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 shrink-0">
             {navLinks.map((item) => {
               const active = isCurrent(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  className={`px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all whitespace-nowrap ${
                     active
                       ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs border border-indigo-100'
                       : 'text-slate-600 hover:text-indigo-700 hover:bg-slate-100/80'
@@ -128,12 +132,12 @@ export const NexalusInnovationsLayout: React.FC = () => {
           </nav>
 
           {/* Right Header Action Button */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3 shrink-0">
             <Button
               variant="primary"
               size="md"
               onClick={() => setIsQuoteOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-md shadow-indigo-600/20"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-md shadow-indigo-600/20 whitespace-nowrap text-xs xl:text-sm px-3 xl:px-4 py-2"
               icon={<PhoneCall className="w-4 h-4 text-cyan-300" />}
             >
               Request Proposal
@@ -157,7 +161,7 @@ export const NexalusInnovationsLayout: React.FC = () => {
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-indigo-300 hover:text-white font-bold text-sm shadow-xs mb-3 border border-indigo-900"
             >
               <ArrowLeft className="w-4 h-4 text-cyan-400" />
-              <span>← Back to Nexalus Innovations LLP</span>
+              <span>Back to Nexalus Innovations LLP</span>
             </Link>
             {navLinks.map((item) => (
               <Link

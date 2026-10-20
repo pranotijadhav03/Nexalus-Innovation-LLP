@@ -15,7 +15,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
 
   return (
     <>
-      <div className="group rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
+      <div className="group rounded-3xl bg-white border border-slate-200/90 shadow-md shadow-slate-200/70 hover:shadow-2xl hover:shadow-teal-500/15 hover:border-teal-400 hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer">
         <div>
           {/* Card Header Banner */}
           {!imageError && plan.image ? (

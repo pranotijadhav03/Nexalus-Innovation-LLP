@@ -81,7 +81,15 @@ export const AdminLayout: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => setLoadingTimedOut(true), 1800);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  if (isLoading && !loadingTimedOut) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-800">
         <div className="flex flex-col items-center gap-3">

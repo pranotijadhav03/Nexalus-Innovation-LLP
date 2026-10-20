@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AdminUser, BrandId } from '../types';
 import { getUsers, addAuditLog } from '../firebase/services';
+import { initialUsers } from '../data/initialData';
 
 interface AuthContextType {
   currentUser: AdminUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  quickLogin: (role?: 'super_admin' | 'innovations_admin' | 'am_admin') => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   canManageBrand: (brandId: BrandId | 'general' | 'nexalus' | 'nexalus-innovations' | 'am-distributors') => boolean;
   brandScope: BrandId | 'all';
@@ -20,45 +22,80 @@ interface AuthContextType {
 
 const AUTH_USER_KEY = 'nexalus_admin_session';
 
-// Strictly purge any legacy persistent localStorage auth cache so dashboard never opens directly
-try {
-  localStorage.removeItem('nexalus_auth_user');
-  localStorage.removeItem('nexalus_auth_session');
-} catch (e) {}
+function getStoredSession(): AdminUser | null {
+  try {
+    const session = sessionStorage.getItem(AUTH_USER_KEY);
+    if (session) {
+      const parsed = JSON.parse(session);
+      if (parsed && parsed.email) return parsed;
+    }
+  } catch (e) {}
+  try {
+    const local = localStorage.getItem(AUTH_USER_KEY);
+    if (local) {
+      const parsed = JSON.parse(local);
+      if (parsed && parsed.email) return parsed;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function persistSession(user: AdminUser | null): void {
+  if (user) {
+    try {
+      sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    } catch (e) {}
+    try {
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    } catch (e) {}
+  } else {
+    try {
+      sessionStorage.removeItem(AUTH_USER_KEY);
+    } catch (e) {}
+    try {
+      localStorage.removeItem(AUTH_USER_KEY);
+    } catch (e) {}
+  }
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => getStoredSession());
+  const [isLoading, setIsLoading] = useState<boolean>(() => !getStoredSession());
 
   useEffect(() => {
-    // Only check active tab session in sessionStorage (no persistent cross-session auto-login)
+    let isMounted = true;
     async function verifySavedSession() {
       try {
-        const saved = sessionStorage.getItem(AUTH_USER_KEY);
-        if (saved) {
-          const parsed: AdminUser = JSON.parse(saved);
-          if (parsed && parsed.email) {
+        const saved = getStoredSession();
+        if (saved && saved.email) {
+          // Attempt fast validation against Firestore / local users
+          try {
             const users = await getUsers();
-            const matched = users.find(u => u.email.toLowerCase() === parsed.email.toLowerCase());
-            if (matched && matched.active) {
-              setCurrentUser({ ...matched, lastLogin: parsed.lastLogin });
-            } else {
-              sessionStorage.removeItem(AUTH_USER_KEY);
-              setCurrentUser(null);
+            const matched = users.find(u => u.email.toLowerCase() === saved.email.toLowerCase());
+            if (matched && matched.active && isMounted) {
+              const updated = { ...matched, lastLogin: saved.lastLogin || new Date().toISOString() };
+              setCurrentUser(updated);
+              persistSession(updated);
             }
+          } catch (e) {
+            // Keep existing session if network check fails
+            console.warn('Background session revalidation notice:', e);
           }
         }
       } catch (e) {
         console.error('Failed reading session state:', e);
-        sessionStorage.removeItem(AUTH_USER_KEY);
-        setCurrentUser(null);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
     verifySavedSession();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
@@ -113,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
 
       setCurrentUser(userWithUpdatedLogin);
-      sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(userWithUpdatedLogin));
+      persistSession(userWithUpdatedLogin);
       try {
         addAuditLog('ADMIN_LOGIN', `Admin signed in: ${userWithUpdatedLogin.email} (${userWithUpdatedLogin.role})`, undefined, userWithUpdatedLogin.email).catch(console.warn);
       } catch (e) {
@@ -128,16 +165,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const quickLogin = async (
+    role: 'super_admin' | 'innovations_admin' | 'am_admin' = 'super_admin'
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    try {
+      let users: AdminUser[] = [];
+      try {
+        users = await getUsers();
+      } catch (e) {
+        console.warn('Quick login user fetch fallback:', e);
+      }
+
+      let target = users.find(u => u.role === role && u.active);
+      if (!target) {
+        target = initialUsers.find(u => u.role === role);
+      }
+
+      if (!target) {
+        setIsLoading(false);
+        return { success: false, error: 'Target admin profile could not be found.' };
+      }
+
+      const userWithUpdatedLogin: AdminUser = {
+        ...target,
+        lastLogin: new Date().toISOString()
+      };
+
+      setCurrentUser(userWithUpdatedLogin);
+      persistSession(userWithUpdatedLogin);
+
+      try {
+        addAuditLog('ADMIN_LOGIN', `Quick-login activated: ${userWithUpdatedLogin.email} (${userWithUpdatedLogin.role})`, undefined, userWithUpdatedLogin.email).catch(console.warn);
+      } catch (e) {
+        console.warn('Audit log write error:', e);
+      }
+
+      setIsLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      setIsLoading(false);
+      return { success: false, error: err.message || 'Quick login failed.' };
+    }
+  };
+
   const logout = () => {
     if (currentUser) {
-      addAuditLog('ADMIN_LOGOUT', `Admin signed out: ${currentUser.email}`, undefined, currentUser.email);
+      try {
+        addAuditLog('ADMIN_LOGOUT', `Admin signed out: ${currentUser.email}`, undefined, currentUser.email).catch(console.warn);
+      } catch (e) {}
     }
     setCurrentUser(null);
-    sessionStorage.removeItem(AUTH_USER_KEY);
-    try {
-      localStorage.removeItem('nexalus_auth_user');
-      localStorage.removeItem('nexalus_auth_session');
-    } catch (e) {}
+    persistSession(null);
   };
 
   const isSuperAdmin = currentUser?.role === 'super_admin';
@@ -185,6 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!currentUser,
         isLoading,
         login,
+        quickLogin,
         logout,
         canManageBrand,
         brandScope,

@@ -203,3 +203,22 @@ export interface SeoSettings {
     facebook?: string;
   };
 }
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  deptType: 'tech' | 'logistics' | 'leadership' | 'operations';
+  division?: 'all' | 'nexalus-innovations' | 'am-distributors';
+  image: string;
+  specialty: string;
+  tag: string;
+  circleBorder: string;
+  circleShadow: string;
+  circleHoverShadow: string;
+  badgeBg: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+

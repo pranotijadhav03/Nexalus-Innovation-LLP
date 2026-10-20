@@ -10,7 +10,8 @@ import {
   FAQ,
   AdminUser,
   SiteBanner,
-  SeoSettings
+  SeoSettings,
+  TeamMember
 } from '../types';
 
 export const initialBrands: Brand[] = [
@@ -1688,3 +1689,143 @@ export const initialSeoSettings: SeoSettings = {
     facebook: 'https://facebook.com/nexalusinnovations'
   }
 };
+
+export const initialTeamMembers: TeamMember[] = [
+  {
+    id: 'team-1',
+    name: 'Pranav More',
+    role: 'Managing Partner & Director',
+    department: 'Corporate Leadership',
+    deptType: 'leadership',
+    division: 'all',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Enterprise Strategy & Governance',
+    tag: 'Executive Lead',
+    circleBorder: 'border-amber-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(245,158,11,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(245,158,11,0.7)] group-hover:border-amber-500',
+    badgeBg: 'bg-amber-500',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-2',
+    name: 'Aniket Shinde',
+    role: 'Lead Network Architect',
+    department: 'Optical Fiber & Telecom',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
+    specialty: 'FTTH Gigabit Backhaul & Switching',
+    tag: 'Fiber Architect',
+    circleBorder: 'border-blue-500',
+    circleShadow: 'shadow-[0_10px_30px_rgba(59,130,246,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(59,130,246,0.7)] group-hover:border-blue-400',
+    badgeBg: 'bg-blue-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-3',
+    name: 'Pooja Deshmukh',
+    role: 'Head of Electronic Security',
+    department: 'CCTV Surveillance & IoT',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
+    specialty: '4K Commercial Cameras & Control',
+    tag: 'Security Lead',
+    circleBorder: 'border-cyan-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(6,182,212,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(6,182,212,0.7)] group-hover:border-cyan-300',
+    badgeBg: 'bg-cyan-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-4',
+    name: 'Rahul Kadam',
+    role: 'Cold-Chain Operations Head',
+    department: 'A.M. Distributors Chiplun',
+    deptType: 'logistics',
+    division: 'am-distributors',
+    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Refrigerated Fleet & Chiplun Depot',
+    tag: 'Logistics Head',
+    circleBorder: 'border-teal-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(20,184,166,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(20,184,166,0.7)] group-hover:border-teal-300',
+    badgeBg: 'bg-teal-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-5',
+    name: 'Snehal Patil',
+    role: 'Enterprise Systems Engineer',
+    department: 'IT Networking & Hardware',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Managed PoE+ & Fluke Cat6A Cabling',
+    tag: 'Systems Engineer',
+    circleBorder: 'border-indigo-500',
+    circleShadow: 'shadow-[0_10px_30px_rgba(99,102,241,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(99,102,241,0.7)] group-hover:border-indigo-400',
+    badgeBg: 'bg-indigo-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-6',
+    name: 'Sachin Pawar',
+    role: 'QA & Compliance Lead',
+    department: 'A.M. Distributors Chiplun',
+    deptType: 'logistics',
+    division: 'am-distributors',
+    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=80',
+    specialty: 'FSSAI Depot Compliance & Sanitization',
+    tag: 'QA & Compliance',
+    circleBorder: 'border-emerald-500',
+    circleShadow: 'shadow-[0_10px_30px_rgba(16,185,129,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(16,185,129,0.7)] group-hover:border-emerald-400',
+    badgeBg: 'bg-emerald-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-7',
+    name: 'Tanvi Joshi',
+    role: '24/7 NOC Support Lead',
+    department: 'Technical Support Desk',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Guaranteed SLA Uptime & Response',
+    tag: 'NOC Lead',
+    circleBorder: 'border-sky-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(56,189,248,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(56,189,248,0.7)] group-hover:border-sky-300',
+    badgeBg: 'bg-sky-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-8',
+    name: 'Vikram Salunkhe',
+    role: 'Senior Telecom & Splicing Lead',
+    department: 'Field Engineering & Maintenance',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Fusion Splicing & Optical Link Testing',
+    tag: 'Telecom Specialist',
+    circleBorder: 'border-blue-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(96,165,250,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(96,165,250,0.7)] group-hover:border-blue-300',
+    badgeBg: 'bg-blue-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+

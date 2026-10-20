@@ -51,6 +51,7 @@ import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminFaqsPage } from './pages/admin/AdminFaqsPage';
 import { AdminContentPage } from './pages/admin/AdminContentPage';
 import { AdminReportsPage } from './pages/admin/AdminReportsPage';
+import { AdminTeamPage } from './pages/admin/AdminTeamPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminSeoPage } from './pages/admin/AdminSeoPage';
 import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
@@ -135,6 +136,7 @@ function App() {
               <Route path="categories" element={<AdminCategoriesPage />} />
               <Route path="faqs" element={<AdminFaqsPage />} />
               <Route path="content" element={<AdminContentPage />} />
+              <Route path="team" element={<AdminTeamPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="seo" element={<AdminSeoPage />} />

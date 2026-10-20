@@ -4,13 +4,22 @@ import { Product } from '../../types';
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
 import { WhatsAppShareModal } from '../common/WhatsAppShareModal';
+import { BlurZoomReveal } from '../common/BlurZoomReveal';
 import { ArrowRight, Camera } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
+  index?: number;
+  direction?: 'left' | 'right' | 'up' | 'down' | 'auto';
+  delay?: number;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  index,
+  direction = 'auto',
+  delay
+}) => {
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const isAm = product.brandId === 'am-distributors';
@@ -41,13 +50,36 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   // Grab first 4 specifications for deep hardware information
   const specEntries = Object.entries(product.specifications || {}).slice(0, 4);
 
+  // Determine entrance direction:
+  // Even cards enter smoothly from left (-55px)
+  // Odd cards enter smoothly from right (+55px)
+  let cardDirection: 'left' | 'right' | 'up' = 'up';
+  if (direction === 'left' || direction === 'right' || direction === 'up') {
+    cardDirection = direction;
+  } else if (index !== undefined) {
+    cardDirection = index % 2 === 0 ? 'left' : 'right';
+  }
+
+  const cardDelay = delay ?? (index !== undefined ? (index % 3) * 100 : 0);
+  const xOffset = cardDirection === 'left' ? -55 : cardDirection === 'right' ? 55 : 0;
+
   return (
     <>
-      <div className={`group bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden hover:-translate-y-1 ${
-        isCctv ? 'hover:border-indigo-400/60' : isAm ? 'hover:border-emerald-300' : 'hover:border-blue-300'
-      }`}>
-        {/* Image & Badge Header */}
-        <Link to={detailPath} className="relative aspect-4/3 bg-slate-100 overflow-hidden block cursor-pointer">
+      <BlurZoomReveal
+        direction={cardDirection}
+        xOffset={xOffset}
+        delay={cardDelay}
+        duration={750}
+        blur={10}
+        scale={0.93}
+        className="h-full flex flex-col"
+      >
+        <div className={`group bg-white rounded-2xl border border-slate-200/90 shadow-md shadow-slate-200/70 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 flex flex-col overflow-hidden card-zoom-hover h-full relative ${
+          isCctv ? 'hover:border-indigo-400/60 hover:shadow-indigo-500/15' : isAm ? 'hover:border-teal-400 hover:shadow-teal-500/20' : 'hover:border-blue-300 hover:shadow-blue-500/15'
+        }`}>
+          {/* Image & Badge Header */}
+          {isAm && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-400 z-20 pointer-events-none" />}
+          <Link to={detailPath} className="relative aspect-4/3 bg-slate-100 overflow-hidden block cursor-pointer">
           {hasError ? (
             <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex flex-col items-center justify-center p-4 text-center">
               <Camera className="w-10 h-10 text-slate-400 mb-2 opacity-60" />
@@ -79,7 +111,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <div className="text-[11px] font-mono font-medium text-slate-400 uppercase tracking-wider mb-1">
               Model: {product.modelNumber}
             </div>
-            <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+            <h3 className={`font-bold text-slate-900 ${isAm ? 'group-hover:text-teal-600' : 'group-hover:text-blue-600'} transition-colors line-clamp-2 leading-snug`}>
               <Link to={detailPath}>{product.name}</Link>
             </h3>
             <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
@@ -129,8 +161,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
               {/* View Product Details Button */}
               <Link
-                to="/products"
-                className="inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors"
+                to={detailPath}
+                className={`inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-colors ${
+                  isAm
+                    ? 'text-teal-700 hover:text-teal-800 hover:bg-teal-50 border border-teal-200'
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200'
+                }`}
                 title="View Product in Catalog"
               >
                 <span>View More</span>
@@ -153,6 +189,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
       </div>
+    </BlurZoomReveal>
 
       <QuoteModal
         isOpen={isQuoteOpen}

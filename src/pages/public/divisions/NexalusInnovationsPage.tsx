@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Shield,
   Wifi,
@@ -11,11 +11,14 @@ import {
   ChevronDown,
   ChevronUp,
   Activity,
-  PhoneCall
+  PhoneCall,
+  Users
 } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
 import { QuoteModal } from '../../../components/common/QuoteModal';
+import { BlurZoomReveal } from '../../../components/common/BlurZoomReveal';
 import { ProductCard } from '../../../components/brand/ProductCard';
+import { OurTeamSection } from '../../../components/common/OurTeamSection';
 import { getProducts } from '../../../firebase/services';
 import { initialProducts } from '../../../data/initialData';
 import { Product } from '../../../types';
@@ -60,7 +63,7 @@ export const NexalusInnovationsPage: React.FC = () => {
   const networkProducts = networkProductIds.map(getProduct).filter(Boolean);
 
   return (
-    <div className="flex flex-col w-full space-y-16 sm:space-y-24 pb-20">
+    <div className="flex flex-col w-full">
       {/* =========================================================================
           HERO SECTION (CORPORATE NAVY & ELECTRIC INDIGO THEME)
           ========================================================================= */}
@@ -147,200 +150,207 @@ export const NexalusInnovationsPage: React.FC = () => {
       </section>
 
       {/* =========================================================================
-          ENGINEERING SLA METRICS BAR
+          OUR TEAM SECTION (NEXALUS INNOVATIONS DIVISION)
+          Directly below Hero fold with pure white background
           ========================================================================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-10 relative z-20 w-full">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-3xl bg-white shadow-xl shadow-slate-900/5 border border-slate-200/90">
-          <div className="flex items-center gap-3.5 p-3 sm:p-4 rounded-2xl bg-slate-50/80">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-              <Shield className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-base sm:text-lg font-black text-slate-900">4K Ultra-HD</div>
-              <p className="text-xs text-slate-500 font-medium">Starlight Color Night Vision</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5 p-3 sm:p-4 rounded-2xl bg-slate-50/80">
-            <div className="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center shrink-0">
-              <Wifi className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-base sm:text-lg font-black text-slate-900">1 Gbps Speeds</div>
-              <p className="text-xs text-slate-500 font-medium">Dedicated Symmetrical FTTH</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5 p-3 sm:p-4 rounded-2xl bg-slate-50/80">
-            <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-              <Server className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-base sm:text-lg font-black text-slate-900">Layer-3 Switching</div>
-              <p className="text-xs text-slate-500 font-medium">370W PoE+ &amp; 10G SFP+ Uplinks</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5 p-3 sm:p-4 rounded-2xl bg-slate-50/80">
-            <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-              <Activity className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-base sm:text-lg font-black text-slate-900">45-Min SLA</div>
-              <p className="text-xs text-slate-500 font-medium">Rapid Field Dispatch Service</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <OurTeamSection division="nexalus-innovations" bgClassName="bg-white" />
 
       {/* =========================================================================
-          Z-TYPE ARCHITECTURE: SECTION 1 (CCTV SURVEILLANCE & SECURITY)
-          ROW 1: LEFT = CCTV CARD (SLIDE IN LEFT) | RIGHT = CCTV INFO (SLIDE IN RIGHT)
+          SECTION 3: SLA METRICS BAR + CCTV SURVEILLANCE & SECURITY (SOFT BLUE THEME)
           ========================================================================= */}
-      <section id="section-cctv" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          {/* Z-1 LEFT: CCTV BOX / CARD (Slide In Left animation) */}
-          <div className="lg:col-span-5 rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group animate-slide-left">
-            <div className="relative h-64 overflow-hidden bg-slate-100">
-              <img
-                src="/images/real-cctv-camera.jpg"
-                alt="4K Ultra-HD Network CCTV Surveillance Camera"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute top-4 left-4">
-                <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-black shadow-md uppercase tracking-wider flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5" />
-                  CCTV Surveillance
-                </span>
+      <section id="section-cctv" className="w-full bg-blue-50/70 py-16 sm:py-24 border-b border-blue-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-12">
+          {/* ENGINEERING SLA METRICS BAR (Placed directly above CCTV) */}
+          <BlurZoomReveal delay={0} yOffset={15} blur={10} scale={0.95}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-3xl bg-white shadow-xl shadow-blue-900/5 border border-blue-100">
+              <div className="flex items-center gap-3.5 p-3 sm:p-4 rounded-2xl bg-slate-50/80 hover:bg-blue-50/50 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="text-base sm:text-lg font-black text-slate-900">4K Ultra-HD</div>
+                  <p className="text-xs text-slate-500 font-medium">Starlight Color Night Vision</p>
+                </div>
               </div>
-              <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
-                4K Ultra-HD • Sony Starvis
+
+              <div className="flex items-center gap-3.5 p-3 sm:p-4 rounded-2xl bg-slate-50/80 hover:bg-teal-50/50 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center shrink-0">
+                  <Wifi className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="text-base sm:text-lg font-black text-slate-900">1 Gbps Speeds</div>
+                  <p className="text-xs text-slate-500 font-medium">Dedicated Symmetrical FTTH</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3.5 p-3 sm:p-4 rounded-2xl bg-slate-50/80 hover:bg-indigo-50/50 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                  <Server className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="text-base sm:text-lg font-black text-slate-900">Layer-3 Switching</div>
+                  <p className="text-xs text-slate-500 font-medium">370W PoE+ &amp; 10G SFP+ Uplinks</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3.5 p-3 sm:p-4 rounded-2xl bg-slate-50/80 hover:bg-emerald-50/50 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Activity className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="text-base sm:text-lg font-black text-slate-900">45-Min SLA</div>
+                  <p className="text-xs text-slate-500 font-medium">Rapid Field Dispatch Service</p>
+                </div>
               </div>
             </div>
+          </BlurZoomReveal>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          {/* Z-1 LEFT: CCTV BOX / CARD */}
+          <BlurZoomReveal delay={0} blur={10} scale={0.94} direction="left" xOffset={-60} className="lg:col-span-5 h-full flex flex-col">
+            <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col justify-between group card-zoom-hover h-full">
+              <div className="relative h-64 overflow-hidden bg-slate-100">
+                <img
+                  src="/images/real-cctv-camera.jpg"
+                  alt="4K Ultra-HD Network CCTV Surveillance Camera"
+                  className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                />
+                <div className="absolute top-4 left-4">
+                  <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-black shadow-md uppercase tracking-wider flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5" />
+                    CCTV Surveillance
+                  </span>
+                </div>
+                <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                  4K Ultra-HD • Sony Starvis
+                </div>
+              </div>
 
-            <div className="p-6 sm:p-7 space-y-4 flex-1 flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                    <Shield className="w-5 h-5" />
+              <div className="p-6 sm:p-7 space-y-4 flex-1 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                      <Shield className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900">
+                        CCTV Video Surveillance
+                      </h3>
+                      <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">
+                        Commercial 4K UHD • Starlight Night Vision
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-900">
-                      CCTV Video Surveillance
-                    </h3>
-                    <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">
-                      Commercial 4K UHD • Starlight Night Vision
-                    </p>
+
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Turnkey commercial video surveillance grids engineered for tech parks, logistics warehouses, and commercial establishments with Starlight night clarity and remote mobile monitoring.
+                  </p>
+
+                  <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-700">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>4K Ultra-HD 8MP Sony Starvis Sensors</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>24/7 Starlight Full-Color Night Vision</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>32x Optical Zoom PTZ Auto-Tracking</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>Perimeter Tripwire &amp; Intrusion Detection</span>
+                    </div>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Turnkey commercial video surveillance grids engineered for tech parks, logistics warehouses, and commercial establishments with Starlight night clarity and remote mobile monitoring.
+                {/* READ MORE BUTTON: Expands / Toggles the 6 CCTV Products below */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCctvProducts(!showCctvProducts)}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>{showCctvProducts ? 'Hide CCTV Products' : 'Read More & Explore CCTV Products (6 Items)'}</span>
+                    {showCctvProducts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </BlurZoomReveal>
+
+          {/* Z-1 RIGHT: CCTV INFORMATION & CAPABILITIES */}
+          <BlurZoomReveal delay={120} blur={10} scale={0.94} direction="right" xOffset={60} className="lg:col-span-7 h-full flex flex-col">
+            <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white p-6 sm:p-9 border border-blue-900/40 shadow-xl hover:shadow-2xl hover:shadow-blue-500/20 hover:border-blue-500/60 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-6 h-full">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-sky-300 border border-blue-400/30 flex items-center gap-1.5">
+                    <Shield className="w-3 h-3 text-sky-400" />
+                    DIVISION 01 — VIDEO SURVEILLANCE &amp; SECURITY
+                  </span>
+                  <span className="text-xs text-sky-300 font-bold">
+                    6 OEM Certified Hardware Models
+                  </span>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                  Commercial CCTV Surveillance Grids &amp; Infrastructure
+                </h2>
+
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Nexalus Innovations delivers turnkey design, OEM procurement, and field deployment of certified commercial video surveillance systems. From 4K Starlight bullet and fixed dome cameras to 32x optical zoom PTZ speed domes and 40TB NVR storage arrays, all installations include structured conduit piping, surge protection, and mobile monitoring apps.
                 </p>
 
-                <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-700">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>4K Ultra-HD 8MP Sony Starvis Sensors</span>
+                {/* 6 Technical Specification Badges */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-sky-400 font-extrabold uppercase">Resolution</div>
+                    <div className="font-black text-white mt-0.5">4K Ultra-HD 8MP</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>24/7 Starlight Full-Color Night Vision</span>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-sky-400 font-extrabold uppercase">Night Vision</div>
+                    <div className="font-extrabold text-white mt-0.5">24/7 Starlight Color</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>32x Optical Zoom PTZ Auto-Tracking</span>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-sky-400 font-extrabold uppercase">PTZ Zoom</div>
+                    <div className="font-extrabold text-white mt-0.5">32x Optical Auto-Track</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Perimeter Tripwire &amp; Intrusion Detection</span>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-sky-400 font-extrabold uppercase">Detection</div>
+                    <div className="font-extrabold text-white mt-0.5">Vehicle ANPR &amp; Tripwire</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-sky-400 font-extrabold uppercase">NVR Storage</div>
+                    <div className="font-extrabold text-white mt-0.5">Up to 40TB RAID</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-sky-400 font-extrabold uppercase">Protection</div>
+                    <div className="font-extrabold text-white mt-0.5">IP67 Weatherproof</div>
                   </div>
                 </div>
               </div>
 
-              {/* READ MORE BUTTON: Expands / Toggles the 6 CCTV Products below */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+              <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => setIsQuoteModalOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700 font-bold"
+                >
+                  Get CCTV Site Estimate
+                </Button>
                 <button
                   type="button"
-                  onClick={() => setShowCctvProducts(!showCctvProducts)}
-                  className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  onClick={() => setShowCctvProducts(true)}
+                  className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1 cursor-pointer"
                 >
-                  <span>{showCctvProducts ? 'Hide CCTV Products' : 'Read More & Explore CCTV Products (6 Items)'}</span>
-                  {showCctvProducts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  <span>View Products Catalog Below</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Z-1 RIGHT: CCTV INFORMATION & CAPABILITIES (Slide In Right animation) */}
-          <div className="lg:col-span-7 rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white p-6 sm:p-9 border border-blue-900/40 shadow-xl flex flex-col justify-between space-y-6 animate-slide-right">
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-sky-300 border border-blue-400/30 flex items-center gap-1.5">
-                  <Shield className="w-3 h-3 text-sky-400" />
-                  DIVISION 01 — VIDEO SURVEILLANCE &amp; SECURITY
-                </span>
-                <span className="text-xs text-sky-300 font-bold">
-                  6 OEM Certified Hardware Models
-                </span>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
-                Commercial CCTV Surveillance Grids &amp; Infrastructure
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Nexalus Innovations delivers turnkey design, OEM procurement, and field deployment of certified commercial video surveillance systems. From 4K Starlight bullet and fixed dome cameras to 32x optical zoom PTZ speed domes and 40TB NVR storage arrays, all installations include structured conduit piping, surge protection, and mobile monitoring apps.
-              </p>
-
-              {/* 6 Technical Specification Badges */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-sky-400 font-extrabold uppercase">Resolution</div>
-                  <div className="font-black text-white mt-0.5">4K Ultra-HD 8MP</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-sky-400 font-extrabold uppercase">Night Vision</div>
-                  <div className="font-extrabold text-white mt-0.5">24/7 Starlight Color</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-sky-400 font-extrabold uppercase">PTZ Zoom</div>
-                  <div className="font-extrabold text-white mt-0.5">32x Optical Auto-Track</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-sky-400 font-extrabold uppercase">Detection</div>
-                  <div className="font-extrabold text-white mt-0.5">Vehicle ANPR &amp; Tripwire</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-sky-400 font-extrabold uppercase">NVR Storage</div>
-                  <div className="font-extrabold text-white mt-0.5">Up to 40TB RAID</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-sky-400 font-extrabold uppercase">Protection</div>
-                  <div className="font-extrabold text-white mt-0.5">IP67 Weatherproof</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4">
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => setIsQuoteModalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 font-bold"
-              >
-                Get CCTV Site Estimate
-              </Button>
-              <button
-                type="button"
-                onClick={() => setShowCctvProducts(true)}
-                className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1 cursor-pointer"
-              >
-                <span>View Products Catalog Below</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
+          </BlurZoomReveal>
         </div>
 
         {/* 6 CCTV PRODUCTS GRID (Revealed by Read More Button) */}
@@ -361,163 +371,169 @@ export const NexalusInnovationsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cctvProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
+              {cctvProducts.map((product, idx) => (
+                <ProductCard key={product.id} product={product} index={idx} />
               ))}
             </div>
           </div>
         )}
+        </div>
       </section>
 
       {/* =========================================================================
-          Z-TYPE ARCHITECTURE: SECTION 2 (OPTICAL FIBER BROADBAND & INTERNET)
+          SECTION 4: OPTICAL FIBER BROADBAND & INTERNET (CLEAN WHITE THEME)
           ROW 2: LEFT = FIBER INFO (SLIDE IN LEFT) | RIGHT = FIBER CARD (SLIDE IN RIGHT)
           [REVERSED ZIGZAG ROW]
           ========================================================================= */}
-      <section id="section-internet" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 w-full">
+      <section id="section-internet" className="w-full bg-white py-16 sm:py-24 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          {/* Z-2 LEFT: FIBER INTERNET INFORMATION (Slide In Left animation) */}
-          <div className="lg:col-span-7 rounded-3xl bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 text-white p-6 sm:p-9 border border-teal-900/40 shadow-xl flex flex-col justify-between space-y-6 order-2 lg:order-1 animate-slide-left">
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-400/30 flex items-center gap-1.5">
-                  <Wifi className="w-3 h-3 text-teal-400" />
-                  DIVISION 02 — OPTICAL FIBER BROADBAND &amp; FTTH
-                </span>
-                <span className="text-xs text-teal-300 font-bold">
-                  6 Optical Hardware &amp; Plan Models
-                </span>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
-                High-Speed Optical Fiber Internet, Wi-Fi 6 &amp; Leased Lines
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Ultra-low latency, pure optical fiber to the home (FTTH) and dedicated business leased line solutions. Equipped with cutting-edge Wi-Fi 6 GPON ONT gateways, Tri-band whole-home mesh Wi-Fi systems, and high-gain outdoor repeaters delivering seamless roaming across every square foot.
-              </p>
-
-              {/* 6 Technical Specification Badges */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-teal-400 font-extrabold uppercase">Wi-Fi Tech</div>
-                  <div className="font-black text-white mt-0.5">Wi-Fi 6 (802.11ax)</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-teal-400 font-extrabold uppercase">Throughput</div>
-                  <div className="font-extrabold text-white mt-0.5">Up to 4.8 Gbps</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-teal-400 font-extrabold uppercase">Mesh Roaming</div>
-                  <div className="font-extrabold text-white mt-0.5">6,000 Sq.Ft. Coverage</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-teal-400 font-extrabold uppercase">WAN Port</div>
-                  <div className="font-extrabold text-white mt-0.5">2.5G Multi-Gig Port</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-teal-400 font-extrabold uppercase">Gaming &amp; Ping</div>
-                  <div className="font-extrabold text-white mt-0.5">Low-Latency OFDMA</div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                  <div className="text-[10px] text-teal-400 font-extrabold uppercase">SLA Uptime</div>
-                  <div className="font-extrabold text-white mt-0.5">99.9% Continuous SLA</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4">
-              <Button
-                variant="teal"
-                size="md"
-                onClick={() => setIsQuoteModalOpen(true)}
-                className="font-bold"
-              >
-                Check Fiber Plans &amp; Coverage
-              </Button>
-              <button
-                type="button"
-                onClick={() => setShowInternetProducts(true)}
-                className="text-xs font-bold text-teal-400 hover:text-teal-300 flex items-center gap-1 cursor-pointer"
-              >
-                <span>View Products Catalog Below</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Z-2 RIGHT: FIBER BOX / CARD (Slide In Right animation) */}
-          <div className="lg:col-span-5 rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group order-1 lg:order-2 animate-slide-right">
-            <div className="relative h-64 overflow-hidden bg-slate-100">
-              <img
-                src="/images/products/mesh-wifi-v2.jpg"
-                alt="High-Speed Optical Fiber Internet Gateway &amp; Mesh Wi-Fi"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute top-4 left-4">
-                <span className="px-3 py-1 rounded-full bg-teal-600 text-white text-xs font-black shadow-md uppercase tracking-wider flex items-center gap-1.5">
-                  <Wifi className="w-3.5 h-3.5" />
-                  Optical Fiber Internet
-                </span>
-              </div>
-              <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
-                1 Gbps • Pure FTTH
-              </div>
-            </div>
-
-            <div className="p-6 sm:p-7 space-y-4 flex-1 flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-                    <Wifi className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-900">
-                      Symmetrical Gigabit Fiber Networks
-                    </h3>
-                    <p className="text-[11px] font-bold text-teal-600 uppercase tracking-wider">
-                      Low Latency • Dedicated 1:1 Bandwidth
-                    </p>
-                  </div>
+          {/* Z-2 LEFT: FIBER INTERNET INFORMATION */}
+          <BlurZoomReveal delay={0} blur={10} scale={0.94} direction="left" xOffset={-60} className="lg:col-span-7 h-full flex flex-col order-2 lg:order-1">
+            <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 text-white p-6 sm:p-9 border border-teal-900/40 shadow-xl hover:shadow-2xl hover:shadow-teal-500/20 hover:border-teal-500/60 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-6 h-full">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-400/30 flex items-center gap-1.5">
+                    <Wifi className="w-3 h-3 text-teal-400" />
+                    DIVISION 02 — OPTICAL FIBER BROADBAND &amp; FTTH
+                  </span>
+                  <span className="text-xs text-teal-300 font-bold">
+                    6 Optical Hardware &amp; Plan Models
+                  </span>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Dedicated high-speed fiber internet and GPON optical networking engineered for multi-user commercial sites, enterprises, and heavy data environments.
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                  High-Speed Optical Fiber Internet, Wi-Fi 6 &amp; Leased Lines
+                </h2>
+
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Ultra-low latency, pure optical fiber to the home (FTTH) and dedicated business leased line solutions. Equipped with cutting-edge Wi-Fi 6 GPON ONT gateways, Tri-band whole-home mesh Wi-Fi systems, and high-gain outdoor repeaters delivering seamless roaming across every square foot.
                 </p>
 
-                <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-700">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                    <span>Pure Optical Fiber to the Premises (FTTH)</span>
+                {/* 6 Technical Specification Badges */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-teal-400 font-extrabold uppercase">Wi-Fi Tech</div>
+                    <div className="font-black text-white mt-0.5">Wi-Fi 6 (802.11ax)</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                    <span>Wi-Fi 6 GPON Gigabit Gateway Hardware</span>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-teal-400 font-extrabold uppercase">Throughput</div>
+                    <div className="font-extrabold text-white mt-0.5">Up to 4.8 Gbps</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                    <span>Whole-Premise Mesh Wi-Fi Roaming System</span>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-teal-400 font-extrabold uppercase">Mesh Roaming</div>
+                    <div className="font-extrabold text-white mt-0.5">6,000 Sq.Ft. Coverage</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                    <span>99.9% Uptime Guarantee with Rapid SLA</span>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-teal-400 font-extrabold uppercase">WAN Port</div>
+                    <div className="font-extrabold text-white mt-0.5">2.5G Multi-Gig Port</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-teal-400 font-extrabold uppercase">Gaming &amp; Ping</div>
+                    <div className="font-extrabold text-white mt-0.5">Low-Latency OFDMA</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                    <div className="text-[10px] text-teal-400 font-extrabold uppercase">SLA Uptime</div>
+                    <div className="font-extrabold text-white mt-0.5">99.9% Continuous SLA</div>
                   </div>
                 </div>
               </div>
 
-              {/* READ MORE BUTTON: Expands / Toggles the 6 Fiber Products below */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+              <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                <Button
+                  variant="teal"
+                  size="md"
+                  onClick={() => setIsQuoteModalOpen(true)}
+                  className="font-bold"
+                >
+                  Check Fiber Plans &amp; Coverage
+                </Button>
                 <button
                   type="button"
-                  onClick={() => setShowInternetProducts(!showInternetProducts)}
-                  className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  onClick={() => setShowInternetProducts(true)}
+                  className="text-xs font-bold text-teal-400 hover:text-teal-300 flex items-center gap-1 cursor-pointer"
                 >
-                  <span>{showInternetProducts ? 'Hide Fiber Hardware' : 'Read More & Explore Fiber Products (6 Items)'}</span>
-                  {showInternetProducts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  <span>View Products Catalog Below</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-          </div>
+          </BlurZoomReveal>
+
+          {/* Z-2 RIGHT: FIBER BOX / CARD */}
+          <BlurZoomReveal delay={120} blur={10} scale={0.94} direction="right" xOffset={60} className="lg:col-span-5 h-full flex flex-col order-1 lg:order-2">
+            <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col justify-between group card-zoom-hover h-full">
+              <div className="relative h-64 overflow-hidden bg-slate-100">
+                <img
+                  src="/images/products/mesh-wifi-v2.jpg"
+                  alt="High-Speed Optical Fiber Internet Gateway &amp; Mesh Wi-Fi"
+                  className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                />
+                <div className="absolute top-4 left-4">
+                  <span className="px-3 py-1 rounded-full bg-teal-600 text-white text-xs font-black shadow-md uppercase tracking-wider flex items-center gap-1.5">
+                    <Wifi className="w-3.5 h-3.5" />
+                    Optical Fiber Internet
+                  </span>
+                </div>
+                <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-xs text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                  1 Gbps • Pure FTTH
+                </div>
+              </div>
+
+              <div className="p-6 sm:p-7 space-y-4 flex-1 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+                      <Wifi className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900">
+                        Symmetrical Gigabit Fiber Networks
+                      </h3>
+                      <p className="text-[11px] font-bold text-teal-600 uppercase tracking-wider">
+                        Low Latency • Dedicated 1:1 Bandwidth
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Dedicated high-speed fiber internet and GPON optical networking engineered for multi-user commercial sites, enterprises, and heavy data environments.
+                  </p>
+
+                  <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-700">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                      <span>Pure Optical Fiber to the Premises (FTTH)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                      <span>Wi-Fi 6 GPON Gigabit Gateway Hardware</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                      <span>Whole-Premise Mesh Wi-Fi Roaming System</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                      <span>99.9% Uptime Guarantee with Rapid SLA</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* READ MORE BUTTON: Expands / Toggles the 6 Fiber Products below */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowInternetProducts(!showInternetProducts)}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>{showInternetProducts ? 'Hide Fiber Hardware' : 'Read More & Explore Fiber Products (6 Items)'}</span>
+                    {showInternetProducts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </BlurZoomReveal>
         </div>
 
         {/* 6 OPTICAL FIBER PRODUCTS GRID (Revealed by Read More Button) */}
@@ -538,22 +554,25 @@ export const NexalusInnovationsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {internetProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
+              {internetProducts.map((product, idx) => (
+                <ProductCard key={product.id} product={product} index={idx} />
               ))}
             </div>
           </div>
         )}
+        </div>
       </section>
 
       {/* =========================================================================
-          Z-TYPE ARCHITECTURE: SECTION 3 (ENTERPRISE IT NETWORKING & SWITCHES)
+          SECTION 5: ENTERPRISE IT NETWORKING & SWITCHES (SOFT BLUE THEME)
           ROW 3: LEFT = NETWORK CARD (SLIDE IN LEFT) | RIGHT = NETWORK INFO (SLIDE IN RIGHT)
           ========================================================================= */}
-      <section id="section-networking" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 w-full">
+      <section id="section-networking" className="w-full bg-blue-50/70 py-16 sm:py-24 border-b border-blue-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          {/* Z-3 LEFT: NETWORKING BOX / CARD (Slide In Left animation) */}
-          <div className="lg:col-span-5 rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group animate-slide-left">
+          {/* Z-3 LEFT: NETWORKING BOX / CARD */}
+          <BlurZoomReveal delay={0} blur={10} scale={0.94} direction="left" xOffset={-60} className="lg:col-span-5 h-full flex flex-col">
+            <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col justify-between group card-zoom-hover h-full">
             <div className="relative h-64 overflow-hidden bg-slate-100">
               <img
                 src="/images/rackmount-switches-real.jpg"
@@ -624,9 +643,11 @@ export const NexalusInnovationsPage: React.FC = () => {
               </div>
             </div>
           </div>
+        </BlurZoomReveal>
 
-          {/* Z-3 RIGHT: NETWORKING INFORMATION & CAPABILITIES (Slide In Right animation) */}
-          <div className="lg:col-span-7 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-9 border border-indigo-900/40 shadow-xl flex flex-col justify-between space-y-6 animate-slide-right">
+        {/* Z-3 RIGHT: NETWORKING INFORMATION & CAPABILITIES */}
+        <BlurZoomReveal delay={120} blur={10} scale={0.94} direction="right" xOffset={60} className="lg:col-span-7 h-full flex flex-col">
+          <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-9 border border-indigo-900/40 shadow-xl hover:shadow-2xl hover:shadow-indigo-500/20 hover:border-indigo-500/60 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-6 h-full">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 flex items-center gap-1.5">
@@ -694,7 +715,8 @@ export const NexalusInnovationsPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </BlurZoomReveal>
+      </div>
 
         {/* 6 NETWORKING PRODUCTS GRID (Revealed by Read More Button) */}
         {showNetworkProducts && (
@@ -714,19 +736,21 @@ export const NexalusInnovationsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {networkProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
+              {networkProducts.map((product, idx) => (
+                <ProductCard key={product.id} product={product} index={idx} />
               ))}
             </div>
           </div>
         )}
+        </div>
       </section>
 
       {/* =========================================================================
-          SECTION 4: TECHNICAL OPERATIONS & SITE SURVEY DESK (DEEP MIDNIGHT BLUE)
+          SECTION 6: TECHNICAL OPERATIONS & SITE SURVEY DESK (CLEAN WHITE THEME)
           ========================================================================= */}
-      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-8 sm:p-12 rounded-3xl bg-slate-900 text-white border border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
+      <section className="w-full bg-white py-16 sm:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="p-8 sm:p-12 rounded-3xl bg-slate-900 text-white border border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
           <div className="lg:col-span-6 space-y-5">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-cyan-300 text-xs font-black uppercase tracking-wider border border-blue-400/30">
               <Cpu className="w-3.5 h-3.5 text-cyan-400" />
@@ -789,7 +813,8 @@ export const NexalusInnovationsPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Modal */}
       <QuoteModal

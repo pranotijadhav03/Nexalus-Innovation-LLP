@@ -308,8 +308,8 @@ export const ProductsPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {searchedProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
+              {searchedProducts.map((product, idx) => (
+                <ProductCard key={product.id} product={product} index={idx} />
               ))}
             </div>
           )}
@@ -351,8 +351,8 @@ export const ProductsPage: React.FC = () => {
 
                 {/* 6 CCTV Product Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {cctvProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
+                  {cctvProducts.map((product, idx) => (
+                    <ProductCard key={product.id} product={product} index={idx} />
                   ))}
                 </div>
               </div>
@@ -391,8 +391,8 @@ export const ProductsPage: React.FC = () => {
 
                 {/* 6 Optical Fiber Product Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {internetProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
+                  {internetProducts.map((product, idx) => (
+                    <ProductCard key={product.id} product={product} index={idx} />
                   ))}
                 </div>
               </div>
@@ -431,8 +431,8 @@ export const ProductsPage: React.FC = () => {
 
                 {/* 6 Enterprise Networking Product Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {networkProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
+                  {networkProducts.map((product, idx) => (
+                    <ProductCard key={product.id} product={product} index={idx} />
                   ))}
                 </div>
               </div>

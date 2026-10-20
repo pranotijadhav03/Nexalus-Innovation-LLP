@@ -91,8 +91,8 @@ export const OneBroadbandProductsPage: React.FC = () => {
           </div>
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map(product => (
-              <ProductCard key={product.id} product={product} />
+            {filtered.map((product, idx) => (
+              <ProductCard key={product.id} product={product} index={idx} />
             ))}
           </div>
         ) : (

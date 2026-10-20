@@ -41,10 +41,10 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, variant = 'li
   return (
     <>
       <div
-        className={`rounded-2xl border transition-all duration-300 p-6 sm:p-7 flex flex-col justify-between group hover:-translate-y-1 ${
+        className={`rounded-3xl border transition-all duration-300 p-6 sm:p-7 flex flex-col justify-between group hover:-translate-y-2 cursor-pointer ${
           isDark
-            ? 'bg-slate-900/95 text-white border-slate-800 hover:border-cyan-400/60 shadow-xl shadow-slate-950/50 hover:shadow-cyan-500/10'
-            : 'bg-white text-slate-900 border-slate-200/90 shadow-xs hover:shadow-xl hover:border-blue-300'
+            ? 'bg-slate-900/95 text-white border-slate-800 hover:border-cyan-400 shadow-xl shadow-slate-950/50 hover:shadow-2xl hover:shadow-cyan-500/20'
+            : 'bg-white text-slate-900 border-slate-200/90 shadow-md shadow-slate-200/70 hover:shadow-2xl hover:shadow-blue-500/15 hover:border-blue-400'
         }`}
       >
         <div>
