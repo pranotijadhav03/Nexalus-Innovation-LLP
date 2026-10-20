@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { PublicLayout } from './components/common/PublicLayout';
@@ -72,9 +72,49 @@ import { AmDistributorsProductsPage } from './pages/public/am-distributors/AmDis
 import { AmDistributorsServicesPage } from './pages/public/am-distributors/AmDistributorsServicesPage';
 import { AmDistributorsContactPage } from './pages/public/am-distributors/AmDistributorsContactPage';
 
+const MobileRouteHandler: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Disable browser automatic scroll restoration to ensure fresh view from top
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    const isMobile = window.innerWidth < 768;
+
+    let isReload = false;
+    try {
+      const navEntries = performance.getEntriesByType('navigation');
+      if (navEntries.length > 0) {
+        isReload = (navEntries[0] as PerformanceNavigationTiming).type === 'reload';
+      } else if ((window.performance as any)?.navigation?.type === 1) {
+        isReload = true;
+      }
+    } catch {
+      // ignore
+    }
+
+    const isNewSession = !sessionStorage.getItem('nexalus_session_active');
+    sessionStorage.setItem('nexalus_session_active', 'true');
+
+    // On mobile: after refresh or when reopening the site, always show the home page '/'
+    if (isMobile && (isReload || isNewSession)) {
+      if (location.pathname !== '/' && !location.pathname.startsWith('/admin')) {
+        navigate('/', { replace: true });
+      }
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
+  return null;
+};
+
 function App() {
   return (
     <BrowserRouter>
+      <MobileRouteHandler />
       <AuthProvider>
         <ToastProvider>
           <Routes>

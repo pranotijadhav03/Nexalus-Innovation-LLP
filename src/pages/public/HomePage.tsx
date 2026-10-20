@@ -189,9 +189,9 @@ export const HomePage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/98 via-[#0f2444]/90 via-45% md:via-40% to-transparent pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/80 via-transparent to-[#0a1628]/50 pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-10 sm:py-16 lg:py-20 flex items-center w-full">
-          <div className="max-w-4xl lg:max-w-5xl space-y-3 sm:space-y-5 text-white mr-auto">
-            <h1 className="text-xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white min-h-[1.2em] flex items-center">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-14 sm:py-16 lg:py-20 flex items-center w-full">
+          <div className="max-w-4xl lg:max-w-5xl space-y-4 sm:space-y-5 text-white mr-auto">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white min-h-[1.25em] flex items-center">
               <span className="inline-flex items-center flex-wrap sm:flex-nowrap break-words">
                 <span className="break-words">{typedTitle}</span>
                 <span className="inline-block w-[3px] sm:w-1 h-[0.8em] bg-cyan-400 ml-1.5 animate-pulse rounded-full shrink-0 align-middle" />
