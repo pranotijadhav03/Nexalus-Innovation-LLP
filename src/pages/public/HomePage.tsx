@@ -175,7 +175,7 @@ export const HomePage: React.FC = () => {
       {/* =========================================================================
           SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER (DEEP MIDNIGHT & SERVER MESH)
           ========================================================================= */}
-      <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 min-h-[calc(100vh-5rem)] flex items-center">
+      <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 min-h-0 sm:min-h-[calc(100vh-5rem)] flex items-start sm:items-center">
         {/* Photographic background image showcasing authentic enterprise server rack */}
         <div className="absolute inset-0">
           <img
@@ -189,8 +189,8 @@ export const HomePage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/98 via-[#0f2444]/90 via-45% md:via-40% to-transparent pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/80 via-transparent to-[#0a1628]/50 pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 flex items-center w-full">
-          <div className="max-w-4xl lg:max-w-5xl space-y-5 text-white mr-auto">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-10 sm:py-16 lg:py-20 flex items-center w-full">
+          <div className="max-w-4xl lg:max-w-5xl space-y-3 sm:space-y-5 text-white mr-auto">
             <h1 className="text-xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white min-h-[1.2em] flex items-center">
               <span className="inline-flex items-center flex-wrap sm:flex-nowrap break-words">
                 <span className="break-words">{typedTitle}</span>
@@ -198,7 +198,7 @@ export const HomePage: React.FC = () => {
               </span>
             </h1>
 
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-sky-300 tracking-tight leading-snug">
+            <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-sky-300 tracking-tight leading-snug">
               Internet, Network &amp; CCTV Services
             </p>
 
