@@ -28,7 +28,8 @@ import {
   AuditLog,
   SiteBanner,
   SeoSettings,
-  TeamMember
+  TeamMember,
+  CustomerOrder
 } from '../types';
 import {
   initialBrands,
@@ -62,7 +63,8 @@ const STORAGE_KEYS = {
   USERS: DATA_VERSION + 'nexalus_store_users',
   AUDIT_LOGS: DATA_VERSION + 'nexalus_store_audit_logs',
   SEO: DATA_VERSION + 'nexalus_store_seo',
-  TEAM: DATA_VERSION + 'nexalus_store_team'
+  TEAM: DATA_VERSION + 'nexalus_store_team',
+  ORDERS: DATA_VERSION + 'nexalus_store_orders'
 };
 
 // Generic Local Storage Helpers
@@ -1436,4 +1438,90 @@ export async function deleteTeamMember(id: string): Promise<boolean> {
   notifyDataUpdate('team');
   return true;
 }
+
+// ----------------------------------------------------
+// CUSTOMER E-COMMERCE ORDERS
+// ----------------------------------------------------
+export async function createOrder(
+  orderData: Omit<CustomerOrder, 'id' | 'status' | 'createdAt' | 'updatedAt'>
+): Promise<{ success: boolean; orderId: string; order: CustomerOrder }> {
+  const orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+  const now = new Date().toISOString();
+
+  const newOrder: CustomerOrder = {
+    ...orderData,
+    id: orderId,
+    status: 'confirmed',
+    createdAt: now,
+    updatedAt: now
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'orders', orderId), newOrder);
+    } catch (e) {
+      console.warn('Firestore createOrder error:', e);
+    }
+  }
+
+  const currentOrders = getLocalItem<CustomerOrder[]>(STORAGE_KEYS.ORDERS, []);
+  const updatedOrders = [newOrder, ...currentOrders.filter(o => o.id !== orderId)];
+  setLocalItem(STORAGE_KEYS.ORDERS, updatedOrders);
+  notifyDataUpdate(STORAGE_KEYS.ORDERS);
+
+  // Automatically register in CRM Enquiries table so admin sees the customer order immediately!
+  const firstItem = newOrder.items[0];
+  const itemsSummary = newOrder.items.map(i => `${i.productName} (Qty: ${i.quantity})`).join(', ');
+
+  await submitEnquiry({
+    brandId: 'nexalus-innovations',
+    websiteId: 'nexalus-innovations',
+    websiteName: 'Nexalus Online Store',
+    customerName: newOrder.customerName,
+    phone: newOrder.phone,
+    email: newOrder.email || 'customer@store.nexalus',
+    enquiryType: 'quote',
+    productOrServiceName: `ONLINE ORDER [${orderId}]: ${firstItem?.productName || 'Equipment'} • Total: ₹${newOrder.totalAmount.toLocaleString('en-IN')}`,
+    location: `${newOrder.city}, PIN ${newOrder.pincode}`,
+    pincode: newOrder.pincode,
+    sourcePage: 'Online Store Checkout',
+    message: `Payment: ${newOrder.paymentMethod.toUpperCase()} | Address: ${newOrder.address}, ${newOrder.city} - ${newOrder.pincode} | Items: ${itemsSummary} | Notes: ${newOrder.orderNotes || 'None'}`
+  }).catch(() => null);
+
+  await addAuditLog(
+    'NEW_ORDER_PLACED',
+    `Online purchase order #${orderId} placed by ${newOrder.customerName} (${newOrder.phone}) for ₹${newOrder.totalAmount.toLocaleString('en-IN')}`,
+    'nexalus-innovations'
+  );
+
+  return {
+    success: true,
+    orderId,
+    order: newOrder
+  };
+}
+
+export async function getOrders(): Promise<CustomerOrder[]> {
+  let allOrders: CustomerOrder[] = [];
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const snapshot = await getDocs(collection(db, 'orders'));
+      if (!snapshot.empty) {
+        allOrders = snapshot.docs.map(d => d.data() as CustomerOrder);
+      }
+    } catch (e) {
+      console.warn('Firestore getOrders error:', e);
+    }
+  }
+
+  if (allOrders.length === 0) {
+    allOrders = getLocalItem<CustomerOrder[]>(STORAGE_KEYS.ORDERS, []);
+  } else {
+    setLocalItem(STORAGE_KEYS.ORDERS, allOrders);
+  }
+
+  return allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
 

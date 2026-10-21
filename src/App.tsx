@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { CartProvider } from './context/CartContext';
+import { CartDrawer } from './components/common/CartDrawer';
 import { PublicLayout } from './components/common/PublicLayout';
 
 // Public Corporate Pages
@@ -117,7 +119,9 @@ function App() {
       <MobileRouteHandler />
       <AuthProvider>
         <ToastProvider>
-          <Routes>
+          <CartProvider>
+            <CartDrawer />
+            <Routes>
             {/* Corporate Parent Portal Public Layout Routes */}
             <Route element={<PublicLayout />}>
               <Route path="/" element={<HomePage />} />
@@ -188,6 +192,7 @@ function App() {
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>
+          </CartProvider>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

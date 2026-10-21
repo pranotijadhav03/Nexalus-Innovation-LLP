@@ -222,3 +222,33 @@ export interface TeamMember {
   updatedAt?: string;
 }
 
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface CustomerOrder {
+  id: string;
+  items: {
+    productId: string;
+    productName: string;
+    modelNumber: string;
+    price: number;
+    quantity: number;
+    image?: string;
+  }[];
+  totalAmount: number;
+  customerName: string;
+  phone: string;
+  email?: string;
+  address: string;
+  city: string;
+  pincode: string;
+  paymentMethod: 'cod' | 'upi' | 'bank_transfer';
+  orderNotes?: string;
+  status: 'pending' | 'confirmed' | 'dispatched' | 'delivered' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+
