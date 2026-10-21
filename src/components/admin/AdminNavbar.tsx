@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { AdminConsoleMode } from './AdminLayout';
 import {
@@ -56,11 +57,51 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
     };
   }, [isDropdownOpen]);
 
+  const navigate = useNavigate();
+
   const handleConsoleSelect = (mode: AdminConsoleMode) => {
     if (onConsoleChange) {
       onConsoleChange(mode);
     }
+    if (mode === 'master') {
+      navigate('/admin');
+    } else {
+      navigate(`/admin?console=${mode}`);
+    }
   };
+
+  const getConsoleInfo = () => {
+    if (activeConsole === 'nexalus-innovations') {
+      return {
+        title: 'Nexalus Innovations Admin',
+        roleBadge: 'Tech & Fiber Console',
+        badgeColor: 'bg-indigo-100 text-indigo-800',
+        gradient: 'from-blue-600 via-indigo-600 to-cyan-500',
+        icon: <Shield className="w-4 h-4 text-white" />,
+        largeIcon: <Shield className="w-5 h-5 text-white" />
+      };
+    }
+    if (activeConsole === 'am-distributors') {
+      return {
+        title: 'A.M. Distributors Admin',
+        roleBadge: 'Chiplun Depot Console',
+        badgeColor: 'bg-teal-100 text-teal-800',
+        gradient: 'from-teal-600 via-teal-700 to-emerald-500',
+        icon: <Building className="w-4 h-4 text-white" />,
+        largeIcon: <Building className="w-5 h-5 text-white" />
+      };
+    }
+    return {
+      title: currentUser?.displayName || 'Nexalus Master Admin',
+      roleBadge: isSuperAdmin ? 'Corporate Super Admin' : 'Admin Console',
+      badgeColor: 'bg-blue-100 text-blue-800',
+      gradient: 'from-blue-700 via-indigo-600 to-cyan-500',
+      icon: <span className="font-black text-sm">{currentUser?.displayName?.charAt(0) || 'N'}</span>,
+      largeIcon: <span className="font-black text-base">{currentUser?.displayName?.charAt(0) || 'N'}</span>
+    };
+  };
+
+  const consoleInfo = getConsoleInfo();
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs h-16 flex items-center justify-between px-3 sm:px-6 gap-2">
@@ -128,18 +169,18 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
           >
             {/* Admin Avatar */}
             <div
-              className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center font-black text-sm shadow-md shadow-blue-500/20 ring-2 ring-blue-500/20 shrink-0"
+              className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${consoleInfo.gradient} text-white flex items-center justify-center font-black text-sm shadow-md ring-2 ring-blue-500/20 shrink-0`}
             >
-              {currentUser?.displayName?.charAt(0) || 'N'}
+              {consoleInfo.icon}
             </div>
 
-            {/* Admin Name & Email */}
+            {/* Admin Name & Console Role */}
             <div className="text-left hidden sm:block min-w-0">
               <div className="text-xs font-black text-slate-900 leading-tight truncate max-w-[180px]">
-                {currentUser?.displayName || 'Nexalus Master Admin'}
+                {consoleInfo.title}
               </div>
-              <div className="text-[10px] text-slate-500 font-medium truncate max-w-[180px]">
-                {currentUser?.email}
+              <div className="text-[10px] text-slate-500 font-semibold truncate max-w-[180px]">
+                {consoleInfo.roleBadge}
               </div>
             </div>
 
@@ -156,25 +197,19 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
             <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 p-3 space-y-2.5 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
               {/* Account Identity Header */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
-                  {currentUser?.displayName?.charAt(0) || 'N'}
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${consoleInfo.gradient} text-white flex items-center justify-center font-black text-base shadow-sm shrink-0`}>
+                  {consoleInfo.largeIcon}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-black text-slate-900 truncate">
-                    {currentUser?.displayName || 'Nexalus Master Admin'}
+                    {consoleInfo.title}
                   </div>
                   <div className="text-[11px] text-slate-500 font-medium truncate">
                     {currentUser?.email}
                   </div>
                   <div className="mt-1 flex items-center gap-1">
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                      {isSuperAdmin
-                        ? 'Corporate Super Admin'
-                        : isInnovationsAdmin
-                        ? 'Nexalus Innovations Admin'
-                        : isAmAdmin
-                        ? 'A.M. Distributors Admin'
-                        : 'Staff Admin'}
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${consoleInfo.badgeColor}`}>
+                      {consoleInfo.roleBadge}
                     </span>
                   </div>
                 </div>

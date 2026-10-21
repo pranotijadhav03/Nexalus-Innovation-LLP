@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   Cpu,
   Menu,
@@ -23,6 +24,7 @@ import { QuoteModal } from '../common/QuoteModal';
 import { ScrollToTop } from '../common/PublicLayout';
 
 export const NexalusInnovationsLayout: React.FC = () => {
+  const { isAuthenticated, isSuperAdmin, isInnovationsAdmin } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
   const location = useLocation();
@@ -78,7 +80,17 @@ export const NexalusInnovationsLayout: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px] text-slate-400">
+          <div className="flex items-center gap-3 text-[11px] text-slate-400">
+            {isAuthenticated && (isSuperAdmin || isInnovationsAdmin) && (
+              <Link
+                to="/admin?console=nexalus-innovations"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-xs transition-colors"
+                title="Open Nexalus Innovations Tech Admin Panel"
+              >
+                <Shield className="w-3.5 h-3.5 text-cyan-300" />
+                <span>Tech Admin Panel</span>
+              </Link>
+            )}
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block animate-ping" />
               <span className="text-cyan-300 font-semibold">24/7 Operations NOC SLA</span>

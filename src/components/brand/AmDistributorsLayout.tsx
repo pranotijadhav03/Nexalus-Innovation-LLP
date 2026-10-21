@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   Truck,
   Droplets,
@@ -22,6 +23,7 @@ import { QuoteModal } from '../common/QuoteModal';
 import { ScrollToTop } from '../common/PublicLayout';
 
 export const AmDistributorsLayout: React.FC = () => {
+  const { isAuthenticated, isSuperAdmin, isAmAdmin } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
   const location = useLocation();
@@ -75,6 +77,22 @@ export const AmDistributorsLayout: React.FC = () => {
             <span className="hidden md:inline text-emerald-200 font-medium">
               Chiplun Regional Cold-Chain &amp; Logistics Hub
             </span>
+          </div>
+
+          <div className="flex items-center gap-3 text-[11px] text-slate-400">
+            {isAuthenticated && (isSuperAdmin || isAmAdmin) && (
+              <Link
+                to="/admin?console=am-distributors"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors"
+                title="Open A.M. Distributors Chiplun Admin Panel"
+              >
+                <Building2 className="w-3.5 h-3.5 text-amber-300" />
+                <span>Chiplun Admin Panel</span>
+              </Link>
+            )}
+            <Link to="/brands/am-distributors/contact" className="hover:text-emerald-300 transition-colors">
+              Depot Desk
+            </Link>
           </div>
         </div>
       </div>
