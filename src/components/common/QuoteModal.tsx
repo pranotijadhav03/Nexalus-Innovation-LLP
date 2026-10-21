@@ -45,6 +45,12 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
       return;
     }
 
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      error('Invalid Mobile Number', 'Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Determine website info
@@ -132,10 +138,11 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
               required
             />
             <Input
-              label="Phone Number"
-              placeholder="+91 98450 12345"
+              label="Phone Number (10 digits)"
+              placeholder="10-digit mobile number"
               value={phone}
-              onChange={e => setPhone(e.target.value)}
+              onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              maxLength={10}
               required
             />
           </div>

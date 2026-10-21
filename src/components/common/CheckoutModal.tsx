@@ -67,6 +67,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      toastError('Invalid Mobile Number', 'Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    if (pincode.replace(/\D/g, '').length !== 6) {
+      toastError('Invalid PIN Code', 'Please enter a valid 6-digit PIN code.');
+      return;
+    }
+
     if (items.length === 0) {
       toastError('Cart Empty', 'Please select at least one product to purchase.');
       return;
@@ -270,17 +281,32 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Mobile / WhatsApp Number <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="10-digit mobile number"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white font-mono"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Mobile / WhatsApp Number <span className="text-rose-500">*</span>
+                  </label>
+                  <span className={`text-[10px] font-mono ${phone.length === 10 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                    {phone.length}/10 digits
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 font-mono select-none">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    inputMode="numeric"
+                    maxLength={10}
+                    placeholder="10-digit mobile number"
+                    value={phone}
+                    onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setPhone(digits);
+                    }}
+                    className="w-full text-xs pl-12 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white font-mono tracking-wider"
+                  />
+                </div>
               </div>
 
               <div className="sm:col-span-2">
@@ -312,15 +338,22 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Pincode <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Pincode <span className="text-rose-500">*</span>
+                  </label>
+                  <span className={`text-[10px] font-mono ${pincode.length === 6 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                    {pincode.length}/6 digits
+                  </span>
+                </div>
                 <input
                   type="text"
                   required
+                  inputMode="numeric"
+                  maxLength={6}
                   placeholder="6-digit PIN"
                   value={pincode}
-                  onChange={e => setPincode(e.target.value)}
+                  onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white font-mono"
                 />
               </div>

@@ -25,6 +25,12 @@ export const ContactPage: React.FC = () => {
       return;
     }
 
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      error('Invalid Mobile Number', 'Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const effectiveWebsiteId = division === 'am-distributors'
@@ -208,10 +214,11 @@ export const ContactPage: React.FC = () => {
                       required
                     />
                     <Input
-                      label="Contact Number *"
-                      placeholder="+91 98450 12345"
+                      label="Contact Number (10 digits) *"
+                      placeholder="10-digit mobile number"
                       value={phone}
-                      onChange={e => setPhone(e.target.value)}
+                      onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      maxLength={10}
                       required
                     />
                   </div>
