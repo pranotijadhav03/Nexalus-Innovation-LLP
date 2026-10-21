@@ -8,6 +8,7 @@ import {
   Wifi,
   Wrench,
   Inbox,
+  ShoppingBag,
   Shield,
   Clock,
   CheckCircle2,
@@ -139,6 +140,16 @@ export const AdminDashboardPage: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <Link
+              to="/admin/orders"
+              className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800">Store Orders</span>
+            </Link>
+
+            <Link
               to="/admin/enquiries"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
             >
@@ -228,6 +239,16 @@ export const AdminDashboardPage: React.FC = () => {
                 <Layers className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold text-slate-800">Categories</span>
+            </Link>
+
+            <Link
+              to="/admin/orders"
+              className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800">Store Orders</span>
             </Link>
 
             <Link
@@ -559,6 +580,16 @@ export const AdminDashboardPage: React.FC = () => {
             </Link>
 
             <Link
+              to="/admin/orders"
+              className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800">Store Orders</span>
+            </Link>
+
+            <Link
               to="/admin/enquiries"
               className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-amber-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
             >
@@ -591,6 +622,16 @@ export const AdminDashboardPage: React.FC = () => {
               </h2>
               <p className="text-xs text-slate-500">CCTV installation, fiber broadband &amp; networking requests</p>
             </div>
+            <Link
+              to="/admin/orders"
+              className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800">Store Orders</span>
+            </Link>
+
             <Link
               to="/admin/enquiries"
               className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
@@ -784,6 +825,16 @@ export const AdminDashboardPage: React.FC = () => {
             </Link>
 
             <Link
+              to="/admin/orders"
+              className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800">Store Orders</span>
+            </Link>
+
+            <Link
               to="/admin/enquiries"
               className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-amber-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
             >
@@ -826,6 +877,16 @@ export const AdminDashboardPage: React.FC = () => {
               </h2>
               <p className="text-xs text-slate-500">Mineral water wholesale orders, dairy supplies &amp; fleet inquiries</p>
             </div>
+            <Link
+              to="/admin/orders"
+              className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800">Store Orders</span>
+            </Link>
+
             <Link
               to="/admin/enquiries"
               className="text-xs font-bold text-teal-600 hover:text-teal-800 flex items-center gap-1"

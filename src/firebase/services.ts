@@ -1524,4 +1524,71 @@ export async function getOrders(): Promise<CustomerOrder[]> {
   return allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+export async function updateOrderStatus(
+  id: string,
+  status: CustomerOrder['status'],
+  orderNotes?: string
+): Promise<CustomerOrder | null> {
+  const now = new Date().toISOString();
+  const orders = getLocalItem<CustomerOrder[]>(STORAGE_KEYS.ORDERS, []);
+  const index = orders.findIndex(o => o.id === id);
+  if (index === -1) return null;
+
+  const current = orders[index];
+  const updated: CustomerOrder = {
+    ...current,
+    status,
+    orderNotes: orderNotes !== undefined ? orderNotes : current.orderNotes,
+    updatedAt: now
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await updateDoc(doc(db, 'orders', id), {
+        status,
+        orderNotes: updated.orderNotes,
+        updatedAt: now
+      });
+    } catch (e) {
+      console.warn('Firestore updateOrderStatus error:', e);
+    }
+  }
+
+  orders[index] = updated;
+  setLocalItem(STORAGE_KEYS.ORDERS, orders);
+  notifyDataUpdate(STORAGE_KEYS.ORDERS);
+
+  await addAuditLog(
+    'UPDATE_ORDER_STATUS',
+    `Updated purchase order #${id} status to '${status}'`,
+    'nexalus-innovations'
+  );
+  return updated;
+}
+
+export async function deleteOrder(id: string): Promise<boolean> {
+  const orders = getLocalItem<CustomerOrder[]>(STORAGE_KEYS.ORDERS, []);
+  const target = orders.find(o => o.id === id);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await deleteDoc(doc(db, 'orders', id));
+    } catch (e) {
+      console.warn('Firestore deleteOrder error:', e);
+    }
+  }
+
+  const updated = orders.filter(o => o.id !== id);
+  setLocalItem(STORAGE_KEYS.ORDERS, updated);
+  notifyDataUpdate(STORAGE_KEYS.ORDERS);
+
+  await addAuditLog(
+    'DELETE_ORDER',
+    `Removed purchase order record #${id} (${target?.customerName || 'Customer'})`,
+    'nexalus-innovations'
+  );
+  return true;
+}
+
+
 

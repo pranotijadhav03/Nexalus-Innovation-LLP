@@ -43,6 +43,7 @@ import { IttiNetworkingHomePage } from './pages/public/itti-networking/IttiNetwo
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
 import { AdminProductsPage } from './pages/admin/AdminProductsPage';
 import { AdminPlansPage } from './pages/admin/AdminPlansPage';
 import { AdminServicesPage } from './pages/admin/AdminServicesPage';
@@ -171,6 +172,7 @@ function App() {
             {/* Protected Admin Back-Office */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboardPage />} />
+              <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="products" element={<AdminProductsPage />} />
               <Route path="plans" element={<AdminPlansPage />} />
               <Route path="services" element={<AdminServicesPage />} />
