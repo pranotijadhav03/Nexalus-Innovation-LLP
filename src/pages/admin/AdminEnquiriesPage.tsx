@@ -94,6 +94,12 @@ export const AdminEnquiriesPage: React.FC = () => {
         filteredEnqs = filteredEnqs.filter(e => e.status === statusFilter);
       }
 
+      filteredEnqs.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
+
       setEnquiries(filteredEnqs);
     } finally {
       setIsLoading(false);
@@ -169,18 +175,24 @@ export const AdminEnquiriesPage: React.FC = () => {
   ).length;
   const amCount = allEnquiriesRaw.filter(e => e.websiteId === 'am-distributors' || e.brandId === 'am-distributors').length;
 
-  const filtered = enquiries.filter(e => {
-    const query = search.toLowerCase();
-    return (
-      e.id.toLowerCase().includes(query) ||
-      e.customerName.toLowerCase().includes(query) ||
-      e.phone.toLowerCase().includes(query) ||
-      e.email.toLowerCase().includes(query) ||
-      (e.sourcePage && e.sourcePage.toLowerCase().includes(query)) ||
-      (e.productOrServiceName && e.productOrServiceName.toLowerCase().includes(query)) ||
-      (e.location && e.location.toLowerCase().includes(query))
-    );
-  });
+  const filtered = enquiries
+    .filter(e => {
+      const query = search.toLowerCase();
+      return (
+        e.id.toLowerCase().includes(query) ||
+        e.customerName.toLowerCase().includes(query) ||
+        e.phone.toLowerCase().includes(query) ||
+        e.email.toLowerCase().includes(query) ||
+        (e.sourcePage && e.sourcePage.toLowerCase().includes(query)) ||
+        (e.productOrServiceName && e.productOrServiceName.toLowerCase().includes(query)) ||
+        (e.location && e.location.toLowerCase().includes(query))
+      );
+    })
+    .sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
 
   return (
     <div className="space-y-6">

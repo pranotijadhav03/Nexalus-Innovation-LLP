@@ -54,6 +54,11 @@ export const AdminOrdersPage: React.FC = () => {
     setIsLoading(true);
     try {
       const allOrders = await getOrders(activeBrandFilter);
+      allOrders.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
       setOrders(allOrders);
     } catch (e: any) {
       toastError('Load Failed', e.message || 'Could not fetch orders.');
@@ -131,6 +136,10 @@ export const AdminOrdersPage: React.FC = () => {
     const matchesPayment = paymentFilter === 'all' || o.paymentMethod === paymentFilter;
 
     return matchesSearch && matchesStatus && matchesPayment;
+  }).sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
   });
 
   const formatPrice = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;

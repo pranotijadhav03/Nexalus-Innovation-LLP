@@ -731,12 +731,21 @@ export async function getEnquiries(scope?: string, statusFilter?: string): Promi
 
   if (isFirebaseConfigured && db) {
     try {
-      const snapshot = await getDocs(collection(db, 'enquiries'));
+      const q = query(collection(db, 'enquiries'), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
       if (!snapshot.empty) {
         allEnquiries = snapshot.docs.map(d => d.data() as Enquiry);
       }
     } catch (e) {
-      console.warn('Firestore getEnquiries error:', e);
+      console.warn('Firestore getEnquiries with orderBy error, falling back:', e);
+      try {
+        const snapshot = await getDocs(collection(db, 'enquiries'));
+        if (!snapshot.empty) {
+          allEnquiries = snapshot.docs.map(d => d.data() as Enquiry);
+        }
+      } catch (err) {
+        console.warn('Firestore getEnquiries fallback error:', err);
+      }
     }
   }
 
@@ -746,12 +755,14 @@ export async function getEnquiries(scope?: string, statusFilter?: string): Promi
     // Merge local items with Firestore to prevent losing offline submissions, deduping by id
     const local = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, []);
     const seen = new Set(allEnquiries.map(e => e.id));
+    const extraLocal: Enquiry[] = [];
     for (const item of local) {
       if (!seen.has(item.id)) {
-        allEnquiries.push(item);
+        extraLocal.push(item);
         seen.add(item.id);
       }
     }
+    allEnquiries = [...extraLocal, ...allEnquiries];
     setLocalItem(STORAGE_KEYS.ENQUIRIES, allEnquiries);
   }
 
@@ -787,7 +798,12 @@ export async function getEnquiries(scope?: string, statusFilter?: string): Promi
     enquiries = enquiries.filter(e => e.status === statusFilter);
   }
 
-  return enquiries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // Strictly sort descending by createdAt (newest at index 0 / top)
+  return enquiries.sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
 }
 
 export async function submitEnquiry(
@@ -846,8 +862,12 @@ export async function submitEnquiry(
   }
 
   const enquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
-  // Ensure no duplicate IDs in local storage
-  const deduped = [newEnquiry, ...enquiries.filter(e => e.id !== id)];
+  // Ensure no duplicate IDs in local storage, strictly prepending new enquiry at top
+  const deduped = [newEnquiry, ...enquiries.filter(e => e.id !== id)].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
   setLocalItem(STORAGE_KEYS.ENQUIRIES, deduped);
   notifyDataUpdate(STORAGE_KEYS.ENQUIRIES);
 
@@ -1488,7 +1508,11 @@ export async function createOrder(
   }
 
   const currentOrders = getLocalItem<CustomerOrder[]>(STORAGE_KEYS.ORDERS, []);
-  const updatedOrders = [newOrder, ...currentOrders.filter(o => o.id !== orderId)];
+  const updatedOrders = [newOrder, ...currentOrders.filter(o => o.id !== orderId)].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
   setLocalItem(STORAGE_KEYS.ORDERS, updatedOrders);
   notifyDataUpdate(STORAGE_KEYS.ORDERS);
 
@@ -1529,34 +1553,52 @@ export async function getOrders(brandFilter?: BrandId | 'all'): Promise<Customer
 
   if (isFirebaseConfigured && db) {
     try {
-      const snapshot = await getDocs(collection(db, 'orders'));
+      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
       if (!snapshot.empty) {
         allOrders = snapshot.docs.map(d => d.data() as CustomerOrder);
       }
     } catch (e) {
-      console.warn('Firestore getOrders error:', e);
+      console.warn('Firestore getOrders with orderBy error, falling back:', e);
+      try {
+        const snapshot = await getDocs(collection(db, 'orders'));
+        if (!snapshot.empty) {
+          allOrders = snapshot.docs.map(d => d.data() as CustomerOrder);
+        }
+      } catch (err) {
+        console.warn('Firestore getOrders fallback error:', err);
+      }
     }
   }
 
-  if (allOrders.length === 0) {
-    allOrders = getLocalItem<CustomerOrder[]>(STORAGE_KEYS.ORDERS, []);
+  // Merge local items with Firestore so no offline/local order is lost, putting local orders at top
+  const local = getLocalItem<CustomerOrder[]>(STORAGE_KEYS.ORDERS, []);
+  const seen = new Set(allOrders.map(o => o.id));
+  const extraLocal: CustomerOrder[] = [];
+  for (const item of local) {
+    if (!seen.has(item.id)) {
+      extraLocal.push(item);
+      seen.add(item.id);
+    }
   }
+  allOrders = [...extraLocal, ...allOrders];
 
   // Ensure every order has a resolved brandId
-  let hasBrandUpdates = false;
   allOrders = allOrders.map(o => {
     if (!o.brandId) {
       o.brandId = resolveOrderBrandId(o);
-      hasBrandUpdates = true;
     }
     return o;
   });
 
-  if (hasBrandUpdates || allOrders.length > 0) {
-    setLocalItem(STORAGE_KEYS.ORDERS, allOrders);
-  }
+  // Strictly sort descending by createdAt (newest at index 0 / top)
+  const sorted = allOrders.sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
 
-  const sorted = allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  setLocalItem(STORAGE_KEYS.ORDERS, sorted);
 
   if (brandFilter && brandFilter !== 'all') {
     return sorted.filter(o => {
