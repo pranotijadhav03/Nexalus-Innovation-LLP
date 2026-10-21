@@ -10,11 +10,11 @@ import {
   Zap,
   Truck,
   ShieldCheck,
-  Layers,
   Plus,
   Minus,
   Check,
-  Camera
+  Camera,
+  Package
 } from 'lucide-react';
 
 interface ProductDetailModalProps {
@@ -67,6 +67,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   };
 
   const specList = Object.entries(product.specifications || {});
+  const keySpecs = specList.slice(0, 3);
 
   return (
     <>
@@ -75,14 +76,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         onClose={onClose}
         title={product.name}
         subtitle={`Model: ${product.modelNumber} • Category: ${product.categoryName}`}
-        maxWidth="3xl"
+        maxWidth="4xl"
       >
         <div className="space-y-6">
-          {/* Main Top Grid (Image Left + Info & Buttons Right) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            {/* Left Column: Product Image & Gallery */}
+          {/* Main Top Grid (Image Left + Info & Actions Right) - Balanced 50/50 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-start">
+            {/* Left Column: Product Image & Trust Highlights */}
             <div className="space-y-3">
-              <div className="relative aspect-4/3 bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 flex items-center justify-center p-3">
+              <div className="relative aspect-4/3 bg-gradient-to-br from-slate-50 to-slate-100/70 rounded-2xl overflow-hidden border border-slate-200 shadow-2xs flex items-center justify-center p-4">
                 {imgError ? (
                   <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-100 rounded-xl">
                     <Camera className="w-12 h-12 text-slate-400 mb-2" />
@@ -99,7 +100,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         setImgError(true);
                       }
                     }}
-                    className="w-full h-full object-contain rounded-xl"
+                    className="w-full h-full object-contain rounded-xl drop-shadow-sm"
                   />
                 )}
               </div>
@@ -124,102 +125,114 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </div>
               )}
 
-              {/* Trust Badges under Image */}
+              {/* Trust Badges under Image - Balanced Width */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-3 gap-2 text-center text-[10px] text-slate-600">
                 <div className="flex flex-col items-center gap-1 font-medium">
-                  <Truck className="w-4 h-4 text-blue-600" />
+                  <Truck className="w-4 h-4 text-blue-600 shrink-0" />
                   <span>Free Dispatch</span>
                 </div>
                 <div className="flex flex-col items-center gap-1 font-medium">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>1-Yr Warranty</span>
                 </div>
                 <div className="flex flex-col items-center gap-1 font-medium">
-                  <Check className="w-4 h-4 text-indigo-600" />
+                  <Check className="w-4 h-4 text-indigo-600 shrink-0" />
                   <span>GST Tax Invoice</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Product Info + Add to Cart & Buy Now Buttons */}
-            <div className="space-y-4">
-              {/* Badges */}
+            {/* Right Column: Clean, Perfectly Proportioned Product Details & Buying Actions */}
+            <div className="space-y-4 pt-1">
+              {/* Badges in a single clean row */}
               <div className="flex flex-wrap items-center gap-2">
                 <BrandBadge brandId={product.brandId} />
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                  <Layers className="w-3 h-3" />
-                  {product.categoryName}
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  <CheckCircle2 className="w-3 h-3" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                   {product.availability === 'in_stock' ? 'In Stock • Ready to Dispatch' : 'Available on Order'}
                 </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono text-slate-600 bg-slate-100 border border-slate-200">
+                  <Package className="w-3 h-3 text-slate-400" />
+                  {product.modelNumber}
+                </span>
               </div>
 
-              {/* Title & Model */}
-              <div>
-                <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
-                  Model: {product.modelNumber}
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 leading-snug">
-                  {product.name}
-                </h2>
-              </div>
-
-              {/* Price Box */}
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/70 via-slate-50 to-indigo-50/50 border border-blue-200/80">
+              {/* Price Card */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/60 via-slate-50 to-indigo-50/40 border border-blue-100 shadow-2xs">
                 <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                  Special Price
+                  Special Commercial Price
                 </div>
-                <div className="flex items-baseline gap-2 mt-0.5">
+                <div className="flex items-baseline gap-2.5 mt-1">
                   <span className="text-2xl sm:text-3xl font-black text-slate-900">
                     {formatPrice(product.price)}
                   </span>
                   <span className="text-xs text-slate-500 font-medium">
-                    (Inclusive of all taxes)
+                    (Inclusive of all taxes &amp; GST)
                   </span>
                 </div>
               </div>
 
-              {/* Quantity Selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 block">
-                  Quantity:
-                </label>
+              {/* Quick Specification Highlights (Adds substance to balance the image) */}
+              {keySpecs.length > 0 && (
+                <div className="space-y-1.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200 text-xs text-slate-700">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">
+                    Key Features:
+                  </span>
+                  {keySpecs.map(([k, v]) => (
+                    <div key={k} className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500 font-medium">{k}:</span>
+                      <span className="font-bold text-slate-800 truncate max-w-[200px]">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Quantity Selector + Subtotal in one balanced row */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">
+                    Select Quantity:
+                  </label>
+                  <span className="text-xs text-slate-600">
+                    Subtotal: <strong className="text-slate-900 font-black text-sm">{formatPrice((product.price || 0) * quantity)}</strong>
+                  </span>
+                </div>
+
                 <div className="flex items-center gap-3">
-                  <div className="inline-flex items-center bg-slate-100 rounded-xl border border-slate-300 p-1">
+                  <div className="inline-flex items-center bg-white rounded-xl border border-slate-300 shadow-2xs p-1">
                     <button
                       type="button"
                       onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-700 hover:bg-white transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Decrease quantity"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="w-10 text-center font-bold text-slate-900 font-mono text-sm">
+                    <span className="w-12 text-center font-bold text-slate-900 font-mono text-sm">
                       {quantity}
                     </span>
                     <button
                       type="button"
                       onClick={() => setQuantity(q => q + 1)}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-700 hover:bg-white transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                      title="Increase quantity"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
-
-                  <span className="text-xs text-slate-500">
-                    Subtotal: <strong className="text-slate-900 font-mono">{formatPrice((product.price || 0) * quantity)}</strong>
+                  <span className="text-[11px] text-slate-500">
+                    Unit Price: {formatPrice(product.price)}
                   </span>
                 </div>
               </div>
 
-              {/* ADD TO CART & BUY NOW BUTTONS */}
+              {/* E-Commerce Buttons: Add to Cart + Buy Now */}
               <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {/* 1. Add to Cart Button */}
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-slate-900/20 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+                  className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-slate-900/15 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
                 >
                   <ShoppingCart className="w-4 h-4" />
                   <span>Add to Cart</span>
@@ -237,18 +250,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
 
               {/* Quick dispatch note */}
-              <p className="text-[11px] text-slate-500 text-center pt-1">
+              <p className="text-[11px] text-slate-500 text-center pt-0.5">
                 ⚡ Express delivery dispatched from Sangli &amp; Chiplun within 24 hours.
               </p>
             </div>
           </div>
 
-          {/* Product Description */}
+          {/* Product Overview & Description (Clean full width box) */}
           <div className="space-y-2 pt-4 border-t border-slate-200">
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Product Overview &amp; Information
             </h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-wrap bg-slate-50/60 p-4 rounded-xl border border-slate-200/80">
               {product.description}
             </p>
           </div>
@@ -257,7 +270,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           {specList.length > 0 && (
             <div className="space-y-3 pt-4 border-t border-slate-200">
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <span>Technical Specifications</span>
+                <span>Complete Technical Specifications</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                   {specList.length} parameters
                 </span>
