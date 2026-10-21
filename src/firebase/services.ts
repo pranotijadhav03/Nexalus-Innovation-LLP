@@ -741,8 +741,8 @@ export async function getEnquiries(scope?: string, statusFilter?: string): Promi
   if (allEnquiries.length === 0) {
     allEnquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
   } else {
-    // Merge local items with Firestore to prevent losing submissions, deduping by id
-    const local = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
+    // Merge local items with Firestore to prevent losing offline submissions, deduping by id
+    const local = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, []);
     const seen = new Set(allEnquiries.map(e => e.id));
     for (const item of local) {
       if (!seen.has(item.id)) {
@@ -906,13 +906,15 @@ export async function updateEnquiryStatus(
 }
 
 export async function deleteEnquiry(id: string): Promise<boolean> {
-  const enquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
+  const enquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, []);
   const target = enquiries.find(e => e.id === id);
-  if (!target) return false;
 
   if (isFirebaseConfigured && db) {
     try {
       await deleteDoc(doc(db, 'enquiries', id));
+      if (target?.websiteId) {
+        await deleteDoc(doc(db, 'websites', target.websiteId, 'enquiries', id));
+      }
     } catch (e) {
       console.warn('Firestore deleteEnquiry error:', e);
     }
@@ -920,7 +922,9 @@ export async function deleteEnquiry(id: string): Promise<boolean> {
 
   const updated = enquiries.filter(e => e.id !== id);
   setLocalItem(STORAGE_KEYS.ENQUIRIES, updated);
-  await addAuditLog('DELETE_ENQUIRY', `Removed enquiry record #${id}`, target.brandId === 'general' ? undefined : target.brandId);
+  notifyDataUpdate(STORAGE_KEYS.ENQUIRIES);
+
+  await addAuditLog('DELETE_ENQUIRY', `Removed enquiry record #${id}`, target?.brandId === 'general' ? undefined : target?.brandId);
   return true;
 }
 

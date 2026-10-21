@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { ProductDetailModal } from './ProductDetailModal';
 import { Product } from '../../types';
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
@@ -20,6 +20,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   direction = 'auto',
   delay
 }) => {
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const isAm = product.brandId === 'am-distributors';
@@ -79,7 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         }`}>
           {/* Image & Badge Header */}
           {isAm && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-400 z-20 pointer-events-none" />}
-          <Link to={detailPath} className="relative aspect-4/3 bg-slate-100 overflow-hidden block cursor-pointer">
+          <div onClick={() => setIsDetailOpen(true)} className="relative aspect-4/3 bg-slate-100 overflow-hidden block cursor-pointer">
           {hasError ? (
             <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex flex-col items-center justify-center p-4 text-center">
               <Camera className="w-10 h-10 text-slate-400 mb-2 opacity-60" />
@@ -103,7 +104,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             />
           )}
 
-        </Link>
+          </div>
 
         {/* Content Body */}
         <div className="p-5 flex-1 flex flex-col justify-between">
@@ -112,7 +113,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               Model: {product.modelNumber}
             </div>
             <h3 className={`font-bold text-slate-900 ${isAm ? 'group-hover:text-teal-600' : 'group-hover:text-blue-600'} transition-colors line-clamp-2 leading-snug`}>
-              <Link to={detailPath}>{product.name}</Link>
+              <span onClick={() => setIsDetailOpen(true)} className="cursor-pointer hover:underline">{product.name}</span>
             </h3>
             <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
               {product.description}
@@ -160,8 +161,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </a>
 
               {/* View Product Details Button */}
-              <Link
-                to={detailPath}
+              <button type="button" onClick={() => setIsDetailOpen(true)}
+
                 className={`inline-flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-colors ${
                   isAm
                     ? 'text-teal-700 hover:text-teal-800 hover:bg-teal-50 border border-teal-200'
@@ -171,7 +172,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               >
                 <span>View More</span>
                 <ArrowRight className="w-3 h-3" />
-              </Link>
+              </button>
 
               {/* Enquire Modal Button */}
               <button
@@ -190,6 +191,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       </div>
     </BlurZoomReveal>
+
+      <ProductDetailModal
+        product={product}
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        onOpenQuote={() => setIsQuoteOpen(true)}
+      />
 
       <QuoteModal
         isOpen={isQuoteOpen}

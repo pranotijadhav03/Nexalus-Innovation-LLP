@@ -102,6 +102,12 @@ export const AdminEnquiriesPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
+
+    const handleUpdate = () => {
+      loadData();
+    };
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    return () => window.removeEventListener('nexalus_data_update', handleUpdate);
   }, [brandFilter, statusFilter]);
 
   const openDetailModal = (enq: Enquiry) => {
@@ -317,7 +323,8 @@ export const AdminEnquiriesPage: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
               <tr>
-                <th className="py-3.5 px-4">Ticket</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Ticket</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Enquiry Date</th>
                 <th className="py-3.5 px-4">Customer</th>
                 <th className="py-3.5 px-4">Origin Website &amp; Page</th>
                 <th className="py-3.5 px-4">Requirement / Location</th>
@@ -328,7 +335,7 @@ export const AdminEnquiriesPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     No inquiries found matching this website or status filter.
                   </td>
                 </tr>
@@ -345,10 +352,32 @@ export const AdminEnquiriesPage: React.FC = () => {
 
                   return (
                     <tr key={enq.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                        #{enq.id}
-                        <div className="text-[10px] text-slate-400 font-sans font-normal">
-                          {new Date(enq.createdAt).toLocaleDateString()}
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 text-[11px] border border-slate-200 inline-block">
+                          #{enq.id}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>
+                            {new Date(enq.createdAt).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 font-mono">
+                          <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>
+                            {new Date(enq.createdAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                          </span>
                         </div>
                       </td>
 
@@ -505,6 +534,30 @@ export const AdminEnquiriesPage: React.FC = () => {
                 <span className="font-bold text-slate-400 uppercase text-[10px] block">Premises Location / PIN</span>
                 <span className="font-semibold text-slate-800">
                   {selectedEnquiry.location} {selectedEnquiry.pincode ? `(${selectedEnquiry.pincode})` : ''}
+                </span>
+              </div>
+              <div>
+                <span className="font-bold text-slate-400 uppercase text-[10px] block">Enquiry Date &amp; Time</span>
+                <span className="font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
+                  <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                  {new Date(selectedEnquiry.createdAt).toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                  })}
+                  <span className="text-slate-400 font-normal">•</span>
+                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                  {new Date(selectedEnquiry.createdAt).toLocaleTimeString('en-IN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  })}
+                </span>
+              </div>
+              <div>
+                <span className="font-bold text-slate-400 uppercase text-[10px] block">Enquiry Ticket ID</span>
+                <span className="font-mono font-bold text-slate-900 mt-0.5 block">
+                  #{selectedEnquiry.id}
                 </span>
               </div>
             </div>
