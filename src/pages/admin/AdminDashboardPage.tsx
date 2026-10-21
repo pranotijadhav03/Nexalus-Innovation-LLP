@@ -232,7 +232,7 @@ export const AdminDashboardPage: React.FC = () => {
             </Link>
 
             <Link
-              to="/admin/categories"
+              to="/admin/products?tab=categories"
               className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -805,7 +805,7 @@ export const AdminDashboardPage: React.FC = () => {
             </Link>
 
             <Link
-              to="/admin/categories"
+              to="/admin/products?tab=categories"
               className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">

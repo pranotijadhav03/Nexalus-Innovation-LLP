@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -8,6 +8,8 @@ import {
   updateProduct,
   deleteProduct,
   getCategories,
+  createCategory,
+  deleteCategory,
   uploadImageFile
 } from '../../firebase/services';
 import { Product, ProductCategory, BrandId } from '../../types';
@@ -20,19 +22,19 @@ import {
   Search,
   Edit2,
   Trash2,
-  Image as ImageIcon,
-  CheckCircle2,
-  Eye,
-  EyeOff,
-  Sparkles,
+  Package,
+  Layers,
   Upload,
   X
 } from 'lucide-react';
 
 export const AdminProductsPage: React.FC = () => {
-  const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, brandScope, canManageBrand } = useAuth();
+  const { isSuperAdmin, isAmAdmin, brandScope, canManageBrand } = useAuth();
   const { activeBrandFilter } = useOutletContext<{ activeBrandFilter: BrandId | 'all' }>();
   const { success, error } = useToast();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'categories' ? 'categories' : 'products';
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -40,11 +42,11 @@ export const AdminProductsPage: React.FC = () => {
   const [selectedCatFilter, setSelectedCatFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modal State
+  // Product Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Form State
+  // Product Form State
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [modelNumber, setModelNumber] = useState('');
@@ -64,8 +66,18 @@ export const AdminProductsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Delete Confirmation
+  // Delete Product Confirmation
   const [deleteCandidate, setDeleteCandidate] = useState<Product | null>(null);
+
+  // Category State
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [catName, setCatName] = useState('');
+  const [catBrandId, setCatBrandId] = useState<BrandId>(
+    isAmAdmin ? 'am-distributors' : 'nexalus-innovations'
+  );
+  const [catDescription, setCatDescription] = useState('');
+  const [isCatSaving, setIsCatSaving] = useState(false);
+  const [deleteCatCandidate, setDeleteCatCandidate] = useState<ProductCategory | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -85,6 +97,15 @@ export const AdminProductsPage: React.FC = () => {
     loadData();
   }, [activeBrandFilter]);
 
+  const handleTabChange = (tab: 'products' | 'categories') => {
+    if (tab === 'categories') {
+      setSearchParams({ tab: 'categories' });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  // Product actions
   const openCreateModal = () => {
     setEditingProduct(null);
     setName('');
@@ -155,7 +176,6 @@ export const AdminProductsPage: React.FC = () => {
       return;
     }
 
-    // Role safety check
     if (!canManageBrand(brandId)) {
       error('Permission Denied', 'You cannot create or update products for this brand.');
       return;
@@ -209,7 +229,7 @@ export const AdminProductsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteProduct = async () => {
     if (!deleteCandidate) return;
     try {
       await deleteProduct(deleteCandidate.id);
@@ -221,7 +241,50 @@ export const AdminProductsPage: React.FC = () => {
     }
   };
 
-  const filtered = products.filter(p => {
+  // Category actions
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!catName.trim()) return;
+
+    if (!canManageBrand(catBrandId)) {
+      error('Access Denied', 'Cannot create category outside your assigned brand.');
+      return;
+    }
+
+    setIsCatSaving(true);
+    try {
+      const catSlug = catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      await createCategory({
+        name: catName,
+        brandId: catBrandId,
+        slug: catSlug,
+        description: catDescription
+      });
+      success('Category Created', `${catName} created successfully.`);
+      setIsCatModalOpen(false);
+      setCatName('');
+      setCatDescription('');
+      loadData();
+    } catch (err: any) {
+      error('Create Failed', err.message);
+    } finally {
+      setIsCatSaving(false);
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!deleteCatCandidate) return;
+    try {
+      await deleteCategory(deleteCatCandidate.id);
+      success('Category Deleted', `${deleteCatCandidate.name} was removed.`);
+      setDeleteCatCandidate(null);
+      loadData();
+    } catch (err: any) {
+      error('Delete Failed', err.message);
+    }
+  };
+
+  const filteredProducts = products.filter(p => {
     const matchesSearch =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.modelNumber.toLowerCase().includes(search.toLowerCase());
@@ -234,139 +297,275 @@ export const AdminProductsPage: React.FC = () => {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Product Management
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <span>Products &amp; Categories</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage CCTV cameras, video recorders, and networking equipment with live Firestore synchronization.
+            Manage your hardware catalog, technical specifications, prices, and classification categories in one place.
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={openCreateModal}
-          icon={<Plus className="w-4 h-4" />}
+        <div className="flex items-center gap-2">
+          {activeTab === 'products' ? (
+            <Button
+              variant="primary"
+              onClick={openCreateModal}
+              icon={<Plus className="w-4 h-4" />}
+            >
+              Add New Product
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={() => {
+                setCatBrandId(isAmAdmin ? 'am-distributors' : 'nexalus-innovations');
+                setIsCatModalOpen(true);
+              }}
+              icon={<Plus className="w-4 h-4" />}
+            >
+              Add Category
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs Navigation */}
+      <div className="flex border-b border-slate-200 gap-2 bg-white px-2 pt-1 rounded-t-2xl shadow-xs">
+        <button
+          type="button"
+          onClick={() => handleTabChange('products')}
+          className={`flex items-center gap-2 py-3 px-4 font-bold text-xs border-b-2 transition-all cursor-pointer ${
+            activeTab === 'products'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
         >
-          Add New Product
-        </Button>
+          <Package className="w-4 h-4" />
+          <span>Products Catalog ({products.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleTabChange('categories')}
+          className={`flex items-center gap-2 py-3 px-4 font-bold text-xs border-b-2 transition-all cursor-pointer ${
+            activeTab === 'categories'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Product Categories ({categories.length})</span>
+        </button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
-        <div className="w-full md:w-80">
-          <Input
-            placeholder="Search by model or product name..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            icon={<Search className="w-4 h-4" />}
-          />
+      {/* TAB 1: PRODUCTS CATALOG */}
+      {activeTab === 'products' && (
+        <div className="space-y-4">
+          {/* Filter and Search Bar */}
+          <div className="p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+            <div className="w-full md:w-80">
+              <Input
+                placeholder="Search by model or product name..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                icon={<Search className="w-4 h-4" />}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+              <select
+                className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700 font-medium cursor-pointer"
+                value={selectedCatFilter}
+                onChange={e => setSelectedCatFilter(e.target.value)}
+              >
+                <option value="all">All Categories ({products.length})</option>
+                {categories.map(c => {
+                  const catCount = products.filter(p => p.categoryId === c.id).length;
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({catCount})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+
+          {/* Products Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th className="py-3.5 px-4">Product / Model</th>
+                    <th className="py-3.5 px-4">Brand</th>
+                    <th className="py-3.5 px-4">Category</th>
+                    <th className="py-3.5 px-4">Est. Price</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-slate-400">
+                        Loading products catalog...
+                      </td>
+                    </tr>
+                  ) : filteredProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-slate-400">
+                        No products found matching your filter. Click "Add New Product" to create one.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProducts.map(product => (
+                      <tr key={product.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={product.images[0] || '/images/products/cp-v34g.jpg'}
+                              alt=""
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                if (target.src !== '/images/products/cp-v34g.jpg') {
+                                  target.src = '/images/products/cp-v34g.jpg';
+                                }
+                              }}
+                              className="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-bold text-slate-900 truncate max-w-xs">
+                                {product.name}
+                              </div>
+                              <div className="text-[11px] font-mono text-slate-500">
+                                {product.modelNumber}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <BrandBadge brandId={product.brandId} size="sm" />
+                        </td>
+
+                        <td className="py-3.5 px-4 text-slate-600 font-medium">
+                          {product.categoryName || 'General'}
+                        </td>
+
+                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                          {product.price ? `₹${product.price.toLocaleString('en-IN')}` : 'Inquiry'}
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              product.published
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}
+                          >
+                            {product.published ? 'Published' : 'Draft'}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => openEditModal(product)}
+                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              title="Edit Product"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteCandidate(product)}
+                              className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Product"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
+      )}
 
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
-          <select
-            className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700"
-            value={selectedCatFilter}
-            onChange={e => setSelectedCatFilter(e.target.value)}
-          >
-            <option value="all">All Categories</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name} ({c.brandId})
-              </option>
-            ))}
-          </select>
+      {/* TAB 2: PRODUCT CATEGORIES */}
+      {activeTab === 'categories' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th className="py-3.5 px-4">Category Name</th>
+                    <th className="py-3.5 px-4">Operating Company</th>
+                    <th className="py-3.5 px-4">Description</th>
+                    <th className="py-3.5 px-4">Total Products</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-400">
+                        Loading categories...
+                      </td>
+                    </tr>
+                  ) : categories.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-400">
+                        No categories found. Click "Add Category" above to create your first category.
+                      </td>
+                    </tr>
+                  ) : (
+                    categories.map(cat => {
+                      const count = products.filter(p => p.categoryId === cat.id).length;
+                      return (
+                        <tr key={cat.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3.5 px-4 font-bold text-slate-900">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
+                              <span>{cat.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <BrandBadge brandId={cat.brandId} size="sm" />
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600">
+                            {cat.description || '—'}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                              {count} {count === 1 ? 'Product' : 'Products'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              onClick={() => setDeleteCatCandidate(cat)}
+                              className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Category"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Products Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
-              <tr>
-                <th className="py-3.5 px-4">Product / Model</th>
-                <th className="py-3.5 px-4">Brand</th>
-                <th className="py-3.5 px-4">Category</th>
-                <th className="py-3.5 px-4">Est. Price</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.map(product => (
-                <tr key={product.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={product.images[0] || '/images/products/cp-v34g.jpg'}
-                        alt=""
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          if (target.src !== '/images/products/cp-v34g.jpg') {
-                            target.src = '/images/products/cp-v34g.jpg';
-                          }
-                        }}
-                        className="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <div className="font-bold text-slate-900 truncate max-w-xs">
-                          {product.name}
-                        </div>
-                        <div className="text-[11px] font-mono text-slate-500">
-                          {product.modelNumber}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <BrandBadge brandId={product.brandId} size="sm" />
-                  </td>
-
-                  <td className="py-3.5 px-4 text-slate-600">
-                    {product.categoryName}
-                  </td>
-
-                  <td className="py-3.5 px-4 font-bold text-slate-900">
-                    {product.price ? `₹${product.price.toLocaleString('en-IN')}` : 'Inquiry'}
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        product.published
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {product.published ? 'Published' : 'Draft'}
-                    </span>
-                  </td>
-
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        onClick={() => openEditModal(product)}
-                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit Product"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteCandidate(product)}
-                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                        title="Delete Product"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
 
       {/* Create / Edit Product Modal */}
       <Modal
@@ -421,11 +620,23 @@ export const AdminProductsPage: React.FC = () => {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Category
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Category
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCatBrandId(brandId);
+                    setIsCatModalOpen(true);
+                  }}
+                  className="text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                >
+                  + New Category
+                </button>
+              </div>
               <select
-                className="block w-full rounded-lg border border-slate-300 text-sm px-3.5 py-2.5 bg-white"
+                className="block w-full rounded-lg border border-slate-300 text-sm px-3.5 py-2.5 bg-white cursor-pointer"
                 value={categoryId}
                 onChange={e => setCategoryId(e.target.value)}
               >
@@ -498,7 +709,7 @@ export const AdminProductsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSpecs([...specs, { key: '', value: '' }])}
-                className="text-xs font-bold text-blue-600 hover:text-blue-800"
+                className="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
               >
                 + Add Spec Row
               </button>
@@ -530,7 +741,7 @@ export const AdminProductsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setSpecs(specs.filter((_, i) => i !== idx))}
-                    className="p-1 text-slate-400 hover:text-rose-600"
+                    className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -575,7 +786,7 @@ export const AdminProductsPage: React.FC = () => {
         </form>
       </Modal>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Product Confirmation Dialog */}
       <Modal
         isOpen={!!deleteCandidate}
         onClose={() => setDeleteCandidate(null)}
@@ -590,7 +801,82 @@ export const AdminProductsPage: React.FC = () => {
             <Button variant="outline" size="sm" onClick={() => setDeleteCandidate(null)}>
               Cancel
             </Button>
-            <Button variant="danger" size="sm" onClick={handleDelete}>
+            <Button variant="danger" size="sm" onClick={handleDeleteProduct}>
+              Confirm Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add Category Modal */}
+      <Modal
+        isOpen={isCatModalOpen}
+        onClose={() => setIsCatModalOpen(false)}
+        title="Add Product Category"
+        maxWidth="sm"
+      >
+        <form onSubmit={handleCreateCategory} className="space-y-4">
+          <Input
+            label="Category Name *"
+            placeholder="e.g. PTZ Cameras or WiFi Routers"
+            value={catName}
+            onChange={e => setCatName(e.target.value)}
+            required
+          />
+
+          {isSuperAdmin ? (
+            <Select
+              label="Operating Company *"
+              value={catBrandId}
+              onChange={e => setCatBrandId(e.target.value as any)}
+              options={[
+                { value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' },
+                { value: 'am-distributors', label: 'A.M. Distributors Chiplun (Cold-Chain & Logistics)' }
+              ]}
+            />
+          ) : (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Operating Company
+              </label>
+              <div className="p-2.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-800">
+                {catBrandId === 'am-distributors' ? 'A.M. Distributors Chiplun' : 'Nexalus Innovations'} (Role Locked)
+              </div>
+            </div>
+          )}
+
+          <TextArea
+            label="Description"
+            placeholder="Brief purpose of this category..."
+            rows={2}
+            value={catDescription}
+            onChange={e => setCatDescription(e.target.value)}
+          />
+
+          <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <Button type="submit" variant="primary" isLoading={isCatSaving} className="w-full sm:w-auto justify-center font-bold">
+              Save Category
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Category Confirmation Dialog */}
+      <Modal
+        isOpen={!!deleteCatCandidate}
+        onClose={() => setDeleteCatCandidate(null)}
+        title="Confirm Category Deletion"
+        maxWidth="sm"
+      >
+        <div className="space-y-4 text-xs text-slate-600">
+          <p>
+            Are you sure you want to delete <strong className="text-slate-900">{deleteCatCandidate?.name}</strong>?
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setDeleteCatCandidate(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleDeleteCategory}>
               Confirm Delete
             </Button>
           </div>

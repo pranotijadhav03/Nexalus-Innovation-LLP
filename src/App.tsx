@@ -50,7 +50,6 @@ import { AdminServicesPage } from './pages/admin/AdminServicesPage';
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage';
 import { AdminEnquiriesPage } from './pages/admin/AdminEnquiriesPage';
 import { AdminServiceAreasPage } from './pages/admin/AdminServiceAreasPage';
-import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminFaqsPage } from './pages/admin/AdminFaqsPage';
 import { AdminContentPage } from './pages/admin/AdminContentPage';
 import { AdminReportsPage } from './pages/admin/AdminReportsPage';
@@ -179,7 +178,7 @@ function App() {
               <Route path="projects" element={<AdminProjectsPage />} />
               <Route path="enquiries" element={<AdminEnquiriesPage />} />
               <Route path="service-areas" element={<AdminServiceAreasPage />} />
-              <Route path="categories" element={<AdminCategoriesPage />} />
+              <Route path="categories" element={<Navigate to="/admin/products?tab=categories" replace />} />
               <Route path="faqs" element={<AdminFaqsPage />} />
               <Route path="content" element={<AdminContentPage />} />
               <Route path="team" element={<AdminTeamPage />} />
