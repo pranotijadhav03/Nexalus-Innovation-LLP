@@ -229,6 +229,7 @@ export interface CartItem {
 
 export interface CustomerOrder {
   id: string;
+  brandId?: BrandId;
   items: {
     productId: string;
     productName: string;
@@ -236,6 +237,7 @@ export interface CustomerOrder {
     price: number;
     quantity: number;
     image?: string;
+    brandId?: BrandId;
   }[];
   totalAmount: number;
   customerName: string;

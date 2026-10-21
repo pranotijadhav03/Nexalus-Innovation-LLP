@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import {
   getOrders,
   updateOrderStatus,
-  deleteOrder
+  deleteOrder,
+  resolveOrderBrandId
 } from '../../firebase/services';
 import { CustomerOrder } from '../../types';
 import { Input, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
+import { BrandBadge } from '../../components/common/BrandBadge';
+import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import {
   ShoppingBag,
   Search,
@@ -30,6 +34,8 @@ import {
 
 export const AdminOrdersPage: React.FC = () => {
   const { success, error: toastError } = useToast();
+  const outletCtx = useOutletContext<AdminOutletContext>();
+  const activeBrandFilter = outletCtx?.activeBrandFilter || 'all';
 
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +53,7 @@ export const AdminOrdersPage: React.FC = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const allOrders = await getOrders();
+      const allOrders = await getOrders(activeBrandFilter);
       setOrders(allOrders);
     } catch (e: any) {
       toastError('Load Failed', e.message || 'Could not fetch orders.');
@@ -64,7 +70,7 @@ export const AdminOrdersPage: React.FC = () => {
     };
     window.addEventListener('nexalus_data_update', handleUpdate);
     return () => window.removeEventListener('nexalus_data_update', handleUpdate);
-  }, []);
+  }, [activeBrandFilter]);
 
   const openDetailModal = (order: CustomerOrder) => {
     setSelectedOrder(order);
@@ -135,10 +141,20 @@ export const AdminOrdersPage: React.FC = () => {
       <div>
         <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
           <ShoppingBag className="w-6 h-6 text-blue-600" />
-          Online Store Customer Orders
+          <span>
+            {activeBrandFilter === 'nexalus-innovations'
+              ? 'Nexalus Innovations Orders'
+              : activeBrandFilter === 'am-distributors'
+              ? 'A.M. Distributors Chiplun Orders'
+              : 'Online Store Customer Orders'}
+          </span>
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          Live customer purchases placed via Add to Cart &amp; Buy Now with real-time Firebase Firestore sync.
+          {activeBrandFilter === 'am-distributors'
+            ? 'Wholesale mineral water, dairy products and cold-chain logistics customer orders.'
+            : activeBrandFilter === 'nexalus-innovations'
+            ? 'CCTV security surveillance, optical fiber and networking store orders.'
+            : 'Live customer purchases placed via Add to Cart & Buy Now with real-time Firebase Firestore sync.'}
         </p>
       </div>
 
@@ -248,6 +264,7 @@ export const AdminOrdersPage: React.FC = () => {
               <tr>
                 <th className="py-3.5 px-4 whitespace-nowrap">Order ID</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">Order Date</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Division</th>
                 <th className="py-3.5 px-4">Customer</th>
                 <th className="py-3.5 px-4">Delivery City &amp; Address</th>
                 <th className="py-3.5 px-4">Items Summary</th>
@@ -260,7 +277,7 @@ export const AdminOrdersPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                  <td colSpan={10} className="py-12 text-center text-slate-400">
                     No orders found matching the filter or search query.
                   </td>
                 </tr>
@@ -268,6 +285,7 @@ export const AdminOrdersPage: React.FC = () => {
                 filteredOrders.map(order => {
                   const firstItem = order.items[0];
                   const extraItemsCount = order.items.length - 1;
+                  const orderBrand = order.brandId || resolveOrderBrandId(order);
 
                   return (
                     <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
@@ -300,6 +318,11 @@ export const AdminOrdersPage: React.FC = () => {
                             })}
                           </span>
                         </div>
+                      </td>
+
+                      {/* Division Badge */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <BrandBadge brandId={orderBrand} size="sm" />
                       </td>
 
                       {/* Customer Info */}
@@ -445,6 +468,10 @@ export const AdminOrdersPage: React.FC = () => {
           <div className="space-y-6">
             {/* Status & Payment Banner */}
             <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-blue-900 uppercase text-[10px]">Division:</span>
+                <BrandBadge brandId={selectedOrder.brandId || resolveOrderBrandId(selectedOrder)} size="sm" />
+              </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-blue-900 uppercase text-[10px]">Payment Mode:</span>
                 <span className="font-black text-blue-700 bg-white px-2 py-0.5 rounded-md border border-blue-200 uppercase">

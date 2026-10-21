@@ -85,14 +85,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      const primaryBrandId = items[0]?.product?.brandId || 'nexalus-innovations';
+
       const orderPayload = {
+        brandId: primaryBrandId,
         items: items.map(i => ({
           productId: i.product.id,
           productName: i.product.name,
           modelNumber: i.product.modelNumber,
           price: i.product.price || 0,
           quantity: i.quantity,
-          image: i.product.images?.[0]
+          image: i.product.images?.[0],
+          brandId: i.product.brandId || primaryBrandId
         })),
         totalAmount,
         customerName: customerName.trim(),

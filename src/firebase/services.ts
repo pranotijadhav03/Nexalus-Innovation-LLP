@@ -1442,14 +1442,37 @@ export async function deleteTeamMember(id: string): Promise<boolean> {
 // ----------------------------------------------------
 // CUSTOMER E-COMMERCE ORDERS
 // ----------------------------------------------------
+export function resolveOrderBrandId(order: CustomerOrder): BrandId {
+  if (order.brandId) return order.brandId;
+  const itemBrand = order.items?.find(i => i.brandId)?.brandId;
+  if (itemBrand) return itemBrand;
+
+  const text = (order.items || []).map(i => `${i.productName} ${i.modelNumber}`).join(' ').toLowerCase();
+  if (
+    text.includes('water') ||
+    text.includes('dairy') ||
+    text.includes('ice cream') ||
+    text.includes('milk') ||
+    text.includes('cold') ||
+    text.includes('chiplun') ||
+    text.includes('distributor')
+  ) {
+    return 'am-distributors';
+  }
+  return 'nexalus-innovations';
+}
+
 export async function createOrder(
   orderData: Omit<CustomerOrder, 'id' | 'status' | 'createdAt' | 'updatedAt'>
 ): Promise<{ success: boolean; orderId: string; order: CustomerOrder }> {
   const orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
   const now = new Date().toISOString();
 
+  const brandId: BrandId = orderData.brandId || orderData.items[0]?.brandId || 'nexalus-innovations';
+
   const newOrder: CustomerOrder = {
     ...orderData,
+    brandId,
     id: orderId,
     status: 'confirmed',
     createdAt: now,
@@ -1474,9 +1497,9 @@ export async function createOrder(
   const itemsSummary = newOrder.items.map(i => `${i.productName} (Qty: ${i.quantity})`).join(', ');
 
   await submitEnquiry({
-    brandId: 'nexalus-innovations',
-    websiteId: 'nexalus-innovations',
-    websiteName: 'Nexalus Online Store',
+    brandId,
+    websiteId: brandId,
+    websiteName: brandId === 'am-distributors' ? 'A.M. Distributors Chiplun Depot' : 'Nexalus Online Store',
     customerName: newOrder.customerName,
     phone: newOrder.phone,
     email: newOrder.email || 'customer@store.nexalus',
@@ -1491,7 +1514,7 @@ export async function createOrder(
   await addAuditLog(
     'NEW_ORDER_PLACED',
     `Online purchase order #${orderId} placed by ${newOrder.customerName} (${newOrder.phone}) for ₹${newOrder.totalAmount.toLocaleString('en-IN')}`,
-    'nexalus-innovations'
+    brandId
   );
 
   return {
@@ -1501,7 +1524,7 @@ export async function createOrder(
   };
 }
 
-export async function getOrders(): Promise<CustomerOrder[]> {
+export async function getOrders(brandFilter?: BrandId | 'all'): Promise<CustomerOrder[]> {
   let allOrders: CustomerOrder[] = [];
 
   if (isFirebaseConfigured && db) {
@@ -1517,11 +1540,35 @@ export async function getOrders(): Promise<CustomerOrder[]> {
 
   if (allOrders.length === 0) {
     allOrders = getLocalItem<CustomerOrder[]>(STORAGE_KEYS.ORDERS, []);
-  } else {
+  }
+
+  // Ensure every order has a resolved brandId
+  let hasBrandUpdates = false;
+  allOrders = allOrders.map(o => {
+    if (!o.brandId) {
+      o.brandId = resolveOrderBrandId(o);
+      hasBrandUpdates = true;
+    }
+    return o;
+  });
+
+  if (hasBrandUpdates || allOrders.length > 0) {
     setLocalItem(STORAGE_KEYS.ORDERS, allOrders);
   }
 
-  return allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const sorted = allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  if (brandFilter && brandFilter !== 'all') {
+    return sorted.filter(o => {
+      const b = o.brandId || resolveOrderBrandId(o);
+      if (brandFilter === 'am-distributors') {
+        return b === 'am-distributors';
+      }
+      return b !== 'am-distributors';
+    });
+  }
+
+  return sorted;
 }
 
 export async function updateOrderStatus(
