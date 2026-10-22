@@ -2,31 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { BrandHeader } from '../../../components/brand/BrandHeader';
 import { ProductCard } from '../../../components/brand/ProductCard';
 import { Input } from '../../../components/common/Input';
-import { getProducts, getCategories } from '../../../firebase/services';
+import { getProducts, getCategories, getCachedProducts } from '../../../firebase/services';
 import { Product, ProductCategory } from '../../../types';
 import { Search } from 'lucide-react';
 
 export const OneBroadbandProductsPage: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => getCachedProducts('one-broadband'));
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const load = async () => {
+    try {
+      const [prods, cats] = await Promise.all([
+        getProducts('one-broadband', true),
+        getCategories('one-broadband')
+      ]);
+      setProducts(prods);
+      setCategories(cats);
+    } catch (e) {
+      console.warn('Failed to load One Broadband products:', e);
+    }
+  };
 
   useEffect(() => {
-    async function load() {
-      try {
-        const [prods, cats] = await Promise.all([
-          getProducts('one-broadband', true),
-          getCategories('one-broadband')
-        ]);
-        setProducts(prods);
-        setCategories(cats);
-      } finally {
-        setIsLoading(false);
-      }
-    }
     load();
+
+    const handleUpdate = () => {
+      const fresh = getCachedProducts('one-broadband');
+      if (fresh && fresh.length > 0) setProducts(fresh);
+      load();
+    };
+
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    window.addEventListener('focus', handleUpdate);
+    document.addEventListener('visibilitychange', handleUpdate);
+
+    return () => {
+      window.removeEventListener('nexalus_data_update', handleUpdate);
+      window.removeEventListener('focus', handleUpdate);
+      document.removeEventListener('visibilitychange', handleUpdate);
+    };
   }, []);
 
   const filtered = products.filter(p => {
