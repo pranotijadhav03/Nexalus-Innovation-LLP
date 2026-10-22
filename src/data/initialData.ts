@@ -1784,6 +1784,52 @@ export const initialFaqs: FAQ[] = [
     answer: 'Yes, our 100% optical fiber (FTTH) network delivers symmetrical speeds, meaning your upload speed matches your download speed. This is crucial for smooth video conferencing, cloud file backups, online streaming, and enterprise server syncing.',
     order: 6,
     published: true
+  },
+  // A.M. Distributors Chiplun FAQs
+  {
+    id: 'faq-am-1',
+    brandId: 'am-distributors',
+    category: 'Packaged Mineral Water',
+    question: 'What are the minimum order quantities for daily 20-Litre packaged mineral water delivery in Chiplun?',
+    answer: 'For commercial offices, institutions, banquet halls, and residential colonies across Chiplun, Kherdi MIDC, and Khed, our minimum doorstep delivery route order is 5 hermetic jars per delivery drop, or an active weekly subscription contract with scheduled route refills.',
+    order: 7,
+    published: true
+  },
+  {
+    id: 'faq-am-2',
+    brandId: 'am-distributors',
+    category: 'Cold-Chain Ice Cream',
+    question: 'How does A.M. Distributors guarantee the cold-chain temperature for commercial ice cream tubs?',
+    answer: 'Our dedicated logistics fleet utilizes certified insulated reefer delivery vans equipped with active -18°C deep-freeze refrigeration units and digital temperature loggers. We guarantee zero melting or ice-crystal formation from our central Chiplun cold depot to your retail freezers.',
+    order: 8,
+    published: true
+  },
+  {
+    id: 'faq-am-3',
+    brandId: 'am-distributors',
+    category: 'Fresh Milk & Dairy',
+    question: 'What time are early morning fresh pasteurized milk and table butter deliveries dispatched?',
+    answer: 'Our early morning dairy logistics routes begin dispatch at 4:00 AM daily. We deliver standardized 4.5% fat pasteurized cow and buffalo milk pouches in sanitized crates, table butter blocks, and pure cow ghee to retail grocers and institutional canteens before 6:30 AM.',
+    order: 9,
+    published: true
+  },
+  {
+    id: 'faq-am-4',
+    brandId: 'am-distributors',
+    category: 'Wholesale B2B Terms',
+    question: 'Can retail supermarkets and restaurants open wholesale credit distribution accounts?',
+    answer: 'Yes. Verified grocers, hotel chains, bakery manufacturers, and caterers can apply for wholesale distribution accounts. After standard FSSAI and depot KYC verification, we offer structured 15-day or 30-day billing cycles with automated order replenishments.',
+    order: 10,
+    published: true
+  },
+  {
+    id: 'faq-am-5',
+    brandId: 'am-distributors',
+    category: 'Route Coverage',
+    question: 'Which areas and towns are covered by A.M. Distributors daily delivery routes?',
+    answer: 'We operate daily route coverage across Chiplun Central, Kherdi MIDC, Bahadursheikh Naka, Mumbai-Goa Highway corridor, Khed Bazaar, and Guhagar Coastal Road, ensuring timely cold-chain supply across the Ratnagiri industrial belt.',
+    order: 11,
+    published: true
   }
 ];
 

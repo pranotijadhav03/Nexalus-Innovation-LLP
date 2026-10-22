@@ -34,6 +34,7 @@ import { BlurZoomReveal } from '../../components/common/BlurZoomReveal';
 import { QuoteModal } from '../../components/common/QuoteModal';
 import { PlanOrderModal } from '../../components/common/PlanOrderModal';
 import { ServiceCard } from '../../components/brand/ServiceCard';
+import { CustomSectionsRenderer } from '../../components/common/CustomSectionsRenderer';
 import { Service, BroadbandPlan, InternetPlan, SiteBanner, CartPlanItem } from '../../types';
 import {
   subscribeToBroadbandPlans,
@@ -2034,6 +2035,11 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* =========================================================================
+          DYNAMIC CUSTOM SECTIONS (Configured via Admin Section Visibility)
+          ========================================================================= */}
+      <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="nexalus" />
 
       {/* =========================================================================
           SECTION: AREAS COVERED & SERVICE AVAILABILITY CHECKER

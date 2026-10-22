@@ -383,7 +383,21 @@ export interface HeroSlide {
   order?: number;
 }
 
+export interface CustomSection {
+  id: string;
+  title: string;
+  subtitle?: string;
+  content: string;
+  badge?: string;
+  imageUrl?: string;
+  ctaText?: string;
+  ctaLink?: string;
+  active: boolean;
+  order: number;
+}
+
 export interface SiteBanner {
+  customSections?: CustomSection[];
   id: string;
   brandId: BrandId | 'nexalus';
   title: string;

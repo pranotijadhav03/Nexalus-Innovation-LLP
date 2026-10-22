@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
+import { AdminOutletContext, AdminConsoleMode } from '../../components/admin/AdminLayout';
 import { getFaqs, createFaq, updateFaq, deleteFaq, getCachedFaqs } from '../../firebase/services';
 import { FAQ, BrandId } from '../../types';
 import { Input, TextArea, Select } from '../../components/common/Input';
@@ -11,7 +13,16 @@ import { Plus, Edit2, Trash2, HelpCircle } from 'lucide-react';
 
 export const AdminFaqsPage: React.FC = () => {
   const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, canManageBrand } = useAuth();
+  const outletCtx = useOutletContext<AdminOutletContext>();
+  const [searchParams] = useSearchParams();
   const { success, error } = useToast();
+
+  const consoleParam = searchParams.get('console');
+  const effectiveConsole: AdminConsoleMode = (isAmAdmin || consoleParam === 'am-distributors' || outletCtx?.activeConsole === 'am-distributors')
+    ? 'am-distributors'
+    : (isInnovationsAdmin || consoleParam === 'nexalus-innovations' || outletCtx?.activeConsole === 'nexalus-innovations')
+    ? 'nexalus-innovations'
+    : 'master';
 
   const [faqs, setFaqs] = useState<FAQ[]>(() => getCachedFaqs());
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,7 +31,11 @@ export const AdminFaqsPage: React.FC = () => {
   // Form State
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
-  const [brandId, setBrandId] = useState<BrandId | 'nexalus'>('nexalus');
+  const [brandId, setBrandId] = useState<BrandId | 'nexalus'>(() => {
+    if (effectiveConsole === 'am-distributors') return 'am-distributors';
+    if (effectiveConsole === 'nexalus-innovations') return 'nexalus-innovations';
+    return 'nexalus';
+  });
   const [category, setCategory] = useState('General');
   const [order, setOrder] = useState('1');
   const [published, setPublished] = useState(true);
@@ -41,10 +56,14 @@ export const AdminFaqsPage: React.FC = () => {
     setEditingFaq(null);
     setQuestion('');
     setAnswer('');
-    const defaultBrand = isAmAdmin ? 'am-distributors' : 'nexalus-innovations';
+    const defaultBrand = effectiveConsole === 'am-distributors'
+      ? 'am-distributors'
+      : effectiveConsole === 'nexalus-innovations'
+      ? 'nexalus-innovations'
+      : 'nexalus';
     setBrandId(defaultBrand);
-    setCategory('General');
-    setOrder('1');
+    setCategory(effectiveConsole === 'am-distributors' ? 'Cold-Chain & Water Supply' : 'General');
+    setOrder(String(faqs.length + 1));
     setPublished(true);
     setIsModalOpen(true);
   };
@@ -118,10 +137,18 @@ export const AdminFaqsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Frequently Asked Questions (FAQ) Management
+            {effectiveConsole === 'am-distributors'
+              ? 'A.M. Distributors Chiplun Depot FAQs'
+              : effectiveConsole === 'nexalus-innovations'
+              ? 'Nexalus Innovations Tech & Security FAQs'
+              : 'Frequently Asked Questions (FAQ) Management'}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Maintain authoritative customer answers for CCTV surveillance, optical broadband, and combined solutions.
+            {effectiveConsole === 'am-distributors'
+              ? 'Maintain customer questions for packaged drinking water, commercial ice cream cold-chain, and morning dairy delivery.'
+              : effectiveConsole === 'nexalus-innovations'
+              ? 'Maintain customer answers for CCTV surveillance, optical fiber broadband, and office networking.'
+              : 'Maintain authoritative customer answers across all operating divisions and holding company operations.'}
           </p>
         </div>
 
@@ -131,7 +158,17 @@ export const AdminFaqsPage: React.FC = () => {
       </div>
 
       <div className="space-y-3">
-        {faqs.map(faq => (
+        {faqs
+          .filter(faq => {
+            if (effectiveConsole === 'am-distributors') {
+              return faq.brandId === 'am-distributors';
+            }
+            if (effectiveConsole === 'nexalus-innovations') {
+              return ['nexalus-innovations', 'cp-plus', 'one-broadband', 'itti-networking'].includes(faq.brandId);
+            }
+            return true;
+          })
+          .map(faq => (
           <div
             key={faq.id}
             className="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-start justify-between gap-4"

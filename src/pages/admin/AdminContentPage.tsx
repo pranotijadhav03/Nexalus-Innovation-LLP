@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getBanners, updateBanner, getCachedBanners, uploadImageFile } from '../../firebase/services';
 import { initialBanners, DEFAULT_AM_SLIDES } from '../../data/initialData';
-import { SiteBanner, HeroSlide } from '../../types';
+import { SiteBanner, HeroSlide, CustomSection } from '../../types';
 import { Input, TextArea } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import {
@@ -87,6 +87,12 @@ export const AdminContentPage: React.FC = () => {
   const [isSlideModalOpen, setIsSlideModalOpen] = useState(false);
   const [previewSlideIdx, setPreviewSlideIdx] = useState(0);
 
+  // Dynamic Custom Sections State
+  const [customSections, setCustomSections] = useState<CustomSection[]>([]);
+  const [editingSection, setEditingSection] = useState<CustomSection | null>(null);
+  const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
+  const [isUploadingSectionImage, setIsUploadingSectionImage] = useState(false);
+
   const getTargetDocId = (scope: ContentScope): string => {
     switch (scope) {
       case 'corporate':
@@ -137,6 +143,7 @@ export const AdminContentPage: React.FC = () => {
         setShowTeam(current.showTeam !== false);
         setShowFaqs(current.showFaqs !== false);
         setShowContact(current.showContact !== false);
+        setCustomSections(current.customSections || []);
 
         if (targetId === 'ban-am') {
           const amSlides = (current.slides && current.slides.length > 0)
@@ -254,6 +261,111 @@ export const AdminContentPage: React.FC = () => {
     }
   };
 
+  // Open modal to add new custom section
+  const handleOpenAddSection = () => {
+    setEditingSection({
+      id: `sec-${Date.now()}`,
+      title: '',
+      subtitle: '',
+      badge: '',
+      content: '',
+      imageUrl: '',
+      ctaText: 'Learn More',
+      ctaLink: '/contact',
+      active: true,
+      order: customSections.length + 1
+    });
+    setIsSectionModalOpen(true);
+  };
+
+  // Open modal to edit existing custom section
+  const handleOpenEditSection = (section: CustomSection) => {
+    setEditingSection({ ...section });
+    setIsSectionModalOpen(true);
+  };
+
+  // Move custom section up or down
+  const handleMoveSection = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= customSections.length) return;
+    const newSections = [...customSections];
+    const temp = newSections[index];
+    newSections[index] = newSections[targetIndex];
+    newSections[targetIndex] = temp;
+    const reordered = newSections.map((s, idx) => ({ ...s, order: idx + 1 }));
+    setCustomSections(reordered);
+    const targetId = getTargetDocId(activeScope);
+    try {
+      await updateBanner(targetId, { customSections: reordered });
+      success('Sequence Updated', `Section moved ${direction} and synchronized live.`);
+    } catch {}
+  };
+
+  // Delete custom section
+  const handleDeleteSection = async (id: string) => {
+    const newSections = customSections.filter(s => s.id !== id);
+    setCustomSections(newSections);
+    const targetId = getTargetDocId(activeScope);
+    try {
+      await updateBanner(targetId, { customSections: newSections });
+      success('Section Removed', 'Custom section deleted and synchronized live.');
+    } catch {}
+  };
+
+  // Toggle active status
+  const handleToggleSectionActive = async (id: string, activeStatus: boolean) => {
+    const newSections = customSections.map(s => s.id === id ? { ...s, active: activeStatus } : s);
+    setCustomSections(newSections);
+    const targetId = getTargetDocId(activeScope);
+    try {
+      await updateBanner(targetId, { customSections: newSections });
+      success('Visibility Updated', `Section is now ${activeStatus ? 'visible' : 'hidden'} on the website.`);
+    } catch {}
+  };
+
+  // Save changes from section modal
+  const handleSaveModalSection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSection || !editingSection.title.trim()) {
+      error('Validation Error', 'Section Title is required.');
+      return;
+    }
+    const exists = customSections.some(s => s.id === editingSection.id);
+    let updated: CustomSection[];
+    if (exists) {
+      updated = customSections.map(s => s.id === editingSection.id ? editingSection : s);
+    } else {
+      updated = [...customSections, editingSection];
+    }
+    setCustomSections(updated);
+    setIsSectionModalOpen(false);
+    setEditingSection(null);
+    const targetId = getTargetDocId(activeScope);
+    try {
+      await updateBanner(targetId, { customSections: updated });
+      success('Section Saved & Published', 'Custom section is now live on the public website.');
+    } catch (err: any) {
+      error('Error', err?.message || 'Failed to save section.');
+    }
+  };
+
+  // Handle image upload for custom section
+  const handleSectionImageUpload = async (file: File) => {
+    if (!file) return;
+    setIsUploadingSectionImage(true);
+    try {
+      const compressedUrl = await uploadImageFile(file, 'banners');
+      if (compressedUrl && editingSection) {
+        setEditingSection({ ...editingSection, imageUrl: compressedUrl });
+        success('Image Selected', 'Section image set and compressed cleanly.');
+      }
+    } catch (err: any) {
+      error('Upload Failed', err?.message || 'Could not process image.');
+    } finally {
+      setIsUploadingSectionImage(false);
+    }
+  };
+
   // Handle instant local image selection for slides with canvas compression
   const handleSlideImageUpload = async (file: File) => {
     if (!file) return;
@@ -322,6 +434,7 @@ export const AdminContentPage: React.FC = () => {
         showTeam,
         showFaqs,
         showContact,
+        customSections,
         ...(activeScope === 'am-distributors' ? { slides } : {})
       };
 
@@ -850,6 +963,128 @@ export const AdminContentPage: React.FC = () => {
                     />
                   </label>
                 </div>
+
+                {/* DYNAMIC CUSTOM CONTENT SECTIONS CREATOR */}
+                <div className="pt-4 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-blue-900/10 via-indigo-900/10 to-transparent border border-blue-500/20">
+                    <div>
+                      <div className="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <Plus className="w-4 h-4 text-blue-600" />
+                        <span>Dynamic Custom Website Sections ({customSections.length})</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Add promotional banners, announcements, seasonal offers, or custom corporate blocks that immediately reflect on this website.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={handleOpenAddSection}
+                      icon={<Plus className="w-4 h-4" />}
+                      className="font-bold cursor-pointer shrink-0"
+                    >
+                      Add Custom Section
+                    </Button>
+                  </div>
+
+                  {customSections.length === 0 ? (
+                    <div className="p-6 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
+                      <p className="text-xs font-semibold text-slate-500">
+                        No custom sections created for this website yet. Click &quot;Add Custom Section&quot; to build one.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {customSections.map((sec, idx) => (
+                        <div
+                          key={sec.id || idx}
+                          className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-blue-400/60 transition-all shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            {sec.imageUrl ? (
+                              <div className="w-14 h-12 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0">
+                                <img src={sec.imageUrl} alt={sec.title} className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                                #{idx + 1}
+                              </div>
+                            )}
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-slate-900 truncate">
+                                  {sec.title}
+                                </span>
+                                {sec.badge && (
+                                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                    {sec.badge}
+                                  </span>
+                                )}
+                              </div>
+                              {sec.subtitle && (
+                                <div className="text-[11px] font-semibold text-slate-600 truncate mt-0.5">
+                                  {sec.subtitle}
+                                </div>
+                              )}
+                              <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                                {sec.content}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                            <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-600 mr-2">
+                              <input
+                                type="checkbox"
+                                checked={sec.active !== false}
+                                onChange={e => handleToggleSectionActive(sec.id, e.target.checked)}
+                                className="rounded text-blue-600 w-3.5 h-3.5 focus:ring-blue-500"
+                              />
+                              <span className="text-[11px]">Active</span>
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={() => handleMoveSection(idx, 'up')}
+                              disabled={idx === 0}
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                              title="Move Up"
+                            >
+                              <ArrowUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveSection(idx, 'down')}
+                              disabled={idx === customSections.length - 1}
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                              title="Move Down"
+                            >
+                              <ArrowDown className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditSection(sec)}
+                              className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 cursor-pointer"
+                              title="Edit Section"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSection(sec.id)}
+                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer"
+                              title="Delete Section"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1007,6 +1242,153 @@ export const AdminContentPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* CUSTOM SECTION MODAL */}
+      {isSectionModalOpen && editingSection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-xl w-full border border-slate-200 shadow-2xl p-6 sm:p-7 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    {customSections.some(s => s.id === editingSection.id) ? 'Edit Custom Section' : 'Create Custom Section'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Configure headline, content paragraphs, image, and CTA route for this website.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSectionModalOpen(false);
+                  setEditingSection(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveModalSection} className="space-y-4">
+              <Input
+                label="Section Title *"
+                placeholder="e.g. Scheduled Institutional Bulk Water Delivery"
+                value={editingSection.title}
+                onChange={e => setEditingSection({ ...editingSection, title: e.target.value })}
+                required
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Subtitle / Supporting Tagline"
+                  placeholder="e.g. Serving Khed & Chiplun Industrial Corridors"
+                  value={editingSection.subtitle || ''}
+                  onChange={e => setEditingSection({ ...editingSection, subtitle: e.target.value })}
+                />
+                <Input
+                  label="Section Badge Tag"
+                  placeholder="e.g. Commercial Wholesale Priority"
+                  value={editingSection.badge || ''}
+                  onChange={e => setEditingSection({ ...editingSection, badge: e.target.value })}
+                />
+              </div>
+
+              <TextArea
+                label="Section Body / Content Description *"
+                placeholder="Write the detailed information, operational specifications, or service summary here..."
+                value={editingSection.content}
+                onChange={e => setEditingSection({ ...editingSection, content: e.target.value })}
+                rows={4}
+                required
+              />
+
+              {/* Image Input + Upload */}
+              <div className="space-y-2">
+                <Input
+                  label="Section Image URL / Path (Optional)"
+                  placeholder="e.g. /images/products/am-water-jar-20l.jpg or upload below"
+                  value={editingSection.imageUrl || ''}
+                  onChange={e => setEditingSection({ ...editingSection, imageUrl: e.target.value })}
+                />
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-bold text-slate-700 cursor-pointer transition-all">
+                    <Upload className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Upload Image from Device</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        if (e.target.files?.[0]) handleSectionImageUpload(e.target.files[0]);
+                      }}
+                    />
+                  </label>
+                  {isUploadingSectionImage && (
+                    <span className="text-xs text-blue-600 font-semibold animate-pulse">
+                      Compressing and attaching...
+                    </span>
+                  )}
+                  {editingSection.imageUrl && (
+                    <div className="w-14 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+                      <img
+                        src={editingSection.imageUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="CTA Button Text"
+                  placeholder="e.g. Order Wholesale Supply"
+                  value={editingSection.ctaText || ''}
+                  onChange={e => setEditingSection({ ...editingSection, ctaText: e.target.value })}
+                />
+                <Input
+                  label="CTA Button Route / Link"
+                  placeholder="e.g. /brands/am-distributors/products or /contact"
+                  value={editingSection.ctaLink || ''}
+                  onChange={e => setEditingSection({ ...editingSection, ctaLink: e.target.value })}
+                />
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 pt-1">
+                <input
+                  type="checkbox"
+                  checked={editingSection.active !== false}
+                  onChange={e => setEditingSection({ ...editingSection, active: e.target.checked })}
+                  className="rounded text-blue-600 w-4 h-4 focus:ring-blue-500"
+                />
+                <span>Active and Visible Immediately on Website</span>
+              </label>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={() => {
+                    setIsSectionModalOpen(false);
+                    setEditingSection(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" size="md">
+                  Apply &amp; Publish Section
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Hero Slide Edit/Create Modal */}
       {isSlideModalOpen && editingSlide && (

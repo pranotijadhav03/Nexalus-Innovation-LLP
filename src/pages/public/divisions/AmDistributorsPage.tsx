@@ -28,6 +28,7 @@ import { subscribeToBanners, getBanners, getProducts, getCachedProducts, getCach
 import { SiteBanner, Product } from '../../../types';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
+import { CustomSectionsRenderer } from '../../../components/common/CustomSectionsRenderer';
 import { initialProducts, DEFAULT_AM_SLIDES } from '../../../data/initialData';
 
 export const AmDistributorsPage: React.FC = () => {
@@ -467,6 +468,11 @@ export const AmDistributorsPage: React.FC = () => {
       </section>
 
 
+
+      {/* =========================================================================
+          DYNAMIC CUSTOM SECTIONS (Configured via Admin Section Visibility)
+          ========================================================================= */}
+      <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="am-distributors" />
 
       {/* 4. FACILITY & OPERATIONS SPOTLIGHT */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

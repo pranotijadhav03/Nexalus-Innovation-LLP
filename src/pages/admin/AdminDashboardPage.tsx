@@ -190,7 +190,7 @@ export const AdminDashboardPage: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <Link
-              to="/admin/enquiries"
+              to={getNavPath('/admin/enquiries')}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
             >
               <Inbox className="w-4 h-4" /> Corporate Inquiries ({corporateEnquiries.length})
@@ -322,7 +322,7 @@ export const AdminDashboardPage: React.FC = () => {
             </Link>
 
             <Link
-              to="/admin/enquiries"
+              to={getNavPath('/admin/enquiries')}
               className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-rose-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
             >
               <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -488,7 +488,7 @@ export const AdminDashboardPage: React.FC = () => {
                 <p className="text-xs text-slate-500">Submissions received via parent corporate contact channels</p>
               </div>
               <Link
-                to="/admin/enquiries"
+                to={getNavPath('/admin/enquiries')}
                 className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
               >
                 Open Corporate CRM <ArrowRight className="w-3.5 h-3.5" />
@@ -534,7 +534,7 @@ export const AdminDashboardPage: React.FC = () => {
                         {enq.status.replace('_', ' ').toUpperCase()}
                       </span>
                       <Link
-                        to="/admin/enquiries"
+                        to={getNavPath('/admin/enquiries')}
                         className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                       >
                         <ArrowRight className="w-4 h-4" />
@@ -841,7 +841,7 @@ export const AdminDashboardPage: React.FC = () => {
               <p className="text-xs text-slate-500">CCTV installation, fiber broadband &amp; networking requests</p>
             </div>
             <Link
-              to="/admin/enquiries"
+              to={getNavPath('/admin/enquiries')}
               className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
             >
               Open Full Tech CRM <ArrowRight className="w-3.5 h-3.5" />
@@ -882,7 +882,7 @@ export const AdminDashboardPage: React.FC = () => {
                       {enq.status.toUpperCase()}
                     </span>
                     <Link
-                      to="/admin/enquiries"
+                      to={getNavPath('/admin/enquiries')}
                       className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                     >
                       <ArrowRight className="w-4 h-4" />
@@ -1070,15 +1070,7 @@ export const AdminDashboardPage: React.FC = () => {
               <span className="text-xs font-bold text-slate-800">Website Content</span>
             </Link>
 
-            <Link
-              to={getNavPath('/admin/reports')}
-              className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Building className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-bold text-slate-800">Depot Reports</span>
-            </Link>
+
 
             <a
               href="/brands/am-distributors"
@@ -1104,7 +1096,7 @@ export const AdminDashboardPage: React.FC = () => {
               <p className="text-xs text-slate-500">Mineral water wholesale orders, dairy supplies &amp; fleet inquiries</p>
             </div>
             <Link
-              to="/admin/enquiries"
+              to={getNavPath('/admin/enquiries')}
               className="text-xs font-bold text-teal-600 hover:text-teal-800 flex items-center gap-1"
             >
               Open Depot CRM <ArrowRight className="w-3.5 h-3.5" />
@@ -1145,7 +1137,7 @@ export const AdminDashboardPage: React.FC = () => {
                       {enq.status.toUpperCase()}
                     </span>
                     <Link
-                      to="/admin/enquiries"
+                      to={getNavPath('/admin/enquiries')}
                       className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                     >
                       <ArrowRight className="w-4 h-4" />

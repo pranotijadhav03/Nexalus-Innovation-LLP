@@ -18,6 +18,7 @@ import { OurTeamSection } from '../../../components/common/OurTeamSection';
 import { ProjectGallerySection } from '../../../components/common/ProjectGallerySection';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
+import { CustomSectionsRenderer } from '../../../components/common/CustomSectionsRenderer';
 import { getProducts, subscribeToBanners, getCachedBanners } from '../../../firebase/services';
 import { SiteBanner } from '../../../types';
 import { initialProducts } from '../../../data/initialData';
@@ -770,6 +771,11 @@ export const NexalusInnovationsPage: React.FC = () => {
       </section>
 
 
+
+      {/* =========================================================================
+          DYNAMIC CUSTOM SECTIONS (Configured via Admin Section Visibility)
+          ========================================================================= */}
+      <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="nexalus-innovations" />
 
       {/* =========================================================================
           SECTION 4: TECHNICAL OPERATIONS & SITE SURVEY DESK (DEEP MIDNIGHT BLUE)

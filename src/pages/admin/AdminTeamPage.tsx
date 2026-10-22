@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -138,27 +138,36 @@ export const AdminTeamPage: React.FC = () => {
   const { success, error } = useToast();
   const { isSuperAdmin, isInnovationsAdmin, isAmAdmin } = useAuth();
   const outletCtx = useOutletContext<AdminOutletContext>();
-  const activeConsole = outletCtx?.activeConsole || 'master';
+  const [searchParams] = useSearchParams();
+  const consoleParam = searchParams.get('console');
+
+  const effectiveConsole = (isAmAdmin || consoleParam === 'am-distributors' || outletCtx?.activeConsole === 'am-distributors')
+    ? 'am-distributors'
+    : (isInnovationsAdmin || consoleParam === 'nexalus-innovations' || outletCtx?.activeConsole === 'nexalus-innovations')
+    ? 'nexalus-innovations'
+    : 'master';
 
   const [members, setMembers] = useState<TeamMember[]>(() => getCachedTeamMembers('all'));
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const getInitialFilterDivision = (): 'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors' => {
-    if (isAmAdmin || activeConsole === 'am-distributors') return 'am-distributors';
-    if (isInnovationsAdmin || activeConsole === 'nexalus-innovations') return 'nexalus-innovations';
+    if (effectiveConsole === 'am-distributors') return 'am-distributors';
+    if (effectiveConsole === 'nexalus-innovations') return 'nexalus-innovations';
     return 'corporate';
   };
 
   const [filterDivision, setFilterDivision] = useState<'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors'>(getInitialFilterDivision);
 
   useEffect(() => {
-    if (isSuperAdmin) {
-      if (activeConsole === 'am-distributors') setFilterDivision('am-distributors');
-      else if (activeConsole === 'nexalus-innovations') setFilterDivision('nexalus-innovations');
-      else setFilterDivision('corporate');
+    if (effectiveConsole === 'am-distributors') {
+      setFilterDivision('am-distributors');
+    } else if (effectiveConsole === 'nexalus-innovations') {
+      setFilterDivision('nexalus-innovations');
+    } else {
+      setFilterDivision('corporate');
     }
-  }, [activeConsole, isSuperAdmin]);
+  }, [effectiveConsole]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -180,9 +189,9 @@ export const AdminTeamPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const lockedDivision =
-    activeConsole === 'am-distributors' || isAmAdmin
+    effectiveConsole === 'am-distributors'
       ? 'am-distributors'
-      : activeConsole === 'nexalus-innovations' || isInnovationsAdmin
+      : effectiveConsole === 'nexalus-innovations'
       ? 'nexalus-innovations'
       : null;
 
@@ -401,17 +410,17 @@ export const AdminTeamPage: React.FC = () => {
               <Users className="w-6 h-6" />
             </span>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              {activeConsole === 'master'
+              {effectiveConsole === 'master'
                 ? 'Corporate Leadership & Executive Team'
-                : activeConsole === 'nexalus-innovations'
+                : effectiveConsole === 'nexalus-innovations'
                 ? 'Nexalus Innovations Tech & Engineering Team'
                 : 'A.M. Distributors Chiplun Depot & Logistics Team'}
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            {activeConsole === 'master'
+            {effectiveConsole === 'master'
               ? 'Manage executive partners, directors, and governance leadership for Nexalus Innovations LLP.'
-              : activeConsole === 'nexalus-innovations'
+              : effectiveConsole === 'nexalus-innovations'
               ? 'Manage CCTV engineers, optical fiber specialists, and enterprise network administrators.'
               : 'Manage refrigerated fleet captains, Chiplun depot managers, and dairy compliance staff.'}
           </p>
@@ -427,21 +436,61 @@ export const AdminTeamPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Summary KPI Badges (Scoped by role) */}
-      <div className={`grid gap-4 ${isAmAdmin ? 'grid-cols-1 max-w-xs' : isInnovationsAdmin ? 'grid-cols-2 max-w-md' : 'grid-cols-2 lg:grid-cols-4'}`}>
-        {!isAmAdmin && (
+      {/* Summary KPI Badges (Scoped strictly by active workspace) */}
+      {effectiveConsole === 'am-distributors' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 max-w-lg gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-teal-200 bg-teal-50/30 shadow-sm">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-teal-700">
+              Chiplun Depot Logistics Team
+            </p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-3xl font-black text-teal-700">{amMembers}</span>
+              <span className="text-xs font-bold text-slate-400">depot staff</span>
+            </div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+              Active Logistics Entity
+            </p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-base font-black text-slate-900">A.M. Distributors</span>
+              <span className="text-xs font-bold text-teal-600">Chiplun</span>
+            </div>
+          </div>
+        </div>
+      ) : effectiveConsole === 'nexalus-innovations' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 max-w-lg gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-indigo-200 bg-indigo-50/30 shadow-sm">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-700">
+              Nexalus Innovations Tech Team
+            </p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-3xl font-black text-indigo-700">{nexalusMembers}</span>
+              <span className="text-xs font-bold text-slate-400">engineers &amp; staff</span>
+            </div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+              Active Division
+            </p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-base font-black text-slate-900">Tech &amp; Security</span>
+              <span className="text-xs font-bold text-indigo-600">Fiber &amp; CCTV</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
               Total Team Members
             </p>
             <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-slate-900">{isInnovationsAdmin ? nexalusMembers : totalMembers}</span>
-              <span className="text-xs font-bold text-slate-400">{isInnovationsAdmin ? 'tech network' : 'across network'}</span>
+              <span className="text-3xl font-black text-slate-900">{totalMembers}</span>
+              <span className="text-xs font-bold text-slate-400">across network</span>
             </div>
           </div>
-        )}
 
-        {!isAmAdmin && isSuperAdmin && (
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">
               Parent: Nexalus LLP
@@ -451,9 +500,7 @@ export const AdminTeamPage: React.FC = () => {
               <span className="text-xs font-bold text-slate-400">Corporate HQ</span>
             </div>
           </div>
-        )}
 
-        {!isAmAdmin && (
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">
               Nexalus Innovations
@@ -463,9 +510,7 @@ export const AdminTeamPage: React.FC = () => {
               <span className="text-xs font-bold text-slate-400">Tech &amp; Fiber</span>
             </div>
           </div>
-        )}
 
-        {!isInnovationsAdmin && (
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-teal-600">
               A.M. Distributors
@@ -475,14 +520,14 @@ export const AdminTeamPage: React.FC = () => {
               <span className="text-xs font-bold text-slate-400">Chiplun Logistics</span>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Division Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
-          {isSuperAdmin && (
+        {/* Division Filter Tabs - Only shown in Master Console */}
+        {effectiveConsole === 'master' ? (
+          <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
             <button
               onClick={() => setFilterDivision('all')}
               className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -493,8 +538,6 @@ export const AdminTeamPage: React.FC = () => {
             >
               All Divisions ({totalMembers})
             </button>
-          )}
-          {isSuperAdmin && (
             <button
               onClick={() => setFilterDivision('corporate')}
               className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -506,8 +549,6 @@ export const AdminTeamPage: React.FC = () => {
               <Layers className="w-3.5 h-3.5" />
               Parent: Nexalus LLP ({parentMembers})
             </button>
-          )}
-          {!isAmAdmin && (
             <button
               onClick={() => setFilterDivision('nexalus-innovations')}
               className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -519,8 +560,6 @@ export const AdminTeamPage: React.FC = () => {
               <Shield className="w-3.5 h-3.5" />
               Nexalus Innovations ({nexalusMembers})
             </button>
-          )}
-          {!isInnovationsAdmin && (
             <button
               onClick={() => setFilterDivision('am-distributors')}
               className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -532,8 +571,18 @@ export const AdminTeamPage: React.FC = () => {
               <Building className="w-3.5 h-3.5" />
               A.M. Distributors ({amMembers})
             </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-xl border ${
+              effectiveConsole === 'am-distributors'
+                ? 'bg-teal-50 text-teal-800 border-teal-200'
+                : 'bg-indigo-50 text-indigo-800 border-indigo-200'
+            }`}>
+              {effectiveConsole === 'am-distributors' ? 'A.M. Distributors Personnel' : 'Nexalus Innovations Personnel'}
+            </span>
+          </div>
+        )}
 
         {/* Search */}
         <div className="w-full md:w-72 relative">
