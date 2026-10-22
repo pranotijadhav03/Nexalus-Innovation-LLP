@@ -16,7 +16,6 @@ import {
 import { Button } from '../../../components/common/Button';
 import { OurTeamSection } from '../../../components/common/OurTeamSection';
 import { ProjectGallerySection } from '../../../components/common/ProjectGallerySection';
-import { AreasCoveredSection } from '../../../components/common/AreasCoveredSection';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
 import { getProducts, subscribeToBanners } from '../../../firebase/services';
@@ -851,9 +850,6 @@ export const NexalusInnovationsPage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* AREAS COVERED & SERVICE AVAILABILITY CHECKER */}
-      <AreasCoveredSection division="nexalus-innovations" />
 
       {/* Modal */}
       <QuoteModal
