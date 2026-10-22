@@ -38,9 +38,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onConsoleChange
 }) => {
   const { isSuperAdmin, isAmAdmin, isInnovationsAdmin } = useAuth();
-  const isMasterConsole = activeConsole === 'master' && isSuperAdmin;
-  const isAmConsole = activeConsole === 'am-distributors' || isAmAdmin;
   const isTechConsole = activeConsole === 'nexalus-innovations' || isInnovationsAdmin;
+  const isAmConsole = !isTechConsole && (activeConsole === 'am-distributors' || isAmAdmin);
+  const isMasterConsole = !isTechConsole && !isAmConsole && isSuperAdmin;
 
   const getNavPath = (path: string) => {
     if (isSuperAdmin && activeConsole && activeConsole !== 'master') {

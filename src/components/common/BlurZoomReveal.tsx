@@ -1,22 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 
 export interface BlurZoomRevealProps {
   children: React.ReactNode;
   className?: string;
   delay?: number; // Milliseconds delay for staggered entrance (e.g., 0, 150, 300)
-  duration?: number; // Milliseconds duration (default: 800ms)
+  duration?: number; // Milliseconds duration (default: 850ms)
   blur?: number; // Pixels of blur before entering view (default: 12px)
-  scale?: number; // Scale before entering view (default: 0.92)
-  xOffset?: number; // Horizontal offset in pixels before entering view (e.g., -60 for left, 60 for right)
+  scale?: number; // Scale before entering view (default: 0.93)
+  xOffset?: number; // Horizontal offset in pixels before entering view (e.g., -70 for left, 70 for right)
   yOffset?: number; // Vertical offset in pixels before entering view (default: 20px)
-  direction?: 'left' | 'right' | 'up' | 'down' | 'none'; // Direction helper for left/right entry
-  threshold?: number; // Viewport intersection threshold (default: 0.12)
+  direction?: 'left' | 'right' | 'up' | 'down' | 'center' | 'none'; // Direction helper for left/center/right entry
+  threshold?: number; // Viewport intersection threshold (default: 0.1)
   once?: boolean; // If true, stays revealed after first entrance. Default false for continuous scroll responsiveness
+  initialOpacity?: number; // Opacity when not yet revealed (default: 0)
 }
 
 /**
  * BlurZoomReveal Component
- * Smoothly transitions elements from a blurred, scaled, or offset state (sliding in from left, right, or bottom)
+ * Smoothly transitions elements from a blurred, scaled, or offset state (sliding in from left, center, or right)
  * into a crystal clear, full-scale sharp focus when scrolled into view, providing an ultra-high-end Apple/Stripe feel.
  */
 export const BlurZoomReveal: React.FC<BlurZoomRevealProps> = ({
@@ -25,12 +26,13 @@ export const BlurZoomReveal: React.FC<BlurZoomRevealProps> = ({
   delay = 0,
   duration = 850,
   blur = 12,
-  scale = 0.94,
+  scale = 0.93,
   xOffset,
   yOffset = 20,
   direction = 'none',
   threshold = 0.1,
   once = false,
+  initialOpacity = 0,
 }) => {
   const elementRef = useRef<HTMLDivElement>(null);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -45,30 +47,38 @@ export const BlurZoomReveal: React.FC<BlurZoomRevealProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Compute final horizontal and vertical entrance offsets (disable horizontal offsets on mobile to prevent side-scroll shaking)
+  // Compute final horizontal and vertical entrance offsets
   let computedX = isMobile ? 0 : (xOffset ?? 0);
   let computedY = isMobile ? (yOffset === 20 ? 15 : yOffset) : yOffset;
 
   if (!isMobile) {
     if (direction === 'left') {
-      computedX = xOffset ?? -60;
+      computedX = xOffset ?? -70;
       computedY = yOffset === 20 ? 0 : yOffset;
     } else if (direction === 'right') {
-      computedX = xOffset ?? 60;
+      computedX = xOffset ?? 70;
       computedY = yOffset === 20 ? 0 : yOffset;
-    } else if (direction === 'up') {
+    } else if (direction === 'up' || direction === 'center') {
       computedX = xOffset ?? 0;
-      computedY = yOffset === 20 ? 30 : yOffset;
+      computedY = yOffset === 20 ? 35 : yOffset;
     } else if (direction === 'down') {
       computedX = xOffset ?? 0;
-      computedY = yOffset === 20 ? -30 : yOffset;
+      computedY = yOffset === 20 ? -35 : yOffset;
     }
   } else {
-    // Mobile: gentle vertical slide only
-    if (direction === 'up' || yOffset !== 0) {
-      computedY = 15;
+    // Mobile: gentle directional slide and rise
+    if (direction === 'left') {
+      computedX = xOffset ? Math.max(xOffset, -30) : -25;
+      computedY = yOffset === 20 ? 12 : yOffset;
+    } else if (direction === 'right') {
+      computedX = xOffset ? Math.min(xOffset, 30) : 25;
+      computedY = yOffset === 20 ? 12 : yOffset;
+    } else if (direction === 'up' || direction === 'center' || yOffset !== 0) {
+      computedX = 0;
+      computedY = 20;
     } else if (direction === 'down') {
-      computedY = -15;
+      computedX = 0;
+      computedY = -20;
     }
   }
 
@@ -116,7 +126,7 @@ export const BlurZoomReveal: React.FC<BlurZoomRevealProps> = ({
       ref={elementRef}
       className={className}
       style={{
-        opacity: isRevealed ? 1 : 0.15,
+        opacity: isRevealed ? 1 : initialOpacity,
         filter: isRevealed ? 'blur(0px)' : `blur(${effectiveBlur}px)`,
         transform: isRevealed
           ? 'scale(1) translate3d(0, 0, 0)'

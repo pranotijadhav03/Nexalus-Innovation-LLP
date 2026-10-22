@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { OurTeamSection } from '../../components/common/OurTeamSection';
+import { BlurZoomReveal } from '../../components/common/BlurZoomReveal';
 import { QuoteModal } from '../../components/common/QuoteModal';
 import { ServiceCard } from '../../components/brand/ServiceCard';
 import { Service, BroadbandPlan, InternetPlan, SiteBanner } from '../../types';
@@ -397,26 +398,37 @@ export const HomePage: React.FC = () => {
       {/* =========================================================================
           SECTION 3: INTEGRATED TECHNOLOGY INFRASTRUCTURE (3 PILLARS - RICH CORPORATE BLUE)
           ========================================================================= */}
-      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-24 border-b border-blue-900/40">
+      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-24 border-b border-blue-900/40 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Header */}
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-cyan-300 text-xs font-black uppercase tracking-wider border border-blue-400/30">
-              <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-              <span>INTEGRATED TECHNOLOGY INFRASTRUCTURE</span>
+          <BlurZoomReveal direction="up" delay={0} duration={700}>
+            <div className="text-center max-w-3xl mx-auto space-y-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-cyan-300 text-xs font-black uppercase tracking-wider border border-blue-400/30">
+                <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+                <span>INTEGRATED TECHNOLOGY INFRASTRUCTURE</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+                Engineered for Reliability, Speed &amp; Security
+              </h2>
+              <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
+                Under <strong>Nexalus Innovations LLP</strong>, we deliver enterprise-grade CCTV surveillance, optical fiber leased lines, and office networking with guaranteed uptime and direct manufacturer warranty.
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-              Engineered for Reliability, Speed &amp; Security
-            </h2>
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
-              Under <strong>Nexalus Innovations LLP</strong>, we deliver enterprise-grade CCTV surveillance, optical fiber leased lines, and office networking with guaranteed uptime and direct manufacturer warranty.
-            </p>
-          </div>
+          </BlurZoomReveal>
 
           {/* 3 Pillar Cards Side-by-Side (CCTV, Internet, Networking) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Card 1: CCTV Surveillance */}
-            <div className="rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl hover:border-blue-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group">
+            {/* Card 1: CCTV Surveillance (Enters from Left) */}
+            <BlurZoomReveal
+              direction="left"
+              xOffset={-80}
+              delay={0}
+              duration={850}
+              blur={12}
+              scale={0.92}
+              className="h-full flex flex-col"
+            >
+              <div className="rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl hover:border-blue-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
               <div className="relative h-56 overflow-hidden bg-[#081222]">
                 <img
                   src="/images/simple-cctv-camera.jpg"
@@ -474,9 +486,19 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
 
-            {/* Card 2: Optical Fiber Internet */}
-            <div className="rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl hover:border-teal-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group">
+            {/* Card 2: Optical Fiber Internet (Enters from Center) */}
+            <BlurZoomReveal
+              direction="center"
+              yOffset={35}
+              delay={120}
+              duration={850}
+              blur={12}
+              scale={0.90}
+              className="h-full flex flex-col"
+            >
+              <div className="rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl hover:border-teal-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
               <div className="relative h-56 overflow-hidden bg-[#081222]">
                 <img
                   src="/images/fiber-optic-cables.jpg"
@@ -534,9 +556,19 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
 
-            {/* Card 3: Enterprise IT Networking */}
-            <div className="rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl hover:border-indigo-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group">
+            {/* Card 3: Enterprise IT Networking (Enters from Right) */}
+            <BlurZoomReveal
+              direction="right"
+              xOffset={80}
+              delay={240}
+              duration={850}
+              blur={12}
+              scale={0.92}
+              className="h-full flex flex-col"
+            >
+              <div className="rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl hover:border-indigo-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
               <div className="relative h-56 overflow-hidden bg-[#081222]">
                 <img
                   src="/images/rackmount-switches-real.jpg"
@@ -594,6 +626,7 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
           </div>
         </div>
       </section>

@@ -8,7 +8,8 @@ import {
   createTeamMember,
   updateTeamMember,
   deleteTeamMember,
-  uploadImageFile
+  uploadImageFile,
+  getCachedTeamMembers
 } from '../../firebase/services';
 import { TeamMember } from '../../types';
 import { Input, TextArea, Select } from '../../components/common/Input';
@@ -139,8 +140,8 @@ export const AdminTeamPage: React.FC = () => {
   const outletCtx = useOutletContext<AdminOutletContext>();
   const activeConsole = outletCtx?.activeConsole || 'master';
 
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [members, setMembers] = useState<TeamMember[]>(() => getCachedTeamMembers('all'));
+  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const getInitialFilterDivision = (): 'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors' => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getServices, createService, updateService, deleteService } from '../../firebase/services';
+import { getServices, createService, updateService, deleteService, getCachedServices } from '../../firebase/services';
 import { Service, BrandId } from '../../types';
 import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { Input, TextArea, Select } from '../../components/common/Input';
@@ -18,8 +18,10 @@ export const AdminServicesPage: React.FC = () => {
   const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
   const { success, error } = useToast();
 
-  const [services, setServices] = useState<Service[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [services, setServices] = useState<Service[]>(() =>
+    getCachedServices(activeConsole === 'master' ? undefined : activeBrandFilter)
+  );
+  const [isLoading, setIsLoading] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,7 +46,7 @@ export const AdminServicesPage: React.FC = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const filter = activeConsole === 'master' ? 'nexalus' : activeBrandFilter;
+      const filter = activeConsole === 'master' ? undefined : activeBrandFilter;
       const data = await getServices(filter === 'all' ? undefined : (filter as any));
       setServices(data);
     } finally {

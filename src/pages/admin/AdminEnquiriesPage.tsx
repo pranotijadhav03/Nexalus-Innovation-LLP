@@ -6,7 +6,9 @@ import {
   getEnquiries,
   updateEnquiryStatus,
   deleteEnquiry,
-  getUsers
+  getUsers,
+  getCachedEnquiries,
+  getCachedUsers
 } from '../../firebase/services';
 import { Enquiry, EnquiryStatus, AdminUser, BrandId } from '../../types';
 import { Input, TextArea, Select } from '../../components/common/Input';
@@ -33,14 +35,14 @@ export const AdminEnquiriesPage: React.FC = () => {
   const outletCtx = useOutletContext<{ activeBrandFilter?: BrandId | 'all' }>();
   const { success, error } = useToast();
 
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [enquiries, setEnquiries] = useState<Enquiry[]>(() => getCachedEnquiries('all'));
+  const [users, setUsers] = useState<AdminUser[]>(() => getCachedUsers());
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [brandFilter, setBrandFilter] = useState<string>(
     isSuperAdmin ? (outletCtx?.activeBrandFilter || 'all') : (brandScope as string)
   );
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isSuperAdmin && outletCtx?.activeBrandFilter) {
@@ -58,7 +60,7 @@ export const AdminEnquiriesPage: React.FC = () => {
   // Delete State
   const [deleteCandidate, setDeleteCandidate] = useState<Enquiry | null>(null);
 
-  const [allEnquiriesRaw, setAllEnquiriesRaw] = useState<Enquiry[]>([]);
+  const [allEnquiriesRaw, setAllEnquiriesRaw] = useState<Enquiry[]>(() => getCachedEnquiries('all'));
 
   const loadData = async () => {
     setIsLoading(true);

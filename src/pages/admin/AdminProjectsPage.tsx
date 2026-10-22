@@ -16,7 +16,7 @@ export const AdminProjectsPage: React.FC = () => {
   const { success, error } = useToast();
 
   const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);

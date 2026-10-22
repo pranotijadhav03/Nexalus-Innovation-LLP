@@ -80,7 +80,7 @@ const STORAGE_KEYS = {
 };
 
 
-export function withTimeout<T>(promise: Promise<T>, ms = 2500): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms = 1200): Promise<T> {
   return Promise.race([
     promise,
     new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`Firestore request timed out after ${ms}ms`)), ms))
@@ -109,6 +109,132 @@ function setLocalItem<T>(key: string, value: T): void {
   } catch (err) {
     console.error('Failed to save to localStorage:', err);
   }
+}
+
+// ----------------------------------------------------
+// SYNCHRONOUS CACHE GETTERS (Instant 0ms Page Paint)
+// ----------------------------------------------------
+export function getCachedProducts(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): Product[] {
+  let products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+  if (brandId && brandId !== 'all') {
+    if (brandId === 'nexalus-innovations') {
+      products = products.filter(p =>
+        p.brandId === 'nexalus-innovations' ||
+        p.brandId === 'cp-plus' ||
+        p.brandId === 'one-broadband' ||
+        p.brandId === 'itti-networking'
+      );
+    } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
+      products = products.filter(p => p.brandId === 'nexalus');
+    } else {
+      products = products.filter(p => p.brandId === brandId);
+    }
+  }
+  return products;
+}
+
+export function getCachedCategories(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): ProductCategory[] {
+  let categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
+  if (brandId && brandId !== 'all') {
+    if (brandId === 'nexalus-innovations') {
+      categories = categories.filter(c =>
+        c.brandId === 'nexalus-innovations' ||
+        c.brandId === 'cp-plus' ||
+        c.brandId === 'one-broadband' ||
+        c.brandId === 'itti-networking'
+      );
+    } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
+      categories = categories.filter(c => c.brandId === 'nexalus');
+    } else {
+      categories = categories.filter(c => c.brandId === brandId);
+    }
+  }
+  return categories;
+}
+
+export function getCachedServices(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): Service[] {
+  let services = getLocalItem<Service[]>(STORAGE_KEYS.SERVICES, initialServices);
+  if (brandId && brandId !== 'all') {
+    if (brandId === 'nexalus-innovations') {
+      services = services.filter(s =>
+        s.brandId === 'nexalus-innovations' ||
+        s.brandId === 'cp-plus' ||
+        s.brandId === 'one-broadband' ||
+        s.brandId === 'itti-networking'
+      );
+    } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
+      services = services.filter(s => s.brandId === 'nexalus');
+    } else {
+      services = services.filter(s => s.brandId === brandId);
+    }
+  }
+  return services;
+}
+
+export function getCachedEnquiries(brandScope?: BrandId | 'all' | 'general' | 'corporate', statusFilter?: EnquiryStatus | 'all'): Enquiry[] {
+  let enquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
+  if (brandScope && brandScope !== 'all') {
+    if (brandScope === 'nexalus-innovations') {
+      enquiries = enquiries.filter(e =>
+        e.brandId === 'nexalus-innovations' ||
+        e.brandId === 'cp-plus' ||
+        e.brandId === 'one-broadband' ||
+        e.brandId === 'itti-networking'
+      );
+    } else if (brandScope === 'corporate' || (brandScope as any) === 'nexalus') {
+      enquiries = enquiries.filter(e => e.websiteId === 'corporate' || e.brandId === 'nexalus' || !e.brandId || (e.brandId as any) === 'general');
+    } else {
+      enquiries = enquiries.filter(e => e.brandId === brandScope);
+    }
+  }
+  if (statusFilter && statusFilter !== 'all') {
+    enquiries = enquiries.filter(e => e.status === statusFilter);
+  }
+  return enquiries;
+}
+
+export function getCachedUsers(): AdminUser[] {
+  return getLocalItem<AdminUser[]>(STORAGE_KEYS.USERS, initialUsers);
+}
+
+export function getCachedTeamMembers(division?: string): TeamMember[] {
+  const members = getLocalItem<TeamMember[]>(STORAGE_KEYS.TEAM, initialTeamMembers);
+  if (!division || division === 'all') return members;
+  return members.filter(m => m.division === division || m.division === 'all');
+}
+
+export function getCachedAuditLogs(): AuditLog[] {
+  return getLocalItem<AuditLog[]>(STORAGE_KEYS.AUDIT_LOGS, []);
+}
+
+export function getCachedInternetPlans(): InternetPlan[] {
+  return getLocalItem<InternetPlan[]>(STORAGE_KEYS.PLANS, initialInternetPlans);
+}
+
+export function getCachedBroadbandPlans(providerId?: string): BroadbandPlan[] {
+  const plans = getLocalItem<BroadbandPlan[]>(STORAGE_KEYS.BROADBAND_PLANS, initialBroadbandPlans);
+  if (providerId) return plans.filter(p => p.providerId === providerId);
+  return plans;
+}
+
+export function getCachedBroadbandProviders(): BroadbandProvider[] {
+  return getLocalItem<BroadbandProvider[]>(STORAGE_KEYS.BROADBAND_PROVIDERS, initialBroadbandProviders);
+}
+
+export function getCachedBanners(brandId?: BrandId | 'nexalus'): SiteBanner[] {
+  const banners = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
+  if (brandId) return banners.filter(b => b.brandId === brandId);
+  return banners;
+}
+
+export function getCachedFaqs(brandId?: BrandId | 'nexalus'): FAQ[] {
+  const faqs = getLocalItem<FAQ[]>(STORAGE_KEYS.FAQS, initialFaqs);
+  if (brandId) return faqs.filter(f => f.brandId === brandId);
+  return faqs;
+}
+
+export function getCachedServiceAreas(): ServiceArea[] {
+  return getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
 }
 
 // ----------------------------------------------------
@@ -147,7 +273,7 @@ export async function getAuditLogs(): Promise<AuditLog[]> {
   if (isFirebaseConfigured && db) {
     try {
       const q = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'));
-      const snapshot = await getDocs(q);
+      const snapshot = await withTimeout(getDocs(q), 1200);
       if (!snapshot.empty) {
         return snapshot.docs.map(d => d.data() as AuditLog);
       }
@@ -164,7 +290,7 @@ export async function getAuditLogs(): Promise<AuditLog[]> {
 export async function getBrands(): Promise<Brand[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const snapshot = await getDocs(collection(db, 'brands'));
+      const snapshot = await withTimeout(getDocs(collection(db, 'brands')), 1200);
       if (!snapshot.empty) {
         return snapshot.docs.map(d => d.data() as Brand);
       }
@@ -244,7 +370,7 @@ export async function getProducts(brandId?: BrandId | 'nexalus' | 'corporate', p
       const q = constraints.length > 0
         ? query(collection(db, 'products'), ...constraints)
         : collection(db, 'products');
-      const snapshot = await getDocs(q);
+      const snapshot = await withTimeout(getDocs(q), 1200);
       if (!snapshot.empty) {
         return snapshot.docs.map(d => d.data() as Product);
       }
@@ -393,7 +519,7 @@ export async function getInternetPlans(publishedOnly = false): Promise<InternetP
       const q = constraints.length > 0
         ? query(collection(db, 'plans'), ...constraints)
         : collection(db, 'plans');
-      const snapshot = await getDocs(q);
+      const snapshot = await withTimeout(getDocs(q), 1200);
       if (!snapshot.empty) {
         return snapshot.docs.map(d => d.data() as InternetPlan);
       }
@@ -518,7 +644,7 @@ export async function getBroadbandProviders(enabledOnly = false): Promise<Broadb
       const q = constraints.length > 0
         ? query(collection(db, 'broadbandProviders'), ...constraints)
         : collection(db, 'broadbandProviders');
-      const snapshot = await getDocs(q);
+      const snapshot = await withTimeout(getDocs(q), 1200);
       if (!snapshot.empty) {
         const providers = snapshot.docs.map(d => d.data() as BroadbandProvider);
         return providers.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
@@ -648,7 +774,7 @@ export async function getBroadbandPlans(
       const q = constraints.length > 0
         ? query(collection(db, 'broadbandPlans'), ...constraints)
         : collection(db, 'broadbandPlans');
-      const snapshot = await getDocs(q);
+      const snapshot = await withTimeout(getDocs(q), 1200);
       if (!snapshot.empty) {
         let results = snapshot.docs.map(d => d.data() as BroadbandPlan);
         if (options?.city) {
@@ -1039,7 +1165,7 @@ export async function getEnquiries(brandScope?: BrandId | 'all', statusFilter?: 
       const q = constraints.length > 0
         ? query(collection(db, 'enquiries'), ...constraints)
         : collection(db, 'enquiries');
-      const snapshot = await getDocs(q);
+      const snapshot = await withTimeout(getDocs(q), 1200);
       if (!snapshot.empty) {
         return snapshot.docs.map(d => d.data() as Enquiry);
       }
@@ -1295,7 +1421,7 @@ export async function deleteFaq(id: string): Promise<boolean> {
 export async function getBanners(brandId?: BrandId | 'nexalus'): Promise<SiteBanner[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const snapshot = await getDocs(collection(db, 'banners'));
+      const snapshot = await withTimeout(getDocs(collection(db, 'banners')), 1200);
       if (!snapshot.empty) {
         const fullList = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SiteBanner));
         setLocalItem(STORAGE_KEYS.BANNERS, fullList);
@@ -1420,7 +1546,7 @@ export async function getUsers(): Promise<AdminUser[]> {
   // If Firestore is available, fetch the verified administrative user list
   if (isFirebaseConfigured && db) {
     try {
-      const snapshot = await getDocs(collection(db, 'users'));
+      const snapshot = await withTimeout(getDocs(collection(db, 'users')), 1200);
       if (!snapshot.empty) {
         const firestoreUsers: AdminUser[] = [];
         snapshot.forEach(d => {
@@ -1626,7 +1752,7 @@ export async function provisionAdminAccount(data: {
         if (authErr.code === 'auth/email-already-in-use') {
           console.info(`Email ${cleanEmail} already registered in Firebase Auth. Linking profile to existing Auth record.`);
           const q = query(collection(db, 'users'), where('email', '==', cleanEmail));
-          const snap = await getDocs(q);
+          const snap = await withTimeout(getDocs(q), 1200);
           if (!snap.empty) {
             authUid = snap.docs[0].id;
           } else {
@@ -2039,7 +2165,7 @@ export async function getCustomerEnquiries(email: string): Promise<Enquiry[]> {
   if (isFirebaseConfigured && db) {
     try {
       const q = query(collection(db, 'enquiries'), where('email', '==', cleanEmail));
-      const snap = await getDocs(q);
+      const snap = await withTimeout(getDocs(q), 1200);
       const items = snap.docs.map(d => ({ ...d.data(), id: d.id } as Enquiry));
       items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       return items;
@@ -2062,7 +2188,7 @@ export async function getTeamMembers(division?: string): Promise<TeamMember[]> {
   if (isFirebaseConfigured && db) {
     try {
       const q = query(collection(db, 'team_members'), orderBy('createdAt', 'desc'));
-      const snapshot = await withTimeout(getDocs(q), 2000);
+      const snapshot = await withTimeout(getDocs(q), 1200);
       if (!snapshot.empty) {
         members = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as TeamMember));
         setLocalItem(STORAGE_KEYS.TEAM, members);
