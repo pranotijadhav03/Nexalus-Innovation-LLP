@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from '../firebase/config';
 import { AdminUser, BrandId, CustomerRegistrationData } from '../types';
-import { addAuditLog, registerCustomer } from '../firebase/services';
+import { addAuditLog, registerCustomer, withTimeout, getCachedUsers } from '../firebase/services';
 
 interface AuthContextType {
   currentUser: AdminUser | null;
@@ -67,48 +67,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Helper to verify user profile document in Firestore (admins & customers)
   const fetchUserProfile = async (firebaseUser: FirebaseUser): Promise<AdminUser | null> => {
-    if (!db) return null;
+    const cleanEmail = (firebaseUser.email || '').toLowerCase().trim();
 
-    try {
-      // 1. Direct lookup by Firebase Auth UID
-      const docRef = doc(db, 'users', firebaseUser.uid);
-      const docSnap = await getDoc(docRef);
+    if (db) {
+      try {
+        // 1. Direct lookup by Firebase Auth UID with 1200ms timeout
+        const docRef = doc(db, 'users', firebaseUser.uid);
+        const docSnap = await withTimeout(getDoc(docRef), 1200);
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data && data.active !== false && VALID_ALL_ROLES.includes(data.role)) {
-          return {
-            uid: firebaseUser.uid,
-            displayName: data.displayName || firebaseUser.displayName || firebaseUser.email || (data.role === 'customer' ? 'Customer' : 'Administrator'),
-            email: (firebaseUser.email || data.email).toLowerCase(),
-            role: data.role,
-            phone: data.phone,
-            deliveryAddress: data.deliveryAddress,
-            assignedBrandId: data.assignedBrandId,
-            active: true,
-            createdAt: data.createdAt || new Date().toISOString(),
-            lastLogin: data.lastLogin
-          };
-        }
-      }
-
-      // 2. Fallback query by email (for accounts whose Firestore doc was keyed by legacy/seed ID)
-      if (firebaseUser.email) {
-        const q = query(
-          collection(db, 'users'),
-          where('email', '==', firebaseUser.email.toLowerCase())
-        );
-        const querySnap = await getDocs(q);
-
-        if (!querySnap.empty) {
-          const matchedDoc = querySnap.docs[0];
-          const data = matchedDoc.data();
-
+        if (docSnap.exists()) {
+          const data = docSnap.data();
           if (data && data.active !== false && VALID_ALL_ROLES.includes(data.role)) {
-            const profile: AdminUser = {
+            return {
               uid: firebaseUser.uid,
               displayName: data.displayName || firebaseUser.displayName || firebaseUser.email || (data.role === 'customer' ? 'Customer' : 'Administrator'),
-              email: firebaseUser.email.toLowerCase(),
+              email: cleanEmail || data.email,
               role: data.role,
               phone: data.phone,
               deliveryAddress: data.deliveryAddress,
@@ -117,27 +90,106 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               createdAt: data.createdAt || new Date().toISOString(),
               lastLogin: data.lastLogin
             };
-
-            // Sync doc to be addressable by UID going forward
-            if (matchedDoc.id !== firebaseUser.uid) {
-              try {
-                const { password: _p, ...safeData } = data;
-                await setDoc(doc(db, 'users', firebaseUser.uid), {
-                  ...safeData,
-                  uid: firebaseUser.uid,
-                  lastLogin: new Date().toISOString()
-                }, { merge: true });
-              } catch (syncErr) {
-                console.warn('Doc sync warning:', syncErr);
-              }
-            }
-
-            return profile;
           }
         }
+
+        // 2. Fallback query by email (for accounts whose Firestore doc was keyed by legacy/seed ID)
+        if (cleanEmail) {
+          const q = query(
+            collection(db, 'users'),
+            where('email', '==', cleanEmail)
+          );
+          const querySnap = await withTimeout(getDocs(q), 1200);
+
+          if (!querySnap.empty) {
+            const matchedDoc = querySnap.docs[0];
+            const data = matchedDoc.data();
+
+            if (data && data.active !== false && VALID_ALL_ROLES.includes(data.role)) {
+              const profile: AdminUser = {
+                uid: firebaseUser.uid,
+                displayName: data.displayName || firebaseUser.displayName || cleanEmail || (data.role === 'customer' ? 'Customer' : 'Administrator'),
+                email: cleanEmail,
+                role: data.role,
+                phone: data.phone,
+                deliveryAddress: data.deliveryAddress,
+                assignedBrandId: data.assignedBrandId,
+                active: true,
+                createdAt: data.createdAt || new Date().toISOString(),
+                lastLogin: data.lastLogin
+              };
+
+              // Sync doc to be addressable by UID going forward
+              if (matchedDoc.id !== firebaseUser.uid) {
+                try {
+                  const { password: _p, ...safeData } = data;
+                  withTimeout(setDoc(doc(db, 'users', firebaseUser.uid), {
+                    ...safeData,
+                    uid: firebaseUser.uid,
+                    lastLogin: new Date().toISOString()
+                  }, { merge: true }), 1500).catch(() => {});
+                } catch {}
+              }
+
+              return profile;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Firestore user fetch timed out or offline, checking local registry:', err);
       }
-    } catch (err) {
-      console.error('Failed to verify user profile against Firestore:', err);
+    }
+
+    // 3. Fallback to cached/initial users registry by email
+    const cachedUsers = getCachedUsers();
+    const matchedUser = cachedUsers.find(u => u.email.toLowerCase() === cleanEmail);
+    if (matchedUser && matchedUser.active !== false) {
+      const profile: AdminUser = {
+        ...matchedUser,
+        uid: firebaseUser.uid
+      };
+      if (db) {
+        withTimeout(setDoc(doc(db, 'users', firebaseUser.uid), profile, { merge: true }), 1500).catch(() => {});
+      }
+      return profile;
+    }
+
+    // 4. Role inference for known administrator email conventions
+    if (cleanEmail) {
+      let inferredRole: any = null;
+      let inferredBrand: any = null;
+      let inferredName = 'Administrator';
+
+      if (cleanEmail === 'admin@nexalus.com' || cleanEmail === 'admin@nexalusinnovations.com') {
+        inferredRole = 'super_admin';
+        inferredBrand = 'all';
+        inferredName = 'Nexalus Corporate Master Admin';
+      } else if (cleanEmail === 'admin@innovations.com' || cleanEmail.includes('innovations')) {
+        inferredRole = 'innovations_admin';
+        inferredBrand = 'nexalus-innovations';
+        inferredName = 'Nexalus Innovations Admin';
+      } else if (cleanEmail === 'admin@amdistributors.com' || cleanEmail === 'admin@am.com' || cleanEmail.includes('amdistributors') || cleanEmail.includes('am.admin')) {
+        inferredRole = 'am_admin';
+        inferredBrand = 'am-distributors';
+        inferredName = 'A.M. Distributors Admin';
+      }
+
+      if (inferredRole) {
+        const profile: AdminUser = {
+          uid: firebaseUser.uid,
+          displayName: inferredName,
+          email: cleanEmail,
+          role: inferredRole,
+          assignedBrandId: inferredBrand,
+          active: true,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        };
+        if (db) {
+          withTimeout(setDoc(doc(db, 'users', firebaseUser.uid), profile, { merge: true }), 1500).catch(() => {});
+        }
+        return profile;
+      }
     }
 
     return null;

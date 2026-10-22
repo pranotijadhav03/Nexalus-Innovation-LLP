@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getBanners, updateBanner } from '../../firebase/services';
+import { getBanners, updateBanner, getCachedBanners } from '../../firebase/services';
 import { initialBanners } from '../../data/initialData';
 import { SiteBanner } from '../../types';
 import { Input, TextArea } from '../../components/common/Input';
@@ -47,8 +47,8 @@ export const AdminContentPage: React.FC = () => {
 
   const [activeScope, setActiveScope] = useState<ContentScope>(getInitialScope);
   const [activeTab, setActiveTab] = useState<ContentTab>('hero');
-  const [banners, setBanners] = useState<SiteBanner[]>(initialBanners);
-  const [isLoading, setIsLoading] = useState(true);
+  const [banners, setBanners] = useState<SiteBanner[]>(() => getCachedBanners());
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Form Fields for Active Scope

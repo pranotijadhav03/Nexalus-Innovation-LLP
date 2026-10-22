@@ -7,7 +7,8 @@ import {
   getServiceAreas,
   createServiceArea,
   updateServiceArea,
-  deleteServiceArea
+  deleteServiceArea,
+  getCachedServiceAreas
 } from '../../firebase/services';
 import { ServiceArea } from '../../types';
 import { Input, Select } from '../../components/common/Input';
@@ -21,8 +22,8 @@ export const AdminServiceAreasPage: React.FC = () => {
   const activeConsole = outletCtx?.activeConsole || 'master';
   const { success, error } = useToast();
 
-  const [areas, setAreas] = useState<ServiceArea[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [areas, setAreas] = useState<ServiceArea[]>(() => getCachedServiceAreas());
+  const [isLoading, setIsLoading] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);

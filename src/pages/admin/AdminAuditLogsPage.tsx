@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getAuditLogs } from '../../firebase/services';
+import { getAuditLogs, getCachedAuditLogs } from '../../firebase/services';
 import { AuditLog } from '../../types';
 import { BrandBadge } from '../../components/common/BrandBadge';
 import { ScrollText, Search, Filter, Clock, User, ShieldCheck } from 'lucide-react';
 
 export const AdminAuditLogsPage: React.FC = () => {
   const { isSuperAdmin } = useAuth();
-  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [logs, setLogs] = useState<AuditLog[]>(() => getCachedAuditLogs());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     async function load() {

@@ -1665,6 +1665,16 @@ export const initialUsers: AdminUser[] = [
     lastLogin: new Date().toISOString()
   },
   {
+    uid: 'admin-innovations-03',
+    displayName: 'Nexalus Innovations Admin',
+    email: 'admin@innovations.com',
+    role: 'innovations_admin',
+    assignedBrandId: 'nexalus-innovations',
+    active: true,
+    createdAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString()
+  },
+  {
     uid: 'admin-am-01',
     displayName: 'A.M. Distributors Chiplun Depot Manager',
     email: 'am@nexalus.com',
@@ -1678,6 +1688,26 @@ export const initialUsers: AdminUser[] = [
     uid: 'admin-am-02',
     displayName: 'A.M. Distributors Chiplun Depot Manager',
     email: 'am.admin@nexalusinnovations.com',
+    role: 'am_admin',
+    assignedBrandId: 'am-distributors',
+    active: true,
+    createdAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString()
+  },
+  {
+    uid: 'admin-am-03',
+    displayName: 'A.M. Distributors Admin',
+    email: 'admin@amdistributors.com',
+    role: 'am_admin',
+    assignedBrandId: 'am-distributors',
+    active: true,
+    createdAt: new Date().toISOString(),
+    lastLogin: new Date().toISOString()
+  },
+  {
+    uid: 'admin-am-04',
+    displayName: 'A.M. Distributors Admin',
+    email: 'admin@am.com',
     role: 'am_admin',
     assignedBrandId: 'am-distributors',
     active: true,

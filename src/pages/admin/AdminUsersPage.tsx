@@ -7,7 +7,8 @@ import {
   getUsers,
   updateUser,
   deleteUser,
-  provisionAdminAccount
+  provisionAdminAccount,
+  getCachedUsers
 } from '../../firebase/services';
 import { AdminUser, BrandId, UserRole } from '../../types';
 import { Button } from '../../components/common/Button';
@@ -37,8 +38,8 @@ export const AdminUsersPage: React.FC = () => {
   const { isSuperAdmin, currentUser } = useAuth();
   const { success, error } = useToast();
 
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [users, setUsers] = useState<AdminUser[]>(() => getCachedUsers());
+  const [isLoading, setIsLoading] = useState(false);
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');

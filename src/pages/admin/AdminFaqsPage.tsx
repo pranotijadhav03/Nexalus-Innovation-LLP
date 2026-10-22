@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getFaqs, createFaq, updateFaq, deleteFaq } from '../../firebase/services';
+import { getFaqs, createFaq, updateFaq, deleteFaq, getCachedFaqs } from '../../firebase/services';
 import { FAQ, BrandId } from '../../types';
 import { Input, TextArea, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -13,7 +13,7 @@ export const AdminFaqsPage: React.FC = () => {
   const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, canManageBrand } = useAuth();
   const { success, error } = useToast();
 
-  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [faqs, setFaqs] = useState<FAQ[]>(() => getCachedFaqs());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
 

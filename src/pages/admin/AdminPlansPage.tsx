@@ -17,7 +17,10 @@ import {
   updateInternetPlan,
   deleteInternetPlan,
   subscribeToBroadbandPlans,
-  subscribeToInternetPlans
+  subscribeToInternetPlans,
+  getCachedBroadbandProviders,
+  getCachedBroadbandPlans,
+  getCachedInternetPlans
 } from '../../firebase/services';
 import {
   BroadbandPlan,
@@ -56,10 +59,10 @@ export const AdminPlansPage: React.FC = () => {
   const { success, error } = useToast();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('airtel');
-  const [providers, setProviders] = useState<BroadbandProvider[]>([]);
-  const [broadbandPlans, setBroadbandPlans] = useState<BroadbandPlan[]>([]);
-  const [oneBroadbandPlans, setOneBroadbandPlans] = useState<InternetPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [providers, setProviders] = useState<BroadbandProvider[]>(() => getCachedBroadbandProviders());
+  const [broadbandPlans, setBroadbandPlans] = useState<BroadbandPlan[]>(() => getCachedBroadbandPlans('airtel'));
+  const [oneBroadbandPlans, setOneBroadbandPlans] = useState<InternetPlan[]>(() => getCachedInternetPlans());
+  const [isLoading, setIsLoading] = useState(false);
 
   // Multi-Provider Plan Modal State
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);

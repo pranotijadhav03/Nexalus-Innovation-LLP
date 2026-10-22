@@ -37,7 +37,15 @@ import {
   getEnquiries,
   getAuditLogs,
   getTeamMembers,
-  getUsers
+  getUsers,
+  getCachedProducts,
+  getCachedInternetPlans,
+  getCachedBroadbandPlans,
+  getCachedServices,
+  getCachedEnquiries,
+  getCachedAuditLogs,
+  getCachedTeamMembers,
+  getCachedUsers
 } from '../../firebase/services';
 import { Product, InternetPlan, Service, Enquiry, AuditLog, TeamMember } from '../../types';
 
@@ -55,21 +63,32 @@ export const AdminDashboardPage: React.FC = () => {
     return path;
   };
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [plans, setPlans] = useState<InternetPlan[]>([]);
-  const [broadbandPlansCount, setBroadbandPlansCount] = useState(0);
-  const [services, setServices] = useState<Service[]>([]);
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [usersCount, setUsersCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const initialProds = getCachedProducts(undefined);
+  const initialEnqs = getCachedEnquiries('all');
 
-  // Subsidiary metrics
-  const [nexalusProductsCount, setNexalusProductsCount] = useState(0);
-  const [amProductsCount, setAmProductsCount] = useState(0);
-  const [nexalusLeadsCount, setNexalusLeadsCount] = useState(0);
-  const [amLeadsCount, setAmLeadsCount] = useState(0);
+  const [products, setProducts] = useState<Product[]>(() => initialProds);
+  const [plans, setPlans] = useState<InternetPlan[]>(() => getCachedInternetPlans());
+  const [broadbandPlansCount, setBroadbandPlansCount] = useState<number>(() => getCachedBroadbandPlans().filter(p => p.published).length);
+  const [services, setServices] = useState<Service[]>(() => getCachedServices(undefined));
+  const [enquiries, setEnquiries] = useState<Enquiry[]>(() => initialEnqs);
+  const [logs, setLogs] = useState<AuditLog[]>(() => getCachedAuditLogs().slice(0, 6));
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => getCachedTeamMembers('all'));
+  const [usersCount, setUsersCount] = useState<number>(() => getCachedUsers().length);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Subsidiary metrics initialized synchronously
+  const [nexalusProductsCount, setNexalusProductsCount] = useState<number>(
+    () => initialProds.filter(p => p.brandId === 'nexalus-innovations' || p.brandId === 'cp-plus' || p.brandId === 'one-broadband' || p.brandId === 'itti-networking').length
+  );
+  const [amProductsCount, setAmProductsCount] = useState<number>(
+    () => initialProds.filter(p => p.brandId === 'am-distributors').length
+  );
+  const [nexalusLeadsCount, setNexalusLeadsCount] = useState<number>(
+    () => initialEnqs.filter(e => e.brandId === 'nexalus-innovations' || e.brandId === 'cp-plus' || e.brandId === 'one-broadband' || e.brandId === 'itti-networking').length
+  );
+  const [amLeadsCount, setAmLeadsCount] = useState<number>(
+    () => initialEnqs.filter(e => e.brandId === 'am-distributors').length
+  );
 
   const loadData = async () => {
     setIsLoading(true);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getCategories, createCategory, deleteCategory } from '../../firebase/services';
+import { getCategories, createCategory, deleteCategory, getCachedCategories } from '../../firebase/services';
 import { ProductCategory, BrandId } from '../../types';
 import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { Input, TextArea, Select } from '../../components/common/Input';
@@ -18,7 +18,9 @@ export const AdminCategoriesPage: React.FC = () => {
   const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
   const { success, error } = useToast();
 
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>(() =>
+    getCachedCategories(activeConsole === 'master' ? undefined : activeBrandFilter)
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [brandId, setBrandId] = useState<BrandId>(
@@ -34,7 +36,7 @@ export const AdminCategoriesPage: React.FC = () => {
   const [deleteCandidate, setDeleteCandidate] = useState<ProductCategory | null>(null);
 
   const loadData = async () => {
-    const filter = activeConsole === 'master' ? 'nexalus' : activeBrandFilter;
+    const filter = activeConsole === 'master' ? undefined : activeBrandFilter;
     const data = await getCategories(filter === 'all' ? undefined : filter as any);
     setCategories(data);
   };
@@ -92,7 +94,7 @@ export const AdminCategoriesPage: React.FC = () => {
     if (activeConsole === 'am-distributors' || isAmAdmin) {
       return c.brandId === 'am-distributors';
     }
-    return c.brandId === 'nexalus';
+    return true; // Corporate Master view shows all categories for Super Admin
   });
 
   const nexalusCatCount = categories.filter(

@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getEnquiries, getProducts, getInternetPlans, getBroadbandPlans, getServices } from '../../firebase/services';
+import {
+  getEnquiries,
+  getProducts,
+  getInternetPlans,
+  getBroadbandPlans,
+  getServices,
+  getCachedEnquiries,
+  getCachedProducts,
+  getCachedInternetPlans,
+  getCachedBroadbandPlans,
+  getCachedServices
+} from '../../firebase/services';
 import { Enquiry, Product, Service, BrandId } from '../../types';
 import { StatCard } from '../../components/admin/StatCard';
 import {
@@ -20,11 +31,21 @@ export const AdminReportsPage: React.FC = () => {
   const outletCtx = useOutletContext<{ activeBrandFilter?: BrandId | 'corporate' | 'all' }>();
   const activeBrandFilter = outletCtx?.activeBrandFilter || 'all';
 
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [totalPlansCount, setTotalPlansCount] = useState<number>(0);
-  const [services, setServices] = useState<Service[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [enquiries, setEnquiries] = useState<Enquiry[]>(() =>
+    getCachedEnquiries(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter)
+  );
+  const [products, setProducts] = useState<Product[]>(() =>
+    getCachedProducts(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter)
+  );
+  const [totalPlansCount, setTotalPlansCount] = useState<number>(() => {
+    const bb = getCachedBroadbandPlans().filter(b => b.published !== false).length;
+    const net = getCachedInternetPlans().filter(n => n.published !== false).length;
+    return bb + net;
+  });
+  const [services, setServices] = useState<Service[]>(() =>
+    getCachedServices(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter)
+  );
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     async function load() {

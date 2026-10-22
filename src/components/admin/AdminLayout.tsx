@@ -108,11 +108,18 @@ export const AdminLayout: React.FC = () => {
     return <Navigate to="/admin/login" replace />;
   }
 
+  // Guaranteed effective console: child admins are locked to their company workspace
+  const effectiveConsole: AdminConsoleMode = isInnovationsAdmin
+    ? 'nexalus-innovations'
+    : isAmAdmin
+    ? 'am-distributors'
+    : activeConsole;
+
   // Active brand filter for products/services/enquiries
   let activeBrandFilter: BrandId | 'corporate' | 'all' = 'corporate';
-  if (activeConsole === 'nexalus-innovations') {
+  if (effectiveConsole === 'nexalus-innovations') {
     activeBrandFilter = 'nexalus-innovations';
-  } else if (activeConsole === 'am-distributors') {
+  } else if (effectiveConsole === 'am-distributors') {
     activeBrandFilter = 'am-distributors';
   } else {
     activeBrandFilter = isSuperAdmin ? 'corporate' : ((brandScope as BrandId) || 'corporate');
@@ -120,7 +127,7 @@ export const AdminLayout: React.FC = () => {
 
   const outletContext: AdminOutletContext = {
     activeBrandFilter,
-    activeConsole,
+    activeConsole: effectiveConsole,
     setActiveConsole,
     openChildConsole,
     returnToMaster
@@ -132,7 +139,7 @@ export const AdminLayout: React.FC = () => {
       <AdminSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        activeConsole={activeConsole}
+        activeConsole={effectiveConsole}
         onConsoleChange={setActiveConsole}
       />
 
@@ -140,17 +147,17 @@ export const AdminLayout: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <AdminNavbar
           onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-          activeConsole={activeConsole}
+          activeConsole={effectiveConsole}
           onConsoleChange={setActiveConsole}
         />
 
         {/* Prominent Super Admin Child Workspace Banner */}
-        {isSuperAdmin && activeConsole !== 'master' && (
+        {isSuperAdmin && effectiveConsole !== 'master' && (
           <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2 sm:px-6 text-xs font-bold flex items-center justify-between border-b border-amber-600/30 shrink-0 shadow-xs">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
               <span>
-                Active Workspace: <strong className="font-extrabold uppercase tracking-wide">{activeConsole === 'nexalus-innovations' ? 'Nexalus Innovations' : 'A.M. Distributors Chiplun'}</strong>. All operations and forms are scoped strictly to this entity.
+                Active Workspace: <strong className="font-extrabold uppercase tracking-wide">{effectiveConsole === 'nexalus-innovations' ? 'Nexalus Innovations' : 'A.M. Distributors Chiplun'}</strong>. All operations and forms are scoped strictly to this entity.
               </span>
             </div>
             <button
@@ -164,7 +171,7 @@ export const AdminLayout: React.FC = () => {
         )}
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          <Outlet key={location.pathname} context={outletContext} />
+          <Outlet context={outletContext} />
         </main>
       </div>
     </div>

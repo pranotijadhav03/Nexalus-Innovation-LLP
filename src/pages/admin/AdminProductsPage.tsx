@@ -8,7 +8,9 @@ import {
   updateProduct,
   deleteProduct,
   getCategories,
-  uploadImageFile
+  uploadImageFile,
+  getCachedProducts,
+  getCachedCategories
 } from '../../firebase/services';
 import { Product, ProductCategory, BrandId } from '../../types';
 import { AdminOutletContext } from '../../components/admin/AdminLayout';
@@ -40,11 +42,15 @@ export const AdminProductsPage: React.FC = () => {
   const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
   const { success, error } = useToast();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [products, setProducts] = useState<Product[]>(() =>
+    getCachedProducts(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter)
+  );
+  const [categories, setCategories] = useState<ProductCategory[]>(() =>
+    getCachedCategories(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter)
+  );
   const [search, setSearch] = useState('');
   const [selectedCatFilter, setSelectedCatFilter] = useState('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -241,7 +247,7 @@ export const AdminProductsPage: React.FC = () => {
         ? (p.brandId === 'nexalus-innovations' || p.brandId === 'cp-plus' || p.brandId === 'one-broadband' || p.brandId === 'itti-networking')
         : activeConsole === 'am-distributors' || isAmAdmin
         ? (p.brandId === 'am-distributors')
-        : (p.brandId === 'nexalus');
+        : true;
 
     return matchesSearch && matchesCat && matchesCompany;
   });
