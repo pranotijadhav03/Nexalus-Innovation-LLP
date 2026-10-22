@@ -300,7 +300,7 @@ export const initialProducts: Product[] = [
       'Cleaning Cycle': 'Automated High-Pressure Steam Washed',
       'Subscription': 'Daily / Weekly Regular Office & Home Supply'
     },
-    images: ['/images/products/am-water-jar-20l.jpg'],
+    images: ['/images/products/am-water-jar-20l.jpg', '/images/products/am-water-bottles-retail.jpg'],
     price: 85,
     currency: 'INR',
     availability: 'in_stock',
@@ -325,7 +325,7 @@ export const initialProducts: Product[] = [
       'Supply Fleet': 'Temperature-Monitored Reefer Delivery Vans',
       'Coverage': 'Chiplun, Ratnagiri District & Konkan Belt'
     },
-    images: ['/images/products/am-icecream-tub.jpg'],
+    images: ['/images/products/am-icecream-tub.jpg', '/images/products/am-icecream-cones.jpg'],
     price: 360,
     currency: 'INR',
     availability: 'in_stock',
@@ -350,7 +350,7 @@ export const initialProducts: Product[] = [
       'Clients': 'Dairy Outlets, Groceries, Hospitals & Residential Societies',
       'Quality Compliance': 'Daily Microbiological & Chilling Audits'
     },
-    images: ['/images/products/am-fresh-milk-dairy.jpg'],
+    images: ['/images/products/am-fresh-milk-dairy.jpg', '/images/projects/real-warehouse-distribution.jpg'],
     price: 34,
     currency: 'INR',
     availability: 'in_stock',
@@ -375,7 +375,7 @@ export const initialProducts: Product[] = [
       'FSSAI Certified': '100% Genuine Dairy Quality Guarantee',
       'Ordering': 'Daily Wholesale Dispatch & Retail replenishment'
     },
-    images: ['/images/projects/am-distributors-chiplun.jpg'],
+    images: ['/images/products/am-butter-block.jpg', '/images/products/am-cheese-block.jpg'],
     price: 275,
     currency: 'INR',
     availability: 'in_stock',

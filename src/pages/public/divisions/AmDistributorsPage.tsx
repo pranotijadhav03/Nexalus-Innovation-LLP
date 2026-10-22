@@ -15,7 +15,9 @@ import {
   Award,
   Building2,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
 import { OurTeamSection } from '../../../components/common/OurTeamSection';
@@ -79,152 +81,223 @@ export const AmDistributorsPage: React.FC = () => {
     };
   }, []);
 
-  // Collect uploaded product images dynamically for the hero sliding background
+  // Dynamically build 4 rich, coordinated slides using uploaded product imagery & matching tailored copy
   const heroSlides = useMemo(() => {
-    const list: { image: string; title: string; category?: string }[] = [];
+    const waterProd = divisionProducts.find(p => p.categoryId?.includes('water') || p.id === 'prod-am-1');
+    const icecreamProd = divisionProducts.find(p => p.categoryId?.includes('icecream') || p.id === 'prod-am-2');
+    const milkProd = divisionProducts.find(p => p.categoryId?.includes('dairy') || p.id === 'prod-am-3');
+    const butterProd = divisionProducts.find(p => p.id === 'prod-am-4');
 
-    divisionProducts.forEach(prod => {
-      if (prod.images && prod.images.length > 0) {
-        prod.images.forEach(img => {
-          if (img && !list.some(s => s.image === img)) {
-            list.push({
-              image: img,
-              title: prod.name,
-              category: prod.categoryId
-            });
-          }
-        });
+    const waterImg = waterProd?.images?.[0] || '/images/products/am-water-jar-20l.jpg';
+    const icecreamImg = icecreamProd?.images?.[0] || '/images/products/am-icecream-tub.jpg';
+    const dairyImg = milkProd?.images?.[0] || butterProd?.images?.[0] || '/images/products/am-fresh-milk-dairy.jpg';
+    const hubImg = '/images/projects/real-warehouse-distribution.jpg';
+
+    return [
+      {
+        id: 'overview',
+        image: hubImg,
+        badge: 'Chiplun Regional Cold-Chain & Commercial Wholesale Logistics',
+        title: heroBanner?.title || 'A.M. Distributors Chiplun',
+        subtitle: 'Packaged Mineral Water • Ice Cream Distributor • Milk, Butter & All Dairy Products',
+        description:
+          heroBanner?.subtitle ||
+          'The dedicated regional cold-chain and commercial distribution hub for Chiplun and the Konkan region. Operating under Nexalus Innovations LLP, we manage temperature-controlled refrigerated logistics for packaged mineral water, commercial ice creams, farm-fresh milk, butter, and complete dairy supplies.',
+        primaryCta: 'Order Wholesale / Distribution Supply',
+        secondaryCta: 'Contact Chiplun Depot',
+        badgeTheme: 'bg-emerald-950/70 border-emerald-500/40 text-emerald-300',
+        gradientText: 'from-emerald-300 via-teal-200 to-cyan-300',
+        tabLabel: 'Depot Overview'
+      },
+      {
+        id: 'mineral-water',
+        image: waterImg,
+        badge: 'Ozone-Treated & Automated Steam-Sanitized Jars',
+        title: 'Packaged Mineral Water Supply',
+        subtitle: '20-Litre Hermetic Sealed Dispensers & 500ml / 1L Bottled Water Cases',
+        description:
+          'Pure, laboratory-tested natural mineral water for corporate campuses, hotels, factories, and residences across Chiplun, Khed, and Guhagar. Tamper-evident hermetic sealing with daily punctual doorstep replenishment routes.',
+        primaryCta: 'Book Water Route Subscription',
+        secondaryCta: 'View Mineral Water Specs',
+        badgeTheme: 'bg-cyan-950/70 border-cyan-500/40 text-cyan-300',
+        gradientText: 'from-cyan-300 via-teal-200 to-sky-300',
+        tabLabel: 'Mineral Water'
+      },
+      {
+        id: 'ice-cream',
+        image: icecreamImg,
+        badge: 'Certified -18°C Deep-Freeze Transport Fleet',
+        title: 'Commercial Bulk Ice Cream Tubs',
+        subtitle: 'Amul, Vadilal & Regional Gourmet Assortments for Parlors & Banquets',
+        description:
+          'Unbroken sub-zero cold-chain transport for banquet halls, luxury hotels, restaurants, and retail parlors across Chiplun and the Konkan belt. Temperature-monitored reefer vans ensuring zero melting and crystal-free gourmet texture.',
+        primaryCta: 'Inquire Ice Cream Wholesale',
+        secondaryCta: 'Explore Flavor Portfolio',
+        badgeTheme: 'bg-amber-950/70 border-amber-500/40 text-amber-300',
+        gradientText: 'from-amber-300 via-orange-200 to-teal-300',
+        tabLabel: 'Ice Creams'
+      },
+      {
+        id: 'dairy-milk',
+        image: dairyImg,
+        badge: 'Daily 4:00 AM Direct Farm Sourcing',
+        title: 'Farm-Fresh Milk & Pure Dairy',
+        subtitle: 'Standardized 4.5% Fat Milk, Pure Cow Ghee & Table Butter Blocks',
+        description:
+          'Nutrient-rich, lab-tested standardized milk chilled within two hours of milking. Delivering morning freshness to dairy counters, groceries, hospitals, and bakeries with unbroken morning cold-chains.',
+        primaryCta: 'Join Morning Milk Route',
+        secondaryCta: 'Dairy Price Breakdown',
+        badgeTheme: 'bg-teal-950/70 border-teal-500/40 text-teal-300',
+        gradientText: 'from-emerald-300 via-teal-200 to-amber-200',
+        tabLabel: 'Milk & Dairy'
       }
-    });
+    ];
+  }, [divisionProducts, heroBanner]);
 
-    // Fallbacks if no products exist yet
-    if (list.length === 0) {
-      return [
-        { image: '/images/products/am-water-jar-20l.jpg', title: '20L Packaged Mineral Water Jars' },
-        { image: '/images/products/am-icecream-tub.jpg', title: 'Commercial Bulk Ice Cream Tubs' },
-        { image: '/images/products/am-fresh-milk-dairy.jpg', title: 'Daily 4:00 AM Farm-Fresh Milk' },
-        { image: '/images/products/am-butter-block.jpg', title: 'Pure Butter & Catering Tins' },
-        { image: '/images/projects/real-warehouse-distribution.jpg', title: 'Chiplun Regional Cold-Chain Logistics Hub' }
-      ];
-    }
-
-    return list;
-  }, [divisionProducts]);
-
-  // Automatic slide rotation every 4.5 seconds
+  // Automatic slide rotation every 5 seconds
   useEffect(() => {
     if (heroSlides.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentSlide(prev => (prev + 1) % heroSlides.length);
-    }, 4500);
+    }, 5000);
     return () => clearInterval(interval);
   }, [heroSlides.length]);
 
+  const activeSlide = heroSlides[currentSlide] || heroSlides[0];
+
+  const handlePrevSlide = () => {
+    setCurrentSlide(prev => (prev - 1 + heroSlides.length) % heroSlides.length);
+  };
+
+  const handleNextSlide = () => {
+    setCurrentSlide(prev => (prev + 1) % heroSlides.length);
+  };
+
   return (
     <div className="space-y-16 sm:space-y-24 pb-20">
-      {/* 1. HERO BANNER WITH SLIDING PRODUCT IMAGES & GENTLE FADE OVERLAY */}
-      <section className="relative overflow-hidden bg-slate-950 text-white pt-20 pb-28 border-b border-slate-800 select-none">
-        {/* Animated Sliding Background Track */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
+      {/* 1. HERO BANNER WITH SLIDING PRODUCT IMAGES, DYNAMIC CONTENT & FADE OVERLAY */}
+      <section className="relative overflow-hidden bg-slate-950 text-white pt-20 pb-28 border-b border-slate-800 select-none min-h-[580px] sm:min-h-[640px] flex flex-col justify-center">
+        {/* Animated Sliding Background Track with Smooth Cross-Fade */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {heroSlides.map((slide, index) => {
             const isActive = index === currentSlide;
             return (
               <div
-                key={slide.image + index}
-                className={`absolute inset-0 transition-all duration-1000 ease-in-out transform ${
-                  isActive
-                    ? 'opacity-80 scale-100 translate-x-0'
-                    : index < currentSlide
-                    ? 'opacity-0 scale-105 -translate-x-12 pointer-events-none'
-                    : 'opacity-0 scale-105 translate-x-12 pointer-events-none'
+                key={slide.id}
+                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                  isActive ? 'opacity-80 z-10' : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
                 <img
                   src={slide.image}
                   alt={slide.title}
-                  className="w-full h-full object-cover filter brightness-95 contrast-105"
+                  className={`w-full h-full object-cover filter brightness-95 contrast-105 transition-transform duration-7000 ease-out ${
+                    isActive ? 'scale-105' : 'scale-100'
+                  }`}
                 />
               </div>
             );
           })}
 
-          {/* Fade Overlay Gradient: Soft dark vignette ensuring vivid image colors while text remains crisp */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/45 backdrop-blur-[0.5px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(2,6,23,0.85)_100%)]" />
+          {/* Fade Overlay Gradient: Soft dark vignette ensuring vivid image colors while text remains razor sharp */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/45 backdrop-blur-[0.5px] z-10" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(2,6,23,0.85)_100%)] z-10" />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 text-center max-w-4xl">
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-teal-200 hover:text-white font-bold text-xs sm:text-sm border border-teal-500/40 shadow-xs transition-all group backdrop-blur-md"
-            >
-              <ArrowLeft className="w-4 h-4 text-teal-400 group-hover:-translate-x-1 transition-transform" />
-              <span>Back to Main Website (Nexalus Innovations LLP)</span>
-            </Link>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-900/60 text-teal-300 text-xs font-semibold border border-teal-700/50 backdrop-blur-sm">
-              <span className="w-2 h-2 rounded-full bg-teal-400 inline-block animate-pulse" />
-              <span>Operating Company — Nexalus Innovations LLP</span>
-            </div>
-            {heroBanner?.badge && (
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/20 text-teal-200 text-xs font-semibold border border-teal-400/40 backdrop-blur-sm">
-                <Sparkles className="w-3.5 h-3.5 text-teal-300 shrink-0" />
-                <span>{heroBanner.badge}</span>
-              </div>
-            )}
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-            {heroBanner?.title || 'A.M. Distributors Chiplun'}
-          </h1>
-
-          <p className="text-base sm:text-xl text-teal-200 font-medium">
-            Packaged Mineral Water • Ice Cream Distributor • Milk, Butter &amp; All Dairy Products
-          </p>
-
-          <p className="text-sm sm:text-base text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            The dedicated regional cold-chain and commercial distribution hub for Chiplun and the Konkan region. Operating under Nexalus Innovations LLP, we manage temperature-controlled refrigerated logistics for packaged mineral water, commercial ice creams, farm-fresh milk, butter, and complete dairy supplies.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Button
-              variant="teal"
-              size="lg"
-              onClick={() => setIsQuoteModalOpen(true)}
-              icon={<ArrowRight className="w-4 h-4" />}
-            >
-              Order Wholesale / Distribution Supply
-            </Button>
-            <Link to="/contact">
-              <Button variant="outline-white" size="lg">
-                Contact Chiplun Depot
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Slide Indicator Dots & Current Product Badge */}
+        {/* Previous / Next Arrow Controls (Desktop) */}
         {heroSlides.length > 1 && (
-          <div className="relative z-10 pt-8 flex flex-col sm:flex-row items-center justify-center gap-3 px-4">
-            <div className="flex items-center gap-2 bg-slate-950/70 backdrop-blur-md px-4 py-1.5 rounded-full border border-teal-500/30 shadow-md">
-              <span className="text-[11px] font-bold text-teal-300">
-                Featured: {heroSlides[currentSlide]?.title}
-              </span>
-              <span className="text-slate-600">•</span>
-              <div className="flex items-center gap-1.5">
-                {heroSlides.map((_, dotIdx) => (
-                  <button
-                    key={dotIdx}
-                    onClick={() => setCurrentSlide(dotIdx)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      dotIdx === currentSlide
-                        ? 'w-6 bg-teal-400'
-                        : 'w-2 bg-slate-600 hover:bg-slate-400'
-                    }`}
-                    title={`Slide to product ${dotIdx + 1}`}
-                  />
-                ))}
+          <>
+            <button
+              onClick={handlePrevSlide}
+              className="hidden lg:flex absolute left-4 xl:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-2xl bg-slate-950/60 hover:bg-slate-900/90 text-slate-300 hover:text-white border border-teal-500/30 backdrop-blur-md items-center justify-center transition-all hover:scale-105 shadow-lg group cursor-pointer"
+              title="Previous slide"
+            >
+              <ChevronLeft className="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+            <button
+              onClick={handleNextSlide}
+              className="hidden lg:flex absolute right-4 xl:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-2xl bg-slate-950/60 hover:bg-slate-900/90 text-slate-300 hover:text-white border border-teal-500/30 backdrop-blur-md items-center justify-center transition-all hover:scale-105 shadow-lg group cursor-pointer"
+              title="Next slide"
+            >
+              <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </>
+        )}
+
+        {/* Dynamic Foreground Content with Staggered Slide Animations */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-4xl py-6">
+          <div key={currentSlide} className="space-y-6">
+            {/* Top Badges */}
+            <div className="animate-hero-down flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-teal-200 hover:text-white font-bold text-xs sm:text-sm border border-teal-500/40 shadow-xs transition-all group backdrop-blur-md"
+              >
+                <ArrowLeft className="w-4 h-4 text-teal-400 group-hover:-translate-x-1 transition-transform" />
+                <span>Back to Main Website (Nexalus Innovations LLP)</span>
+              </Link>
+              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold border backdrop-blur-sm transition-all shadow-xs ${activeSlide.badgeTheme}`}>
+                <span className="w-2 h-2 rounded-full bg-teal-400 inline-block animate-pulse" />
+                <span>{activeSlide.badge}</span>
               </div>
+            </div>
+
+            {/* Main Slide Title */}
+            <h1 className="animate-hero-up text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight drop-shadow-sm">
+              {activeSlide.title}
+            </h1>
+
+            {/* Tailored Subtitle with Gradient Text Shimmer */}
+            <p className={`animate-hero-up text-base sm:text-xl font-bold bg-gradient-to-r ${activeSlide.gradientText} bg-clip-text text-transparent [animation-delay:120ms]`}>
+              {activeSlide.subtitle}
+            </p>
+
+            {/* Description Paragraph */}
+            <p className="animate-hero-up text-sm sm:text-base text-slate-300 max-w-3xl mx-auto leading-relaxed [animation-delay:220ms]">
+              {activeSlide.description}
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="animate-hero-up flex flex-wrap items-center justify-center gap-4 pt-2 [animation-delay:320ms]">
+              <Button
+                variant="teal"
+                size="lg"
+                onClick={() => setIsQuoteModalOpen(true)}
+                icon={<ArrowRight className="w-4 h-4" />}
+                className="shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 font-bold transition-all hover:scale-[1.02]"
+              >
+                {activeSlide.primaryCta}
+              </Button>
+              <Link to="/contact">
+                <Button variant="outline-white" size="lg" className="backdrop-blur-sm hover:bg-white/10 font-bold">
+                  {activeSlide.secondaryCta}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Interactive Bottom Slide Navigation Tabs */}
+        {heroSlides.length > 1 && (
+          <div className="relative z-10 pt-8 flex flex-col items-center justify-center gap-2.5 px-4">
+            <div className="flex flex-wrap items-center justify-center gap-2 bg-slate-950/80 backdrop-blur-md px-3 py-2 rounded-2xl border border-teal-500/30 shadow-xl">
+              {heroSlides.map((slide, dotIdx) => {
+                const isActive = dotIdx === currentSlide;
+                return (
+                  <button
+                    key={slide.id}
+                    onClick={() => setCurrentSlide(dotIdx)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                      isActive
+                        ? 'bg-teal-500/20 text-teal-200 border border-teal-400/50 shadow-inner'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full transition-all ${isActive ? 'bg-teal-400 scale-125' : 'bg-slate-600'}`} />
+                    <span>{slide.tabLabel}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

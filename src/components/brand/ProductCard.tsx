@@ -27,13 +27,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     ? '/images/projects/am-distributors-chiplun.jpg'
     : '/images/products/cp-bullet.jpg';
 
-  const [imgSrc, setImgSrc] = useState(product.images?.[0] || defaultFallback);
-  const [hasError, setHasError] = useState(false);
+  const images = (product.images && product.images.length > 0 ? product.images : [defaultFallback]).filter(Boolean);
+  const [activeImgIndex, setActiveImgIndex] = useState(0);
 
   useEffect(() => {
-    setImgSrc(product.images?.[0] || defaultFallback);
-    setHasError(false);
-  }, [product.images, defaultFallback]);
+    setActiveImgIndex(0);
+  }, [product.images]);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const staggerDelay = ((index || 0) % 4) * 800;
+    let intervalId: any;
+    const timeoutId = setTimeout(() => {
+      intervalId = setInterval(() => {
+        setActiveImgIndex(prev => (prev + 1) % images.length);
+      }, 4200);
+    }, staggerDelay);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [images.length, index]);
 
   const formatPrice = (price?: number) => {
     if (!price) return 'Contact for Pricing';
@@ -72,28 +87,46 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           isCctv ? 'hover:border-indigo-400/60 hover:shadow-indigo-500/15' : isAm ? 'hover:border-teal-400 hover:shadow-teal-500/20' : 'hover:border-blue-300 hover:shadow-blue-500/15'
         }`}>
           {isAm && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-teal-400 to-emerald-400 z-20 pointer-events-none" />}
-          <div onClick={() => setIsDetailOpen(true)} className="relative aspect-4/3 bg-slate-100 overflow-hidden block cursor-pointer">
-            {hasError ? (
-              <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex flex-col items-center justify-center p-4 text-center">
-                <Camera className="w-10 h-10 text-slate-400 mb-2 opacity-60" />
-                <span className="text-xs font-semibold text-slate-500 font-mono">{product.modelNumber}</span>
+          <div onClick={() => setIsDetailOpen(true)} className="relative aspect-4/3 bg-slate-100 overflow-hidden block cursor-pointer select-none">
+            {images.map((img, i) => {
+              const isActive = i === activeImgIndex;
+              return (
+                <img
+                  key={img + i}
+                  src={img}
+                  alt={product.name}
+                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out ${
+                    isActive
+                      ? 'opacity-100 scale-100 z-10'
+                      : 'opacity-0 scale-105 z-0 pointer-events-none'
+                  } ${isCctv ? 'group-hover:scale-110' : 'group-hover:scale-105'}`}
+                  loading="lazy"
+                  onError={(e) => {
+                    // Fallback to default if error
+                    (e.currentTarget as HTMLImageElement).src = defaultFallback;
+                  }}
+                />
+              );
+            })}
+
+            {/* Subtle Carousel Dots if product has multiple images */}
+            {images.length > 1 && (
+              <div
+                className="absolute bottom-2.5 right-2.5 z-20 flex items-center gap-1 bg-slate-950/60 backdrop-blur-xs px-2 py-1 rounded-full shadow-xs pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {images.map((_, dotI) => (
+                  <button
+                    key={dotI}
+                    type="button"
+                    onClick={() => setActiveImgIndex(dotI)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      dotI === activeImgIndex ? 'w-4 bg-teal-300' : 'w-1.5 bg-white/50 hover:bg-white'
+                    }`}
+                    title={`View photo ${dotI + 1}`}
+                  />
+                ))}
               </div>
-            ) : (
-              <img
-                src={imgSrc}
-                alt={product.name}
-                onError={() => {
-                  if (imgSrc !== defaultFallback) {
-                    setImgSrc(defaultFallback);
-                  } else {
-                    setHasError(true);
-                  }
-                }}
-                className={`w-full h-full object-cover transition-transform duration-700 ease-out ${
-                  isCctv ? 'group-hover:scale-110' : 'group-hover:scale-105'
-                }`}
-                loading="lazy"
-              />
             )}
           </div>
 
