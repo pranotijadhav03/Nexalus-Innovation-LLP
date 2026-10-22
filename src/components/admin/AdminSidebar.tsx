@@ -381,50 +381,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   </NavLink>
                 </div>
               </div>
-
-              {/* Subsidiary Workspaces Entry */}
-              <div className="pt-2 border-t border-slate-100">
-                <div className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
-                  Subsidiary Workspaces
-                </div>
-                <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onConsoleChange?.('nexalus-innovations');
-                      onClose();
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl text-left bg-sky-50/70 hover:bg-sky-100 border border-sky-200/80 transition-all text-xs font-bold text-slate-800 cursor-pointer group shadow-2xs"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Shield className="w-4 h-4 text-blue-600 shrink-0" />
-                      <div className="min-w-0">
-                        <div className="truncate">Nexalus Innovations</div>
-                        <div className="text-[10px] text-blue-700 font-semibold truncate">CCTV, Fiber & Network</div>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-blue-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onConsoleChange?.('am-distributors');
-                      onClose();
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl text-left bg-teal-50/70 hover:bg-teal-100 border border-teal-200/80 transition-all text-xs font-bold text-slate-800 cursor-pointer group shadow-2xs"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Building className="w-4 h-4 text-teal-600 shrink-0" />
-                      <div className="min-w-0">
-                        <div className="truncate">A.M. Distributors</div>
-                        <div className="text-[10px] text-teal-700 font-semibold truncate">Mineral Water & Dairy</div>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-3.5 h-3.5 text-teal-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
-                  </button>
-                </div>
-              </div>
             </>
           )}
 
