@@ -1824,6 +1824,8 @@ export async function getUsers(): Promise<AdminUser[]> {
               displayName: sanitized.displayName || sanitized.email,
               email: sanitized.email,
               role: sanitized.role,
+              phone: sanitized.phone,
+              deliveryAddress: sanitized.deliveryAddress,
               assignedBrandId: sanitized.assignedBrandId,
               active: sanitized.active !== false,
               createdAt: sanitized.createdAt || new Date().toISOString(),

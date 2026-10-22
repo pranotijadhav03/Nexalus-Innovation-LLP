@@ -423,7 +423,7 @@ export const AdminUsersPage: React.FC = () => {
 
           {/* Customers Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            {isLoading ? (
+            {isLoading && users.length === 0 ? (
               <div className="p-12 text-center text-slate-500 space-y-3">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" />
                 <p className="text-xs font-semibold">Loading registered customers from Firebase Firestore...</p>

@@ -540,7 +540,7 @@ export const AdminPlansPage: React.FC = () => {
           </span>
         </div>
 
-        {isLoading ? (
+        {isLoading && broadbandPlans.length === 0 && oneBroadbandPlans.length === 0 ? (
           <div className="p-12 text-center text-slate-500 space-y-3">
             <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
             <p className="text-xs font-semibold">Loading plans from Cloud Firestore...</p>

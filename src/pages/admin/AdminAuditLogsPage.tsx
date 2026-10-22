@@ -83,7 +83,7 @@ export const AdminAuditLogsPage: React.FC = () => {
 
       {/* Logs Table / List */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        {isLoading ? (
+        {isLoading && logs.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-400">Loading audit log events...</div>
         ) : filteredLogs.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-500">

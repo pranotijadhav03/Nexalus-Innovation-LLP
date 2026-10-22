@@ -41,8 +41,22 @@ interface AuthContextType {
 }
 
 const LEGACY_AUTH_KEY = 'nexalus_admin_session';
+const ACTIVE_USER_CACHE_KEY = 'nexalus_active_user_session_v3';
 
-// Strictly purge legacy insecure localStorage / sessionStorage auth caches
+const getInitialUserSession = (): AdminUser | null => {
+  try {
+    const raw = localStorage.getItem(ACTIVE_USER_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.email && parsed.role && VALID_ALL_ROLES.includes(parsed.role)) {
+        return parsed;
+      }
+    }
+  } catch {}
+  return null;
+};
+
+// Purge obsolete legacy storage keys
 try {
   sessionStorage.removeItem(LEGACY_AUTH_KEY);
   localStorage.removeItem('nexalus_auth_user');
@@ -63,8 +77,9 @@ const VALID_ADMIN_ROLES = [
 const VALID_ALL_ROLES = [...VALID_ADMIN_ROLES, 'customer'];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const initialUser = getInitialUserSession();
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(initialUser);
+  const [isLoading, setIsLoading] = useState<boolean>(!initialUser);
 
   // Helper to verify user profile document in Firestore (admins & customers)
   const fetchUserProfile = async (firebaseUser: FirebaseUser): Promise<AdminUser | null> => {
@@ -220,16 +235,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
+    // Safety timer: Never allow isLoading to block longer than 1000ms under any condition
+    const safetyTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
     const activeAuth = auth;
     if (!isFirebaseConfigured || !activeAuth) {
-      console.warn('Firebase Authentication is not configured or offline.');
+      clearTimeout(safetyTimer);
       setIsLoading(false);
       return;
     }
 
     // Subscribe to genuine Firebase Authentication state listener
     const unsubscribe = onAuthStateChanged(activeAuth, async (firebaseUser: FirebaseUser | null) => {
+      clearTimeout(safetyTimer);
       if (!firebaseUser) {
+        localStorage.removeItem(ACTIVE_USER_CACHE_KEY);
         setCurrentUser(null);
         setIsLoading(false);
         return;
@@ -239,22 +261,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userProfile = await fetchUserProfile(firebaseUser);
 
         if (userProfile) {
+          localStorage.setItem(ACTIVE_USER_CACHE_KEY, JSON.stringify(userProfile));
           setCurrentUser(userProfile);
         } else {
           // Authenticated in Firebase Auth, but NOT an authorized user in Firestore
           console.warn(`User ${firebaseUser.email} has no registered profile. Revoking access.`);
+          localStorage.removeItem(ACTIVE_USER_CACHE_KEY);
           await signOut(activeAuth);
           setCurrentUser(null);
         }
       } catch (err) {
         console.error('Auth state resolution error:', err);
-        setCurrentUser(null);
       } finally {
         setIsLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(safetyTimer);
+      unsubscribe();
+    };
   }, []);
 
   // Admin login handler (Restricted strictly to administrators)
@@ -315,6 +341,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...userProfile,
         lastLogin: now
       };
+
+      try {
+        localStorage.setItem(ACTIVE_USER_CACHE_KEY, JSON.stringify(updatedProfile));
+      } catch {}
 
       setCurrentUser(updatedProfile);
 
@@ -412,6 +442,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Could not update cached users on login:', e);
       }
 
+      try {
+        localStorage.setItem(ACTIVE_USER_CACHE_KEY, JSON.stringify(updatedProfile));
+      } catch {}
+
       setCurrentUser(updatedProfile);
       setIsLoading(false);
       return { success: true };
@@ -438,6 +472,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const result = await registerCustomer(data);
+      try {
+        localStorage.setItem(ACTIVE_USER_CACHE_KEY, JSON.stringify(result.user));
+      } catch {}
       setCurrentUser(result.user);
       setIsLoading(false);
       return { success: true };
@@ -458,6 +495,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async (): Promise<void> => {
+    try {
+      localStorage.removeItem(ACTIVE_USER_CACHE_KEY);
+    } catch {}
+
     if (currentUser && currentUser.role !== 'customer') {
       try {
         await addAuditLog('ADMIN_LOGOUT', `Admin signed out: ${currentUser.email}`, undefined, currentUser.email);

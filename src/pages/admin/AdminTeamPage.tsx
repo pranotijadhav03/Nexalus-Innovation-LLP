@@ -549,7 +549,7 @@ export const AdminTeamPage: React.FC = () => {
       </div>
 
       {/* Team Members Grid View */}
-      {isLoading ? (
+      {isLoading && members.length === 0 ? (
         <div className="py-20 text-center space-y-3 bg-white rounded-2xl border border-slate-200">
           <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-sm font-semibold text-slate-500">Loading team members...</p>

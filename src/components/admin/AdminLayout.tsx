@@ -18,9 +18,16 @@ export interface AdminOutletContext {
 const CONSOLE_STORAGE_KEY = 'nexalus_admin_console_active';
 
 export const AdminLayout: React.FC = () => {
-  const { isAuthenticated, isLoading, brandScope, isSuperAdmin, isInnovationsAdmin, isAmAdmin, isCustomer } = useAuth();
+  const { currentUser, isAuthenticated, isLoading, brandScope, isSuperAdmin, isInnovationsAdmin, isAmAdmin, isCustomer } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Auto-recovery timeout: Never let AdminLayout hang indefinitely on loading
+  const [forceTimeout, setForceTimeout] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setForceTimeout(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Determine initial console based on role & search params
   const getInitialConsole = (): AdminConsoleMode => {
@@ -93,18 +100,19 @@ export const AdminLayout: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  // If currentUser is cached or loaded, render instantly! Only show loader if no user and still checking with timeout
+  if (isLoading && !currentUser && !forceTimeout) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-800">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-semibold text-slate-500">Connecting to Firebase Firestore...</p>
+          <p className="text-xs font-semibold text-slate-500">Loading console...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAuthenticated || isCustomer) {
+  if (!currentUser && (!isAuthenticated || isCustomer)) {
     return <Navigate to="/admin/login" replace />;
   }
 
