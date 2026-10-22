@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { AdminConsoleMode } from './AdminLayout';
 import {
   LayoutDashboard,
+  ShoppingCart,
+  FolderGit2,
   Wifi,
   Package,
   Layers,
@@ -227,6 +229,36 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   >
                     <Wifi className="w-4 h-4" />
                     Plans &amp; Pricing
+                  </NavLink>
+
+                  <NavLink
+                    to="/admin/orders"
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`
+                    }
+                  >
+                    <ShoppingCart className="w-4 h-4 text-orange-500" />
+                    <span>Orders &amp; Bookings</span>
+                  </NavLink>
+
+                  <NavLink
+                    to="/admin/projects"
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`
+                    }
+                  >
+                    <FolderGit2 className="w-4 h-4" />
+                    <span>Case Studies &amp; Projects</span>
                   </NavLink>
 
                   <NavLink

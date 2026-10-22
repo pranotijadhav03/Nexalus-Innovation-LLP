@@ -1429,7 +1429,7 @@ export const initialProjects: Project[] = [
       'Central Operations Video Wall Setup'
     ],
     images: [
-      '/images/projects/tech-park.jpg'
+      '/images/projects/tech-park-real.jpg'
     ],
     featured: true,
     published: true,
@@ -1453,7 +1453,7 @@ export const initialProjects: Project[] = [
       'Gate ANPR Vehicle Tracking & Visitor Intercom'
     ],
     images: [
-      '/images/cctv-real-2.jpg'
+      '/images/projects/ratnagiri-resort-real.jpg'
     ],
     featured: true,
     published: true,
@@ -1477,7 +1477,7 @@ export const initialProjects: Project[] = [
       'FSSAI Certified Cold Storage Warehouse Operations'
     ],
     images: [
-      '/images/am-warehouse-depot.jpg'
+      '/images/projects/chiplun-depot-real.jpg'
     ],
     featured: true,
     published: true,
@@ -1501,7 +1501,7 @@ export const initialProjects: Project[] = [
       '40TB RAID NVR Storage with 90-Day Archival SLA'
     ],
     images: [
-      '/images/computer-rack-switches-real.jpg'
+      '/images/projects/industrial-plant-real.jpg'
     ],
     featured: true,
     published: true,
@@ -1525,7 +1525,7 @@ export const initialProjects: Project[] = [
       'Daily 4:00 AM Dispatch Guarantee'
     ],
     images: [
-      '/images/projects/logistics-center.jpg'
+      '/images/projects/dairy-fleet-real.jpg'
     ],
     featured: true,
     published: true,
@@ -1549,7 +1549,7 @@ export const initialProjects: Project[] = [
       'Resident Security Guard Intercom & Control Station'
     ],
     images: [
-      '/images/projects/luxury-residency.jpg'
+      '/images/projects/luxury-residency-real.jpg'
     ],
     featured: true,
     published: true,

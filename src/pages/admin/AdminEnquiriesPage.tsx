@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
   getEnquiries,
+  createManualEnquiry,
   updateEnquiryStatus,
   deleteEnquiry,
   getUsers,
@@ -17,6 +18,8 @@ import { Modal } from '../../components/common/Modal';
 import { BrandBadge } from '../../components/common/BrandBadge';
 import {
   Inbox,
+  ShoppingCart,
+  Plus,
   Zap,
   Search,
   Filter,
@@ -51,6 +54,59 @@ export const AdminEnquiriesPage: React.FC = () => {
       setBrandFilter(outletCtx.activeBrandFilter);
     }
   }, [outletCtx?.activeBrandFilter, isSuperAdmin]);
+
+  // Create Manual Enquiry Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newBrandId, setNewBrandId] = useState<BrandId | 'corporate'>('corporate');
+  const [newLocation, setNewLocation] = useState('Chiplun');
+  const [newPincode, setNewPincode] = useState('415605');
+  const [newProductOrServiceName, setNewProductOrServiceName] = useState('');
+  const [newMessage, setNewMessage] = useState('');
+  const [newStatus, setNewStatus] = useState<EnquiryStatus>('new');
+  const [isSubmittingNew, setIsSubmittingNew] = useState(false);
+
+  const handleCreateManualEnquiry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustomerName.trim() || !newPhone.trim() || !newEmail.trim()) {
+      error('Validation Error', 'Customer Name, Phone and Email are required.');
+      return;
+    }
+
+    setIsSubmittingNew(true);
+    try {
+      const created = await createManualEnquiry({
+        customerName: newCustomerName.trim(),
+        phone: newPhone.trim(),
+        email: newEmail.trim().toLowerCase(),
+        brandId: newBrandId === 'corporate' ? ('general' as any) : newBrandId,
+        websiteId: newBrandId === 'corporate' ? 'corporate' : (newBrandId as any),
+        websiteName: newBrandId === 'corporate' ? 'Nexalus Corporate Group' : newBrandId === 'am-distributors' ? 'A.M. Distributors Chiplun' : 'Nexalus Innovations Tech',
+        sourcePage: 'Admin Manual Entry',
+        enquiryType: 'general',
+        productOrServiceName: newProductOrServiceName.trim() || 'General Corporate Inquiry',
+        location: newLocation.trim(),
+        pincode: newPincode.trim(),
+        message: newMessage.trim() || 'Direct lead created by Admin.',
+        status: newStatus
+      });
+
+      success('Lead Created', `Lead #${created.id} saved to Firebase successfully.`);
+      setIsCreateModalOpen(false);
+      setNewCustomerName('');
+      setNewPhone('');
+      setNewEmail('');
+      setNewProductOrServiceName('');
+      setNewMessage('');
+      loadData();
+    } catch (err: any) {
+      error('Failed to create lead', err.message || 'Error creating lead.');
+    } finally {
+      setIsSubmittingNew(false);
+    }
+  };
 
   // Detail Modal State
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);

@@ -792,28 +792,6 @@ export const PlansPricingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Floating Cart Trigger Button */}
-      {cartItems.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setIsCartOpen(true)}
-          className="fixed bottom-24 left-6 z-40 bg-slate-900 text-white hover:bg-slate-800 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 transition-all hover:scale-105 cursor-pointer"
-        >
-          <div className="relative">
-            <ShoppingCart className="w-5 h-5 text-orange-400" />
-            <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-              {cartItems.length}
-            </span>
-          </div>
-          <div className="text-left text-xs">
-            <div className="font-bold leading-none">Broadband Cart</div>
-            <div className="text-[10px] text-slate-300 mt-0.5">
-              {cartItems.length} plan{cartItems.length > 1 ? 's' : ''} saved
-            </div>
-          </div>
-        </button>
-      )}
-
       {/* CART DRAWER / MODAL */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fadeIn">

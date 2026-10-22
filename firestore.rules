@@ -134,7 +134,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // 5. Customer Profiles (Prepared for Phase 2 / 4)
+    // 5. Broadband Plan Orders (Buy Now & Cart Bookings)
+    match /plan_orders/{orderId} {
+      allow create: if true;
+      allow read: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // 6. Customer Profiles (Prepared for Phase 2 / 4)
     match /customers/{customerId} {
       allow read: if isAuthenticated() && (request.auth.uid == customerId || isAdmin());
       allow create: if isAuthenticated() && (
@@ -149,3 +156,4 @@ service cloud.firestore {
     }
   }
 }
+

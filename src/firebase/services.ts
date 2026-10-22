@@ -61,7 +61,7 @@ import {
 } from '../data/initialData';
 
 // Storage Keys for resilient local state
-const DATA_VERSION = 'v10_';
+const DATA_VERSION = 'v11_';
 const STORAGE_KEYS = {
   BRANDS: DATA_VERSION + 'nexalus_store_brands',
   CATEGORIES: DATA_VERSION + 'nexalus_store_categories',
@@ -1296,6 +1296,40 @@ export async function submitEnquiry(
   };
 }
 
+export async function createManualEnquiry(
+  data: Omit<Enquiry, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<Enquiry> {
+  const id = 'enq-' + Math.floor(100000 + Math.random() * 900000);
+  const now = new Date().toISOString();
+  const newEnquiry: Enquiry = {
+    ...data,
+    id,
+    createdAt: now,
+    updatedAt: now
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'enquiries', id), newEnquiry), 5000);
+    } catch (e) {
+      console.warn('Firestore createManualEnquiry error:', e);
+    }
+  }
+
+  const enquiries = getLocalItem<Enquiry[]>(STORAGE_KEYS.ENQUIRIES, initialEnquiries);
+  const updatedList = [newEnquiry, ...enquiries.filter(e => e.id !== id)];
+  setLocalItem(STORAGE_KEYS.ENQUIRIES, updatedList);
+
+  await addAuditLog(
+    'MANUAL_ENQUIRY_CREATED',
+    `Admin created manual lead #${id} for ${newEnquiry.customerName} (${newEnquiry.phone})`,
+    newEnquiry.brandId === 'general' ? undefined : newEnquiry.brandId
+  );
+
+  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.ENQUIRIES } }));
+  return newEnquiry;
+}
+
 // ----------------------------------------------------
 // BROADBAND PLAN ORDER SERVICES (BUY NOW & CART CHECKOUT)
 // ----------------------------------------------------
@@ -1343,6 +1377,7 @@ export async function submitPlanOrder(
 
   const orders = getLocalItem<PlanOrder[]>(STORAGE_KEYS.PLAN_ORDERS, []);
   setLocalItem(STORAGE_KEYS.PLAN_ORDERS, [newOrder, ...orders]);
+  window.dispatchEvent(new CustomEvent('nexalus_plan_orders_updated', { detail: [newOrder, ...orders] }));
 
   try {
     await addAuditLog(
@@ -1356,6 +1391,10 @@ export async function submitPlanOrder(
   }
 
   return { success: true, id, order: newOrder };
+}
+
+export function getCachedPlanOrders(): PlanOrder[] {
+  return getLocalItem<PlanOrder[]>(STORAGE_KEYS.PLAN_ORDERS, []);
 }
 
 export async function getPlanOrders(): Promise<PlanOrder[]> {
@@ -1376,36 +1415,166 @@ export async function getPlanOrders(): Promise<PlanOrder[]> {
   return getLocalItem<PlanOrder[]>(STORAGE_KEYS.PLAN_ORDERS, []);
 }
 
-export async function updatePlanOrderStatus(
+export function subscribeToPlanOrders(callback: (orders: PlanOrder[]) => void): () => void {
+  // 1. Initial fire with cached data
+  callback(getCachedPlanOrders());
+
+  let unsubFirestore: (() => void) | null = null;
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = query(collection(db, 'plan_orders'), orderBy('createdAt', 'desc'));
+      unsubFirestore = onSnapshot(
+        q,
+        (snap) => {
+          const list: PlanOrder[] = [];
+          snap.forEach(d => list.push(d.data() as PlanOrder));
+          setLocalItem(STORAGE_KEYS.PLAN_ORDERS, list);
+          callback(list);
+        },
+        (err) => {
+          console.warn('Firestore plan_orders subscription error:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('Failed to attach plan_orders onSnapshot:', err);
+    }
+  }
+
+  const handleCustomEvent = (e: any) => {
+    if (e.detail) {
+      callback(Array.isArray(e.detail) ? e.detail : getCachedPlanOrders());
+    } else {
+      callback(getCachedPlanOrders());
+    }
+  };
+  window.addEventListener('nexalus_plan_orders_updated', handleCustomEvent);
+
+  return () => {
+    if (unsubFirestore) unsubFirestore();
+    window.removeEventListener('nexalus_plan_orders_updated', handleCustomEvent);
+  };
+}
+
+export async function createPlanOrder(
+  orderData: Omit<PlanOrder, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<PlanOrder> {
+  const id = 'ORD-PLN-' + Math.floor(100000 + Math.random() * 900000);
+  const now = new Date().toISOString();
+
+  const newOrder: PlanOrder = {
+    ...orderData,
+    id,
+    createdAt: now,
+    updatedAt: now
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'plan_orders', id), newOrder), 5000);
+    } catch (e) {
+      console.warn('Firestore createPlanOrder error:', e);
+    }
+  }
+
+  // Also mirror to enquiries CRM for omni-channel tracking
+  try {
+    await submitEnquiry({
+      customerName: newOrder.customerName,
+      phone: newOrder.phone,
+      email: newOrder.email,
+      brandId: newOrder.brandId === 'one-broadband' ? 'one-broadband' : 'nexalus',
+      websiteId: 'corporate',
+      websiteName: newOrder.providerName + ' Broadband Desk',
+      sourcePage: 'Admin Direct Order Entry',
+      enquiryType: 'order',
+      productOrServiceId: newOrder.planId,
+      productOrServiceName: `${newOrder.providerName} - ${newOrder.planName} (${newOrder.speed}) [₹${newOrder.price}/${newOrder.billingPeriod}]`,
+      location: `${newOrder.address}, ${newOrder.city}`,
+      pincode: newOrder.pincode,
+      message: `Direct Order #${id}. Slot: ${newOrder.preferredSlot || 'Immediate'}. Payment: ${newOrder.paymentMethod.replace(/_/g, ' ').toUpperCase()}. Notes: ${newOrder.notes || 'Created by Admin'}`
+    });
+  } catch {}
+
+  const orders = getCachedPlanOrders();
+  const updatedOrders = [newOrder, ...orders.filter(o => o.id !== id)];
+  setLocalItem(STORAGE_KEYS.PLAN_ORDERS, updatedOrders);
+  window.dispatchEvent(new CustomEvent('nexalus_plan_orders_updated', { detail: updatedOrders }));
+
+  await addAuditLog(
+    'ADMIN_PLAN_ORDER_CREATED',
+    `Admin created broadband order #${id} for ${newOrder.customerName} (${newOrder.planName})`,
+    newOrder.brandId === 'one-broadband' ? 'one-broadband' : undefined
+  );
+
+  return newOrder;
+}
+
+export async function updatePlanOrder(
   orderId: string,
-  status: PlanOrder['status'],
-  notes?: string,
-  assignedEngineer?: string
+  updates: Partial<PlanOrder>
 ): Promise<PlanOrder | null> {
-  const orders = await getPlanOrders();
+  const orders = getCachedPlanOrders();
   const idx = orders.findIndex(o => o.id === orderId);
   if (idx === -1) return null;
 
   const now = new Date().toISOString();
   const updated: PlanOrder = {
     ...orders[idx],
-    status,
-    notes: notes !== undefined ? notes : orders[idx].notes,
-    assignedEngineer: assignedEngineer !== undefined ? assignedEngineer : orders[idx].assignedEngineer,
+    ...updates,
     updatedAt: now
   };
 
   if (isFirebaseConfigured && db) {
     try {
-      await withTimeout(setDoc(doc(db, 'plan_orders', orderId), updated, { merge: true }), 3000);
+      await withTimeout(setDoc(doc(db, 'plan_orders', orderId), updated, { merge: true }), 4000);
     } catch (e) {
-      console.warn('Firestore updatePlanOrderStatus error:', e);
+      console.warn('Firestore updatePlanOrder error:', e);
     }
   }
 
   orders[idx] = updated;
   setLocalItem(STORAGE_KEYS.PLAN_ORDERS, orders);
+  window.dispatchEvent(new CustomEvent('nexalus_plan_orders_updated', { detail: orders }));
+
+  await addAuditLog(
+    'PLAN_ORDER_UPDATED',
+    `Updated broadband order #${orderId} (Status: ${updated.status})`,
+    updated.brandId === 'one-broadband' ? 'one-broadband' : undefined
+  );
+
   return updated;
+}
+
+export async function updatePlanOrderStatus(
+  orderId: string,
+  status: PlanOrder['status'],
+  notes?: string,
+  assignedEngineer?: string
+): Promise<PlanOrder | null> {
+  return updatePlanOrder(orderId, {
+    status,
+    ...(notes !== undefined ? { notes } : {}),
+    ...(assignedEngineer !== undefined ? { assignedEngineer } : {})
+  });
+}
+
+export async function deletePlanOrder(orderId: string): Promise<boolean> {
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(deleteDoc(doc(db, 'plan_orders', orderId)), 4000);
+    } catch (e) {
+      console.warn('Firestore deletePlanOrder error:', e);
+    }
+  }
+
+  const orders = getCachedPlanOrders();
+  const filtered = orders.filter(o => o.id !== orderId);
+  setLocalItem(STORAGE_KEYS.PLAN_ORDERS, filtered);
+  window.dispatchEvent(new CustomEvent('nexalus_plan_orders_updated', { detail: filtered }));
+
+  await addAuditLog('PLAN_ORDER_DELETED', `Deleted broadband plan order #${orderId}`);
+  return true;
 }
 
 // ----------------------------------------------------

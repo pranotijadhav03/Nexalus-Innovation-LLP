@@ -45,6 +45,7 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminProductsPage } from './pages/admin/AdminProductsPage';
 import { AdminPlansPage } from './pages/admin/AdminPlansPage';
+import { AdminOrdersPage } from './pages/admin/AdminOrdersPage';
 import { AdminServicesPage } from './pages/admin/AdminServicesPage';
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage';
 import { AdminEnquiriesPage } from './pages/admin/AdminEnquiriesPage';
@@ -136,6 +137,7 @@ function App() {
               <Route index element={<AdminDashboardPage />} />
               <Route path="products" element={<AdminProductsPage />} />
               <Route path="plans" element={<AdminPlansPage />} />
+              <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="services" element={<AdminServicesPage />} />
               <Route path="projects" element={<AdminProjectsPage />} />
               <Route path="enquiries" element={<AdminEnquiriesPage />} />

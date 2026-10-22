@@ -5,6 +5,7 @@ import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { StatCard } from '../../components/admin/StatCard';
 import {
   Package,
+  ShoppingCart,
   Wifi,
   Wrench,
   Inbox,
@@ -35,6 +36,8 @@ import {
   getBroadbandPlans,
   getServices,
   getEnquiries,
+  getPlanOrders,
+  getCachedPlanOrders,
   getAuditLogs,
   getTeamMembers,
   getUsers,
@@ -47,7 +50,7 @@ import {
   getCachedTeamMembers,
   getCachedUsers
 } from '../../firebase/services';
-import { Product, InternetPlan, Service, Enquiry, AuditLog, TeamMember } from '../../types';
+import { Product, InternetPlan, Service, Enquiry, AuditLog, TeamMember, PlanOrder } from '../../types';
 
 export const AdminDashboardPage: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
@@ -71,6 +74,7 @@ export const AdminDashboardPage: React.FC = () => {
   const [broadbandPlansCount, setBroadbandPlansCount] = useState<number>(() => getCachedBroadbandPlans().filter(p => p.published).length);
   const [services, setServices] = useState<Service[]>(() => getCachedServices(undefined));
   const [enquiries, setEnquiries] = useState<Enquiry[]>(() => initialEnqs);
+  const [planOrders, setPlanOrders] = useState<PlanOrder[]>(() => getCachedPlanOrders());
   const [logs, setLogs] = useState<AuditLog[]>(() => getCachedAuditLogs().slice(0, 6));
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => getCachedTeamMembers('all'));
   const [usersCount, setUsersCount] = useState<number>(() => getCachedUsers().length);
@@ -93,7 +97,7 @@ export const AdminDashboardPage: React.FC = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [allProds, allPlans, allBbPlans, allServs, allEnqs, allLogs, allTeam, allUsers] = await Promise.all([
+      const [allProds, allPlans, allBbPlans, allServs, allEnqs, allLogs, allTeam, allUsers, allOrders] = await Promise.all([
         getProducts(undefined),
         getInternetPlans(),
         getBroadbandPlans(),
@@ -101,7 +105,8 @@ export const AdminDashboardPage: React.FC = () => {
         getEnquiries('all'),
         getAuditLogs(),
         getTeamMembers('all'),
-        getUsers()
+        getUsers(),
+        getPlanOrders()
       ]);
       setProducts(allProds);
       setPlans(allPlans);
@@ -111,6 +116,7 @@ export const AdminDashboardPage: React.FC = () => {
       setLogs(allLogs.slice(0, 6));
       setTeamMembers(allTeam);
       setUsersCount(allUsers.length);
+      setPlanOrders(allOrders);
 
       setNexalusProductsCount(
         allProds.filter(
@@ -197,7 +203,17 @@ export const AdminDashboardPage: React.FC = () => {
           <h2 className="text-xs font-black uppercase tracking-wider text-slate-400">
             Corporate Master Key Metrics
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+            <Link to="/admin/orders" className="block cursor-pointer">
+              <StatCard
+                title="Plan Bookings"
+                value={planOrders.length}
+                subtitle="${planOrders.filter(o => o.status === 'new').length} new orders"
+                icon={<ShoppingCart className="w-6 h-6 text-orange-500" />}
+                colorScheme="teal"
+                trend={{ value: `${planOrders.filter(o => o.status === 'new').length} New`, isPositive: planOrders.filter(o => o.status === 'new').length === 0 }}
+              />
+            </Link>
             <StatCard
               title="Corporate Inquiries"
               value={corporateEnquiries.length}
@@ -365,6 +381,99 @@ export const AdminDashboardPage: React.FC = () => {
               <span className="text-xs font-bold text-slate-800">Audit Logs</span>
             </Link>
           </div>
+        </div>
+
+        {/* Recent Broadband Plan Orders (Buy Now & Cart Checkouts) */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900">
+                  Recent Broadband Plan Orders &amp; Bookings
+                </h2>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                  Live Firebase Orders
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Customer bookings from &quot;Buy Now&quot; and broadband cart checkouts
+              </p>
+            </div>
+            <Link
+              to="/admin/orders"
+              className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 self-start sm:self-auto"
+            >
+              Open Orders &amp; Bookings Desk <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {planOrders.length === 0 ? (
+            <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              <ShoppingCart className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <p className="text-xs font-bold text-slate-600">No broadband plan orders recorded yet</p>
+              <p className="text-[11px] text-slate-400">
+                Orders placed via the website or manual entries will appear here instantly.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {planOrders.slice(0, 5).map(order => (
+                <div key={order.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs font-black text-slate-900">
+                        {order.id}
+                      </span>
+                      <span className="text-xs font-bold text-slate-800">
+                        {order.customerName}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-500">
+                        ({order.phone})
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">
+                        {order.city}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-600 mt-1 flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-slate-900">{order.providerName} - {order.planName}</span>
+                      <span className="text-slate-400">•</span>
+                      <span className="font-bold text-teal-700">{order.speed}</span>
+                      <span className="text-slate-400">•</span>
+                      <span className="font-extrabold text-slate-900">₹{order.price}/{order.billingPeriod || 'mo'}</span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-[11px] text-slate-500">{order.paymentMethod ? order.paymentMethod.replace(/_/g, ' ').toUpperCase() : 'PAY ON INSTALLATION'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+                        order.status === 'new'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : order.status === 'confirmed'
+                          ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                          : order.status === 'installation_scheduled'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : order.status === 'converted'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                      }`}
+                    >
+                      {order.status === 'new' && <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 mr-1 animate-pulse"></span>}
+                      {order.status.replace(/_/g, ' ')}
+                    </span>
+                    <Link
+                      to="/admin/orders"
+                      className="p-1.5 text-slate-400 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Manage Order"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Corporate Inquiries & Live Audit Logs */}

@@ -23,7 +23,8 @@ import {
   Zap,
   Clock,
   PhoneCall,
-  ShoppingCart
+  ShoppingCart,
+  Trash2
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { OurTeamSection } from '../../components/common/OurTeamSection';
@@ -41,6 +42,7 @@ import {
   subscribeToBanners,
   addToPlanCart,
   getPlanCart,
+  clearPlanCart,
   getCachedBroadbandPlans,
   getCachedInternetPlans
 } from '../../firebase/services';
@@ -1164,6 +1166,74 @@ export const HomePage: React.FC = () => {
               </Button>
             </Link>
           </div>
+
+          {/* Broadband Cart Saved Plans Banner */}
+          {cartItems.length > 0 && (
+            <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-900 border border-blue-500/40 shadow-2xl backdrop-blur-md text-white animate-in fade-in slide-in-from-top-4">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/30">
+                    <ShoppingCart className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                        Broadband Cart ({cartItems.length} Plan{cartItems.length > 1 ? 's' : ''} Saved)
+                      </span>
+                      <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Ready for Instant Activation &amp; Line Pulling
+                      </span>
+                    </div>
+                    <h4 className="text-base sm:text-lg font-black text-white mt-1">
+                      {cartItems[0].providerName} — {cartItems[0].planName} ({cartItems[0].speed})
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Tariff: <strong className="text-teal-400 font-extrabold text-sm">₹{cartItems[0].price}</strong>/{cartItems[0].billingPeriod || 'monthly'}
+                      {cartItems.length > 1 && <span className="text-slate-400 ml-2">(and {cartItems.length - 1} other saved plan{cartItems.length > 2 ? 's' : ''})</span>}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const first = cartItems[0];
+                      setSelectedPlanForOrder({
+                        planId: first.planId,
+                        planName: first.planName,
+                        providerName: first.providerName,
+                        speed: first.speed,
+                        price: first.price,
+                        billingPeriod: first.billingPeriod,
+                        brandId: first.brandId
+                      });
+                      setIsOrderModalOpen(true);
+                    }}
+                    className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all transform hover:scale-102 cursor-pointer"
+                  >
+                    <Zap className="w-4 h-4 fill-current" />
+                    <span>Proceed to Order (Buy Now)</span>
+                  </button>
+                  <Link
+                    to="/plans"
+                    className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-colors whitespace-nowrap"
+                  >
+                    View All Plans &amp; Cart
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => clearPlanCart()}
+                    className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-white/5 transition-colors"
+                    title="Clear Broadband Cart"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Provider Selector Tabs */}
           <div className="inline-flex flex-wrap p-1.5 bg-slate-800/90 rounded-2xl border border-slate-700/80 gap-1.5">
