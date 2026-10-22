@@ -60,7 +60,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
     };
   }, [division]);
 
-  // Close suggestions when clicking outside Google search bar
+  // Close suggestions when clicking outside search bar
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
@@ -117,13 +117,17 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
 
   const defaultTitle =
     division === 'am-distributors'
-      ? 'A.M. Distributors — प्रादेशिक वितरण व लॉजिस्टिक्स कव्हरेज'
+      ? 'A.M. Distributors Chiplun — Regional Delivery & Logistics Coverage'
       : division === 'nexalus-innovations'
-      ? 'Nexalus Innovations — 4K CCTV व ऑप्टिकल फायबर सेवा कव्हरेज'
-      : 'सेवा उपलब्धता तपासणी (Service Availability Checker)';
+      ? 'Nexalus Innovations — Active Engineering & Deployment Locations'
+      : 'Areas Covered & Service Availability Checker';
 
   const defaultSubtitle =
-    'गुगल प्रमाणे आपल्या शहराचे किंवा परिसराचे नाव सर्च करा आणि आपल्या भागात सेवा उपलब्ध आहे का ते लगेच तपासा.';
+    division === 'am-distributors'
+      ? 'Search your city or industrial zone to verify daily morning milk routes, packaged mineral water jar delivery, and commercial bulk ice cream supply schedules.'
+      : division === 'nexalus-innovations'
+      ? 'Search your city or industrial area to inspect available 4K CCTV surveillance teams, optical fiber internet connectivity, and on-site engineering SLA.'
+      : 'Type your city name or PIN code to instantly inspect which services (CCTV surveillance, optical fiber leased lines, or cold-chain wholesale supplies) are operational in your area.';
 
   const handleBookService = (cityName: string) => {
     setQuotePrefillCity(cityName);
@@ -182,7 +186,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                     executeSearch();
                   }
                 }}
-                placeholder="आपल्या शहराचे नाव टाका (उदा. Chiplun, Ratnagiri, Sangli, Pune...)..."
+                placeholder="Enter city or area (e.g. Chiplun, Ratnagiri, Sangli, Pune, Mumbai, Kolhapur)..."
                 className="w-full px-3 py-3 sm:py-3.5 bg-transparent text-white placeholder-slate-400 text-sm sm:text-base outline-none"
               />
 
@@ -202,7 +206,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                 onClick={() => executeSearch()}
                 className="px-5 sm:px-7 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs sm:text-sm rounded-full shrink-0 shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer"
               >
-                <span>शोधा</span>
+                <span>Search</span>
                 <ArrowRight className="w-4 h-4 hidden sm:inline" />
               </button>
             </div>
@@ -211,7 +215,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-slate-800">
                 <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-950/60">
-                  उपलब्ध शहरे (Suggested Locations):
+                  Available Hub Locations:
                 </div>
                 {suggestions.map(city => (
                   <button
@@ -227,7 +231,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                       </span>
                     </div>
                     <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                      ✓ सेवा उपलब्ध
+                      ✓ Service Available
                     </span>
                   </button>
                 ))}
@@ -237,7 +241,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
             {/* Search Prompt when no search made yet */}
             {!hasSearched && (
               <p className="text-center text-xs text-slate-400 mt-3">
-                💡 टीप: वरील सर्च बॉक्समध्ये आपल्या शहराचे नाव टाईप करून <span className="text-cyan-300 font-semibold">&ldquo;शोधा&rdquo;</span> वर क्लिक करा.
+                💡 Tip: Type your city name in the search box above and click <span className="text-cyan-300 font-semibold">&ldquo;Search&rdquo;</span> or press Enter.
               </p>
             )}
           </div>
@@ -282,14 +286,14 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                               </span>
                             </div>
                             <p className="text-xs text-slate-300 font-medium pl-11">
-                              कव्हरेज परिसर: <span className="text-white font-semibold">{area.locality}</span>
+                              Coverage Zone: <span className="text-white font-semibold">{area.locality}</span>
                             </p>
                           </div>
 
                           <div className="flex items-center gap-2 self-start sm:self-auto">
                             <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                               <CheckCircle2 className="w-4 h-4" />
-                              <span>या भागात सेवा उपलब्ध आहे</span>
+                              <span>Service Active in This Area</span>
                             </span>
                           </div>
                         </div>
@@ -299,10 +303,10 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
                               <Sparkles className="w-3.5 h-3.5" />
-                              <span>{area.city} मध्ये उपलब्ध असलेल्या सेवा:</span>
+                              <span>Active Services Available in {area.city}:</span>
                             </h4>
                             <span className="text-[11px] text-slate-400">
-                              {(area.services || []).length} प्रमाणित सेवा सक्रिय
+                              {(area.services || []).length} verified services operational
                             </span>
                           </div>
 
@@ -324,7 +328,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                                     {svc}
                                   </div>
                                   <div className="text-[11px] text-slate-400 mt-0.5">
-                                    सक्रिय सेवा • जलद इन्स्टॉलेशन
+                                    Active Coverage • Fast Installation SLA
                                   </div>
                                 </div>
                               </div>
@@ -337,7 +341,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
                             <span>
-                              {area.notes || 'स्थानिक तंत्रज्ञ टीम आणि थेट डिस्पेच उपलब्ध आहे.'}
+                              {area.notes || 'Local technician team and rapid on-site dispatch active.'}
                             </span>
                           </div>
 
@@ -348,7 +352,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                             className="font-bold text-xs shadow-md whitespace-nowrap w-full sm:w-auto"
                             icon={<ArrowRight className="w-3.5 h-3.5" />}
                           >
-                            {area.city} मध्ये सेवा बुक करा
+                            Book Service in {area.city}
                           </Button>
                         </div>
                       </div>
@@ -366,15 +370,15 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
 
                   <div className="space-y-1">
                     <h3 className="text-2xl font-black text-white">
-                      या भागात सध्या थेट सेवा उपलब्ध नाही
+                      Service Currently Not Available
                     </h3>
                     <p className="text-sm font-bold text-amber-300">
-                      Service Currently Not Available in &ldquo;{searchedCity}&rdquo;
+                      No active operational facility registered in &ldquo;{searchedCity}&rdquo;
                     </p>
                   </div>
 
                   <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
-                    आम्ही संपूर्ण महाराष्ट्रात आमचे ऑप्टिकल फायबर, 4K सीसीटीव्ही नेटवर्क आणि लॉजिस्टिक्स वेगाने वाढवत आहोत. आपल्या भागात सेवा सुरू करण्यासाठी खालील बटनावर क्लिक करून मागणी नोंदवा, आमची टेक्निकल टीम तातडीने संपर्क करेल.
+                    We are actively expanding our optical fiber leased lines, 4K CCTV surveillance coverage, and cold-chain supply routes across Maharashtra. Submit your location below to request feasibility, and our engineering team will evaluate rapid deployment.
                   </p>
 
                   <div className="pt-2">
