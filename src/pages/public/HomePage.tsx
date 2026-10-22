@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Award,
   Users,
+  ChevronLeft,
   ChevronRight,
   Building2,
   Sparkles,
@@ -225,6 +226,109 @@ export const HomePage: React.FC = () => {
     };
   }, []);
 
+  // =========================================================================
+  // HERO BACKGROUND SLIDESHOW CONFIGURATION & ROTATION
+  // =========================================================================
+  interface HeroSlide {
+    id: string;
+    imageUrl: string;
+    tag: string;
+    subTag: string;
+    focusPosition: string;
+    alt: string;
+  }
+
+  const DEFAULT_HERO_SLIDES: HeroSlide[] = [
+    {
+      id: 'server-datacenter',
+      imageUrl: '/images/fermilab-blue-racks-real.jpg',
+      tag: 'Enterprise Datacenter & Server Infrastructure',
+      subTag: 'Tier-3 Datacenter Racks & High-Speed Optical Backbones',
+      focusPosition: 'object-[75%_center] lg:object-[82%_center]',
+      alt: 'Nexalus Innovations Enterprise Server Rack & Optical Data Center'
+    },
+    {
+      id: 'fiber-broadband',
+      imageUrl: '/images/fiber-optic-glowing.jpg',
+      tag: 'Gigabit Optical Fiber Internet Connectivity',
+      subTag: 'Ultra-Fast Dedicated Leased Lines & Low-Latency Broadband',
+      focusPosition: 'object-center',
+      alt: 'High-Speed Optical Fiber Internet Connectivity Infrastructure'
+    },
+    {
+      id: 'managed-networking',
+      imageUrl: '/images/network-hero-banner.jpg',
+      tag: 'Enterprise Networking & Wi-Fi Routers',
+      subTag: 'Layer-2/3 Managed Core Switches & High-Throughput Routing',
+      focusPosition: 'object-[70%_center]',
+      alt: 'Enterprise Managed Network Switching and Routing Infrastructure'
+    },
+    {
+      id: 'cctv-surveillance',
+      imageUrl: '/images/cctv-hero-banner.jpg',
+      tag: 'AI CCTV & Security Surveillance',
+      subTag: 'Commercial HD Security Cameras, Dome Units & 24/7 Monitoring',
+      focusPosition: 'object-[80%_center]',
+      alt: 'Nexalus Commercial CCTV Security Surveillance Cameras'
+    },
+    {
+      id: 'commercial-techpark',
+      imageUrl: '/images/projects/tech-park-real.jpg',
+      tag: 'Modern Commercial Building & IT Campus',
+      subTag: 'Turnkey Enterprise Corporate Infrastructure & Structured Cabling',
+      focusPosition: 'object-[65%_center]',
+      alt: 'Modern Commercial Business Tech Park Infrastructure'
+    }
+  ];
+
+  // Dynamic hero slides list: preserves custom admin hero banner while rotating through 5 core domains
+  const heroSlides: HeroSlide[] = React.useMemo(() => {
+    if (heroBanner?.imageUrl && !DEFAULT_HERO_SLIDES.some(s => s.imageUrl === heroBanner.imageUrl)) {
+      return [
+        {
+          id: 'custom-admin-banner',
+          imageUrl: heroBanner.imageUrl,
+          tag: 'Featured Infrastructure',
+          subTag: heroBanner.badge || 'Official Enterprise Solution',
+          focusPosition: 'object-center',
+          alt: heroBanner.title || 'Nexalus Innovations Enterprise Infrastructure'
+        },
+        ...DEFAULT_HERO_SLIDES
+      ];
+    }
+    return DEFAULT_HERO_SLIDES;
+  }, [heroBanner?.imageUrl, heroBanner?.badge, heroBanner?.title]);
+
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [isSlidePaused, setIsSlidePaused] = useState(false);
+
+  // Preload all slideshow images for instant, smooth crossfading without flash
+  useEffect(() => {
+    heroSlides.forEach(slide => {
+      const img = new Image();
+      img.src = slide.imageUrl;
+    });
+  }, [heroSlides]);
+
+  // Automatic slideshow rotation every 5 seconds (5000ms)
+  useEffect(() => {
+    if (isSlidePaused) return;
+    const interval = setInterval(() => {
+      setCurrentSlideIndex(prev => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isSlidePaused, heroSlides.length]);
+
+  const handlePrevSlide = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCurrentSlideIndex(prev => (prev === 0 ? heroSlides.length - 1 : prev - 1));
+  };
+
+  const handleNextSlide = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCurrentSlideIndex(prev => (prev + 1) % heroSlides.length);
+  };
+
   // Typewriter effect for Website Name in Hero
   const fullBrandName = 'Nexalus Innovations LLP';
   const [typedTitle, setTypedTitle] = useState('');
@@ -251,23 +355,48 @@ export const HomePage: React.FC = () => {
   return (
     <div className="flex flex-col w-full">
       {/* =========================================================================
-          SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER (DEEP MIDNIGHT & SERVER MESH)
+          SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER (AUTOMATIC BACKGROUND SLIDESHOW)
           ========================================================================= */}
-      <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800">
-        {/* Photographic background image showcasing authentic enterprise server rack */}
-        <div className="absolute inset-0">
-          <img
-            src={heroBanner?.imageUrl || "/images/fermilab-blue-racks-real.jpg"}
-            alt={heroBanner?.title || "Nexalus Innovations LLP Enterprise Server Rack, Optical Fiber & CCTV Surveillance Infrastructure"}
-            className="w-full h-full object-cover object-[75%_center] lg:object-[82%_center]"
-          />
+      <section 
+        className="relative w-full overflow-hidden bg-[#070e20] border-b border-slate-800 select-none"
+        onMouseEnter={() => setIsSlidePaused(true)}
+        onMouseLeave={() => setIsSlidePaused(false)}
+      >
+        {/* Layer 1: Automatic Background Image Slideshow with Smooth Crossfade & Cinematic Scale */}
+        <div className="absolute inset-0 bg-[#070e20]">
+          {heroSlides.map((slide, idx) => {
+            const isActive = idx === currentSlideIndex;
+            return (
+              <div
+                key={slide.id}
+                aria-hidden={!isActive}
+                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                  isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                }`}
+              >
+                <img
+                  src={slide.imageUrl}
+                  alt={slide.alt}
+                  className={`w-full h-full object-cover transition-transform duration-[6000ms] ease-out will-change-transform ${
+                    slide.focusPosition
+                  } ${isActive ? 'scale-105' : 'scale-100'}`}
+                  loading={idx === 0 ? 'eager' : 'lazy'}
+                />
+              </div>
+            );
+          })}
         </div>
 
-        {/* Clean directional contrast scrim */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/98 via-[#0f2444]/90 via-45% md:via-40% to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/80 via-transparent to-[#0a1628]/50 pointer-events-none" />
+        {/* Layer 2: Corporate Directional Contrast Scrims (Ensures 100% Readable Text Across All Backgrounds) */}
+        {/* Left-to-right directional readability gradient */}
+        <div className="absolute inset-0 z-20 bg-gradient-to-r from-[#060e1e]/98 via-[#091734]/90 via-55% md:via-45% to-[#08142b]/35 pointer-events-none" />
+        {/* Top-and-bottom framing vignette */}
+        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#060e1e] via-transparent via-60% to-[#060e1e]/70 pointer-events-none" />
+        {/* Subtle royal blue ambient accent glow */}
+        <div className="absolute inset-0 z-20 bg-[radial-gradient(ellipse_at_top_left,rgba(37,99,235,0.22),transparent_65%)] pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32 flex items-center min-h-[520px] lg:min-h-[600px]">
+        {/* Layer 3: Main Hero Text, Badges & CTA Content (Preserved Exactly) */}
+        <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-28 flex items-center min-h-[520px] lg:min-h-[580px]">
           <div className="max-w-4xl lg:max-w-5xl space-y-5 text-white mr-auto">
             {/* Top Badges: Brand Name + Announcement Badge */}
             <div className="flex flex-wrap items-center gap-2.5">
@@ -319,6 +448,85 @@ export const HomePage: React.FC = () => {
                     {heroBanner?.secondaryCtaText || 'Explore Solutions'}
                   </Button>
                 </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Layer 4: Interactive Slideshow Indicators, Category Pill & Navigation Controls */}
+        <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 sm:pb-8 pt-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-white/10">
+            {/* Active Infrastructure Domain Indicator */}
+            <div className="flex items-center gap-3">
+              <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
+              </span>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-mono font-bold text-cyan-300">
+                  0{currentSlideIndex + 1} / 0{heroSlides.length}
+                </span>
+                <span className="text-slate-500">•</span>
+                <span className="font-semibold text-slate-200">
+                  {heroSlides[currentSlideIndex]?.tag}
+                </span>
+                <span className="hidden md:inline text-slate-400">
+                  ({heroSlides[currentSlideIndex]?.subTag})
+                </span>
+              </div>
+            </div>
+
+            {/* Slide Navigation Progress Pills & Arrows */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                {heroSlides.map((slide, idx) => {
+                  const isActive = idx === currentSlideIndex;
+                  return (
+                    <button
+                      key={slide.id}
+                      type="button"
+                      onClick={() => setCurrentSlideIndex(idx)}
+                      className={`relative h-2 rounded-full transition-all duration-300 cursor-pointer overflow-hidden ${
+                        isActive
+                          ? 'w-10 bg-white/20'
+                          : 'w-2.5 bg-white/25 hover:bg-white/40'
+                      }`}
+                      title={`View ${slide.tag}`}
+                      aria-label={`View slide ${idx + 1}: ${slide.tag}`}
+                    >
+                      {isActive && (
+                        <span
+                          key={`progress-${currentSlideIndex}`}
+                          className={`absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full ${
+                            !isSlidePaused ? 'animate-hero-progress' : 'w-full'
+                          }`}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Prev / Next Subtle Glass Arrow Buttons */}
+              <div className="flex items-center gap-1 ml-2">
+                <button
+                  type="button"
+                  onClick={handlePrevSlide}
+                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-white flex items-center justify-center transition-colors cursor-pointer"
+                  title="Previous Slide"
+                  aria-label="Previous Slide"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextSlide}
+                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-white flex items-center justify-center transition-colors cursor-pointer"
+                  title="Next Slide"
+                  aria-label="Next Slide"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>

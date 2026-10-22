@@ -325,3 +325,18 @@
   transform: translateY(-6px);
   box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.15), 0 0 20px 0 rgba(37, 99, 235, 0.12);
 }
+
+
+/* Hero Slideshow Progress & Smooth Transitions */
+@keyframes heroProgress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-hero-progress {
+  animation: heroProgress 5s linear forwards;
+}
