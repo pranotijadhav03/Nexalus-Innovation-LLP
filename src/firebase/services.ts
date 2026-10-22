@@ -19,6 +19,8 @@ import {
   Brand,
   CustomerDeliveryAddress,
   CustomerRegistrationData,
+  PlanOrder,
+  CartPlanItem,
   BrandId,
   ProductCategory,
   Product,
@@ -59,7 +61,7 @@ import {
 } from '../data/initialData';
 
 // Storage Keys for resilient local state
-const DATA_VERSION = 'v9_';
+const DATA_VERSION = 'v10_';
 const STORAGE_KEYS = {
   BRANDS: DATA_VERSION + 'nexalus_store_brands',
   CATEGORIES: DATA_VERSION + 'nexalus_store_categories',
@@ -70,6 +72,7 @@ const STORAGE_KEYS = {
   SERVICES: DATA_VERSION + 'nexalus_store_services',
   PROJECTS: DATA_VERSION + 'nexalus_store_projects',
   ENQUIRIES: DATA_VERSION + 'nexalus_store_enquiries',
+  PLAN_ORDERS: DATA_VERSION + 'nexalus_store_plan_orders',
   SERVICE_AREAS: DATA_VERSION + 'nexalus_store_service_areas',
   FAQS: DATA_VERSION + 'nexalus_store_faqs',
   BANNERS: DATA_VERSION + 'nexalus_store_banners',
@@ -1232,6 +1235,157 @@ export async function submitEnquiry(
     id,
     message: 'Your enquiry has been successfully registered. Our technical advisor will contact you shortly.'
   };
+}
+
+// ----------------------------------------------------
+// BROADBAND PLAN ORDER SERVICES (BUY NOW & CART CHECKOUT)
+// ----------------------------------------------------
+export async function submitPlanOrder(
+  orderData: Omit<PlanOrder, 'id' | 'status' | 'createdAt' | 'updatedAt'>
+): Promise<{ success: boolean; id: string; order: PlanOrder }> {
+  const id = 'ORD-PLN-' + Math.floor(100000 + Math.random() * 900000);
+  const now = new Date().toISOString();
+
+  const newOrder: PlanOrder = {
+    ...orderData,
+    id,
+    status: 'new',
+    createdAt: now,
+    updatedAt: now
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'plan_orders', id), newOrder), 8000);
+    } catch (e) {
+      console.warn('Firestore submitPlanOrder error:', e);
+    }
+  }
+
+  try {
+    await submitEnquiry({
+      customerName: orderData.customerName,
+      phone: orderData.phone,
+      email: orderData.email,
+      brandId: orderData.brandId === 'one-broadband' ? 'one-broadband' : 'nexalus',
+      websiteId: 'corporate',
+      websiteName: orderData.providerName + ' Broadband Portal',
+      sourcePage: 'Plans & Pricing (Direct Plan Order)',
+      enquiryType: 'order',
+      productOrServiceId: orderData.planId,
+      productOrServiceName: `${orderData.providerName} - ${orderData.planName} (${orderData.speed}) [₹${orderData.price}/${orderData.billingPeriod}]`,
+      location: `${orderData.address}, ${orderData.city}`,
+      pincode: orderData.pincode,
+      message: `Plan Order #${id}. Slot: ${orderData.preferredSlot || 'Standard'}. Payment: ${orderData.paymentMethod.replace(/_/g, ' ').toUpperCase()}. Notes: ${orderData.notes || 'None'}`
+    });
+  } catch (enqErr) {
+    console.warn('Could not mirror plan order to enquiries:', enqErr);
+  }
+
+  const orders = getLocalItem<PlanOrder[]>(STORAGE_KEYS.PLAN_ORDERS, []);
+  setLocalItem(STORAGE_KEYS.PLAN_ORDERS, [newOrder, ...orders]);
+
+  try {
+    await addAuditLog(
+      'PLAN_ORDER_PLACED',
+      `New broadband plan order #${id} placed by ${newOrder.customerName} for ${newOrder.planName} (${newOrder.speed})`,
+      orderData.brandId === 'one-broadband' ? 'one-broadband' : undefined,
+      newOrder.email
+    );
+  } catch (logErr) {
+    console.warn('Could not write audit log:', logErr);
+  }
+
+  return { success: true, id, order: newOrder };
+}
+
+export async function getPlanOrders(): Promise<PlanOrder[]> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = query(collection(db, 'plan_orders'), orderBy('createdAt', 'desc'));
+      const snap = await withTimeout(getDocs(q), 3000);
+      if (!snap.empty) {
+        const list: PlanOrder[] = [];
+        snap.forEach(d => list.push(d.data() as PlanOrder));
+        setLocalItem(STORAGE_KEYS.PLAN_ORDERS, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Firestore getPlanOrders error:', e);
+    }
+  }
+  return getLocalItem<PlanOrder[]>(STORAGE_KEYS.PLAN_ORDERS, []);
+}
+
+export async function updatePlanOrderStatus(
+  orderId: string,
+  status: PlanOrder['status'],
+  notes?: string,
+  assignedEngineer?: string
+): Promise<PlanOrder | null> {
+  const orders = await getPlanOrders();
+  const idx = orders.findIndex(o => o.id === orderId);
+  if (idx === -1) return null;
+
+  const now = new Date().toISOString();
+  const updated: PlanOrder = {
+    ...orders[idx],
+    status,
+    notes: notes !== undefined ? notes : orders[idx].notes,
+    assignedEngineer: assignedEngineer !== undefined ? assignedEngineer : orders[idx].assignedEngineer,
+    updatedAt: now
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'plan_orders', orderId), updated, { merge: true }), 3000);
+    } catch (e) {
+      console.warn('Firestore updatePlanOrderStatus error:', e);
+    }
+  }
+
+  orders[idx] = updated;
+  setLocalItem(STORAGE_KEYS.PLAN_ORDERS, orders);
+  return updated;
+}
+
+// ----------------------------------------------------
+// BROADBAND PLAN CART HELPERS
+// ----------------------------------------------------
+export function getPlanCart(): CartPlanItem[] {
+  return getLocalItem<CartPlanItem[]>('nexalus_plan_cart', []);
+}
+
+export function addToPlanCart(item: Omit<CartPlanItem, 'id' | 'addedAt'>): CartPlanItem {
+  const current = getPlanCart();
+  const newItem: CartPlanItem = {
+    ...item,
+    id: 'cart-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    addedAt: new Date().toISOString()
+  };
+  const updated = [newItem, ...current];
+  setLocalItem('nexalus_plan_cart', updated);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: updated }));
+  }
+  return newItem;
+}
+
+export function removeFromPlanCart(cartItemId: string): CartPlanItem[] {
+  const current = getPlanCart();
+  const updated = current.filter(i => i.id !== cartItemId);
+  setLocalItem('nexalus_plan_cart', updated);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: updated }));
+  }
+  return updated;
+}
+
+export function clearPlanCart(): void {
+  setLocalItem('nexalus_plan_cart', []);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: [] }));
+  }
 }
 
 export async function updateEnquiryStatus(

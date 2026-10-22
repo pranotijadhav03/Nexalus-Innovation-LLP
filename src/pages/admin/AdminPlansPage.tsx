@@ -20,14 +20,17 @@ import {
   subscribeToInternetPlans,
   getCachedBroadbandProviders,
   getCachedBroadbandPlans,
-  getCachedInternetPlans
+  getCachedInternetPlans,
+  getPlanOrders,
+  updatePlanOrderStatus
 } from '../../firebase/services';
 import {
   BroadbandPlan,
   BroadbandProvider,
   BroadbandBillingPeriod,
   BroadbandPlanAvailability,
-  InternetPlan
+  InternetPlan,
+  PlanOrder
 } from '../../types';
 import { Input, TextArea } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -50,7 +53,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-type ActiveTab = 'airtel' | 'bsnl' | 'railwire' | 'one-broadband';
+type ActiveTab = 'airtel' | 'bsnl' | 'railwire' | 'one-broadband' | 'orders';
 
 export const AdminPlansPage: React.FC = () => {
   const { isAmAdmin, isSuperAdmin } = useAuth();
@@ -63,6 +66,18 @@ export const AdminPlansPage: React.FC = () => {
   const [broadbandPlans, setBroadbandPlans] = useState<BroadbandPlan[]>(() => getCachedBroadbandPlans('airtel'));
   const [oneBroadbandPlans, setOneBroadbandPlans] = useState<InternetPlan[]>(() => getCachedInternetPlans());
   const [isLoading, setIsLoading] = useState(false);
+  const [planOrders, setPlanOrders] = useState<PlanOrder[]>([]);
+
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: PlanOrder['status']) => {
+    try {
+      await updatePlanOrderStatus(orderId, newStatus);
+      success('Order Updated', `Order #${orderId} marked as ${newStatus.replace(/_/g, ' ').toUpperCase()}.`);
+      const updatedList = await getPlanOrders();
+      setPlanOrders(updatedList);
+    } catch (err: any) {
+      error('Update Failed', err.message);
+    }
+  };
 
   // Multi-Provider Plan Modal State
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
@@ -118,7 +133,10 @@ export const AdminPlansPage: React.FC = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      if (activeTab === 'one-broadband') {
+      if (activeTab === 'orders') {
+        const orders = await getPlanOrders();
+        setPlanOrders(orders);
+      } else if (activeTab === 'one-broadband') {
         const legacy = await getInternetPlans(false);
         setOneBroadbandPlans(legacy);
       } else {

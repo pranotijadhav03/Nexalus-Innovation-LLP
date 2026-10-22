@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { InternetPlan } from '../../types';
-import { QuoteModal } from '../common/QuoteModal';
-import { ShoppingCart, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { PlanOrderModal } from '../common/PlanOrderModal';
+import { addToPlanCart } from '../../firebase/services';
+import { useToast } from '../../context/ToastContext';
+import { ShoppingCart, Zap, Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface PlanCardProps {
   plan: InternetPlan;
@@ -9,9 +11,30 @@ interface PlanCardProps {
 }
 
 export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
-  const [isQuoteOpen, setIsQuoteOpen] = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isAddedRecently, setIsAddedRecently] = useState(false);
+  const { success } = useToast();
+
+  const handleAddToCart = () => {
+    addToPlanCart({
+      planId: plan.id,
+      providerName: 'One Broadband',
+      planName: plan.name,
+      speed: plan.speed,
+      price: plan.price,
+      billingPeriod: plan.billingPeriod || 'monthly',
+      brandId: 'one-broadband'
+    });
+    setIsAddedRecently(true);
+    setTimeout(() => setIsAddedRecently(false), 2000);
+    success('Added to Cart', `${plan.name} (${plan.speed}) has been added to your broadband cart.`);
+  };
+
+  const handleBuyNow = () => {
+    setIsOrderModalOpen(true);
+  };
 
   return (
     <>
@@ -90,15 +113,30 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
         </div>
 
         {/* Card Footer Actions */}
-        <div className="p-5 sm:p-6 pt-0 space-y-2">
-          <button
-            type="button"
-            onClick={() => setIsQuoteOpen(true)}
-            className="w-full py-2.5 px-4 rounded-full border border-orange-400 text-orange-500 hover:bg-orange-500 hover:text-white font-semibold text-xs tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-          >
-            <ShoppingCart className="w-3.5 h-3.5" />
-            Add to Cart
-          </button>
+        <div className="p-5 sm:p-6 pt-0 space-y-2.5">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className={`py-2.5 px-3 rounded-xl border text-xs font-bold tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 shadow-xs cursor-pointer ${
+                isAddedRecently
+                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  : 'border-orange-400 text-orange-600 hover:bg-orange-50 bg-white'
+              }`}
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+              {isAddedRecently ? 'Added!' : 'Add to Cart'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20 cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              Buy Now
+            </button>
+          </div>
 
           <button
             type="button"
@@ -118,12 +156,19 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
         </div>
       </div>
 
-      <QuoteModal
-        isOpen={isQuoteOpen}
-        onClose={() => setIsQuoteOpen(false)}
-        brandId="one-broadband"
-        itemName={`${plan.name} (${plan.speed}) - ₹${plan.price}/mo`}
-        itemType="plan"
+      {/* Instant Direct Order Modal */}
+      <PlanOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        plan={{
+          planId: plan.id,
+          planName: plan.name,
+          providerName: 'One Broadband',
+          speed: plan.speed,
+          price: plan.price,
+          billingPeriod: plan.billingPeriod || 'monthly',
+          brandId: 'one-broadband'
+        }}
       />
     </>
   );

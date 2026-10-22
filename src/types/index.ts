@@ -47,6 +47,42 @@ export interface Product {
   updatedAt: string;
 }
 
+export interface PlanOrder {
+  id: string;
+  planId?: string;
+  planName: string;
+  providerName: string;
+  speed: string;
+  price: number | string;
+  billingPeriod: string;
+  brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
+  customerName: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  pincode: string;
+  preferredSlot?: string;
+  paymentMethod: 'pay_on_installation' | 'online_upi' | 'corporate_invoice';
+  status: 'new' | 'confirmed' | 'installation_scheduled' | 'converted' | 'cancelled';
+  notes?: string;
+  assignedEngineer?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CartPlanItem {
+  id: string;
+  planId?: string;
+  planName: string;
+  providerName: string;
+  speed: string;
+  price: number | string;
+  billingPeriod: string;
+  brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
+  addedAt: string;
+}
+
 export interface InternetPlan {
   id: string;
   brandId: BrandId | 'nexalus' | 'one-broadband' | 'am-distributors' | 'all';
@@ -245,7 +281,7 @@ export interface Enquiry {
   websiteId?: 'corporate' | 'nexalus-innovations' | 'am-distributors' | string;
   websiteName?: string;
   sourcePage?: string;
-  enquiryType: 'product' | 'service' | 'plan' | 'quote' | 'coverage' | 'general';
+  enquiryType: 'product' | 'service' | 'plan' | 'quote' | 'coverage' | 'general' | 'order';
   productOrServiceId?: string;
   productOrServiceName?: string;
   location: string;

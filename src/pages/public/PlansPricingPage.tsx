@@ -5,15 +5,23 @@ import {
   formatBroadbandPrice,
   getInternetPlans,
   subscribeToBroadbandPlans,
-  subscribeToInternetPlans
+  subscribeToInternetPlans,
+  addToPlanCart,
+  getPlanCart,
+  removeFromPlanCart,
+  clearPlanCart
 } from '../../firebase/services';
 import {
   BroadbandPlan,
   BroadbandProvider,
-  InternetPlan
+  InternetPlan,
+  CartPlanItem,
+  BrandId
 } from '../../types';
+import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { QuoteModal } from '../../components/common/QuoteModal';
+import { PlanOrderModal } from '../../components/common/PlanOrderModal';
 import {
   Wifi,
   Check,
@@ -27,7 +35,13 @@ import {
   Clock,
   Layers,
   Building,
-  HelpCircle
+  HelpCircle,
+  ShoppingCart,
+  ShoppingBag,
+  Trash2,
+  X,
+  CreditCard,
+  CheckCircle2
 } from 'lucide-react';
 
 type ProviderTab = 'airtel' | 'bsnl' | 'railwire' | 'one-broadband';
@@ -44,11 +58,28 @@ function getEffectiveSpeed(p: { speedNumeric?: number; speed?: string }): number
 }
 
 export const PlansPricingPage: React.FC = () => {
+  const { success, info } = useToast();
   const [activeTab, setActiveTab] = useState<ProviderTab>('airtel');
   const [providers, setProviders] = useState<BroadbandProvider[]>([]);
   const [broadbandPlans, setBroadbandPlans] = useState<BroadbandPlan[]>([]);
   const [oneBroadbandPlans, setOneBroadbandPlans] = useState<InternetPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Cart State
+  const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => getPlanCart());
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Direct Plan Order Modal State
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [selectedPlanForOrder, setSelectedPlanForOrder] = useState<{
+    planId?: string;
+    planName: string;
+    providerName: string;
+    speed: string;
+    price: number | string;
+    billingPeriod?: string;
+    brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
+  } | null>(null);
 
   // Filters
   const [selectedSpeedFilter, setSelectedSpeedFilter] = useState<'all' | 'entry' | 'mid' | 'high'>('all');
@@ -64,6 +95,17 @@ export const PlansPricingPage: React.FC = () => {
     billingPeriod: string;
     brandId: 'one-broadband' | 'nexalus-innovations';
   } | null>(null);
+
+  // Sync Cart State on custom events
+  useEffect(() => {
+    const handleCartUpdate = (e: any) => {
+      setCartItems(e.detail || getPlanCart());
+    };
+    window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+    return () => {
+      window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -154,6 +196,34 @@ export const PlansPricingPage: React.FC = () => {
     setIsQuoteModalOpen(true);
   };
 
+  // Add to cart handler
+  const handleAddToCart = (plan: {
+    planId: string;
+    providerName: string;
+    planName: string;
+    speed: string;
+    price: number;
+    billingPeriod: string;
+    brandId?: 'one-broadband' | 'nexalus-innovations';
+  }) => {
+    addToPlanCart(plan);
+    success('Added to Cart', `${plan.providerName} - ${plan.planName} (${plan.speed}) added to your broadband cart.`);
+  };
+
+  // Direct Buy Now handler
+  const handleBuyNow = (plan: {
+    planId?: string;
+    planName: string;
+    providerName: string;
+    speed: string;
+    price: number | string;
+    billingPeriod?: string;
+    brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
+  }) => {
+    setSelectedPlanForOrder(plan);
+    setIsOrderModalOpen(true);
+  };
+
   const getProviderMeta = (tab: ProviderTab) => {
     switch (tab) {
       case 'airtel':
@@ -206,7 +276,7 @@ export const PlansPricingPage: React.FC = () => {
   const meta = getProviderMeta(activeTab);
 
   return (
-    <div className="space-y-12 pb-24">
+    <div className="space-y-12 pb-24 relative">
       {/* Hero Header */}
       <section className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white py-16 sm:py-20 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px] opacity-15" />
@@ -240,58 +310,74 @@ export const PlansPricingPage: React.FC = () => {
 
       {/* Main Catalog Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Provider Selector Tabs */}
-        <div className="bg-white p-2 rounded-2xl border border-slate-200/90 shadow-sm flex flex-wrap gap-2 items-center justify-center sm:justify-start">
-          <button
-            type="button"
-            onClick={() => setActiveTab('airtel')}
-            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'airtel'
-                ? 'bg-red-600 text-white shadow-md shadow-red-500/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${activeTab === 'airtel' ? 'bg-white' : 'bg-red-500'}`} />
-            <span>Airtel Xstream</span>
-          </button>
+        {/* Provider Selector Tabs & Cart Trigger */}
+        <div className="bg-white p-2 rounded-2xl border border-slate-200/90 shadow-sm flex flex-wrap gap-2 items-center justify-between">
+          <div className="flex flex-wrap gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => setActiveTab('airtel')}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'airtel'
+                  ? 'bg-red-600 text-white shadow-md shadow-red-500/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${activeTab === 'airtel' ? 'bg-white' : 'bg-red-500'}`} />
+              <span>Airtel Xstream</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('bsnl')}
-            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'bsnl'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${activeTab === 'bsnl' ? 'bg-white' : 'bg-blue-500'}`} />
-            <span>BSNL Bharat Fiber</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('bsnl')}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'bsnl'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${activeTab === 'bsnl' ? 'bg-white' : 'bg-blue-500'}`} />
+              <span>BSNL Bharat Fiber</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('railwire')}
-            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'railwire'
-                ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${activeTab === 'railwire' ? 'bg-white' : 'bg-orange-500'}`} />
-            <span>RailWire Retail</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('railwire')}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'railwire'
+                  ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${activeTab === 'railwire' ? 'bg-white' : 'bg-orange-500'}`} />
+              <span>RailWire Retail</span>
+            </button>
 
+            <button
+              type="button"
+              onClick={() => setActiveTab('one-broadband')}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'one-broadband'
+                  ? 'bg-teal-600 text-white shadow-md shadow-teal-500/20'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${activeTab === 'one-broadband' ? 'bg-white' : 'bg-teal-500'}`} />
+              <span>One Broadband (FTTH)</span>
+            </button>
+          </div>
+
+          {/* Cart Header Button */}
           <button
             type="button"
-            onClick={() => setActiveTab('one-broadband')}
-            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'one-broadband'
-                ? 'bg-teal-600 text-white shadow-md shadow-teal-500/20'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+            onClick={() => setIsCartOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-all cursor-pointer shadow-xs ml-auto"
+            title="View Broadband Cart"
           >
-            <span className={`w-2 h-2 rounded-full ${activeTab === 'one-broadband' ? 'bg-white' : 'bg-teal-500'}`} />
-            <span>One Broadband (FTTH)</span>
+            <ShoppingCart className="w-4 h-4 text-orange-400" />
+            <span className="hidden sm:inline">Plan Cart</span>
+            <span className="bg-orange-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded-full">
+              {cartItems.length}
+            </span>
           </button>
         </div>
 
@@ -456,10 +542,50 @@ export const PlansPricingPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="p-6 pt-0">
-                      <Button
-                        variant="teal"
-                        className="w-full"
+                    {/* Dual Action Buttons: Add to Cart & Buy Now */}
+                    <div className="p-6 pt-0 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleAddToCart({
+                              planId: plan.id,
+                              providerName: 'One Broadband',
+                              planName: plan.name,
+                              speed: plan.speed,
+                              price: plan.price,
+                              billingPeriod: plan.billingPeriod || 'monthly',
+                              brandId: 'one-broadband'
+                            })
+                          }
+                          className="py-2.5 px-3 rounded-xl border border-teal-600 text-teal-700 bg-teal-50/60 hover:bg-teal-100 font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5" />
+                          <span>Add to Cart</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleBuyNow({
+                              planId: plan.id,
+                              providerName: 'One Broadband',
+                              planName: plan.name,
+                              speed: plan.speed,
+                              price: plan.price,
+                              billingPeriod: plan.billingPeriod || 'monthly',
+                              brandId: 'one-broadband'
+                            })
+                          }
+                          className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-teal-600/20 cursor-pointer"
+                        >
+                          <Zap className="w-3.5 h-3.5 fill-current" />
+                          <span>Buy Now</span>
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
                         onClick={() =>
                           handleOpenQuote({
                             providerName: 'One Broadband',
@@ -470,10 +596,10 @@ export const PlansPricingPage: React.FC = () => {
                             brandId: 'one-broadband'
                           })
                         }
-                        icon={<ArrowRight className="w-4 h-4" />}
+                        className="w-full text-center text-[11px] font-semibold text-slate-400 hover:text-slate-600 py-1 transition-colors cursor-pointer"
                       >
-                        Get Connection
-                      </Button>
+                        Enquire custom feasibility &rarr;
+                      </button>
                     </div>
                   </div>
                 ))
@@ -557,10 +683,50 @@ export const PlansPricingPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="p-6 pt-0">
-                      <Button
-                        variant={meta.buttonVariant}
-                        className="w-full"
+                    {/* Dual Action Buttons: Add to Cart & Buy Now */}
+                    <div className="p-6 pt-0 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleAddToCart({
+                              planId: plan.id,
+                              providerName: meta.name,
+                              planName: plan.name,
+                              speed: plan.speed,
+                              price: plan.price,
+                              billingPeriod: plan.billingPeriod || 'monthly',
+                              brandId: 'nexalus-innovations'
+                            })
+                          }
+                          className="py-2.5 px-3 rounded-xl border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5" />
+                          <span>Add to Cart</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleBuyNow({
+                              planId: plan.id,
+                              providerName: meta.name,
+                              planName: plan.name,
+                              speed: plan.speed,
+                              price: plan.price,
+                              billingPeriod: plan.billingPeriod || 'monthly',
+                              brandId: 'nexalus-innovations'
+                            })
+                          }
+                          className={`py-2.5 px-3 rounded-xl bg-gradient-to-r ${meta.color} hover:opacity-95 text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer`}
+                        >
+                          <Zap className="w-3.5 h-3.5 fill-current" />
+                          <span>Buy Now</span>
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
                         onClick={() =>
                           handleOpenQuote({
                             providerName: meta.name,
@@ -571,10 +737,10 @@ export const PlansPricingPage: React.FC = () => {
                             brandId: 'nexalus-innovations'
                           })
                         }
-                        icon={<ArrowRight className="w-4 h-4" />}
+                        className="w-full text-center text-[11px] font-semibold text-slate-400 hover:text-slate-600 py-1 transition-colors cursor-pointer"
                       >
-                        Get Connection
-                      </Button>
+                        Enquire custom feasibility &rarr;
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -615,6 +781,171 @@ export const PlansPricingPage: React.FC = () => {
           </Button>
         </div>
       </section>
+
+      {/* Floating Cart Trigger Button */}
+      {cartItems.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setIsCartOpen(true)}
+          className="fixed bottom-24 left-6 z-40 bg-slate-900 text-white hover:bg-slate-800 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 transition-all hover:scale-105 cursor-pointer"
+        >
+          <div className="relative">
+            <ShoppingCart className="w-5 h-5 text-orange-400" />
+            <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+              {cartItems.length}
+            </span>
+          </div>
+          <div className="text-left text-xs">
+            <div className="font-bold leading-none">Broadband Cart</div>
+            <div className="text-[10px] text-slate-300 mt-0.5">
+              {cartItems.length} plan{cartItems.length > 1 ? 's' : ''} saved
+            </div>
+          </div>
+        </button>
+      )}
+
+      {/* CART DRAWER / MODAL */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+            {/* Header */}
+            <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Your Broadband Cart</h3>
+                  <p className="text-[11px] text-slate-300">{cartItems.length} plan{cartItems.length !== 1 ? 's' : ''} selected</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCartOpen(false)}
+                className="w-8 h-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Cart Body */}
+            <div className="p-5 flex-1 overflow-y-auto space-y-3">
+              {cartItems.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 space-y-2">
+                  <ShoppingBag className="w-10 h-10 mx-auto text-slate-300" />
+                  <p className="text-sm font-bold text-slate-700">Your cart is empty</p>
+                  <p className="text-xs text-slate-400">Click &ldquo;Add to Cart&rdquo; on any broadband plan to save it here.</p>
+                </div>
+              ) : (
+                cartItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 hover:border-slate-300 transition-colors"
+                  >
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+                          {item.providerName}
+                        </span>
+                        <span className="text-xs font-bold text-slate-900 truncate">{item.planName}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-slate-600">
+                        <span className="font-bold text-indigo-600">{item.speed}</span>
+                        <span>•</span>
+                        <span className="font-extrabold text-slate-900">₹{item.price.toLocaleString('en-IN')}/{item.billingPeriod || 'mo'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCartOpen(false);
+                          handleBuyNow({
+                            planId: item.planId,
+                            planName: item.planName,
+                            providerName: item.providerName,
+                            speed: item.speed,
+                            price: item.price,
+                            billingPeriod: item.billingPeriod,
+                            brandId: item.brandId
+                          });
+                        }}
+                        className="py-1.5 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Zap className="w-3 h-3 fill-current" />
+                        <span>Checkout</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeFromPlanCart(item.id)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Remove from Cart"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Cart Footer */}
+            {cartItems.length > 0 && (
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={clearPlanCart}
+                  className="text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
+                >
+                  Clear all
+                </button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsCartOpen(false)}
+                  >
+                    Continue Browsing
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    icon={<Zap className="w-3.5 h-3.5 fill-current" />}
+                    onClick={() => {
+                      if (cartItems.length > 0) {
+                        const first = cartItems[0];
+                        setIsCartOpen(false);
+                        handleBuyNow({
+                          planId: first.planId,
+                          planName: first.planName,
+                          providerName: first.providerName,
+                          speed: first.speed,
+                          price: first.price,
+                          billingPeriod: first.billingPeriod,
+                          brandId: first.brandId
+                        });
+                      }
+                    }}
+                  >
+                    Buy First ({cartItems[0]?.planName})
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Instant Direct Order Modal (BUY NOW) */}
+      <PlanOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => {
+          setIsOrderModalOpen(false);
+          setSelectedPlanForOrder(null);
+        }}
+        plan={selectedPlanForOrder}
+      />
 
       {/* Quote / Feasibility Modal */}
       {selectedPlanForQuote && (

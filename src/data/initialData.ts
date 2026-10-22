@@ -1452,7 +1452,7 @@ export const initialProjects: Project[] = [
       'Gate ANPR Vehicle Tracking & Visitor Intercom'
     ],
     images: [
-      '/images/projects/nexalus-innovations-real.jpg'
+      '/images/cctv-real-2.jpg'
     ],
     featured: true,
     published: true,
@@ -1476,7 +1476,7 @@ export const initialProjects: Project[] = [
       'FSSAI Certified Cold Storage Warehouse Operations'
     ],
     images: [
-      '/images/projects/am-distributors-chiplun.jpg'
+      '/images/am-warehouse-depot.jpg'
     ],
     featured: true,
     published: true,
@@ -1500,7 +1500,7 @@ export const initialProjects: Project[] = [
       '40TB RAID NVR Storage with 90-Day Archival SLA'
     ],
     images: [
-      '/images/projects/real-warehouse-distribution.jpg'
+      '/images/computer-rack-switches-real.jpg'
     ],
     featured: true,
     published: true,
@@ -1524,7 +1524,7 @@ export const initialProjects: Project[] = [
       'Daily 4:00 AM Dispatch Guarantee'
     ],
     images: [
-      '/images/projects/real-warehouse-distribution.jpg'
+      '/images/projects/logistics-center.jpg'
     ],
     featured: true,
     published: true,

@@ -23,6 +23,7 @@ import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
 import { ScrollToTop } from '../common/PublicLayout';
 import { FloatingWhatsAppButton } from '../common/FloatingWhatsAppButton';
+import { FloatingCallButton } from '../common/FloatingCallButton';
 import { CustomerChoiceModal } from '../common/CustomerChoiceModal';
 import { useAuth } from '../../context/AuthContext';
 import { User, UserCheck } from 'lucide-react';
@@ -403,6 +404,9 @@ export const NexalusInnovationsLayout: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Direct Phone Call Floating Button (Directly Above WhatsApp) */}
+      <FloatingCallButton phoneNumber="+919158886444" title="Direct Call Admin: +91 9158886444" />
 
       {/* Quick WhatsApp / Calling Connect Floating Button */}
       <FloatingWhatsAppButton

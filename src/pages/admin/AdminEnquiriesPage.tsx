@@ -17,6 +17,7 @@ import { Modal } from '../../components/common/Modal';
 import { BrandBadge } from '../../components/common/BrandBadge';
 import {
   Inbox,
+  Zap,
   Search,
   Filter,
   Trash2,
@@ -39,6 +40,7 @@ export const AdminEnquiriesPage: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>(() => getCachedUsers());
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'order' | 'enquiry'>('all');
   const [brandFilter, setBrandFilter] = useState<string>(
     isSuperAdmin ? (outletCtx?.activeBrandFilter || 'all') : (brandScope as string)
   );
@@ -171,7 +173,11 @@ export const AdminEnquiriesPage: React.FC = () => {
   ).length;
   const amCount = allEnquiriesRaw.filter(e => e.websiteId === 'am-distributors' || e.brandId === 'am-distributors').length;
 
+  const orderCount = allEnquiriesRaw.filter(e => e.enquiryType === 'order').length;
+
   const filtered = enquiries.filter(e => {
+    if (typeFilter === 'order' && e.enquiryType !== 'order') return false;
+    if (typeFilter === 'enquiry' && e.enquiryType === 'order') return false;
     const query = search.toLowerCase();
     return (
       e.id.toLowerCase().includes(query) ||
@@ -304,6 +310,15 @@ export const AdminEnquiriesPage: React.FC = () => {
 
         <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
           <select
+            className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700 font-bold"
+            value={typeFilter}
+            onChange={e => setTypeFilter(e.target.value as any)}
+          >
+            <option value="all">All Record Types</option>
+            <option value="order">⚡ Plan Orders ({orderCount})</option>
+            <option value="enquiry">General Leads &amp; Quotes</option>
+          </select>
+          <select
             className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700 font-medium"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
@@ -391,17 +406,24 @@ export const AdminEnquiriesPage: React.FC = () => {
 
                       <td className="py-3.5 px-4">
                         <div className="flex flex-col gap-1 items-start">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                              isAmDist
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                : isNexTech
-                                ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
-                                : 'bg-blue-50 text-blue-800 border-blue-200'
-                            }`}
-                          >
-                            {websiteDisplay}
-                          </span>
+                          {enq.enquiryType === 'order' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                              <Zap className="w-3 h-3 fill-emerald-600 text-emerald-600" />
+                              PLAN ORDER
+                            </span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                isAmDist
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                  : isNexTech
+                                  ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                                  : 'bg-blue-50 text-blue-800 border-blue-200'
+                              }`}
+                            >
+                              {websiteDisplay}
+                            </span>
+                          )}
                           <span className="text-[11px] text-slate-500 font-medium">
                             {enq.sourcePage || 'General Form'}
                           </span>
@@ -569,7 +591,19 @@ export const AdminEnquiriesPage: React.FC = () => {
               <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Inquiry Details & Message:
               </div>
-              {selectedEnquiry.productOrServiceName && (
+              {selectedEnquiry.enquiryType === 'order' ? (
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-[10px] uppercase tracking-wider flex items-center gap-1">
+                      <Zap className="w-3 h-3 fill-current" /> BROADBAND PLAN ORDER
+                    </span>
+                    <span className="font-extrabold text-slate-900">{selectedEnquiry.productOrServiceName}</span>
+                  </div>
+                  <div className="text-[11px] text-emerald-800 pt-1">
+                    Customer selected this plan for immediate connection provisioning.
+                  </div>
+                </div>
+              ) : selectedEnquiry.productOrServiceName && (
                 <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-200 text-xs text-blue-900 font-medium">
                   Associated Item: <span className="font-bold">{selectedEnquiry.productOrServiceName}</span>
                 </div>
