@@ -32,9 +32,7 @@ import {
   X,
   Building,
   Shield,
-  ArrowRight,
-  Link2,
-  Zap
+  ArrowRight
 } from 'lucide-react';
 
 const FMCG_PRESETS = [
@@ -589,14 +587,10 @@ export const AdminProductsPage: React.FC = () => {
 
           {/* Enhanced Image Management Box */}
           <div className="space-y-3 p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl">
-            <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
                 Product Images
               </label>
-              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                <Zap className="w-3 h-3 text-emerald-600" />
-                <span>Instant Local Mode Active (No Blaze required for testing)</span>
-              </span>
             </div>
 
             {/* Upload File + Direct Path/URL Input */}
