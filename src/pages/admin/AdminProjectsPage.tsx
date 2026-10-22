@@ -25,7 +25,7 @@ export const AdminProjectsPage: React.FC = () => {
   // Form
   const [title, setTitle] = useState('');
   const [brandId, setBrandId] = useState<BrandId | 'nexalus'>('nexalus');
-  const [clientType, setClientType] = useState<'Enterprise' | 'Commercial' | 'Residential' | 'Government' | 'Retail'>('Enterprise');
+  const [clientType, setClientType] = useState<Project['clientType']>('Enterprise');
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [solutionProvided, setSolutionProvided] = useState('');
@@ -274,7 +274,10 @@ export const AdminProjectsPage: React.FC = () => {
                 { value: 'Commercial', label: 'Commercial Complex' },
                 { value: 'Residential', label: 'Residential Community' },
                 { value: 'Government', label: 'Government / Public' },
-                { value: 'Retail', label: 'Retail Chains' }
+                { value: 'Retail', label: 'Retail Chains' },
+                { value: 'Logistics', label: 'Logistics & Distribution' },
+                { value: 'Industrial', label: 'Industrial & Depot' },
+                { value: 'Wholesale', label: 'Wholesale & FMCG' }
               ]}
             />
 

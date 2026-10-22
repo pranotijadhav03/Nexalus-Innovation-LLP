@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { OurTeamSection } from '../../components/common/OurTeamSection';
+import { ProjectGallerySection } from '../../components/common/ProjectGallerySection';
+import { AreasCoveredSection } from '../../components/common/AreasCoveredSection';
 import { BlurZoomReveal } from '../../components/common/BlurZoomReveal';
 import { QuoteModal } from '../../components/common/QuoteModal';
 import { ServiceCard } from '../../components/brand/ServiceCard';
@@ -394,6 +396,11 @@ export const HomePage: React.FC = () => {
       {heroBanner?.showTeam !== false && (
         <OurTeamSection division="corporate" />
       )}
+
+      {/* =========================================================================
+          SECTION: PROJECT GALLERY
+          ========================================================================= */}
+      <ProjectGallerySection division="corporate" />
 
       {/* =========================================================================
           SECTION 3: INTEGRATED TECHNOLOGY INFRASTRUCTURE (3 PILLARS - RICH CORPORATE BLUE)
@@ -1803,6 +1810,11 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* =========================================================================
+          SECTION: AREAS COVERED & SERVICE AVAILABILITY CHECKER
+          ========================================================================= */}
+      <AreasCoveredSection division="corporate" />
 
       {/* =========================================================================
           SLIDE 8: BUSINESS ENQUIRY & SITE SURVEY CTA BANNER (CLEAN WHITE THEME)

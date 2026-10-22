@@ -59,7 +59,7 @@ import {
 } from '../data/initialData';
 
 // Storage Keys for resilient local state
-const DATA_VERSION = 'v8_';
+const DATA_VERSION = 'v9_';
 const STORAGE_KEYS = {
   BRANDS: DATA_VERSION + 'nexalus_store_brands',
   CATEGORIES: DATA_VERSION + 'nexalus_store_categories',
@@ -1294,42 +1294,54 @@ export async function getServiceAreas(): Promise<ServiceArea[]> {
   return getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
 }
 
-export async function checkCoverage(queryStr: string): Promise<{
+export async function checkCoverage(queryStr: string, brandFilter?: string): Promise<{
   isServiceable: boolean;
   status?: 'fully_operational' | 'expanding_soon' | 'planned';
   matchedArea?: ServiceArea;
+  matchedAreas?: ServiceArea[];
+  services?: string[];
   message: string;
 }> {
   const clean = queryStr.trim().toLowerCase();
-  const areas = await getServiceAreas();
+  let areas = await getServiceAreas();
+  if (brandFilter && brandFilter !== 'all') {
+    areas = areas.filter(a => a.brandId === brandFilter || a.brandId === 'all');
+  }
 
-  const found = areas.find(a =>
+  const matching = areas.filter(a =>
     a.pincode === clean ||
     a.locality.toLowerCase().includes(clean) ||
     a.city.toLowerCase().includes(clean)
   );
 
-  if (found) {
+  if (matching.length > 0) {
+    const found = matching[0];
+    const allServices = Array.from(new Set(matching.flatMap(a => a.services || [])));
     if (found.status === 'fully_operational') {
       return {
         isServiceable: true,
         status: 'fully_operational',
         matchedArea: found,
-        message: `High-Speed Fiber is fully operational in ${found.locality} (${found.pincode}). Connections can be activated within 24–48 hours!`
+        matchedAreas: matching,
+        services: allServices,
+        message: `Service coverage is fully operational in ${found.city} (${found.locality}, ${found.pincode}). Direct operations and deployment active!`
       };
     } else if (found.status === 'expanding_soon') {
       return {
         isServiceable: true,
         status: 'expanding_soon',
         matchedArea: found,
-        message: `Network rollout is currently expanding in ${found.locality}. Book your connection early for priority installation.`
+        matchedAreas: matching,
+        services: allServices,
+        message: `Service operations are currently expanding in ${found.city} (${found.locality}). Accepting advance survey & booking requests!`
       };
     }
   }
 
   return {
     isServiceable: false,
-    message: `We currently do not have confirmed fiber presence at '${queryStr}'. Submit an enquiry below and our network team will check nearest feeder availability!`
+    services: [],
+    message: `We currently do not have confirmed presence at '${queryStr}'. Submit an inquiry and our regional operations team will check coverage availability!`
   };
 }
 

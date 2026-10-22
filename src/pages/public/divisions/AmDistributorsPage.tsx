@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
 import { OurTeamSection } from '../../../components/common/OurTeamSection';
+import { ProjectGallerySection } from '../../../components/common/ProjectGallerySection';
+import { AreasCoveredSection } from '../../../components/common/AreasCoveredSection';
 import { subscribeToBanners, getProducts } from '../../../firebase/services';
 import { SiteBanner, Product } from '../../../types';
 import { QuoteModal } from '../../../components/common/QuoteModal';
@@ -127,6 +129,9 @@ export const AmDistributorsPage: React.FC = () => {
       {heroBanner?.showTeam !== false && (
         <OurTeamSection division="am-distributors" bgClassName="bg-slate-50/50" />
       )}
+
+      {/* PROJECT GALLERY */}
+      <ProjectGallerySection division="am-distributors" />
 
       {/* 2. CORE BUSINESS VERTICALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -276,10 +281,7 @@ export const AmDistributorsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* OUR TEAM - A.M. DISTRIBUTORS CHIPLUN */}
-      {heroBanner?.showTeam !== false && (
-        <OurTeamSection division="am-distributors" bgClassName="bg-slate-50/50" />
-      )}
+
 
       {/* 4. FACILITY & OPERATIONS SPOTLIGHT */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -332,6 +334,9 @@ export const AmDistributorsPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* AREAS COVERED & SERVICE AVAILABILITY CHECKER */}
+      <AreasCoveredSection division="am-distributors" />
 
       {/* Modal */}
       <QuoteModal

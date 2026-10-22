@@ -49,7 +49,8 @@ export interface Product {
 
 export interface InternetPlan {
   id: string;
-  brandId: 'one-broadband';
+  brandId: BrandId | 'nexalus' | 'one-broadband' | 'am-distributors' | 'all';
+  services?: string[];
   name: string;
   slug: string;
   speed: string; // e.g. "100 Mbps", "300 Mbps", "1 Gbps"
@@ -220,7 +221,7 @@ export interface Project {
   brandId: BrandId | 'nexalus';
   title: string;
   slug: string;
-  clientType: 'Enterprise' | 'Commercial' | 'Residential' | 'Government' | 'Retail';
+  clientType: 'Enterprise' | 'Commercial' | 'Residential' | 'Government' | 'Retail' | 'Logistics' | 'Industrial' | 'Wholesale';
   location: string;
   description: string;
   solutionProvided: string;
@@ -259,7 +260,8 @@ export interface Enquiry {
 
 export interface ServiceArea {
   id: string;
-  brandId: 'one-broadband';
+  brandId: BrandId | 'nexalus' | 'one-broadband' | 'am-distributors' | 'all';
+  services?: string[];
   locality: string;
   city: string;
   state: string;

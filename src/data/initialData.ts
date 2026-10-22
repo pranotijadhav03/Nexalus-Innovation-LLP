@@ -1438,11 +1438,107 @@ export const initialProjects: Project[] = [
   },
   {
     id: 'proj-2',
+    brandId: 'nexalus',
+    title: 'Ratnagiri Waterfront Resort & Commercial Security Grid',
+    slug: 'ratnagiri-waterfront-resort-security',
+    clientType: 'Commercial',
+    location: 'Mirjole Coastal Strip, Ratnagiri, Maharashtra',
+    description: 'Full perimeter defense and gigabit optical fiber deployment across an 18-acre waterfront resort with 4K Starlight color night-vision cameras and central security NOC.',
+    solutionProvided: 'Installed marine-grade IP67 vandal-proof dome cameras along high-corrosion beach zones and wired high-speed fiber backhauls with uninterrupted guest Wi-Fi roaming.',
+    scope: [
+      '48 × CP PLUS 4K Starlight Color Night-Vision Domes',
+      'Dedicated Symmetrical Optical Fiber Leased Line',
+      'Whole-Property Wi-Fi 6 Mesh Roaming',
+      'Gate ANPR Vehicle Tracking & Visitor Intercom'
+    ],
+    images: [
+      '/images/projects/nexalus-innovations-real.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2026-01-20',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-3',
+    brandId: 'am-distributors',
+    title: 'A.M. Distributors Chiplun Cold-Chain & Regional Depot Hub',
+    slug: 'am-distributors-chiplun-depot-hub',
+    clientType: 'Logistics',
+    location: 'Kherdi MIDC, Chiplun 415605, Maharashtra',
+    description: 'Establishment of state-of-the-art temperature-controlled cold-room storage and a dedicated refrigerated fleet delivering packaged mineral water, bulk ice cream, and dairy.',
+    solutionProvided: 'Built zero-break cold-chain corridors with GPS temperature logging vehicles, 20L bottle automated sanitation docks, and daily 4:00 AM dispatch routes across Konkan.',
+    scope: [
+      '20L Mineral Water Automated Dispatch Dock (3,000 Jars/Day)',
+      'Refrigerated Fleet Supporting -18°C Ice Cream Logistics',
+      '4:00 AM Doorstep Milk Pouch & Pure Butter Supply Route',
+      'FSSAI Certified Cold Storage Warehouse Operations'
+    ],
+    images: [
+      '/images/projects/am-distributors-chiplun.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2025-10-01',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-4',
+    brandId: 'nexalus',
+    title: 'Sangli-Kolhapur Industrial Corridor Manufacturing Plant',
+    slug: 'sangli-kolhapur-industrial-manufacturing',
+    clientType: 'Industrial',
+    location: 'Kupwad MIDC, Sangli, Maharashtra',
+    description: 'Heavy industrial facility deployment with 45,000 sq.ft. structured Cat6A pure copper cabling, 10G optical uplinks, and AI motion tracking PTZ cameras.',
+    solutionProvided: 'Nexalus engineered an industrial switch fabric with hardware firewalls, organized 42U server cabinets, and centralized monitoring with remote live view.',
+    scope: [
+      '32 × CP PLUS High-Bay PTZ Domes with Auto-Tracking',
+      'Organized 42U Server Cabinets & 10G SFP+ Uplinks',
+      'Fluke-Certified Pure Copper Cat6A Structured Cabling',
+      '40TB RAID NVR Storage with 90-Day Archival SLA'
+    ],
+    images: [
+      '/images/projects/real-warehouse-distribution.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2026-02-18',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-5',
+    brandId: 'am-distributors',
+    title: 'Konkan Institutional & Supermarket Dairy Logistics Fleet',
+    slug: 'konkan-supermarket-dairy-fleet',
+    clientType: 'Wholesale',
+    location: 'Chiplun, Khed & Guhagar Route, Maharashtra',
+    description: 'Wholesale cold-chain distribution network supplying commercial bulk ice cream tubs, bottled mineral water cases, and dairy products to supermarkets and hotels.',
+    solutionProvided: 'Structured daily morning supply SLAs with dedicated refrigerated vans ensuring zero melting and guaranteed doorstep delivery before 7:00 AM.',
+    scope: [
+      'Bulk Ice Cream Supply to 120+ Retailers (Amul / Vadilal)',
+      'Bottled Mineral Water Cases (500ml & 1L) Wholesale',
+      'Dairy & Pure Ghee Institutional Catering Tins',
+      'Daily 4:00 AM Dispatch Guarantee'
+    ],
+    images: [
+      '/images/projects/real-warehouse-distribution.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2026-03-05',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-6',
     brandId: 'cp-plus',
     title: 'Grand Horizon Luxury Residency Surveillance Upgrade',
     slug: 'grand-horizon-surveillance',
     clientType: 'Residential',
-    location: 'Indiranagar, Bengaluru',
+    location: 'Indiranagar & Electronic City Corridor',
     description: 'Modernization of perimeter, parking basement, and lobby security for an upscale 240-unit residential gated community.',
     solutionProvided: 'Replaced legacy analog cameras with 64 CP PLUS Starlight full-color IP cameras and established ANPR barrier gate tracking for resident and visitor vehicles.',
     scope: [
@@ -1459,42 +1555,153 @@ export const initialProjects: Project[] = [
     completionDate: '2026-02-10',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'proj-3',
-    brandId: 'one-broadband',
-    title: 'Silver Oak Logistics & Warehousing Center',
-    slug: 'silver-oak-logistics-connectivity',
-    clientType: 'Commercial',
-    location: 'Whitefield Industrial Zone, Bengaluru',
-    description: 'High-density fiber deployment, warehouse handheld scanner Wi-Fi roaming, and multi-node switch fabric across 85,000 sq ft logistics facility.',
-    solutionProvided: 'One Broadband laid a dedicated underground fiber run, implemented outdoor directional mesh access points, and configured uninterrupted cloud warehouse syncing.',
-    scope: [
-      '500 Mbps Dedicated Business Fiber Connection',
-      'Industrial-Grade Mesh Access Points (Zero Handshake Loss)',
-      '16 × CP PLUS High-Bay Warehouse Surveillance Units',
-      '4-Hour Emergency Restoration SLA Guarantee'
-    ],
-    images: [
-      '/images/projects/logistics-center.jpg'
-    ],
-    featured: true,
-    published: true,
-    completionDate: '2026-03-22',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
   }
 ];
 
 export const initialServiceAreas: ServiceArea[] = [
-  { id: 'sa-1', brandId: 'one-broadband', locality: 'Koramangala (Blocks 1-8)', city: 'Bengaluru', state: 'Karnataka', pincode: '560034', status: 'fully_operational', notes: 'High-density FTTH coverage; same-day connection available', updatedAt: new Date().toISOString() },
-  { id: 'sa-2', brandId: 'one-broadband', locality: 'Indiranagar & Defense Colony', city: 'Bengaluru', state: 'Karnataka', pincode: '560038', status: 'fully_operational', notes: 'Gigabit fiber nodes active throughout main avenues', updatedAt: new Date().toISOString() },
-  { id: 'sa-3', brandId: 'one-broadband', locality: 'Whitefield & ITPL Main Road', city: 'Bengaluru', state: 'Karnataka', pincode: '560066', status: 'fully_operational', notes: 'Enterprise leased line and residential high-rise fiber ready', updatedAt: new Date().toISOString() },
-  { id: 'sa-4', brandId: 'one-broadband', locality: 'HSR Layout (Sectors 1-7)', city: 'Bengaluru', state: 'Karnataka', pincode: '560102', status: 'fully_operational', notes: 'Full FTTH fiber coverage with 1 Gbps capability', updatedAt: new Date().toISOString() },
-  { id: 'sa-5', brandId: 'one-broadband', locality: 'Electronic City Phase 1 & 2', city: 'Bengaluru', state: 'Karnataka', pincode: '560100', status: 'fully_operational', notes: 'Industrial and residential fiber networks active', updatedAt: new Date().toISOString() },
-  { id: 'sa-6', brandId: 'one-broadband', locality: 'Bellandur & Outer Ring Road', city: 'Bengaluru', state: 'Karnataka', pincode: '560103', status: 'fully_operational', notes: 'Ultra-low latency connection to tech corridors', updatedAt: new Date().toISOString() },
-  { id: 'sa-7', brandId: 'one-broadband', locality: 'Marathahalli & AECS Layout', city: 'Bengaluru', state: 'Karnataka', pincode: '560037', status: 'expanding_soon', notes: 'Feeder cables laid; fiber activation in progress', updatedAt: new Date().toISOString() },
-  { id: 'sa-8', brandId: 'one-broadband', locality: 'Sarjapur Road & Carmelaram', city: 'Bengaluru', state: 'Karnataka', pincode: '560035', status: 'expanding_soon', notes: 'Accepting advance bookings for fast rollout', updatedAt: new Date().toISOString() }
+  {
+    id: 'sa-chiplun',
+    brandId: 'am-distributors',
+    locality: 'Kherdi MIDC, Chiplun Central & Bazaar Road',
+    city: 'Chiplun',
+    state: 'Maharashtra',
+    pincode: '415605',
+    status: 'fully_operational',
+    services: [
+      '20-Litre Packaged Mineral Water Jars',
+      'Bottled Drinking Water Cases (500ml/1L)',
+      'Commercial Bulk Ice Cream Tubs (Amul / Vadilal)',
+      'Daily Farm-Fresh Milk Pouches & Dairy',
+      'Cold-Chain Refrigerated Logistics Fleet',
+      'Chiplun Depot Wholesale Booking'
+    ],
+    notes: 'Central Depot Hub — Daily 4:00 AM morning route dispatch across Chiplun & surrounding MIDC',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sa-ratnagiri',
+    brandId: 'all',
+    locality: 'Mirjole MIDC, Port Road, Coastal Strip & City Center',
+    city: 'Ratnagiri',
+    state: 'Maharashtra',
+    pincode: '415612',
+    status: 'fully_operational',
+    services: [
+      'Commercial 4K CCTV Video Surveillance',
+      'High-Speed Optical Fiber Internet',
+      'Enterprise Switching & Managed Wi-Fi',
+      'Cold-Chain Logistics Supply',
+      '20L Mineral Water Delivery',
+      'Same-Day Onsite Technical Survey'
+    ],
+    notes: 'Full active regional coverage with local technicians and refrigerated depot supply lines',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sa-sangli',
+    brandId: 'nexalus',
+    locality: 'Kupwad MIDC, Vishrambag, Market Yard & City Core',
+    city: 'Sangli',
+    state: 'Maharashtra',
+    pincode: '416416',
+    status: 'fully_operational',
+    services: [
+      'Commercial 4K CCTV Surveillance Systems',
+      'Symmetrical Gigabit Optical Fiber Leased Line',
+      'Enterprise IT Racks & PoE+ Switching',
+      'Fluke-Certified Pure Copper Cat6A Cabling',
+      'CCTV AMC & Field Maintenance SLA'
+    ],
+    notes: 'Dedicated on-site technician team in Sangli with 45-minute emergency restoration SLA',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sa-kolhapur',
+    brandId: 'nexalus',
+    locality: 'Shiroli MIDC, Gokul Shirgaon Industrial & Tarabai Park',
+    city: 'Kolhapur',
+    state: 'Maharashtra',
+    pincode: '416001',
+    status: 'fully_operational',
+    services: [
+      'Commercial 4K CCTV Video Surveillance',
+      'Gigabit Optical Fiber FTTH Broadband',
+      'Managed Wi-Fi 6 Routers & Whole-Premises Mesh',
+      'Pure Copper Cat6A Structured Office Cabling',
+      'Hardware Firewall Installation'
+    ],
+    notes: 'Direct authorized OEM integrations with authentic serial number warranties',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sa-pune',
+    brandId: 'nexalus',
+    locality: 'Hinjewadi IT Park, Shivajinagar, Baner & Hadapsar',
+    city: 'Pune',
+    state: 'Maharashtra',
+    pincode: '411001',
+    status: 'fully_operational',
+    services: [
+      'Enterprise Layer-2/3 Managed PoE+ Switching',
+      'Security Command Center 4K Video Wall Integration',
+      '10G SFP+ Optical Leased Line Backhaul',
+      '24/7 Operations NOC SLA Monitoring',
+      'Door Access Terminals & Smart Intercoms'
+    ],
+    notes: 'Corporate infrastructure consulting with certified network & security engineers',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sa-mumbai',
+    brandId: 'nexalus',
+    locality: 'BKC, Andheri East Industrial & Navi Mumbai MIDC',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    pincode: '400001',
+    status: 'fully_operational',
+    services: [
+      'Turnkey Commercial CCTV Surveillance Grids',
+      'Enterprise Structured Cabling Cat6A & Fiber',
+      'Dedicated Symmetrical Business Leased Line',
+      'High-Bay Warehouse Camera Installations'
+    ],
+    notes: 'Enterprise project delivery with Fluke-certified testing and multi-node switch fabrics',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sa-khed',
+    brandId: 'am-distributors',
+    locality: 'Khed Bazaar, MIDC Zone & Guhagar Coastal Road',
+    city: 'Khed',
+    state: 'Maharashtra',
+    pincode: '415703',
+    status: 'fully_operational',
+    services: [
+      '20-Litre Packaged Mineral Water Jars',
+      'Commercial Ice Cream Wholesale (Amul / Vadilal)',
+      'Daily 4:00 AM Farm-Fresh Milk Pouches',
+      'Doorstep Delivery SLA for Retailers & Resorts'
+    ],
+    notes: 'Daily scheduled refrigerated van runs departing from Chiplun depot at 4:00 AM',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sa-satara',
+    brandId: 'nexalus',
+    locality: 'Karad MIDC, Satara City Center & Highway Corridor',
+    city: 'Satara',
+    state: 'Maharashtra',
+    pincode: '415001',
+    status: 'expanding_soon',
+    services: [
+      'Commercial 4K CCTV Video Surveillance',
+      'High-Speed Optical Fiber Internet',
+      'Office Networking & Managed Switches',
+      'Advance Project Site Surveys'
+    ],
+    notes: 'Currently accepting advance site survey bookings; weekly dedicated installation slots',
+    updatedAt: new Date().toISOString()
+  }
 ];
 
 export const initialFaqs: FAQ[] = [
