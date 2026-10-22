@@ -22,6 +22,7 @@ import {
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
 import { ScrollToTop } from '../common/PublicLayout';
+import { FloatingWhatsAppButton } from '../common/FloatingWhatsAppButton';
 
 export const AmDistributorsLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -76,6 +77,14 @@ export const AmDistributorsLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
+            <a
+              href="tel:+919158886444"
+              className="hidden sm:inline-flex items-center gap-1.5 text-emerald-300 hover:text-white font-semibold transition-colors"
+              title="Call Chiplun Depot: +91 9158886444"
+            >
+              <PhoneCall className="w-3.5 h-3.5 text-emerald-400" />
+              <span>+91 9158886444</span>
+            </a>
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-emerald-400" />
               <span>Dispatch: Daily 4:00 AM Morning Route</span>
@@ -131,6 +140,14 @@ export const AmDistributorsLayout: React.FC = () => {
 
           {/* Right Header Action Button */}
           <div className="hidden sm:flex items-center gap-2.5">
+            <a
+              href="tel:+919158886444"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 transition-colors"
+              title="Call Chiplun Depot: +91 9158886444"
+            >
+              <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Call Depot</span>
+            </a>
             <Button
               variant="teal"
               size="md"
@@ -176,6 +193,13 @@ export const AmDistributorsLayout: React.FC = () => {
               </Link>
             ))}
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+              <a
+                href="tel:+919158886444"
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-900 text-emerald-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2 border border-slate-800 transition-colors shadow-xs"
+              >
+                <PhoneCall className="w-4 h-4 text-emerald-400" />
+                <span>Direct Call Depot: +91 9158886444</span>
+              </a>
               <Button
                 variant="teal"
                 size="md"
@@ -349,6 +373,13 @@ export const AmDistributorsLayout: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Quick WhatsApp / Calling Connect Floating Button */}
+      <FloatingWhatsAppButton
+        phoneNumber="919158886444"
+        message="Hello A.M. Distributors Chiplun, I would like to inquire about wholesale packaged drinking water, commercial ice cream, and dairy distribution."
+        title="Call or Chat on WhatsApp (+91 9158886444)"
+      />
 
       {/* Quote / Wholesale Modal */}
       <QuoteModal

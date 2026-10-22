@@ -21,6 +21,7 @@ import {
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
 import { ScrollToTop } from '../common/PublicLayout';
+import { FloatingWhatsAppButton } from '../common/FloatingWhatsAppButton';
 
 export const NexalusInnovationsLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -129,6 +130,14 @@ export const NexalusInnovationsLayout: React.FC = () => {
 
           {/* Right Header Action Button */}
           <div className="hidden sm:flex items-center gap-3">
+            <a
+              href="tel:+919158886444"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 transition-colors"
+              title="Call Sales & Support: +91 9158886444"
+            >
+              <PhoneCall className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Call Us</span>
+            </a>
             <Button
               variant="primary"
               size="md"
@@ -174,6 +183,13 @@ export const NexalusInnovationsLayout: React.FC = () => {
               </Link>
             ))}
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+              <a
+                href="tel:+919158886444"
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-900 text-cyan-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2 border border-slate-800 transition-colors shadow-xs"
+              >
+                <PhoneCall className="w-4 h-4 text-cyan-400" />
+                <span>Direct Call: +91 9158886444</span>
+              </a>
               <Button
                 variant="primary"
                 size="md"
@@ -347,6 +363,13 @@ export const NexalusInnovationsLayout: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Quick WhatsApp / Calling Connect Floating Button */}
+      <FloatingWhatsAppButton
+        phoneNumber="919158886444"
+        message="Hello Nexalus Innovations, I would like to inquire about your CCTV surveillance, fiber internet and enterprise networking services."
+        title="Call or Chat on WhatsApp (+91 9158886444)"
+      />
 
       {/* Quote Modal */}
       <QuoteModal
