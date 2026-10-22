@@ -179,6 +179,13 @@ export const AdminTeamPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const lockedDivision =
+    activeConsole === 'am-distributors' || isAmAdmin
+      ? 'am-distributors'
+      : activeConsole === 'nexalus-innovations' || isInnovationsAdmin
+      ? 'nexalus-innovations'
+      : null;
+
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -199,12 +206,12 @@ export const AdminTeamPage: React.FC = () => {
     setEditingMember(null);
     setName('');
     setRole('');
-    if (isAmAdmin || activeConsole === 'am-distributors') {
+    if (lockedDivision === 'am-distributors') {
       setDepartment('Distribution & Cold-Chain Logistics');
       setDeptType('logistics');
       setDivision('am-distributors');
       setSelectedThemeId('teal');
-    } else if (isInnovationsAdmin || activeConsole === 'nexalus-innovations') {
+    } else if (lockedDivision === 'nexalus-innovations') {
       setDepartment('Optical Fiber & CCTV Engineering');
       setDeptType('tech');
       setDivision('nexalus-innovations');
@@ -216,7 +223,7 @@ export const AdminTeamPage: React.FC = () => {
       setSelectedThemeId('amber');
     }
     setImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80');
-    setSpecialty('Leading technical operations, security strategies, and regional execution across Maharashtra.');
+    setSpecialty('Leading operations, strategic execution, and regional customer success.');
     setTag('MANAGEMENT');
     setIsModalOpen(true);
   };
@@ -227,7 +234,7 @@ export const AdminTeamPage: React.FC = () => {
     setRole(member.role);
     setDepartment(member.department);
     setDeptType(member.deptType || 'leadership');
-    setDivision(member.division || 'all');
+    setDivision(lockedDivision || member.division || 'corporate');
     setImage(member.image);
     setSpecialty(member.specialty);
     setTag(member.tag);
@@ -271,13 +278,14 @@ export const AdminTeamPage: React.FC = () => {
     }
 
     const theme = COLOR_THEMES.find(t => t.id === selectedThemeId) || COLOR_THEMES[0];
+    const effectiveDivision = lockedDivision || division;
 
     const payload = {
       name: name.trim(),
       role: role.trim(),
       department: department.trim() || 'General Operations',
       deptType,
-      division,
+      division: effectiveDivision,
       image: image.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
       specialty: specialty.trim() || 'Dedicated team member driving excellence.',
       tag: tag.trim() || role.split(' ')[0].toUpperCase(),
@@ -360,25 +368,23 @@ export const AdminTeamPage: React.FC = () => {
   });
 
   const divisionOptions = useMemo(() => {
-    if (isAmAdmin) {
+    if (lockedDivision === 'am-distributors') {
       return [
-        { value: 'am-distributors', label: 'A.M. Distributors (Chiplun FMCG Depot)' }
+        { value: 'am-distributors', label: 'Child Site 2: A.M. Distributors (Chiplun FMCG Depot Only)' }
       ];
     }
-    if (isInnovationsAdmin) {
+    if (lockedDivision === 'nexalus-innovations') {
       return [
-        { value: 'nexalus-innovations', label: 'Nexalus Innovations (Tech/Fiber/CCTV)' },
-        { value: 'corporate', label: 'Parent Website Only (Nexalus Innovations LLP)' },
-        { value: 'all', label: 'All Technology Portals' }
+        { value: 'nexalus-innovations', label: 'Child Site 1: Nexalus Innovations (Tech & Hardware Only)' }
       ];
     }
     return [
-      { value: 'all', label: 'All 3 Websites (Parent + Both Child Websites)' },
       { value: 'corporate', label: 'Parent Website Only (Nexalus Innovations LLP Corporate)' },
       { value: 'nexalus-innovations', label: 'Child Site 1: Nexalus Innovations (Tech/Fiber/CCTV)' },
       { value: 'am-distributors', label: 'Child Site 2: A.M. Distributors (Chiplun FMCG Depot)' },
+      { value: 'all', label: 'All 3 Websites (Parent + Both Child Websites)' },
     ];
-  }, [isAmAdmin, isInnovationsAdmin]);
+  }, [lockedDivision]);
 
   const totalMembers = members.length;
   const parentMembers = members.filter(m => m.division === 'corporate' || m.division === 'all').length;
@@ -793,12 +799,20 @@ export const AdminTeamPage: React.FC = () => {
 
           {/* Division (Website Target) & Badge Tag */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Select
-              label="Display on Website(s) *"
-              value={division}
-              onChange={e => setDivision(e.target.value as any)}
-              options={divisionOptions}
-            />
+            <div>
+              <Select
+                label="Display on Website(s) *"
+                value={lockedDivision || division}
+                onChange={e => setDivision(e.target.value as any)}
+                options={divisionOptions}
+                disabled={Boolean(lockedDivision)}
+              />
+              {lockedDivision && (
+                <span className="text-[11px] font-semibold text-emerald-700 block mt-1.5 flex items-center gap-1">
+                  🔒 Locked to {lockedDivision === 'am-distributors' ? 'A.M. Distributors Chiplun' : 'Nexalus Innovations'} in this console.
+                </span>
+              )}
+            </div>
             <Input
               label="Badge Tag Pill (Shown under circle)"
               placeholder="e.g. LEADERSHIP, SURVEILLANCE, FIBER TECH"

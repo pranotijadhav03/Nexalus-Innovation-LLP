@@ -146,17 +146,17 @@ export const AmDistributorsLayout: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1.5 xl:gap-3">
             {navLinks.map((item) => {
               const active = isCurrent(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  className={`px-3.5 xl:px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                     active
-                      ? 'bg-emerald-50 text-emerald-700 font-bold shadow-xs border border-emerald-100'
-                      : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-100/80'
+                      ? 'bg-emerald-50 text-emerald-800 font-bold shadow-xs border border-emerald-200/80'
+                      : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-100/90'
                   }`}
                 >
                   {item.label}
@@ -166,12 +166,12 @@ export const AmDistributorsLayout: React.FC = () => {
           </nav>
 
           {/* Right Header Action Button */}
-          <div className="hidden sm:flex items-center gap-2.5">
+          <div className="hidden sm:flex items-center">
             <Button
               variant="teal"
               size="md"
               onClick={() => setIsQuoteOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 font-bold shadow-md shadow-emerald-600/20"
+              className="bg-emerald-600 hover:bg-emerald-500 font-bold shadow-md shadow-emerald-600/20 px-5 py-2.5 rounded-xl text-sm transition-all hover:scale-[1.02]"
             >
               Inquire Wholesale Supply
             </Button>

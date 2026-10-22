@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Truck,
@@ -21,7 +21,7 @@ import { Button } from '../../../components/common/Button';
 import { OurTeamSection } from '../../../components/common/OurTeamSection';
 import { ProjectGallerySection } from '../../../components/common/ProjectGallerySection';
 import { AreasCoveredSection } from '../../../components/common/AreasCoveredSection';
-import { subscribeToBanners, getProducts } from '../../../firebase/services';
+import { subscribeToBanners, getProducts, getCachedProducts } from '../../../firebase/services';
 import { SiteBanner, Product } from '../../../types';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
@@ -40,9 +40,10 @@ export const AmDistributorsPage: React.FC = () => {
     } catch {}
     return null;
   });
-  const [divisionProducts, setDivisionProducts] = useState<Product[]>(
-    initialProducts.filter(p => p.brandId === 'am-distributors')
+  const [divisionProducts, setDivisionProducts] = useState<Product[]>(() =>
+    getCachedProducts('am-distributors')
   );
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     const unsub = subscribeToBanners((banners) => {
@@ -50,28 +51,106 @@ export const AmDistributorsPage: React.FC = () => {
       if (b) setHeroBanner(b);
     }, 'am-distributors');
 
-    getProducts('am-distributors', true).then(prods => {
-      if (prods && prods.length > 0) {
-        setDivisionProducts(prods);
+    const refreshData = () => {
+      const cached = getCachedProducts('am-distributors');
+      if (cached && cached.length > 0) {
+        setDivisionProducts(cached);
       }
-    }).catch(err => {
-      console.warn('Could not fetch A.M. products from Firestore:', err);
+      getProducts('am-distributors', true).then(prods => {
+        if (prods && prods.length > 0) {
+          setDivisionProducts(prods);
+        }
+      }).catch(err => {
+        console.warn('Could not fetch A.M. products from Firestore:', err);
+      });
+    };
+
+    refreshData();
+
+    window.addEventListener('nexalus_data_update', refreshData);
+    window.addEventListener('focus', refreshData);
+    document.addEventListener('visibilitychange', refreshData);
+
+    return () => {
+      unsub();
+      window.removeEventListener('nexalus_data_update', refreshData);
+      window.removeEventListener('focus', refreshData);
+      document.removeEventListener('visibilitychange', refreshData);
+    };
+  }, []);
+
+  // Collect uploaded product images dynamically for the hero sliding background
+  const heroSlides = useMemo(() => {
+    const list: { image: string; title: string; category?: string }[] = [];
+
+    divisionProducts.forEach(prod => {
+      if (prod.images && prod.images.length > 0) {
+        prod.images.forEach(img => {
+          if (img && !list.some(s => s.image === img)) {
+            list.push({
+              image: img,
+              title: prod.name,
+              category: prod.categoryId
+            });
+          }
+        });
+      }
     });
 
-    return () => unsub();
-  }, []);
+    // Fallbacks if no products exist yet
+    if (list.length === 0) {
+      return [
+        { image: '/images/products/am-water-jar-20l.jpg', title: '20L Packaged Mineral Water Jars' },
+        { image: '/images/products/am-icecream-tub.jpg', title: 'Commercial Bulk Ice Cream Tubs' },
+        { image: '/images/products/am-fresh-milk-dairy.jpg', title: 'Daily 4:00 AM Farm-Fresh Milk' },
+        { image: '/images/products/am-butter-block.jpg', title: 'Pure Butter & Catering Tins' },
+        { image: '/images/projects/real-warehouse-distribution.jpg', title: 'Chiplun Regional Cold-Chain Logistics Hub' }
+      ];
+    }
+
+    return list;
+  }, [divisionProducts]);
+
+  // Automatic slide rotation every 4.5 seconds
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % heroSlides.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-20">
-      {/* 1. HERO BANNER */}
-      <section className="relative overflow-hidden bg-slate-950 text-white pt-20 pb-24 border-b border-slate-800">
-        <div className="absolute inset-0">
-          <img
-            src="/images/projects/real-warehouse-distribution.jpg"
-            alt="A.M. Distributors Chiplun Regional Logistics Hub"
-            className="w-full h-full object-cover opacity-35 filter brightness-95"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+      {/* 1. HERO BANNER WITH SLIDING PRODUCT IMAGES & GENTLE FADE OVERLAY */}
+      <section className="relative overflow-hidden bg-slate-950 text-white pt-20 pb-28 border-b border-slate-800 select-none">
+        {/* Animated Sliding Background Track */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          {heroSlides.map((slide, index) => {
+            const isActive = index === currentSlide;
+            return (
+              <div
+                key={slide.image + index}
+                className={`absolute inset-0 transition-all duration-1000 ease-in-out transform ${
+                  isActive
+                    ? 'opacity-80 scale-100 translate-x-0'
+                    : index < currentSlide
+                    ? 'opacity-0 scale-105 -translate-x-12 pointer-events-none'
+                    : 'opacity-0 scale-105 translate-x-12 pointer-events-none'
+                }`}
+              >
+                <img
+                  src={slide.image}
+                  alt={slide.title}
+                  className="w-full h-full object-cover filter brightness-95 contrast-105"
+                />
+              </div>
+            );
+          })}
+
+          {/* Fade Overlay Gradient: Soft dark vignette ensuring vivid image colors while text remains crisp */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/45 backdrop-blur-[0.5px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(2,6,23,0.85)_100%)]" />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 text-center max-w-4xl">
@@ -123,6 +202,32 @@ export const AmDistributorsPage: React.FC = () => {
             </Link>
           </div>
         </div>
+
+        {/* Slide Indicator Dots & Current Product Badge */}
+        {heroSlides.length > 1 && (
+          <div className="relative z-10 pt-8 flex flex-col sm:flex-row items-center justify-center gap-3 px-4">
+            <div className="flex items-center gap-2 bg-slate-950/70 backdrop-blur-md px-4 py-1.5 rounded-full border border-teal-500/30 shadow-md">
+              <span className="text-[11px] font-bold text-teal-300">
+                Featured: {heroSlides[currentSlide]?.title}
+              </span>
+              <span className="text-slate-600">•</span>
+              <div className="flex items-center gap-1.5">
+                {heroSlides.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    onClick={() => setCurrentSlide(dotIdx)}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      dotIdx === currentSlide
+                        ? 'w-6 bg-teal-400'
+                        : 'w-2 bg-slate-600 hover:bg-slate-400'
+                    }`}
+                    title={`Slide to product ${dotIdx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* OUR TEAM - A.M. DISTRIBUTORS CHIPLUN (DIRECTLY AFTER HERO) */}
