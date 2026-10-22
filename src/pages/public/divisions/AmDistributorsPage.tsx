@@ -20,6 +20,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
+import { BlurZoomReveal } from '../../../components/common/BlurZoomReveal';
 import { OurTeamSection } from '../../../components/common/OurTeamSection';
 import { ProjectGallerySection } from '../../../components/common/ProjectGallerySection';
 import { AreasCoveredSection } from '../../../components/common/AreasCoveredSection';
@@ -307,118 +308,136 @@ export const AmDistributorsPage: React.FC = () => {
 
       {/* 2. CORE BUSINESS VERTICALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
-          <span className="text-xs font-extrabold text-teal-600 uppercase tracking-widest">
-            Distribution Verticals
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            4 Core Pillars of A.M. Distributors Chiplun
-          </h2>
-          <p className="text-sm text-slate-600">
-            Dedicated logistics operations delivering daily across Chiplun, Khed, Guhagar, and the Konkan industrial corridor.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Vertical 1: Packaged Mineral Water */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
-              <Droplets className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900">Packaged Mineral Water</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Purified mineral water in heavy-duty 20-litre hermetic dispenser jars and retail bottle crates with automated steam sanitization.
+        <BlurZoomReveal direction="up" delay={0} duration={650} yOffset={35} once>
+          <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
+            <span className="text-xs font-extrabold text-teal-600 uppercase tracking-widest">
+              Distribution Verticals
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              4 Core Pillars of A.M. Distributors Chiplun
+            </h2>
+            <p className="text-sm text-slate-600">
+              Dedicated logistics operations delivering daily across Chiplun, Khed, Guhagar, and the Konkan industrial corridor.
             </p>
-            <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                20-Litre Hermetic Dispenser Jars
-              </li>
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                500ml &amp; 1L Crates Available
-              </li>
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                Daily Doorstep Office &amp; Home Delivery
-              </li>
-            </ul>
           </div>
+        </BlurZoomReveal>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          {/* Vertical 1: Packaged Mineral Water */}
+          <BlurZoomReveal direction="up" delay={0} duration={700} yOffset={40} once className="h-full">
+            <div className="h-full p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
+                  <Droplets className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Packaged Mineral Water</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Purified mineral water in heavy-duty 20-litre hermetic dispenser jars and retail bottle crates with automated steam sanitization.
+                </p>
+              </div>
+              <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                  20-Litre Hermetic Dispenser Jars
+                </li>
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                  500ml &amp; 1L Crates Available
+                </li>
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                  Daily Doorstep Office &amp; Home Delivery
+                </li>
+              </ul>
+            </div>
+          </BlurZoomReveal>
 
           {/* Vertical 2: Ice Cream Distributor */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
-              <IceCream className="w-6 h-6" />
+          <BlurZoomReveal direction="up" delay={120} duration={700} yOffset={40} once className="h-full">
+            <div className="h-full p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
+                  <IceCream className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Ice Cream Distributor</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Certified -18°C refrigerated reefer delivery vans supplying retail freezer display cabinets, hotels, banquet halls, and restaurants.
+                </p>
+              </div>
+              <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                  -18°C Insulated Refrigerated Vans
+                </li>
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                  Bulk 5L Tubs, Premium Cones &amp; Bars
+                </li>
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                  Strict Cold-Chain Temperature Log
+                </li>
+              </ul>
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Ice Cream Distributor</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Certified -18°C refrigerated reefer delivery vans supplying retail freezer display cabinets, hotels, banquet halls, and restaurants.
-            </p>
-            <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                -18°C Insulated Refrigerated Vans
-              </li>
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                Bulk 5L Tubs, Premium Cones &amp; Bars
-              </li>
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                Strict Cold-Chain Temperature Log
-              </li>
-            </ul>
-          </div>
+          </BlurZoomReveal>
 
           {/* Vertical 3: Farm-Fresh Milk */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
-              <Milk className="w-6 h-6" />
+          <BlurZoomReveal direction="up" delay={240} duration={700} yOffset={40} once className="h-full">
+            <div className="h-full p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
+                  <Milk className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Pasteurized Milk</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Lab-tested pasteurized fresh cow and buffalo milk pouches distributed in crates during early morning 4:00 AM dispatch routes.
+                </p>
+              </div>
+              <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  Daily Early Morning 4:00 AM Dispatch
+                </li>
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  Standardized Fat 4.5%, SNF 8.5%
+                </li>
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                  Dairy Outlets &amp; Institutional Supply
+                </li>
+              </ul>
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Pasteurized Milk</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Lab-tested pasteurized fresh cow and buffalo milk pouches distributed in crates during early morning 4:00 AM dispatch routes.
-            </p>
-            <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                Daily Early Morning 4:00 AM Dispatch
-              </li>
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                Standardized Fat 4.5%, SNF 8.5%
-              </li>
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                Dairy Outlets &amp; Institutional Supply
-              </li>
-            </ul>
-          </div>
+          </BlurZoomReveal>
 
           {/* Vertical 4: Butter & All Dairy */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-              <Truck className="w-6 h-6" />
+          <BlurZoomReveal direction="up" delay={360} duration={700} yOffset={40} once className="h-full">
+            <div className="h-full p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+                  <Truck className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Butter &amp; All Dairy</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Pure table butter, desi cow ghee, paneer, and processed cheese blocks for bakeries, institutional caterers, and supermarkets.
+                </p>
+              </div>
+              <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  Salted Table Butter (100g, 500g)
+                </li>
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  1kg &amp; 2.5kg Cheese Blocks
+                </li>
+                <li className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  100% FSSAI Certified Genuine Dairy
+                </li>
+              </ul>
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Butter &amp; All Dairy</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Pure table butter, desi cow ghee, paneer, and processed cheese blocks for bakeries, institutional caterers, and supermarkets.
-            </p>
-            <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                Salted Table Butter (100g, 500g)
-              </li>
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                1kg &amp; 2.5kg Cheese Blocks
-              </li>
-              <li className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                100% FSSAI Certified Genuine Dairy
-              </li>
-            </ul>
-          </div>
+          </BlurZoomReveal>
         </div>
       </section>
 
