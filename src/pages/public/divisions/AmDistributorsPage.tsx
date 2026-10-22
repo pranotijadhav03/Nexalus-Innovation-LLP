@@ -23,7 +23,7 @@ import { Button } from '../../../components/common/Button';
 import { OurTeamSection } from '../../../components/common/OurTeamSection';
 import { ProjectGallerySection } from '../../../components/common/ProjectGallerySection';
 import { AreasCoveredSection } from '../../../components/common/AreasCoveredSection';
-import { subscribeToBanners, getProducts, getCachedProducts } from '../../../firebase/services';
+import { subscribeToBanners, getBanners, getProducts, getCachedProducts, getCachedBanners } from '../../../firebase/services';
 import { SiteBanner, Product } from '../../../types';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
@@ -54,6 +54,23 @@ export const AmDistributorsPage: React.FC = () => {
     }, 'am-distributors');
 
     const refreshData = () => {
+      // 1. Immediately refresh banner & slides from cache
+      const cachedBanners = getCachedBanners('am-distributors');
+      const b = cachedBanners.find(ban => ban.id === 'ban-am' || ban.brandId === 'am-distributors');
+      if (b) {
+        setHeroBanner(b);
+      } else {
+        try {
+          const raw = localStorage.getItem('nexalus_site_banners');
+          if (raw) {
+            const list: SiteBanner[] = JSON.parse(raw);
+            const found = list.find(ban => ban.id === 'ban-am' || ban.brandId === 'am-distributors');
+            if (found) setHeroBanner(found);
+          }
+        } catch {}
+      }
+
+      // 2. Refresh division products
       const cached = getCachedProducts('am-distributors');
       if (cached && cached.length > 0) {
         setDivisionProducts(cached);
@@ -70,12 +87,14 @@ export const AmDistributorsPage: React.FC = () => {
     refreshData();
 
     window.addEventListener('nexalus_data_update', refreshData);
+    window.addEventListener('storage', refreshData);
     window.addEventListener('focus', refreshData);
     document.addEventListener('visibilitychange', refreshData);
 
     return () => {
       unsub();
       window.removeEventListener('nexalus_data_update', refreshData);
+      window.removeEventListener('storage', refreshData);
       window.removeEventListener('focus', refreshData);
       document.removeEventListener('visibilitychange', refreshData);
     };
@@ -136,6 +155,13 @@ export const AmDistributorsPage: React.FC = () => {
       };
     });
   }, [heroBanner]);
+
+  // Ensure currentSlide is within bounds when slides change
+  useEffect(() => {
+    if (currentSlide >= heroSlides.length) {
+      setCurrentSlide(0);
+    }
+  }, [heroSlides.length, currentSlide]);
 
   // Automatic slide rotation every 5 seconds
   useEffect(() => {

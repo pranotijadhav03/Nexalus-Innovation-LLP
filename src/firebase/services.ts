@@ -668,11 +668,18 @@ export async function deleteInternetPlan(id: string): Promise<boolean> {
 // MULTI-PROVIDER BROADBAND PLANS & PROVIDERS (Phase 2 Data Model)
 // ----------------------------------------------------
 
-function sanitizeForFirestore<T extends Record<string, any>>(data: T): Record<string, any> {
+function sanitizeForFirestore(data: any): any {
+  if (data === undefined) return null;
+  if (data === null || typeof data !== 'object') return data;
+  if (Array.isArray(data)) {
+    return data
+      .map(item => sanitizeForFirestore(item))
+      .filter(item => item !== undefined);
+  }
   const sanitized: Record<string, any> = {};
   for (const [key, val] of Object.entries(data)) {
     if (val !== undefined) {
-      sanitized[key] = val;
+      sanitized[key] = sanitizeForFirestore(val);
     }
   }
   return sanitized;
@@ -1735,23 +1742,35 @@ export async function deleteFaq(id: string): Promise<boolean> {
 // BANNERS
 // ----------------------------------------------------
 export async function getBanners(brandId?: BrandId | 'nexalus'): Promise<SiteBanner[]> {
+  let localList = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
+
   if (isFirebaseConfigured && db) {
     try {
-      const snapshot = await withTimeout(getDocs(collection(db, 'banners')), 1200);
+      const snapshot = await withTimeout(getDocs(collection(db, 'banners')), 1500);
       if (!snapshot.empty) {
-        const fullList = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SiteBanner));
-        setLocalItem(STORAGE_KEYS.BANNERS, fullList);
-        return brandId ? fullList.filter(b => b.brandId === brandId) : fullList;
+        const firestoreMap = new Map<string, SiteBanner>();
+        snapshot.docs.forEach(d => {
+          firestoreMap.set(d.id, { id: d.id, ...d.data() } as SiteBanner);
+        });
+
+        // Merge initial, local, and firestore safely by ID so defaults/slides are never lost
+        const bannerMap = new Map<string, SiteBanner>();
+        initialBanners.forEach(b => bannerMap.set(b.id, b));
+        localList.forEach(b => bannerMap.set(b.id, { ...(bannerMap.get(b.id) || {}), ...b }));
+        firestoreMap.forEach((val, id) => bannerMap.set(id, { ...(bannerMap.get(id) || {}), ...val }));
+
+        localList = Array.from(bannerMap.values());
+        setLocalItem(STORAGE_KEYS.BANNERS, localList);
       }
     } catch (e) {
       console.warn('Firestore getBanners error:', e);
     }
   }
-  let banners = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
+
   if (brandId) {
-    banners = banners.filter(b => b.brandId === brandId);
+    return localList.filter(b => b.brandId === brandId || (brandId === 'nexalus' && b.id === 'ban-parent'));
   }
-  return banners;
+  return localList;
 }
 
 export async function updateBanner(id: string, updates: Partial<SiteBanner>): Promise<SiteBanner | null> {
@@ -1761,19 +1780,20 @@ export async function updateBanner(id: string, updates: Partial<SiteBanner>): Pr
     ? { ...allBanners[index], ...updates, id }
     : ({ id, active: true, title: '', subtitle: '', ctaText: '', ctaLink: '', brandId: 'nexalus', ...updates } as SiteBanner);
 
-  if (isFirebaseConfigured && db) {
-    try {
-      await setDoc(doc(db, 'banners', id), sanitizeForFirestore(updated), { merge: true });
-    } catch (e) {
-      console.warn('Firestore updateBanner error:', e);
-      throw e;
-    }
-  }
-
+  // 1. Immediately persist to localStorage and broadcast cross-tab
   const nextList = index >= 0
     ? allBanners.map(b => b.id === id ? updated : b)
     : [...allBanners, updated];
   setLocalItem(STORAGE_KEYS.BANNERS, nextList);
+
+  // 2. Persist to Firestore in background without blocking local sync
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'banners', id), sanitizeForFirestore(updated), { merge: true }), 2500);
+    } catch (e) {
+      console.warn('Firestore updateBanner sync warning:', e);
+    }
+  }
 
   await addAuditLog('UPDATE_BANNER', `Updated website content banner: ${updated.title}`, updated.brandId as any);
   return updated;
@@ -1785,16 +1805,20 @@ export function subscribeToBanners(
 ): () => void {
   let unsubFirestore: (() => void) | null = null;
 
-  // Immediate synchronous emit from local storage so UI renders instantly
-  try {
-    let localBanners = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
-    if (brandId) {
-      localBanners = localBanners.filter(b => b.brandId === brandId);
+  // Emit current cached banners immediately
+  const emitCached = () => {
+    try {
+      let localBanners = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
+      if (brandId) {
+        localBanners = localBanners.filter(b => b.brandId === brandId || (brandId === 'nexalus' && b.id === 'ban-parent'));
+      }
+      callback(localBanners);
+    } catch (err) {
+      console.warn('Initial banner emit warning:', err);
     }
-    callback(localBanners);
-  } catch (err) {
-    console.warn('Initial banner emit warning:', err);
-  }
+  };
+
+  emitCached();
 
   const emitBanners = async () => {
     try {
@@ -1807,20 +1831,24 @@ export function subscribeToBanners(
 
   if (isFirebaseConfigured && db) {
     try {
-      const q = brandId
-        ? query(collection(db, 'banners'), where('brandId', '==', brandId))
-        : collection(db, 'banners');
-
-      unsubFirestore = onSnapshot(q, (snapshot) => {
+      const colRef = collection(db, 'banners');
+      unsubFirestore = onSnapshot(colRef, (snapshot) => {
         let results = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SiteBanner));
+        
+        // Merge with initial and local banners so nothing is lost
+        const mergedMap = new Map<string, SiteBanner>();
+        initialBanners.forEach(b => mergedMap.set(b.id, b));
+        const local = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
+        local.forEach(b => mergedMap.set(b.id, { ...(mergedMap.get(b.id) || {}), ...b }));
+        results.forEach(b => mergedMap.set(b.id, { ...(mergedMap.get(b.id) || {}), ...b }));
+        const mergedList = Array.from(mergedMap.values());
+        setLocalItem(STORAGE_KEYS.BANNERS, mergedList);
+        
+        let filtered = mergedList;
         if (brandId) {
-          results = results.filter(b => b.brandId === brandId);
+          filtered = mergedList.filter(b => b.brandId === brandId || (brandId === 'nexalus' && b.id === 'ban-parent'));
         }
-        if (results.length > 0) {
-          callback(results);
-        } else {
-          emitBanners();
-        }
+        callback(filtered);
       }, (err) => {
         console.warn('Firestore onSnapshot error for banners, falling back to local updates:', err);
         emitBanners();
@@ -1835,12 +1863,14 @@ export function subscribeToBanners(
 
   const handleUpdate = (e: any) => {
     if (!e.detail || e.detail.key === STORAGE_KEYS.BANNERS) {
+      emitCached();
       emitBanners();
     }
   };
 
   const handleStorage = (e: StorageEvent) => {
     if (e.key === STORAGE_KEYS.BANNERS) {
+      emitCached();
       emitBanners();
     }
   };

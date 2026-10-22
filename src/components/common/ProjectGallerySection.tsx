@@ -58,7 +58,19 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
       }
     }
     load();
-    return () => { isMounted = false; };
+
+    const handleUpdate = () => {
+      load();
+    };
+
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('nexalus_data_update', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, [division]);
 
   // Dynamic filter tabs

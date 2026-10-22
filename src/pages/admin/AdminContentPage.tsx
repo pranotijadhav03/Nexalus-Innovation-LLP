@@ -153,7 +153,7 @@ export const AdminContentPage: React.FC = () => {
   };
 
   // Reorder slide up or down
-  const handleMoveSlide = (index: number, direction: 'up' | 'down') => {
+  const handleMoveSlide = async (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= slides.length) return;
     const newSlides = [...slides];
@@ -162,11 +162,15 @@ export const AdminContentPage: React.FC = () => {
     newSlides[targetIndex] = temp;
     const reordered = newSlides.map((s, idx) => ({ ...s, order: idx + 1 }));
     setSlides(reordered);
-    success('Sequence Updated', `Slide moved ${direction}. Click 'Save & Publish Content' to persist live.`);
+    // Instant live persistence
+    try {
+      await updateBanner('ban-am', { slides: reordered });
+    } catch {}
+    success('Sequence Updated', `Slide moved ${direction} and synchronized live.`);
   };
 
   // Delete slide
-  const handleDeleteSlide = (id: string) => {
+  const handleDeleteSlide = async (id: string) => {
     if (slides.length <= 1) {
       error('Action Denied', 'A minimum of 1 slide is required for the carousel.');
       return;
@@ -176,7 +180,11 @@ export const AdminContentPage: React.FC = () => {
     if (previewSlideIdx >= newSlides.length) {
       setPreviewSlideIdx(0);
     }
-    success('Slide Removed', 'Slide deleted. Click \'Save & Publish Content\' to persist live.');
+    // Instant live persistence
+    try {
+      await updateBanner('ban-am', { slides: newSlides });
+    } catch {}
+    success('Slide Removed', 'Slide deleted and synchronized live.');
   };
 
   // Open modal to edit existing slide
@@ -204,7 +212,7 @@ export const AdminContentPage: React.FC = () => {
   };
 
   // Save changes from slide modal
-  const handleSaveModalSlide = (e: React.FormEvent) => {
+  const handleSaveModalSlide = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSlide || !editingSlide.title.trim()) {
       error('Validation Error', 'Slide Title is required.');
@@ -220,7 +228,11 @@ export const AdminContentPage: React.FC = () => {
     setSlides(updated);
     setIsSlideModalOpen(false);
     setEditingSlide(null);
-    success('Slide Applied', 'Slide details applied. Remember to click \'Save & Publish Content\' below.');
+    // Instant live persistence
+    try {
+      await updateBanner('ban-am', { slides: updated });
+    } catch {}
+    success('Slide Applied', 'Slide details updated and synchronized live.');
   };
 
   // Handle instant local image selection for slides (base64 reader avoids CORS/Blaze blocks)

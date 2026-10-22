@@ -205,6 +205,16 @@ export const HomePage: React.FC = () => {
         setHomeBroadbandPlans(getCachedBroadbandPlans());
         setHomeOnePlans(getCachedInternetPlans());
       }
+      if (!e.detail?.key || e.detail.key === 'nexalus_site_banners') {
+        try {
+          const raw = localStorage.getItem('nexalus_site_banners');
+          if (raw) {
+            const list: SiteBanner[] = JSON.parse(raw);
+            const found = list.find(b => b.id === 'ban-parent' || b.brandId === 'nexalus');
+            if (found) setHeroBanner(found);
+          }
+        } catch {}
+      }
     };
     window.addEventListener('nexalus_data_update', handleDataUpdate);
 

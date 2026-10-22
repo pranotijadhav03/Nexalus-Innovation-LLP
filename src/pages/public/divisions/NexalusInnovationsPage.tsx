@@ -62,8 +62,27 @@ export const NexalusInnovationsPage: React.FC = () => {
       if (b) setHeroBanner(b);
     }, 'nexalus-innovations');
 
+    const handleUpdate = () => {
+      load();
+      try {
+        const saved = localStorage.getItem('nexalus_site_banners');
+        if (saved) {
+          const list: SiteBanner[] = JSON.parse(saved);
+          const found = list.find(b => b.id === 'ban-innovations' || b.brandId === 'nexalus-innovations');
+          if (found) setHeroBanner(found);
+        }
+      } catch {}
+    };
+
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('focus', handleUpdate);
+
     return () => {
       unsubBanners();
+      window.removeEventListener('nexalus_data_update', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('focus', handleUpdate);
     };
   }, []);
 

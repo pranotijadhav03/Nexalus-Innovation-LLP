@@ -3,7 +3,7 @@ import { BrandHeader } from '../../../components/brand/BrandHeader';
 import { PlanCard } from '../../../components/brand/PlanCard';
 import { CoverageCheckerModal } from '../../../components/brand/CoverageCheckerModal';
 import { Button } from '../../../components/common/Button';
-import { getInternetPlans } from '../../../firebase/services';
+import { getInternetPlans, subscribeToInternetPlans } from '../../../firebase/services';
 import { InternetPlan } from '../../../types';
 import { Search } from 'lucide-react';
 
@@ -22,6 +22,24 @@ export const OneBroadbandPlansPage: React.FC = () => {
       }
     }
     load();
+
+    const unsub = subscribeToInternetPlans((newPlans) => {
+      setPlans(newPlans);
+      setIsLoading(false);
+    }, true);
+
+    const handleUpdate = () => {
+      load();
+    };
+
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      unsub();
+      window.removeEventListener('nexalus_data_update', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, []);
 
   return (
