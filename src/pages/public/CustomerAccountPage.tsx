@@ -15,6 +15,7 @@ import {
   MapPin,
   FileText,
   Shield,
+  ShieldCheck,
   Phone,
   Mail,
   Building,
@@ -87,6 +88,13 @@ export const CustomerAccountPage: React.FC = () => {
       setAuthMode('login');
     }
   }, [location.pathname]);
+
+  // Redirect Admin / Staff Users to the Admin Panel Console immediately
+  useEffect(() => {
+    if (isAuthenticated && !isCustomer) {
+      navigate('/admin', { replace: true });
+    }
+  }, [isAuthenticated, isCustomer, navigate]);
 
   // Login Form State
   const [loginEmail, setLoginEmail] = useState('');
@@ -183,8 +191,12 @@ export const CustomerAccountPage: React.FC = () => {
     try {
       const res = await loginCustomer(emailClean, loginPassword);
       if (res.success) {
-        success('Welcome Back!', 'You are now signed in to the customer portal.');
-        navigate('/account');
+        success('Welcome Back!', 'You are now signed in.');
+        if ((res as any)?.user?.role && (res as any).user.role !== 'customer') {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate('/account', { replace: true });
+        }
       } else {
         setLoginError(res.error || 'Invalid email or password.');
       }
@@ -898,6 +910,47 @@ export const CustomerAccountPage: React.FC = () => {
                 ← Return to Nexalus Homepage
               </Link>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // VIEW: AUTHENTICATED ADMIN / STAFF (REDIRECT TO ADMIN CONSOLE)
+  // =========================================================================
+  if (isAuthenticated && !isCustomer) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-800/95 rounded-3xl p-8 border border-slate-700 text-center space-y-4 shadow-2xl backdrop-blur-md">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center mx-auto border border-indigo-500/30">
+            <ShieldCheck className="w-8 h-8 text-indigo-400" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">Nexalus Administrative Console</h2>
+            <p className="text-xs text-slate-300 mt-1">
+              Logged in as <strong className="text-white">{currentUser?.displayName || currentUser?.email}</strong> (Staff / Admin).
+            </p>
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Staff and Corporate Admins manage operations via the Admin Panel. Redirecting to your console dashboard...
+          </p>
+          <div className="pt-2 flex flex-col gap-2.5">
+            <Link
+              to="/admin"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Go to Admin Panel Console →</span>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              icon={<LogOut className="w-3.5 h-3.5" />}
+            >
+              Sign Out
+            </Button>
           </div>
         </div>
       </div>

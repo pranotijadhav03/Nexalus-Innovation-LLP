@@ -149,7 +149,11 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
       if (result.success) {
         success('Account Created', 'Welcome to Nexalus Innovations! Your customer profile has been saved.');
         handleDismiss();
-        navigate('/account');
+        if ((result as any)?.user?.role && (result as any).user.role !== 'customer') {
+          navigate('/admin');
+        } else {
+          navigate('/account');
+        }
       } else {
         setFormError(result.error || 'Failed to complete registration. Please try again.');
       }
@@ -180,7 +184,11 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
       if (result.success) {
         success('Welcome Back', 'You are now signed in to the customer portal.');
         handleDismiss();
-        navigate('/account');
+        if ((result as any)?.user?.role && (result as any).user.role !== 'customer') {
+          navigate('/admin');
+        } else {
+          navigate('/account');
+        }
       } else {
         setFormError(result.error || 'Invalid email or password.');
       }

@@ -208,7 +208,7 @@ export const AdminDashboardPage: React.FC = () => {
               <StatCard
                 title="Plan Bookings"
                 value={planOrders.length}
-                subtitle="${planOrders.filter(o => o.status === 'new').length} new orders"
+                subtitle={`${planOrders.filter(o => o.status === 'new').length} new orders`}
                 icon={<ShoppingCart className="w-6 h-6 text-orange-500" />}
                 colorScheme="teal"
                 trend={{ value: `${planOrders.filter(o => o.status === 'new').length} New`, isPositive: planOrders.filter(o => o.status === 'new').length === 0 }}

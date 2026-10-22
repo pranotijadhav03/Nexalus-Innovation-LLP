@@ -93,6 +93,15 @@ export const AmDistributorsLayout: React.FC = () => {
                 <UserCheck className="w-3.5 h-3.5 text-teal-600" />
                 <span>My Account</span>
               </Link>
+            ) : isAuthenticated && !isCustomer ? (
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors shadow-xs"
+                title="Admin Console"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+                <span>Admin Panel</span>
+              </Link>
             ) : !isAuthenticated ? (
               <button
                 type="button"

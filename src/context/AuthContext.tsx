@@ -25,9 +25,9 @@ interface AuthContextType {
   isLoading: boolean;
   isCustomer: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  loginCustomer: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  registerCustomerAccount: (data: CustomerRegistrationData) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: AdminUser }>;
+  loginCustomer: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: AdminUser }>;
+  registerCustomerAccount: (data: CustomerRegistrationData) => Promise<{ success: boolean; error?: string; user?: AdminUser }>;
   refreshUserProfile: () => Promise<void>;
   logout: () => Promise<void>;
   canManageBrand: (brandId: BrandId | 'general' | 'nexalus' | 'nexalus-innovations' | 'am-distributors') => boolean;
@@ -379,7 +379,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Customer login handler
-  const loginCustomer = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const loginCustomer = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: AdminUser }> => {
     setIsLoading(true);
 
     if (!isFirebaseConfigured || !auth || !db) {
@@ -448,7 +448,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setCurrentUser(updatedProfile);
       setIsLoading(false);
-      return { success: true };
+      return { success: true, user: updatedProfile };
     } catch (err: any) {
       setIsLoading(false);
 
@@ -468,7 +468,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Customer registration handler
-  const registerCustomerAccount = async (data: CustomerRegistrationData): Promise<{ success: boolean; error?: string }> => {
+  const registerCustomerAccount = async (data: CustomerRegistrationData): Promise<{ success: boolean; error?: string; user?: AdminUser }> => {
     setIsLoading(true);
     try {
       const result = await registerCustomer(data);
@@ -477,7 +477,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {}
       setCurrentUser(result.user);
       setIsLoading(false);
-      return { success: true };
+      return { success: true, user: result.user };
     } catch (err: any) {
       setIsLoading(false);
       let msg = 'Registration failed. Please check your information and try again.';

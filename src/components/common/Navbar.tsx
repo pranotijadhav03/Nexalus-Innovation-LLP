@@ -220,27 +220,17 @@ export const Navbar: React.FC = () => {
                   <span>My Account</span>
                 </Link>
               ) : isAuthenticated && !isCustomer ? (
-                <div className="flex items-center gap-2">
-                  <Link
-                    to="/account"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-blue-700 bg-slate-100 hover:bg-blue-50 border border-slate-200 rounded-xl transition-colors"
-                    title="Customer Portal"
-                  >
-                    <User className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Customer Portal</span>
-                  </Link>
-                  <Link
-                    to="/admin"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors"
-                    title="Admin Console"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Admin Panel</span>
-                  </Link>
-                </div>
-              ) : (
                 <Link
-                  to="/account"
+                  to="/admin"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors shadow-xs"
+                  title="Admin Console"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Admin Panel</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
                   onClick={() => {
                     window.dispatchEvent(new CustomEvent('open_customer_portal', { detail: { view: 'choice' } }));
                   }}
@@ -249,7 +239,7 @@ export const Navbar: React.FC = () => {
                 >
                   <User className="w-3.5 h-3.5 text-slate-500" />
                   <span>Customer Portal</span>
-                </Link>
+                </button>
               )}
 
               <Button
@@ -358,14 +348,6 @@ export const Navbar: React.FC = () => {
                 )}
               </Link>
 
-              <Link
-                to="/account"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200"
-              >
-                <User className="w-4 h-4 text-blue-600" />
-                <span>Customer Portal (Account / Orders)</span>
-              </Link>
               {isAuthenticated && isCustomer ? (
                 <Link
                   to="/account"
@@ -375,7 +357,16 @@ export const Navbar: React.FC = () => {
                   <UserCheck className="w-4 h-4 text-blue-600" />
                   <span>My Customer Account</span>
                 </Link>
-              ) : !isAuthenticated ? (
+              ) : isAuthenticated && !isCustomer ? (
+                <Link
+                  to="/admin"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 shadow-xs"
+                >
+                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                  <span>Admin Panel Console</span>
+                </Link>
+              ) : (
                 <button
                   type="button"
                   onClick={() => {
@@ -387,7 +378,7 @@ export const Navbar: React.FC = () => {
                   <User className="w-4 h-4 text-blue-600" />
                   <span>Customer Portal (Register / Login)</span>
                 </button>
-              ) : null}
+              )}
 
               <Button
                 variant="primary"
