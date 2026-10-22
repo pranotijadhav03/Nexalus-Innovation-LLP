@@ -222,6 +222,13 @@ export const NexalusInnovationsPage: React.FC = () => {
       </section>
 
       {/* =========================================================================
+          OUR TEAM - NEXALUS INNOVATIONS TECH DIVISION (DIRECTLY AFTER HERO)
+          ========================================================================= */}
+      {heroBanner?.showTeam !== false && (
+        <OurTeamSection division="nexalus-innovations" bgClassName="bg-slate-50/50" />
+      )}
+
+      {/* =========================================================================
           Z-TYPE ARCHITECTURE: SECTION 1 (CCTV SURVEILLANCE & SECURITY)
           ROW 1: LEFT = CCTV CARD (SLIDE IN LEFT) | RIGHT = CCTV INFO (SLIDE IN RIGHT)
           ========================================================================= */}
@@ -750,12 +757,7 @@ export const NexalusInnovationsPage: React.FC = () => {
         )}
       </section>
 
-      {/* =========================================================================
-          OUR TEAM - NEXALUS INNOVATIONS TECH DIVISION
-          ========================================================================= */}
-      {heroBanner?.showTeam !== false && (
-        <OurTeamSection division="nexalus-innovations" bgClassName="bg-slate-50/50" />
-      )}
+
 
       {/* =========================================================================
           SECTION 4: TECHNICAL OPERATIONS & SITE SURVEY DESK (DEEP MIDNIGHT BLUE)

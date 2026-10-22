@@ -300,7 +300,7 @@ export const initialProducts: Product[] = [
       'Cleaning Cycle': 'Automated High-Pressure Steam Washed',
       'Subscription': 'Daily / Weekly Regular Office & Home Supply'
     },
-    images: ['/images/projects/am-distributors-chiplun.jpg'],
+    images: ['/images/products/am-water-jar-20l.jpg'],
     price: 85,
     currency: 'INR',
     availability: 'in_stock',
@@ -325,7 +325,7 @@ export const initialProducts: Product[] = [
       'Supply Fleet': 'Temperature-Monitored Reefer Delivery Vans',
       'Coverage': 'Chiplun, Ratnagiri District & Konkan Belt'
     },
-    images: ['/images/projects/am-distributors-chiplun.jpg'],
+    images: ['/images/products/am-icecream-tub.jpg'],
     price: 360,
     currency: 'INR',
     availability: 'in_stock',
@@ -350,7 +350,7 @@ export const initialProducts: Product[] = [
       'Clients': 'Dairy Outlets, Groceries, Hospitals & Residential Societies',
       'Quality Compliance': 'Daily Microbiological & Chilling Audits'
     },
-    images: ['/images/projects/am-distributors-chiplun.jpg'],
+    images: ['/images/products/am-fresh-milk-dairy.jpg'],
     price: 34,
     currency: 'INR',
     availability: 'in_stock',

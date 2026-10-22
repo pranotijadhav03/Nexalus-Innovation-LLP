@@ -123,6 +123,11 @@ export const AmDistributorsPage: React.FC = () => {
         </div>
       </section>
 
+      {/* OUR TEAM - A.M. DISTRIBUTORS CHIPLUN (DIRECTLY AFTER HERO) */}
+      {heroBanner?.showTeam !== false && (
+        <OurTeamSection division="am-distributors" bgClassName="bg-slate-50/50" />
+      )}
+
       {/* 2. CORE BUSINESS VERTICALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
