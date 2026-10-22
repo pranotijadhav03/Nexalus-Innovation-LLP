@@ -22,7 +22,8 @@ import {
   Truck,
   Zap,
   Clock,
-  PhoneCall
+  PhoneCall,
+  ShoppingCart
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { OurTeamSection } from '../../components/common/OurTeamSection';
@@ -30,10 +31,21 @@ import { ProjectGallerySection } from '../../components/common/ProjectGallerySec
 import { AreasCoveredSection } from '../../components/common/AreasCoveredSection';
 import { BlurZoomReveal } from '../../components/common/BlurZoomReveal';
 import { QuoteModal } from '../../components/common/QuoteModal';
+import { PlanOrderModal } from '../../components/common/PlanOrderModal';
 import { ServiceCard } from '../../components/brand/ServiceCard';
-import { Service, BroadbandPlan, InternetPlan, SiteBanner } from '../../types';
-import { subscribeToBroadbandPlans, subscribeToInternetPlans, formatBroadbandPrice, subscribeToBanners } from '../../firebase/services';
+import { Service, BroadbandPlan, InternetPlan, SiteBanner, CartPlanItem } from '../../types';
+import {
+  subscribeToBroadbandPlans,
+  subscribeToInternetPlans,
+  formatBroadbandPrice,
+  subscribeToBanners,
+  addToPlanCart,
+  getPlanCart,
+  getCachedBroadbandPlans,
+  getCachedInternetPlans
+} from '../../firebase/services';
 import { initialBanners } from '../../data/initialData';
+import { useToast } from '../../context/ToastContext';
 
 // Simple, clear services for Nexalus Innovations LLP
 const NEXALUS_CORE_SERVICES: Service[] = [
@@ -105,8 +117,8 @@ export const HomePage: React.FC = () => {
 
   // Broadband Plans Section State
   const [homeProviderTab, setHomeProviderTab] = useState<'airtel' | 'bsnl' | 'railwire' | 'one-broadband'>('airtel');
-  const [homeBroadbandPlans, setHomeBroadbandPlans] = useState<BroadbandPlan[]>([]);
-  const [homeOnePlans, setHomeOnePlans] = useState<InternetPlan[]>([]);
+  const [homeBroadbandPlans, setHomeBroadbandPlans] = useState<BroadbandPlan[]>(() => getCachedBroadbandPlans());
+  const [homeOnePlans, setHomeOnePlans] = useState<InternetPlan[]>(() => getCachedInternetPlans());
   const [planQuoteItem, setPlanQuoteItem] = useState<{
     providerName: string;
     planName: string;
@@ -114,6 +126,48 @@ export const HomePage: React.FC = () => {
     brandId: 'one-broadband' | 'nexalus-innovations';
   } | null>(null);
   const [isPlanQuoteOpen, setIsPlanQuoteOpen] = useState(false);
+  const { success } = useToast();
+
+  // Cart State
+  const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => getPlanCart());
+
+  // Direct Plan Order Modal State
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [selectedPlanForOrder, setSelectedPlanForOrder] = useState<{
+    planId?: string;
+    planName: string;
+    providerName: string;
+    speed: string;
+    price: number | string;
+    billingPeriod?: string;
+    brandId?: any;
+  } | null>(null);
+
+  const handleAddToCart = (plan: {
+    planId: string;
+    providerName: string;
+    planName: string;
+    speed: string;
+    price: number;
+    billingPeriod: string;
+    brandId?: any;
+  }) => {
+    addToPlanCart(plan);
+    success('Added to Cart', `${plan.providerName} - ${plan.planName} (${plan.speed}) added to broadband cart.`);
+  };
+
+  const handleBuyNow = (plan: {
+    planId?: string;
+    planName: string;
+    providerName: string;
+    speed: string;
+    price: number | string;
+    billingPeriod?: string;
+    brandId?: any;
+  }) => {
+    setSelectedPlanForOrder(plan);
+    setIsOrderModalOpen(true);
+  };
 
   const [heroBanner, setHeroBanner] = useState<SiteBanner>(() => {
     try {
@@ -141,10 +195,25 @@ export const HomePage: React.FC = () => {
       if (b) setHeroBanner(b);
     }, 'nexalus');
 
+    const handleCartUpdate = (e: any) => {
+      setCartItems(e.detail || getPlanCart());
+    };
+    window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+
+    const handleDataUpdate = (e: any) => {
+      if (!e.detail?.key || e.detail.key.includes('plans')) {
+        setHomeBroadbandPlans(getCachedBroadbandPlans());
+        setHomeOnePlans(getCachedInternetPlans());
+      }
+    };
+    window.addEventListener('nexalus_data_update', handleDataUpdate);
+
     return () => {
       unsubBB();
       unsubLegacy();
       unsubBanners();
+      window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+      window.removeEventListener('nexalus_data_update', handleDataUpdate);
     };
   }, []);
 
@@ -1193,10 +1262,49 @@ export const HomePage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="pt-6 mt-6 border-t border-slate-700/60">
-                    <Button
-                      variant="primary"
-                      className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold cursor-pointer"
+                  <div className="pt-6 mt-6 border-t border-slate-700/60 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleAddToCart({
+                            planId: plan.id,
+                            providerName: 'One Broadband',
+                            planName: plan.name,
+                            speed: plan.speed,
+                            price: plan.price,
+                            billingPeriod: plan.billingPeriod || 'monthly',
+                            brandId: 'one-broadband'
+                          })
+                        }
+                        className="py-2.5 px-3 rounded-xl border border-teal-500/50 text-teal-300 hover:bg-teal-500/10 font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5" />
+                        <span>Add to Cart</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleBuyNow({
+                            planId: plan.id,
+                            providerName: 'One Broadband',
+                            planName: plan.name,
+                            speed: plan.speed,
+                            price: plan.price,
+                            billingPeriod: plan.billingPeriod || 'monthly',
+                            brandId: 'one-broadband'
+                          })
+                        }
+                        className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-teal-500/20 cursor-pointer"
+                      >
+                        <Zap className="w-3.5 h-3.5 fill-current" />
+                        <span>Buy Now</span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
                       onClick={() => {
                         setPlanQuoteItem({
                           providerName: 'One Broadband',
@@ -1206,9 +1314,10 @@ export const HomePage: React.FC = () => {
                         });
                         setIsPlanQuoteOpen(true);
                       }}
+                      className="w-full text-center text-[11px] font-semibold text-slate-400 hover:text-slate-300 py-1 transition-colors cursor-pointer"
                     >
-                      Enquire Connection
-                    </Button>
+                      Enquire custom feasibility &rarr;
+                    </button>
                   </div>
                 </div>
               ))
@@ -1310,10 +1419,49 @@ export const HomePage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="pt-6 mt-6 border-t border-slate-700/60">
-                        <Button
-                          variant="primary"
-                          className={`w-full text-white font-bold cursor-pointer ${providerTheme.btn}`}
+                      <div className="pt-6 mt-6 border-t border-slate-700/60 space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleAddToCart({
+                                planId: plan.id,
+                                providerName: plan.providerId === 'airtel' ? 'Airtel Xstream' : plan.providerId === 'bsnl' ? 'BSNL Bharat Fiber' : 'RailWire',
+                                planName: plan.name,
+                                speed: plan.speed,
+                                price: plan.price,
+                                billingPeriod: plan.billingPeriod || 'monthly',
+                                brandId: 'nexalus-innovations'
+                              })
+                            }
+                            className="py-2.5 px-3 rounded-xl border border-slate-600 text-slate-200 hover:bg-slate-700/50 font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                          >
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                            <span>Add to Cart</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleBuyNow({
+                                planId: plan.id,
+                                providerName: plan.providerId === 'airtel' ? 'Airtel Xstream' : plan.providerId === 'bsnl' ? 'BSNL Bharat Fiber' : 'RailWire',
+                                planName: plan.name,
+                                speed: plan.speed,
+                                price: plan.price,
+                                billingPeriod: plan.billingPeriod || 'monthly',
+                                brandId: 'nexalus-innovations'
+                              })
+                            }
+                            className={`py-2.5 px-3 rounded-xl ${providerTheme.btn} text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer`}
+                          >
+                            <Zap className="w-3.5 h-3.5 fill-current" />
+                            <span>Buy Now</span>
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
                           onClick={() => {
                             setPlanQuoteItem({
                               providerName: plan.providerId.toUpperCase(),
@@ -1323,9 +1471,10 @@ export const HomePage: React.FC = () => {
                             });
                             setIsPlanQuoteOpen(true);
                           }}
+                          className="w-full text-center text-[11px] font-semibold text-slate-400 hover:text-slate-300 py-1 transition-colors cursor-pointer"
                         >
-                          Enquire Connection
-                        </Button>
+                          Enquire custom feasibility &rarr;
+                        </button>
                       </div>
                     </div>
                   );
@@ -1874,6 +2023,16 @@ export const HomePage: React.FC = () => {
           sourcePage="/"
         />
       )}
+
+      {/* Instant Direct Order Modal (BUY NOW) */}
+      <PlanOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => {
+          setIsOrderModalOpen(false);
+          setSelectedPlanForOrder(null);
+        }}
+        plan={selectedPlanForOrder}
+      />
     </div>
   );
 };
