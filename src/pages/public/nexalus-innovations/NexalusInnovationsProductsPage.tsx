@@ -24,12 +24,24 @@ export const NexalusInnovationsProductsPage: React.FC = () => {
   useEffect(() => {
     loadData();
 
-    // Listen for real-time updates when admin creates/edits/deletes products
+    // Listen for real-time cross-tab updates when admin creates/edits/deletes products
     const handleUpdate = () => {
+      const fresh = getCachedProducts('nexalus-innovations');
+      if (fresh && fresh.length > 0) {
+        setTechProducts(fresh);
+      }
       loadData();
     };
+
     window.addEventListener('nexalus_data_update', handleUpdate);
-    return () => window.removeEventListener('nexalus_data_update', handleUpdate);
+    window.addEventListener('focus', handleUpdate);
+    document.addEventListener('visibilitychange', handleUpdate);
+
+    return () => {
+      window.removeEventListener('nexalus_data_update', handleUpdate);
+      window.removeEventListener('focus', handleUpdate);
+      document.removeEventListener('visibilitychange', handleUpdate);
+    };
   }, []);
 
   const displayedProducts = techProducts.filter(p => {

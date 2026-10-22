@@ -87,6 +87,38 @@ export function withTimeout<T>(promise: Promise<T>, ms = 1200): Promise<T> {
   ]);
 }
 
+// Cross-Tab & Cross-Window Real-Time Broadcast Synchronization
+const tabSyncChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
+  ? new BroadcastChannel('nexalus_tab_sync_channel')
+  : null;
+
+if (tabSyncChannel) {
+  tabSyncChannel.onmessage = (event) => {
+    if (event.data?.type === 'nexalus_data_update') {
+      window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: event.data.key } }));
+    }
+  };
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key && event.key.startsWith('nexalus_')) {
+      window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: event.key } }));
+    }
+  });
+}
+
+function notifyDataUpdate(key: string): void {
+  try {
+    // 1. Dispatch event to current tab
+    window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key } }));
+    // 2. Broadcast immediately across all open tabs/windows
+    tabSyncChannel?.postMessage({ type: 'nexalus_data_update', key, timestamp: Date.now() });
+  } catch (err) {
+    console.error('Failed to notify data update:', err);
+  }
+}
+
 // Generic Local Storage Helpers
 function getLocalItem<T>(key: string, defaultValue: T): T {
   try {
@@ -104,8 +136,8 @@ function getLocalItem<T>(key: string, defaultValue: T): T {
 function setLocalItem<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-    // Dispatch local update event for reactivity
-    window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key } }));
+    // Dispatch cross-tab update event for instant reactivity without manual refresh
+    notifyDataUpdate(key);
   } catch (err) {
     console.error('Failed to save to localStorage:', err);
   }
@@ -392,8 +424,7 @@ export async function getProducts(brandId?: BrandId | 'nexalus' | 'corporate', p
         !currentImg ||
         currentImg.includes('photo-1544716278-ca5e3f4abd8c') || // Book image removal
         currentImg.includes('photo-1589793463308-658ed42e524e') || // 404 URL removal
-        currentImg.includes('photo-1582139329536-e7284fece509') || // Vault door removal
-        (initProd.images?.[0]?.startsWith('/images/products/') && currentImg !== initProd.images[0])
+        currentImg.includes('photo-1582139329536-e7284fece509') // Vault door removal
       ) {
         hasStoreUpdates = true;
         return { ...p, images: initProd.images };

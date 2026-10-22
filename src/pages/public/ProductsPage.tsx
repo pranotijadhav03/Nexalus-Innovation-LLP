@@ -52,10 +52,22 @@ export const ProductsPage: React.FC = () => {
     loadData();
 
     const handleUpdate = () => {
+      const fresh = getCachedProducts().filter(p => p.brandId !== 'am-distributors');
+      if (fresh && fresh.length > 0) {
+        setProducts(fresh);
+      }
       loadData();
     };
+
     window.addEventListener('nexalus_data_update', handleUpdate);
-    return () => window.removeEventListener('nexalus_data_update', handleUpdate);
+    window.addEventListener('focus', handleUpdate);
+    document.addEventListener('visibilitychange', handleUpdate);
+
+    return () => {
+      window.removeEventListener('nexalus_data_update', handleUpdate);
+      window.removeEventListener('focus', handleUpdate);
+      document.removeEventListener('visibilitychange', handleUpdate);
+    };
   }, []);
 
   // Sync brand when search param changes

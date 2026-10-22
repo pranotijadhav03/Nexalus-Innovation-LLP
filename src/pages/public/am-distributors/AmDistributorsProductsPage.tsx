@@ -59,12 +59,28 @@ export const AmDistributorsProductsPage: React.FC = () => {
   useEffect(() => {
     loadData();
 
-    // Listen for real-time updates when admin creates/edits/deletes products or categories
+    // Listen for real-time cross-tab updates when admin creates/edits/deletes products or categories
     const handleUpdate = () => {
+      const freshProds = getCachedProducts('am-distributors');
+      if (freshProds && freshProds.length > 0) {
+        setProducts(freshProds);
+      }
+      const freshCats = getCachedCategories('am-distributors');
+      if (freshCats && freshCats.length > 0) {
+        setCategories(freshCats);
+      }
       loadData();
     };
+
     window.addEventListener('nexalus_data_update', handleUpdate);
-    return () => window.removeEventListener('nexalus_data_update', handleUpdate);
+    window.addEventListener('focus', handleUpdate);
+    document.addEventListener('visibilitychange', handleUpdate);
+
+    return () => {
+      window.removeEventListener('nexalus_data_update', handleUpdate);
+      window.removeEventListener('focus', handleUpdate);
+      document.removeEventListener('visibilitychange', handleUpdate);
+    };
   }, []);
 
   // Filter products by selected category
