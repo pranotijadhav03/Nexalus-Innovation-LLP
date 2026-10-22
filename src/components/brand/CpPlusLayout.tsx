@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Shield, Menu, X, PhoneCall, ChevronRight, ArrowLeft, ArrowUpRight } from 'lucide-react';
+import { Shield, Menu, X, PhoneCall, ChevronRight, ArrowLeft, ArrowUpRight, Lock } from 'lucide-react';
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
 import { ScrollToTop } from '../common/PublicLayout';
@@ -203,6 +203,12 @@ export const CpPlusLayout: React.FC = () => {
                 <li><Link to="/brands/cp-plus/services" className="hover:text-sky-400 transition-colors">Services & AMC</Link></li>
                 <li><Link to="/brands/cp-plus/projects" className="hover:text-sky-400 transition-colors">Featured Projects</Link></li>
                 <li><Link to="/brands/cp-plus/contact" className="hover:text-sky-400 transition-colors">Contact Support</Link></li>
+                <li>
+                  <Link to="/admin/login" className="hover:text-sky-400 transition-colors flex items-center gap-1.5 pt-1 text-slate-300 font-medium">
+                    <Lock className="w-3 h-3 text-sky-400" />
+                    <span>Admin Login</span>
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -240,8 +246,13 @@ export const CpPlusLayout: React.FC = () => {
             <div>
               © {new Date().getFullYear()} CP PLUS Surveillance Division. Operated under Nexalus Innovations LLP.
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <Link to="/brands/cp-plus/contact" className="hover:text-slate-300">Support Desk</Link>
+              <span>•</span>
+              <Link to="/admin/login" className="hover:text-sky-400 text-slate-400 flex items-center gap-1 font-medium">
+                <Lock className="w-3 h-3 text-sky-400" />
+                <span>Admin Login</span>
+              </Link>
               <span>•</span>
               <Link to="/" className="hover:text-slate-300">Nexalus Portal</Link>
             </div>

@@ -35,6 +35,28 @@ import {
   ArrowRight
 } from 'lucide-react';
 
+const FMCG_PRESETS = [
+  { label: '20L Water Jar', url: '/images/products/am-water-jar-20l.jpg' },
+  { label: 'Bottled Water Pack', url: '/images/products/am-water-bottles-retail.jpg' },
+  { label: 'Ice Cream Tub', url: '/images/products/am-icecream-tub.jpg' },
+  { label: 'Ice Cream Cones', url: '/images/products/am-icecream-cones.jpg' },
+  { label: 'Farm-Fresh Milk', url: '/images/products/am-fresh-milk-dairy.jpg' },
+  { label: 'Table Butter', url: '/images/products/am-butter-block.jpg' },
+  { label: 'Catering Cheese', url: '/images/products/am-cheese-block.jpg' }
+];
+
+const TECH_PRESETS = [
+  { label: '4K Dome CCTV', url: '/images/products/cp-dome.jpg' },
+  { label: 'Bullet CCTV', url: '/images/products/cp-bullet.jpg' },
+  { label: 'PTZ Speed Dome', url: '/images/products/cp-ptz.jpg' },
+  { label: '32Ch NVR', url: '/images/products/cp-nvr.jpg' },
+  { label: 'Wi-Fi 6 Router', url: '/images/products/wifi6-router.jpg' },
+  { label: 'Fiber ONT', url: '/images/products/fiber-ont.jpg' },
+  { label: 'PoE+ Switch', url: '/images/products/poe-switch.jpg' },
+  { label: '42U Server Rack', url: '/images/products/server-rack.jpg' },
+  { label: 'Cat6 Cable Drum', url: '/images/products/cat6-cable.jpg' }
+];
+
 export const AdminProductsPage: React.FC = () => {
   const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, brandScope, canManageBrand } = useAuth();
   const outletCtx = useOutletContext<AdminOutletContext>();
@@ -75,6 +97,7 @@ export const AdminProductsPage: React.FC = () => {
   ]);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [customImageUrl, setCustomImageUrl] = useState('');
 
   // Delete Confirmation
   const [deleteCandidate, setDeleteCandidate] = useState<Product | null>(null);
@@ -117,11 +140,22 @@ export const AdminProductsPage: React.FC = () => {
     setAvailability('in_stock');
     setFeatured(false);
     setPublished(true);
-    setImages(['https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=800&q=80']);
-    setSpecs([
-      { key: 'Resolution', value: '4MP Ultra HD' },
-      { key: 'Lens', value: '2.8mm Wide Angle' }
-    ]);
+    setCustomImageUrl('');
+    const defaultImg = defaultBrand === 'am-distributors'
+      ? '/images/products/am-water-jar-20l.jpg'
+      : '/images/products/cp-dome.jpg';
+    setImages([defaultImg]);
+    setSpecs(
+      defaultBrand === 'am-distributors'
+        ? [
+            { key: 'Packaging', value: 'Food-Grade 20L Sealed Container' },
+            { key: 'Dispatch Slot', value: 'Direct Depot Dispatch Within 4 Hours' }
+          ]
+        : [
+            { key: 'Resolution', value: '4MP Ultra HD' },
+            { key: 'Lens', value: '2.8mm Wide Angle' }
+          ]
+    );
     setIsModalOpen(true);
   };
 
@@ -142,7 +176,12 @@ export const AdminProductsPage: React.FC = () => {
     setAvailability(prod.availability);
     setFeatured(prod.featured);
     setPublished(prod.published);
-    setImages(prod.images.length > 0 ? prod.images : ['https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=800&q=80']);
+    setCustomImageUrl('');
+    setImages(prod.images.length > 0 ? prod.images : [
+      prod.brandId === 'am-distributors'
+        ? '/images/products/am-water-jar-20l.jpg'
+        : '/images/products/cp-dome.jpg'
+    ]);
     setSpecs(
       Object.entries(prod.specifications || {}).map(([key, value]) => ({ key, value }))
     );
@@ -243,11 +282,9 @@ export const AdminProductsPage: React.FC = () => {
       p.modelNumber.toLowerCase().includes(search.toLowerCase());
     const matchesCat = selectedCatFilter === 'all' || p.categoryId === selectedCatFilter;
     const matchesCompany =
-      activeConsole === 'nexalus-innovations' || isInnovationsAdmin
-        ? (p.brandId === 'nexalus-innovations' || p.brandId === 'cp-plus' || p.brandId === 'one-broadband' || p.brandId === 'itti-networking')
-        : activeConsole === 'am-distributors' || isAmAdmin
-        ? (p.brandId === 'am-distributors')
-        : true;
+      activeConsole === 'am-distributors' || isAmAdmin
+        ? p.brandId === 'am-distributors'
+        : p.brandId !== 'am-distributors';
 
     return matchesSearch && matchesCat && matchesCompany;
   });
@@ -278,13 +315,31 @@ export const AdminProductsPage: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={openCreateModal}
-          icon={<Plus className="w-4 h-4" />}
-        >
-          Add New Product
-        </Button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <a
+            href={
+              activeConsole === 'am-distributors'
+                ? '/brands/am-distributors/products'
+                : activeConsole === 'nexalus-innovations'
+                ? '/brands/nexalus-innovations/products'
+                : '/products'
+            }
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all cursor-pointer"
+            title="Open customer-facing products landing page in a new tab"
+          >
+            <span>View Live Store ↗</span>
+          </a>
+
+          <Button
+            variant="primary"
+            onClick={openCreateModal}
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Add New Product
+          </Button>
+        </div>
       </div>
 
       {/* Corporate Super Admin Workspace Context Link */}
@@ -407,6 +462,19 @@ export const AdminProductsPage: React.FC = () => {
 
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
+                      <a
+                        href={
+                          product.brandId === 'am-distributors'
+                            ? '/brands/am-distributors/products'
+                            : '/products'
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                        title="View product on public store"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </a>
                       <button
                         onClick={() => openEditModal(product)}
                         className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -517,33 +585,101 @@ export const AdminProductsPage: React.FC = () => {
             onChange={e => setDescription(e.target.value)}
           />
 
-          {/* Image Upload Box */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-              Product Images
-            </label>
-            <div className="flex items-center gap-3">
-              <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition-colors">
-                <Upload className="w-4 h-4" />
-                <span>Upload Image</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
+          {/* Enhanced Image Management Box */}
+          <div className="space-y-3 p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl">
+            <div>
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Product Images
               </label>
-              {isUploading && <span className="text-xs text-blue-600 animate-pulse">Uploading file...</span>}
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pt-2">
+            {/* Upload File + Direct Path/URL Input */}
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-300 shadow-2xs transition-colors shrink-0">
+                  <Upload className="w-4 h-4 text-blue-600" />
+                  <span>Choose Image File</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="flex-1 flex gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="Or paste image path / URL (e.g. /images/products/... or http)"
+                    value={customImageUrl}
+                    onChange={e => setCustomImageUrl(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (customImageUrl.trim()) {
+                          setImages(prev => [customImageUrl.trim(), ...prev]);
+                          setCustomImageUrl('');
+                        }
+                      }
+                    }}
+                    className="flex-1 rounded-xl border border-slate-300 bg-white text-xs px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (customImageUrl.trim()) {
+                        setImages(prev => [customImageUrl.trim(), ...prev]);
+                        setCustomImageUrl('');
+                      }
+                    }}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-colors shrink-0"
+                  >
+                    + Add URL
+                  </button>
+                </div>
+              </div>
+
+              {isUploading && (
+                <div className="text-xs text-blue-600 font-medium animate-pulse flex items-center gap-1.5 pt-1">
+                  <span>Processing &amp; attaching image instantly...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Sample Presets */}
+            <div className="pt-1">
+              <span className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+                Quick Sample Presets for Testing:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {(brandId === 'am-distributors' ? FMCG_PRESETS : TECH_PRESETS).map((p, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      if (!images.includes(p.url)) {
+                        setImages(prev => [p.url, ...prev]);
+                      }
+                    }}
+                    className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 transition-colors flex items-center gap-1"
+                  >
+                    <span>+</span>
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Previews */}
+            <div className="flex gap-2 overflow-x-auto pt-2 pb-1">
               {images.map((img, idx) => (
-                <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 group shrink-0">
+                <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-300 group shrink-0 bg-slate-100">
                   <img src={img} alt="Preview" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => setImages(images.filter((_, i) => i !== idx))}
                     className="absolute top-1 right-1 p-0.5 bg-rose-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove Image"
                   >
                     <X className="w-3 h-3" />
                   </button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { getProducts, getCategories } from '../../firebase/services';
+import { getProducts, getCategories, getCachedProducts } from '../../firebase/services';
 import { Product, ProductCategory, BrandId } from '../../types';
 import { ProductCard } from '../../components/brand/ProductCard';
 import { initialProducts } from '../../data/initialData';
@@ -25,29 +25,37 @@ export const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialBrand = (searchParams.get('brand') as BrandId | 'all') || 'all';
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    const cached = getCachedProducts();
+    const filtered = cached.filter(p => p.brandId !== 'am-distributors');
+    return filtered.length > 0 ? filtered : initialProducts.filter(p => p.brandId !== 'am-distributors');
+  });
   const [selectedBrand, setSelectedBrand] = useState<BrandId | 'all'>(initialBrand);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'name'>('featured');
   const [onlyInStock, setOnlyInStock] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isBulkQuoteOpen, setIsBulkQuoteOpen] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      try {
-        const allProducts = await getProducts(undefined, true);
-        // Strictly exclude A.M. Distributors products from Nexalus hardware catalog
-        const filtered = allProducts.filter(p => p.brandId !== 'am-distributors');
-        setProducts(filtered.length > 0 ? filtered : initialProducts.filter(p => p.brandId !== 'am-distributors'));
-      } catch (err) {
-        setProducts(initialProducts.filter(p => p.brandId !== 'am-distributors'));
-      } finally {
-        setIsLoading(false);
-      }
+  const loadData = async () => {
+    try {
+      const allProducts = await getProducts(undefined, true);
+      // Strictly exclude A.M. Distributors products from Nexalus hardware catalog
+      const filtered = allProducts.filter(p => p.brandId !== 'am-distributors');
+      setProducts(filtered.length > 0 ? filtered : initialProducts.filter(p => p.brandId !== 'am-distributors'));
+    } catch (err) {
+      setProducts(initialProducts.filter(p => p.brandId !== 'am-distributors'));
     }
-    load();
+  };
+
+  useEffect(() => {
+    loadData();
+
+    const handleUpdate = () => {
+      loadData();
+    };
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    return () => window.removeEventListener('nexalus_data_update', handleUpdate);
   }, []);
 
   // Sync brand when search param changes

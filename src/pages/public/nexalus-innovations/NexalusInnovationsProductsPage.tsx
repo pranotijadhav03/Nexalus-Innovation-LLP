@@ -1,15 +1,36 @@
-import React, { useState } from 'react';
-import { initialProducts } from '../../../data/initialData';
+import React, { useState, useEffect } from 'react';
+import { getProducts, getCachedProducts } from '../../../firebase/services';
+import { Product } from '../../../types';
 import { ProductCard } from '../../../components/brand/ProductCard';
 import { Cpu, Shield, Wifi, Server, Sparkles, Filter } from 'lucide-react';
 
 export const NexalusInnovationsProductsPage: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'cctv' | 'internet' | 'network'>('all');
-
-  // Filter products relevant to Nexalus Innovations tech ecosystem
-  const techProducts = initialProducts.filter(
-    p => p.brandId === 'nexalus-innovations' || p.brandId === 'one-broadband' || p.brandId === 'itti-networking' || p.brandId === 'cp-plus'
+  const [techProducts, setTechProducts] = useState<Product[]>(() =>
+    getCachedProducts('nexalus-innovations')
   );
+
+  const loadData = async () => {
+    try {
+      const prods = await getProducts('nexalus-innovations', true);
+      if (prods && prods.length > 0) {
+        setTechProducts(prods);
+      }
+    } catch (err) {
+      console.warn('Could not load tech products:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+
+    // Listen for real-time updates when admin creates/edits/deletes products
+    const handleUpdate = () => {
+      loadData();
+    };
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    return () => window.removeEventListener('nexalus_data_update', handleUpdate);
+  }, []);
 
   const displayedProducts = techProducts.filter(p => {
     if (filter === 'cctv') return p.categoryId.includes('cctv');

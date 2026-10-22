@@ -2000,25 +2000,60 @@ export async function updateSeoSettings(updates: Partial<SeoSettings>): Promise<
 }
 
 // ----------------------------------------------------
-// IMAGE UPLOAD (Storage or Local Data URI fallback)
+// IMAGE UPLOAD (Instant Client Data URI for Spark / Firebase Storage for Blaze)
 // ----------------------------------------------------
 export async function uploadImageFile(file: File, folder = 'products'): Promise<string> {
-  if (isFirebaseConfigured && storage) {
+  // Only attempt Firebase Cloud Storage if explicitly enabled with Blaze plan.
+  // On Spark (free tier) or local development, Firebase Storage throws CORS errors and hangs on preflight.
+  const isStorageEnabled = import.meta.env.VITE_ENABLE_FIREBASE_STORAGE === 'true';
+
+  if (isStorageEnabled && isFirebaseConfigured && storage) {
     try {
       const storageRef = ref(storage, `${folder}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`);
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadUrl = await getDownloadURL(uploadResult.ref);
       return downloadUrl;
     } catch (e) {
-      console.warn('Firebase Storage upload failed, converting to object URI:', e);
+      console.warn('Firebase Storage upload failed or blocked by CORS, falling back to instant client data URI:', e);
     }
   }
 
-  // Resilient fallback: convert to base64 Data URL so preview & persistence works offline
+  // Instant client-side conversion (0 network requests, no CORS, no Blaze requirement)
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      resolve(reader.result as string);
+      const result = reader.result as string;
+      // If image is over 300KB, downscale client-side to keep Firestore & localStorage fast and lightweight
+      if (file.size > 300 * 1024 && file.type.startsWith('image/')) {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1200;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.82));
+            return;
+          }
+          resolve(result);
+        };
+        img.onerror = () => resolve(result);
+        img.src = result;
+      } else {
+        resolve(result);
+      }
     };
     reader.onerror = error => reject(error);
     reader.readAsDataURL(file);

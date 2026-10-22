@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Mail,
   MapPin,
-  Clock
+  Clock,
+  Lock
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
@@ -287,6 +288,15 @@ export const NexalusInnovationsLayout: React.FC = () => {
                 ))}
                 <li>
                   <Link
+                    to="/admin/login"
+                    className="text-slate-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5 pt-1.5 font-medium"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Tech Admin Login</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     to="/"
                     className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors flex items-center gap-1 pt-2"
                   >
@@ -347,13 +357,18 @@ export const NexalusInnovationsLayout: React.FC = () => {
             <div>
               &copy; {new Date().getFullYear()} Nexalus Innovations. All rights reserved. A subsidiary of Nexalus Innovations LLP.
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <Link to="/brands/nexalus-innovations/about" className="hover:text-slate-400">
                 About Division
               </Link>
               <span>•</span>
               <Link to="/brands/nexalus-innovations/contact" className="hover:text-slate-400">
                 Contact
+              </Link>
+              <span>•</span>
+              <Link to="/admin/login" className="text-slate-400 hover:text-cyan-300 flex items-center gap-1 font-medium">
+                <Lock className="w-3 h-3 text-cyan-400" />
+                <span>Admin Login</span>
               </Link>
               <span>•</span>
               <Link to="/" className="text-cyan-400 hover:text-cyan-300 font-semibold">

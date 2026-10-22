@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Server, Menu, X, PhoneCall, ArrowLeft, ArrowUpRight } from 'lucide-react';
+import { Server, Menu, X, PhoneCall, ArrowLeft, ArrowUpRight, Lock } from 'lucide-react';
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
 import { ScrollToTop } from '../common/PublicLayout';
@@ -196,7 +196,14 @@ export const IttiNetworkingLayout: React.FC = () => {
             <div>
               © {new Date().getFullYear()} ITTI Networking Division. Operated under Nexalus Innovations LLP.
             </div>
-            <Link to="/" className="hover:text-slate-300">Nexalus Portal</Link>
+            <div className="flex items-center gap-4">
+              <Link to="/admin/login" className="hover:text-indigo-400 text-slate-400 flex items-center gap-1 font-medium">
+                <Lock className="w-3 h-3 text-indigo-400" />
+                <span>Admin Login</span>
+              </Link>
+              <span>•</span>
+              <Link to="/" className="hover:text-slate-300">Nexalus Portal</Link>
+            </div>
           </div>
         </div>
       </footer>

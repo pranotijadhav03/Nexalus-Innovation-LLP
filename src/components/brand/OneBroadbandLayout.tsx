@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Wifi, Menu, X, PhoneCall, ArrowLeft, ArrowUpRight, Search } from 'lucide-react';
+import { Wifi, Menu, X, PhoneCall, ArrowLeft, ArrowUpRight, Search, Lock } from 'lucide-react';
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
 import { CoverageCheckerModal } from './CoverageCheckerModal';
@@ -216,6 +216,12 @@ export const OneBroadbandLayout: React.FC = () => {
                 <li><Link to="/brands/one-broadband/services" className="hover:text-teal-400 transition-colors">FTTH & Leased Lines</Link></li>
                 <li><Link to="/brands/one-broadband/coverage" className="hover:text-teal-400 transition-colors">Check PIN Coverage</Link></li>
                 <li><Link to="/brands/one-broadband/contact" className="hover:text-teal-400 transition-colors">Contact Support</Link></li>
+                <li>
+                  <Link to="/admin/login" className="hover:text-teal-400 transition-colors flex items-center gap-1.5 pt-1 text-slate-300 font-medium">
+                    <Lock className="w-3 h-3 text-teal-400" />
+                    <span>Admin Login</span>
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -253,8 +259,13 @@ export const OneBroadbandLayout: React.FC = () => {
             <div>
               © {new Date().getFullYear()} One Broadband Division. Operated under Nexalus Innovations LLP.
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <Link to="/brands/one-broadband/contact" className="hover:text-slate-300">Support Desk</Link>
+              <span>•</span>
+              <Link to="/admin/login" className="hover:text-teal-400 text-slate-400 flex items-center gap-1 font-medium">
+                <Lock className="w-3 h-3 text-teal-400" />
+                <span>Admin Login</span>
+              </Link>
               <span>•</span>
               <Link to="/" className="hover:text-slate-300">Nexalus Portal</Link>
             </div>
