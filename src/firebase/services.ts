@@ -125,9 +125,15 @@ function notifyDataUpdate(key: string): void {
 // Generic Local Storage Helpers
 function getLocalItem<T>(key: string, defaultValue: T): T {
   try {
-    const saved = localStorage.getItem(key);
+    let saved = localStorage.getItem(key);
+    if (!saved && key === STORAGE_KEYS.BANNERS) {
+      saved = localStorage.getItem("nexalus_site_banners");
+    }
     if (!saved) {
       localStorage.setItem(key, JSON.stringify(defaultValue));
+      if (key === STORAGE_KEYS.BANNERS) {
+        try { localStorage.setItem("nexalus_site_banners", JSON.stringify(defaultValue)); } catch {}
+      }
       return defaultValue;
     }
     return JSON.parse(saved);
@@ -139,10 +145,16 @@ function getLocalItem<T>(key: string, defaultValue: T): T {
 function setLocalItem<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    if (key === STORAGE_KEYS.BANNERS) {
+      try { localStorage.setItem("nexalus_site_banners", JSON.stringify(value)); } catch {}
+    }
     // Dispatch cross-tab update event for instant reactivity without manual refresh
     notifyDataUpdate(key);
+    if (key === STORAGE_KEYS.BANNERS) {
+      notifyDataUpdate("nexalus_site_banners");
+    }
   } catch (err) {
-    console.error('Failed to save to localStorage:', err);
+    console.error("Failed to save to localStorage:", err);
   }
 }
 
@@ -258,7 +270,20 @@ export function getCachedBroadbandProviders(): BroadbandProvider[] {
 
 export function getCachedBanners(brandId?: BrandId | 'nexalus'): SiteBanner[] {
   const banners = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
-  if (brandId) return banners.filter(b => b.brandId === brandId);
+  if (brandId) {
+    return banners.filter(b => {
+      if (brandId === 'nexalus' || (brandId as any) === 'corporate') {
+        return b.brandId === 'nexalus' || b.id === 'ban-parent';
+      }
+      if (brandId === 'nexalus-innovations') {
+        return b.brandId === 'nexalus-innovations' || b.id === 'ban-innovations';
+      }
+      if (brandId === 'am-distributors') {
+        return b.brandId === 'am-distributors' || b.id === 'ban-am';
+      }
+      return b.brandId === brandId;
+    });
+  }
   return banners;
 }
 
@@ -1922,11 +1947,27 @@ export async function getBanners(brandId?: BrandId | 'nexalus'): Promise<SiteBan
           firestoreMap.set(d.id, { id: d.id, ...d.data() } as SiteBanner);
         });
 
-        // Merge initial, local, and firestore safely by ID so defaults/slides are never lost
+        // Merge initial, local, and firestore safely by ID so defaults/slides are never lost.
+        // If local banner has a newer or equal updatedAt than Firestore, keep local banner!
         const bannerMap = new Map<string, SiteBanner>();
         initialBanners.forEach(b => bannerMap.set(b.id, b));
         localList.forEach(b => bannerMap.set(b.id, { ...(bannerMap.get(b.id) || {}), ...b }));
-        firestoreMap.forEach((val, id) => bannerMap.set(id, { ...(bannerMap.get(id) || {}), ...val }));
+        
+        firestoreMap.forEach((remoteBanner, id) => {
+          const localBanner = bannerMap.get(id);
+          if (!localBanner) {
+            bannerMap.set(id, remoteBanner);
+          } else {
+            const localTime = localBanner.updatedAt ? new Date(localBanner.updatedAt).getTime() : 0;
+            const remoteTime = remoteBanner.updatedAt ? new Date(remoteBanner.updatedAt).getTime() : 0;
+            if (remoteTime > localTime) {
+              bannerMap.set(id, { ...localBanner, ...remoteBanner });
+            } else {
+              // Local edit is newer or equal: preserve local!
+              bannerMap.set(id, localBanner);
+            }
+          }
+        });
 
         localList = Array.from(bannerMap.values());
         setLocalItem(STORAGE_KEYS.BANNERS, localList);
@@ -1937,7 +1978,18 @@ export async function getBanners(brandId?: BrandId | 'nexalus'): Promise<SiteBan
   }
 
   if (brandId) {
-    return localList.filter(b => b.brandId === brandId || (brandId === 'nexalus' && b.id === 'ban-parent'));
+    return localList.filter(b => {
+      if (brandId === 'nexalus' || (brandId as any) === 'corporate') {
+        return b.brandId === 'nexalus' || b.id === 'ban-parent';
+      }
+      if (brandId === 'nexalus-innovations') {
+        return b.brandId === 'nexalus-innovations' || b.id === 'ban-innovations';
+      }
+      if (brandId === 'am-distributors') {
+        return b.brandId === 'am-distributors' || b.id === 'ban-am';
+      }
+      return b.brandId === brandId;
+    });
   }
   return localList;
 }
@@ -1945,9 +1997,10 @@ export async function getBanners(brandId?: BrandId | 'nexalus'): Promise<SiteBan
 export async function updateBanner(id: string, updates: Partial<SiteBanner>): Promise<SiteBanner | null> {
   const allBanners = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
   const index = allBanners.findIndex(b => b.id === id);
+  const now = new Date().toISOString();
   const updated: SiteBanner = index >= 0
-    ? { ...allBanners[index], ...updates, id }
-    : ({ id, active: true, title: '', subtitle: '', ctaText: '', ctaLink: '', brandId: 'nexalus', ...updates } as SiteBanner);
+    ? { ...allBanners[index], ...updates, id, updatedAt: now }
+    : ({ id, active: true, title: '', subtitle: '', ctaText: '', ctaLink: '', brandId: 'nexalus', ...updates, updatedAt: now } as SiteBanner);
 
   // 1. Immediately persist to localStorage and broadcast cross-tab
   const nextList = index >= 0
@@ -1958,7 +2011,7 @@ export async function updateBanner(id: string, updates: Partial<SiteBanner>): Pr
   // 2. Persist to Firestore in background without blocking local sync
   if (isFirebaseConfigured && db) {
     try {
-      await withTimeout(setDoc(doc(db, 'banners', id), sanitizeForFirestore(updated), { merge: true }), 2500);
+      await withTimeout(setDoc(doc(db, 'banners', id), sanitizeForFirestore(updated), { merge: true }), 3000);
     } catch (e) {
       console.warn('Firestore updateBanner sync warning:', e);
     }
@@ -1979,7 +2032,18 @@ export function subscribeToBanners(
     try {
       let localBanners = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
       if (brandId) {
-        localBanners = localBanners.filter(b => b.brandId === brandId || (brandId === 'nexalus' && b.id === 'ban-parent'));
+        localBanners = localBanners.filter(b => {
+          if (brandId === 'nexalus' || (brandId as any) === 'corporate') {
+            return b.brandId === 'nexalus' || b.id === 'ban-parent';
+          }
+          if (brandId === 'nexalus-innovations') {
+            return b.brandId === 'nexalus-innovations' || b.id === 'ban-innovations';
+          }
+          if (brandId === 'am-distributors') {
+            return b.brandId === 'am-distributors' || b.id === 'ban-am';
+          }
+          return b.brandId === brandId;
+        });
       }
       callback(localBanners);
     } catch (err) {
@@ -2009,13 +2073,39 @@ export function subscribeToBanners(
         initialBanners.forEach(b => mergedMap.set(b.id, b));
         const local = getLocalItem<SiteBanner[]>(STORAGE_KEYS.BANNERS, initialBanners);
         local.forEach(b => mergedMap.set(b.id, { ...(mergedMap.get(b.id) || {}), ...b }));
-        results.forEach(b => mergedMap.set(b.id, { ...(mergedMap.get(b.id) || {}), ...b }));
+        
+        results.forEach(remoteBanner => {
+          const localBanner = mergedMap.get(remoteBanner.id);
+          if (!localBanner) {
+            mergedMap.set(remoteBanner.id, remoteBanner);
+          } else {
+            const localTime = localBanner.updatedAt ? new Date(localBanner.updatedAt).getTime() : 0;
+            const remoteTime = remoteBanner.updatedAt ? new Date(remoteBanner.updatedAt).getTime() : 0;
+            if (remoteTime > localTime) {
+              mergedMap.set(remoteBanner.id, { ...localBanner, ...remoteBanner });
+            } else {
+              // Local is newer or equal: preserve local!
+              mergedMap.set(remoteBanner.id, localBanner);
+            }
+          }
+        });
         const mergedList = Array.from(mergedMap.values());
         setLocalItem(STORAGE_KEYS.BANNERS, mergedList);
         
         let filtered = mergedList;
         if (brandId) {
-          filtered = mergedList.filter(b => b.brandId === brandId || (brandId === 'nexalus' && b.id === 'ban-parent'));
+          filtered = mergedList.filter(b => {
+            if (brandId === 'nexalus' || (brandId as any) === 'corporate') {
+              return b.brandId === 'nexalus' || b.id === 'ban-parent';
+            }
+            if (brandId === 'nexalus-innovations') {
+              return b.brandId === 'nexalus-innovations' || b.id === 'ban-innovations';
+            }
+            if (brandId === 'am-distributors') {
+              return b.brandId === 'am-distributors' || b.id === 'ban-am';
+            }
+            return b.brandId === brandId;
+          });
         }
         callback(filtered);
       }, (err) => {
@@ -2031,16 +2121,14 @@ export function subscribeToBanners(
   }
 
   const handleUpdate = (e: any) => {
-    if (!e.detail || e.detail.key === STORAGE_KEYS.BANNERS) {
+    if (!e.detail || e.detail.key === STORAGE_KEYS.BANNERS || e.detail.key === 'nexalus_site_banners') {
       emitCached();
-      emitBanners();
     }
   };
 
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEYS.BANNERS) {
+    if (!e.key || e.key === STORAGE_KEYS.BANNERS || e.key === 'nexalus_site_banners') {
       emitCached();
-      emitBanners();
     }
   };
 
@@ -2053,6 +2141,7 @@ export function subscribeToBanners(
     window.removeEventListener('storage', handleStorage);
   };
 }
+
 
 // ----------------------------------------------------
 // USERS & ROLES

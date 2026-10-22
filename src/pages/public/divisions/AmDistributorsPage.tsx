@@ -33,15 +33,9 @@ import { initialProducts, DEFAULT_AM_SLIDES } from '../../../data/initialData';
 export const AmDistributorsPage: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [heroBanner, setHeroBanner] = useState<SiteBanner | null>(() => {
-    try {
-      const saved = localStorage.getItem('nexalus_site_banners');
-      if (saved) {
-        const list: SiteBanner[] = JSON.parse(saved);
-        const found = list.find(b => b.id === 'ban-am' || b.brandId === 'am-distributors');
-        if (found) return found;
-      }
-    } catch {}
-    return null;
+    const list = getCachedBanners('am-distributors');
+    const found = list.find(b => b.id === 'ban-am' || b.brandId === 'am-distributors');
+    return found || null;
   });
   const [divisionProducts, setDivisionProducts] = useState<Product[]>(() =>
     getCachedProducts('am-distributors')

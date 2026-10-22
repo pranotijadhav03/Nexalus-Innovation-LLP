@@ -18,7 +18,7 @@ import { OurTeamSection } from '../../../components/common/OurTeamSection';
 import { ProjectGallerySection } from '../../../components/common/ProjectGallerySection';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
-import { getProducts, subscribeToBanners } from '../../../firebase/services';
+import { getProducts, subscribeToBanners, getCachedBanners } from '../../../firebase/services';
 import { SiteBanner } from '../../../types';
 import { initialProducts } from '../../../data/initialData';
 import { Product } from '../../../types';
@@ -27,15 +27,9 @@ export const NexalusInnovationsPage: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
   const [heroBanner, setHeroBanner] = useState<SiteBanner | null>(() => {
-    try {
-      const saved = localStorage.getItem('nexalus_site_banners');
-      if (saved) {
-        const list: SiteBanner[] = JSON.parse(saved);
-        const found = list.find(b => b.id === 'ban-innovations' || b.brandId === 'nexalus-innovations');
-        if (found) return found;
-      }
-    } catch {}
-    return null;
+    const list = getCachedBanners('nexalus-innovations');
+    const found = list.find(b => b.id === 'ban-innovations' || b.brandId === 'nexalus-innovations');
+    return found || null;
   });
 
   // Independent toggle states for the 3 Z-pattern product sections (default open)
@@ -63,14 +57,9 @@ export const NexalusInnovationsPage: React.FC = () => {
 
     const handleUpdate = () => {
       load();
-      try {
-        const saved = localStorage.getItem('nexalus_site_banners');
-        if (saved) {
-          const list: SiteBanner[] = JSON.parse(saved);
-          const found = list.find(b => b.id === 'ban-innovations' || b.brandId === 'nexalus-innovations');
-          if (found) setHeroBanner(found);
-        }
-      } catch {}
+      const list = getCachedBanners('nexalus-innovations');
+      const found = list.find(b => b.id === 'ban-innovations' || b.brandId === 'nexalus-innovations');
+      if (found) setHeroBanner(found);
     };
 
     window.addEventListener('nexalus_data_update', handleUpdate);
@@ -177,8 +166,8 @@ export const NexalusInnovationsPage: React.FC = () => {
             <div className="lg:col-span-5">
               <div className="relative group rounded-3xl overflow-hidden border border-blue-800/40 bg-slate-900 shadow-2xl shadow-blue-950/50">
                 <img
-                  src="/images/tony-webster-server-room.jpg"
-                  alt="Nexalus Innovations Commercial Technology Facility"
+                  src={heroBanner?.imageUrl || "/images/tony-webster-server-room.jpg"}
+                  alt={heroBanner?.title || "Nexalus Innovations Commercial Technology Facility"}
                   className="w-full h-[320px] sm:h-[380px] lg:h-[420px] object-cover object-[70%_center] group-hover:scale-105 transition-transform duration-700"
                 />
 

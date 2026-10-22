@@ -404,6 +404,8 @@ export interface SiteBanner {
   showFaqs?: boolean;
   showContact?: boolean;
   slides?: HeroSlide[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SeoSettings {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getBanners, updateBanner, getCachedBanners } from '../../firebase/services';
+import { getBanners, updateBanner, getCachedBanners, uploadImageFile } from '../../firebase/services';
 import { initialBanners, DEFAULT_AM_SLIDES } from '../../data/initialData';
 import { SiteBanner, HeroSlide } from '../../types';
 import { Input, TextArea } from '../../components/common/Input';
@@ -235,18 +235,37 @@ export const AdminContentPage: React.FC = () => {
     success('Slide Applied', 'Slide details updated and synchronized live.');
   };
 
-  // Handle instant local image selection for slides (base64 reader avoids CORS/Blaze blocks)
-  const handleSlideImageUpload = (file: File) => {
+  const [isUploadingMainImage, setIsUploadingMainImage] = useState(false);
+
+  // Upload and compress hero background image for main landing page
+  const handleMainHeroImageUpload = async (file: File) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result && editingSlide) {
-        setEditingSlide({ ...editingSlide, imageUrl: result });
-        success('Image Selected', 'Slide image set from local file.');
+    setIsUploadingMainImage(true);
+    try {
+      const compressedUrl = await uploadImageFile(file, 'banners');
+      if (compressedUrl) {
+        setImageUrl(compressedUrl);
+        success('Image Attached', 'Hero background image selected and compressed.');
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      error('Upload Failed', err?.message || 'Could not process image.');
+    } finally {
+      setIsUploadingMainImage(false);
+    }
+  };
+
+  // Handle instant local image selection for slides with canvas compression
+  const handleSlideImageUpload = async (file: File) => {
+    if (!file) return;
+    try {
+      const compressedUrl = await uploadImageFile(file, 'banners');
+      if (compressedUrl && editingSlide) {
+        setEditingSlide({ ...editingSlide, imageUrl: compressedUrl });
+        success('Image Selected', 'Slide image set and compressed cleanly.');
+      }
+    } catch (err: any) {
+      error('Upload Failed', err?.message || 'Could not process image.');
+    }
   };
 
   // Keep activeScope strictly synchronized with active workspace console
@@ -669,13 +688,54 @@ export const AdminContentPage: React.FC = () => {
                       />
                     </div>
 
-                    <Input
-                      label="Hero Background Image URL / Asset Path"
-                      placeholder="e.g. /images/hero-server.jpg or /images/simple-cctv-camera.jpg"
-                      value={imageUrl}
-                      onChange={e => setImageUrl(e.target.value)}
-                      disabled={isSaving}
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        label="Hero Background Image URL / Asset Path"
+                        placeholder="e.g. /images/hero-server.jpg or /images/simple-cctv-camera.jpg"
+                        value={imageUrl}
+                        onChange={e => setImageUrl(e.target.value)}
+                        disabled={isSaving}
+                      />
+                      <div className="flex flex-wrap items-center gap-3 pt-0.5">
+                        <label className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-bold text-slate-700 cursor-pointer transition-all shadow-2xs">
+                          <Upload className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Choose / Upload Image File</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => {
+                              if (e.target.files && e.target.files[0]) {
+                                handleMainHeroImageUpload(e.target.files[0]);
+                              }
+                            }}
+                          />
+                        </label>
+                        {isUploadingMainImage && (
+                          <span className="text-xs text-blue-600 font-semibold animate-pulse">
+                            Compressing and setting image...
+                          </span>
+                        )}
+                        {imageUrl && (
+                          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-1.5 pr-3 shadow-2xs">
+                            <div className="w-12 h-8 rounded-lg overflow-hidden border border-slate-300 bg-slate-200 shrink-0">
+                              <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-[11px] font-medium text-slate-600 truncate max-w-[200px]">
+                              {imageUrl.startsWith('data:') ? 'Local Image Attached (Optimized)' : imageUrl}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setImageUrl('')}
+                              className="text-slate-400 hover:text-rose-600 ml-1 cursor-pointer"
+                              title="Clear Image"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
                     <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 pt-2">
                       <input

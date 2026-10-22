@@ -44,7 +44,8 @@ import {
   getPlanCart,
   clearPlanCart,
   getCachedBroadbandPlans,
-  getCachedInternetPlans
+  getCachedInternetPlans,
+  getCachedBanners
 } from '../../firebase/services';
 import { initialBanners } from '../../data/initialData';
 import { useToast } from '../../context/ToastContext';
@@ -172,15 +173,9 @@ export const HomePage: React.FC = () => {
   };
 
   const [heroBanner, setHeroBanner] = useState<SiteBanner>(() => {
-    try {
-      const saved = localStorage.getItem('nexalus_site_banners');
-      if (saved) {
-        const list: SiteBanner[] = JSON.parse(saved);
-        const found = list.find(b => b.id === 'ban-parent' || b.brandId === 'nexalus');
-        if (found) return found;
-      }
-    } catch {}
-    return initialBanners.find(b => b.id === 'ban-parent') || initialBanners[0];
+    const list = getCachedBanners('nexalus');
+    const found = list.find(b => b.id === 'ban-parent' || b.brandId === 'nexalus');
+    return found || initialBanners.find(b => b.id === 'ban-parent') || initialBanners[0];
   });
 
   useEffect(() => {
@@ -207,18 +202,16 @@ export const HomePage: React.FC = () => {
         setHomeBroadbandPlans(getCachedBroadbandPlans());
         setHomeOnePlans(getCachedInternetPlans());
       }
-      if (!e.detail?.key || e.detail.key === 'nexalus_site_banners') {
-        try {
-          const raw = localStorage.getItem('nexalus_site_banners');
-          if (raw) {
-            const list: SiteBanner[] = JSON.parse(raw);
-            const found = list.find(b => b.id === 'ban-parent' || b.brandId === 'nexalus');
-            if (found) setHeroBanner(found);
-          }
-        } catch {}
+      if (!e.detail?.key || e.detail.key === 'nexalus_site_banners' || e.detail.key.includes('banners')) {
+        const list = getCachedBanners('nexalus');
+        const found = list.find(b => b.id === 'ban-parent' || b.brandId === 'nexalus');
+        if (found) setHeroBanner(found);
       }
     };
     window.addEventListener('nexalus_data_update', handleDataUpdate);
+
+    window.addEventListener('storage', handleDataUpdate);
+    window.addEventListener('focus', handleDataUpdate);
 
     return () => {
       unsubBB();
@@ -226,6 +219,8 @@ export const HomePage: React.FC = () => {
       unsubBanners();
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
       window.removeEventListener('nexalus_data_update', handleDataUpdate);
+      window.removeEventListener('storage', handleDataUpdate);
+      window.removeEventListener('focus', handleDataUpdate);
     };
   }, []);
 
@@ -261,8 +256,8 @@ export const HomePage: React.FC = () => {
         {/* Photographic background image showcasing authentic enterprise server rack */}
         <div className="absolute inset-0">
           <img
-            src="/images/fermilab-blue-racks-real.jpg"
-            alt="Nexalus Innovations LLP Enterprise Server Rack, Optical Fiber & CCTV Surveillance Infrastructure"
+            src={heroBanner?.imageUrl || "/images/fermilab-blue-racks-real.jpg"}
+            alt={heroBanner?.title || "Nexalus Innovations LLP Enterprise Server Rack, Optical Fiber & CCTV Surveillance Infrastructure"}
             className="w-full h-full object-cover object-[75%_center] lg:object-[82%_center]"
           />
         </div>
