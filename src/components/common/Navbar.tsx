@@ -69,7 +69,7 @@ export const Navbar: React.FC = () => {
             <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
               <Link
                 to="/"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
                   isActive('/') && location.pathname === '/'
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -79,7 +79,7 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link
                 to="/about"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
                   isActive('/about')
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -92,7 +92,7 @@ export const Navbar: React.FC = () => {
               <div className="relative group">
                 <Link
                   to="/brands"
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
                     isActive('/brands')
                       ? 'text-blue-600 bg-blue-50/80'
                       : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -153,7 +153,7 @@ export const Navbar: React.FC = () => {
 
               <Link
                 to="/services"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
                   isActive('/services')
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -163,7 +163,7 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link
                 to="/plans"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
                   isActive('/plans')
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -173,7 +173,7 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link
                 to="/products"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
                   isActive('/products')
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
@@ -183,7 +183,7 @@ export const Navbar: React.FC = () => {
               </Link>
               <Link
                 to="/contact"
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
                   isActive('/contact')
                     ? 'text-blue-600 bg-blue-50/80'
                     : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'

@@ -136,10 +136,10 @@ export const AmDistributorsLayout: React.FC = () => {
               <Truck className="w-6 h-6 text-amber-300" />
             </div>
             <div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none group-hover:text-emerald-700 transition-colors">
+              <div className="text-lg sm:text-xl xl:text-2xl font-black text-slate-900 tracking-tight leading-none group-hover:text-emerald-700 transition-colors whitespace-nowrap">
                 A.M. DISTRIBUTORS
               </div>
-              <div className="text-[10px] font-extrabold text-emerald-700 tracking-wider uppercase mt-1">
+              <div className="text-[10px] font-extrabold text-emerald-700 tracking-wider uppercase mt-1 whitespace-nowrap">
                 Chiplun Depot • Mineral Water • Ice Cream • Dairy
               </div>
             </div>
@@ -153,7 +153,7 @@ export const AmDistributorsLayout: React.FC = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-3.5 xl:px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  className={`px-3 xl:px-4 py-2 rounded-xl text-xs xl:text-sm font-bold whitespace-nowrap transition-all ${
                     active
                       ? 'bg-emerald-50 text-emerald-800 font-bold shadow-xs border border-emerald-200/80'
                       : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-100/90'
