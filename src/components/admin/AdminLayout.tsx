@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate, Outlet, useSearchParams } from 'react-router-dom';
+import { Navigate, Outlet, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminNavbar } from './AdminNavbar';
@@ -8,7 +8,7 @@ import { BrandId } from '../../types';
 export type AdminConsoleMode = 'master' | 'nexalus-innovations' | 'am-distributors';
 
 export interface AdminOutletContext {
-  activeBrandFilter: BrandId | 'all';
+  activeBrandFilter: BrandId | 'corporate' | 'all';
   activeConsole: AdminConsoleMode;
   setActiveConsole: (mode: AdminConsoleMode) => void;
   openChildConsole: (brand: 'nexalus-innovations' | 'am-distributors') => void;
@@ -18,7 +18,7 @@ export interface AdminOutletContext {
 const CONSOLE_STORAGE_KEY = 'nexalus_admin_console_active';
 
 export const AdminLayout: React.FC = () => {
-  const { isAuthenticated, isLoading, brandScope, isSuperAdmin, isInnovationsAdmin, isAmAdmin } = useAuth();
+  const { isAuthenticated, isLoading, brandScope, isSuperAdmin, isInnovationsAdmin, isAmAdmin, isCustomer } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -39,6 +39,18 @@ export const AdminLayout: React.FC = () => {
   };
 
   const [activeConsole, setActiveConsoleState] = useState<AdminConsoleMode>(getInitialConsole);
+  const location = useLocation();
+
+  // Guarantee child admins always stay strictly locked to their company workspace
+  useEffect(() => {
+    if (isInnovationsAdmin && activeConsole !== 'nexalus-innovations') {
+      setActiveConsoleState('nexalus-innovations');
+      sessionStorage.setItem(CONSOLE_STORAGE_KEY, 'nexalus-innovations');
+    } else if (isAmAdmin && activeConsole !== 'am-distributors') {
+      setActiveConsoleState('am-distributors');
+      sessionStorage.setItem(CONSOLE_STORAGE_KEY, 'am-distributors');
+    }
+  }, [isInnovationsAdmin, isAmAdmin, activeConsole]);
 
   // Sync state if searchParams change
   useEffect(() => {
@@ -92,18 +104,18 @@ export const AdminLayout: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || isCustomer) {
     return <Navigate to="/admin/login" replace />;
   }
 
   // Active brand filter for products/services/enquiries
-  let activeBrandFilter: BrandId | 'all' = 'all';
+  let activeBrandFilter: BrandId | 'corporate' | 'all' = 'corporate';
   if (activeConsole === 'nexalus-innovations') {
     activeBrandFilter = 'nexalus-innovations';
   } else if (activeConsole === 'am-distributors') {
     activeBrandFilter = 'am-distributors';
   } else {
-    activeBrandFilter = isSuperAdmin ? 'all' : ((brandScope as BrandId) || 'all');
+    activeBrandFilter = isSuperAdmin ? 'corporate' : ((brandScope as BrandId) || 'corporate');
   }
 
   const outletContext: AdminOutletContext = {
@@ -115,7 +127,7 @@ export const AdminLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="h-screen bg-slate-50 flex overflow-hidden">
       {/* Dynamic Sidebar */}
       <AdminSidebar
         isOpen={isSidebarOpen}
@@ -125,15 +137,34 @@ export const AdminLayout: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <AdminNavbar
           onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
           activeConsole={activeConsole}
           onConsoleChange={setActiveConsole}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          <Outlet context={outletContext} />
+        {/* Prominent Super Admin Child Workspace Banner */}
+        {isSuperAdmin && activeConsole !== 'master' && (
+          <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2 sm:px-6 text-xs font-bold flex items-center justify-between border-b border-amber-600/30 shrink-0 shadow-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
+              <span>
+                Active Workspace: <strong className="font-extrabold uppercase tracking-wide">{activeConsole === 'nexalus-innovations' ? 'Nexalus Innovations' : 'A.M. Distributors Chiplun'}</strong>. All operations and forms are scoped strictly to this entity.
+              </span>
+            </div>
+            <button
+              onClick={returnToMaster}
+              className="px-3 py-1 bg-slate-950 hover:bg-slate-900 text-amber-400 rounded-lg text-xs font-black flex items-center gap-1 transition-all cursor-pointer shadow-xs shrink-0"
+              title="Return to Corporate Master Admin Panel"
+            >
+              <span>← Return to Corporate Master</span>
+            </button>
+          </div>
+        )}
+
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          <Outlet key={location.pathname} context={outletContext} />
         </main>
       </div>
     </div>

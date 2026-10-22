@@ -11,6 +11,7 @@ import {
   uploadImageFile
 } from '../../firebase/services';
 import { Product, ProductCategory, BrandId } from '../../types';
+import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { Input, TextArea, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
@@ -26,12 +27,17 @@ import {
   EyeOff,
   Sparkles,
   Upload,
-  X
+  X,
+  Building,
+  Shield,
+  ArrowRight
 } from 'lucide-react';
 
 export const AdminProductsPage: React.FC = () => {
   const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, brandScope, canManageBrand } = useAuth();
-  const { activeBrandFilter } = useOutletContext<{ activeBrandFilter: BrandId | 'all' }>();
+  const outletCtx = useOutletContext<AdminOutletContext>();
+  const activeConsole = outletCtx?.activeConsole || 'master';
+  const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
   const { success, error } = useToast();
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -71,8 +77,8 @@ export const AdminProductsPage: React.FC = () => {
     setIsLoading(true);
     try {
       const [prods, cats] = await Promise.all([
-        getProducts(activeBrandFilter === 'all' ? undefined : activeBrandFilter),
-        getCategories(activeBrandFilter === 'all' ? undefined : activeBrandFilter)
+        getProducts(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter),
+        getCategories(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter)
       ]);
       setProducts(prods);
       setCategories(cats);
@@ -91,7 +97,11 @@ export const AdminProductsPage: React.FC = () => {
     setSlug('');
     setModelNumber('');
     const defaultBrand: BrandId = isSuperAdmin
-      ? (activeBrandFilter === 'all' ? 'nexalus-innovations' : activeBrandFilter)
+      ? (activeConsole === 'am-distributors'
+          ? 'am-distributors'
+          : activeConsole === 'nexalus-innovations'
+          ? 'nexalus-innovations'
+          : ('nexalus' as any))
       : (brandScope as BrandId);
     setBrandId(defaultBrand);
     const availableCats = categories.filter(c => c.brandId === defaultBrand);
@@ -226,8 +236,20 @@ export const AdminProductsPage: React.FC = () => {
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.modelNumber.toLowerCase().includes(search.toLowerCase());
     const matchesCat = selectedCatFilter === 'all' || p.categoryId === selectedCatFilter;
-    return matchesSearch && matchesCat;
+    const matchesCompany =
+      activeConsole === 'nexalus-innovations' || isInnovationsAdmin
+        ? (p.brandId === 'nexalus-innovations' || p.brandId === 'cp-plus' || p.brandId === 'one-broadband' || p.brandId === 'itti-networking')
+        : activeConsole === 'am-distributors' || isAmAdmin
+        ? (p.brandId === 'am-distributors')
+        : (p.brandId === 'nexalus');
+
+    return matchesSearch && matchesCat && matchesCompany;
   });
+
+  const nexalusCount = products.filter(
+    p => p.brandId === 'nexalus-innovations' || p.brandId === 'cp-plus' || p.brandId === 'one-broadband' || p.brandId === 'itti-networking'
+  ).length;
+  const amCount = products.filter(p => p.brandId === 'am-distributors').length;
 
   return (
     <div className="space-y-6">
@@ -235,10 +257,18 @@ export const AdminProductsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Product Management
+            {activeConsole === 'nexalus-innovations'
+              ? 'Nexalus Innovations Products'
+              : activeConsole === 'am-distributors'
+              ? 'A.M. Distributors Products'
+              : 'Corporate Parent Products Catalog'}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage CCTV cameras, video recorders, and networking equipment with live Firestore synchronization.
+            {activeConsole === 'nexalus-innovations'
+              ? 'Manage CCTV surveillance cameras, optical fiber equipment, and networking hardware.'
+              : activeConsole === 'am-distributors'
+              ? 'Manage packaged mineral water, commercial ice creams, and cold-chain FMCG inventories.'
+              : 'Turnkey enterprise optical fiber backbones, command server fabrics, and corporate IT products.'}
           </p>
         </div>
 
@@ -250,6 +280,32 @@ export const AdminProductsPage: React.FC = () => {
           Add New Product
         </Button>
       </div>
+
+      {/* Corporate Super Admin Workspace Context Link */}
+      {isSuperAdmin && activeConsole === 'master' && (
+        <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-blue-900 font-medium">
+            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+            <span>You are viewing <strong>Corporate Parent</strong> products only. Child company catalogs are strictly separated in their own workspaces.</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => outletCtx?.openChildConsole('nexalus-innovations')}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 transition-all cursor-pointer shadow-2xs"
+            >
+              Nexalus Innovations Workspace →
+            </button>
+            <button
+              type="button"
+              onClick={() => outletCtx?.openChildConsole('am-distributors')}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-teal-100 text-teal-700 font-bold border border-teal-200 transition-all cursor-pointer shadow-2xs"
+            >
+              A.M. Distributors Workspace →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
@@ -405,8 +461,9 @@ export const AdminProductsPage: React.FC = () => {
                   setCategoryId(availableCats[0]?.id || '');
                 }}
                 options={[
-                  { value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' },
-                  { value: 'am-distributors', label: 'A.M. Distributors Chiplun (Cold-Chain & Logistics)' }
+                  ...(activeConsole === 'master' ? [{ value: 'nexalus', label: 'Nexalus Corporate Parent (Turnkey & Enterprise)' }] : []),
+                  ...(activeConsole === 'nexalus-innovations' || activeConsole === 'master' ? [{ value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' }] : []),
+                  ...(activeConsole === 'am-distributors' || activeConsole === 'master' ? [{ value: 'am-distributors', label: 'A.M. Distributors Chiplun (Cold-Chain & Logistics)' }] : [])
                 ]}
               />
             ) : (

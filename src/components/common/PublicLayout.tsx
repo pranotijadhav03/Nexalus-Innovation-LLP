@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { CustomerChoiceModal, CustomerModalView } from './CustomerChoiceModal';
+import { useAuth } from '../../context/AuthContext';
 
 export const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
@@ -18,6 +20,37 @@ export const ScrollToTop: React.FC = () => {
 };
 
 export const PublicLayout: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [modalView, setModalView] = useState<CustomerModalView>('choice');
+
+  // Trigger popup once per session for unauthenticated visitors after short delay
+  useEffect(() => {
+    if (isLoading || isAuthenticated) return;
+
+    try {
+      const dismissed = sessionStorage.getItem('nexalus_customer_choice_dismissed');
+      if (!dismissed) {
+        const timer = setTimeout(() => {
+          setIsCustomerModalOpen(true);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    } catch {}
+  }, [isAuthenticated, isLoading]);
+
+  // Listen for global custom event to open customer portal from any link or button
+  useEffect(() => {
+    const handleOpen = (e: any) => {
+      const targetView = (e.detail?.view as CustomerModalView) || 'choice';
+      setModalView(targetView);
+      setIsCustomerModalOpen(true);
+    };
+
+    window.addEventListener('open_customer_portal', handleOpen);
+    return () => window.removeEventListener('open_customer_portal', handleOpen);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 relative">
       <ScrollToTop />
@@ -46,7 +79,13 @@ export const PublicLayout: React.FC = () => {
       </a>
 
       <Footer />
+
+      {/* Customer Choice / Login / Register Modal */}
+      <CustomerChoiceModal
+        isOpen={isCustomerModalOpen}
+        onClose={() => setIsCustomerModalOpen(false)}
+        initialView={modalView}
+      />
     </div>
   );
 };
-

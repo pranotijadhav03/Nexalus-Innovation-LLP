@@ -1,0 +1,151 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for administrative authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        getUserData().active == true &&
+        getUserData().role in ['super_admin', 'innovations_admin', 'am_admin', 'cp_plus_admin', 'one_broadband_admin', 'networking_admin'];
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        getUserData().active == true &&
+        getUserData().role == 'super_admin';
+    }
+
+    function isInnovationsAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        getUserData().active == true &&
+        getUserData().role in ['super_admin', 'innovations_admin', 'cp_plus_admin', 'one_broadband_admin', 'networking_admin'];
+    }
+
+    // 1. Users Collection (Administrators & Registered Customers)
+    match /users/{userId} {
+      // Users can read their own profile; Super Admins can read all profiles
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
+      // Self-registration for customers (role must be customer); Super Admins can create any role
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == userId && request.resource.data.role == 'customer') ||
+        isSuperAdmin()
+      );
+      // Profile updates: Super Admins can edit anything; Customers can update their profile/address without privilege escalation
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (request.auth.uid == userId &&
+         request.resource.data.role == resource.data.role &&
+         request.resource.data.active == resource.data.active)
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // 2. Audit Logs
+    match /auditLogs/{logId} {
+      // Any authenticated admin can record an audit log; only Admins can read logs
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // 3. Public Website Content (Read by public, written by Admins)
+    match /brands/{brandId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /plans/{planId} {
+      allow read: if true;
+      allow write: if isInnovationsAdmin();
+    }
+
+    match /broadbandProviders/{providerId} {
+      allow read: if true;
+      allow write: if isInnovationsAdmin();
+    }
+
+    match /broadbandPlans/{planId} {
+      allow read: if true;
+      allow write: if isInnovationsAdmin();
+    }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /projects/{projectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /serviceAreas/{areaId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /faqs/{faqId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /team_members/{memberId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /seoSettings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 4. Enquiries (Leads generated from public forms)
+    match /enquiries/{enquiryId} {
+      // Public visitors can submit quotes, contact requests, and plan enquiries
+      allow create: if true;
+      // Authorized administrators can view all enquiries; registered customers can view their own enquiries
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.email == request.auth.token.email);
+      allow update, delete: if isAdmin();
+    }
+
+    // 5. Customer Profiles (Prepared for Phase 2 / 4)
+    match /customers/{customerId} {
+      allow read: if isAuthenticated() && (request.auth.uid == customerId || isAdmin());
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == customerId && request.resource.data.role == 'customer') ||
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == customerId && request.resource.data.role == resource.data.role) ||
+        isAdmin()
+      );
+      allow delete: if isSuperAdmin();
+    }
+  }
+}

@@ -122,7 +122,7 @@ export const AdminSeoPage: React.FC = () => {
             Official Social Media Presence
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Input
               label="LinkedIn URL"
               value={settings.socials?.linkedin || ''}
@@ -141,10 +141,20 @@ export const AdminSeoPage: React.FC = () => {
             />
             <Input
               label="Facebook URL"
+              placeholder="https://facebook.com/..."
               value={settings.socials?.facebook || ''}
               onChange={e => setSettings({
                 ...settings,
                 socials: { ...settings.socials, facebook: e.target.value }
+              })}
+            />
+            <Input
+              label="Instagram URL"
+              placeholder="https://instagram.com/..."
+              value={settings.socials?.instagram || ''}
+              onChange={e => setSettings({
+                ...settings,
+                socials: { ...settings.socials, instagram: e.target.value }
               })}
             />
           </div>

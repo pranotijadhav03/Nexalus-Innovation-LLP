@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Truck,
@@ -18,17 +18,46 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
+import { OurTeamSection } from '../../../components/common/OurTeamSection';
+import { subscribeToBanners, getProducts } from '../../../firebase/services';
+import { SiteBanner, Product } from '../../../types';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
 import { initialProducts } from '../../../data/initialData';
 
 export const AmDistributorsPage: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-
-  // Products belonging to A.M. Distributors Chiplun
-  const divisionProducts = initialProducts.filter(
-    p => p.brandId === 'am-distributors'
+  const [heroBanner, setHeroBanner] = useState<SiteBanner | null>(() => {
+    try {
+      const saved = localStorage.getItem('nexalus_site_banners');
+      if (saved) {
+        const list: SiteBanner[] = JSON.parse(saved);
+        const found = list.find(b => b.id === 'ban-am' || b.brandId === 'am-distributors');
+        if (found) return found;
+      }
+    } catch {}
+    return null;
+  });
+  const [divisionProducts, setDivisionProducts] = useState<Product[]>(
+    initialProducts.filter(p => p.brandId === 'am-distributors')
   );
+
+  useEffect(() => {
+    const unsub = subscribeToBanners((banners) => {
+      const b = banners.find(ban => ban.id === 'ban-am' || ban.brandId === 'am-distributors');
+      if (b) setHeroBanner(b);
+    }, 'am-distributors');
+
+    getProducts('am-distributors', true).then(prods => {
+      if (prods && prods.length > 0) {
+        setDivisionProducts(prods);
+      }
+    }).catch(err => {
+      console.warn('Could not fetch A.M. products from Firestore:', err);
+    });
+
+    return () => unsub();
+  }, []);
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-20">
@@ -56,10 +85,16 @@ export const AmDistributorsPage: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-teal-400 inline-block animate-pulse" />
               <span>Operating Company — Nexalus Innovations LLP</span>
             </div>
+            {heroBanner?.badge && (
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/20 text-teal-200 text-xs font-semibold border border-teal-400/40 backdrop-blur-sm">
+                <Sparkles className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                <span>{heroBanner.badge}</span>
+              </div>
+            )}
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-            A.M. Distributors Chiplun
+            {heroBanner?.title || 'A.M. Distributors Chiplun'}
           </h1>
 
           <p className="text-base sm:text-xl text-teal-200 font-medium">
@@ -235,6 +270,11 @@ export const AmDistributorsPage: React.FC = () => {
           ))}
         </div>
       </section>
+
+      {/* OUR TEAM - A.M. DISTRIBUTORS CHIPLUN */}
+      {heroBanner?.showTeam !== false && (
+        <OurTeamSection division="am-distributors" bgClassName="bg-slate-50/50" />
+      )}
 
       {/* 4. FACILITY & OPERATIONS SPOTLIGHT */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

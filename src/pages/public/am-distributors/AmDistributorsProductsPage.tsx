@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getProducts } from '../../../firebase/services';
+import { Product } from '../../../types';
 import { initialProducts } from '../../../data/initialData';
 import { ProductCard } from '../../../components/brand/ProductCard';
 import { Truck, Droplets, IceCream, Milk, Sparkles } from 'lucide-react';
@@ -6,7 +8,19 @@ import { Truck, Droplets, IceCream, Milk, Sparkles } from 'lucide-react';
 export const AmDistributorsProductsPage: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'water' | 'icecream' | 'dairy'>('all');
 
-  const products = initialProducts.filter(p => p.brandId === 'am-distributors');
+  const [products, setProducts] = useState<Product[]>(
+    initialProducts.filter(p => p.brandId === 'am-distributors')
+  );
+
+  useEffect(() => {
+    getProducts('am-distributors', true).then(prods => {
+      if (prods && prods.length > 0) {
+        setProducts(prods);
+      }
+    }).catch(err => {
+      console.warn('Could not load products from Firestore:', err);
+    });
+  }, []);
 
   const displayedProducts = products.filter(p => {
     if (filter === 'water') return p.categoryId.includes('water');

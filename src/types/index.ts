@@ -1,4 +1,4 @@
-export type BrandId = 'nexalus-innovations' | 'am-distributors' | 'cp-plus' | 'one-broadband' | 'itti-networking';
+export type BrandId = 'nexalus' | 'nexalus-innovations' | 'am-distributors' | 'cp-plus' | 'one-broadband' | 'itti-networking';
 
 export interface Brand {
   id: BrandId;
@@ -66,6 +66,136 @@ export interface InternetPlan {
   published: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+// ----------------------------------------------------
+// MULTI-PROVIDER BROADBAND PLANS (Phase 2 Data Model)
+// ----------------------------------------------------
+export type BroadbandProviderId = 'airtel' | 'bsnl' | 'railwire' | (string & {});
+
+export interface BroadbandProvider {
+  id: string; // Stable provider identifier: 'airtel' | 'bsnl' | 'railwire'
+  name: string; // Display name: 'Airtel', 'BSNL', 'RailWire'
+  slug: string;
+  description?: string;
+  logoUrl?: string;
+  enabled: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BroadbandBillingPeriod =
+  | 'monthly'
+  | 'quarterly'
+  | 'semi-annually'
+  | 'annually'
+  | 'custom';
+
+export type BroadbandPlanAvailability = 'active' | 'inactive' | 'coming_soon';
+
+export interface BroadbandPlan {
+  id: string; // Stable plan identifier e.g. 'airtel-basic-40mbps'
+  providerId: string; // References BroadbandProvider.id ('airtel' | 'bsnl' | 'railwire')
+  name: string; // Plan display name
+  slug: string;
+  speed: string; // e.g. '40 Mbps', '100 Mbps'
+  speedNumeric: number; // Numeric Mbps for sorting/filtering
+  price: number; // Numeric tariff price with explicit currency handling
+  currency: string; // e.g. 'INR'
+  originalPrice?: number; // Numeric original/strikethrough price
+  billingPeriod: BroadbandBillingPeriod; // Validity or billing period
+  validityDays?: number; // Explicit validity in days (e.g. 30, 90, 365)
+  dataAllowance?: string; // e.g. 'Truly Unlimited'
+  description?: string;
+  features: string[]; // Plan features and perks
+  city?: string; // City or regional availability constraint (e.g. 'Chiplun' or 'All')
+  cities?: string[]; // Optional specific list of supported cities
+  availability: BroadbandPlanAvailability;
+  published: boolean; // Published/enabled status
+  displayOrder: number; // For ordering within provider or public listings
+  popular?: boolean;
+  featured?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlanValidationError {
+  field: string;
+  message: string;
+}
+
+export function validateBroadbandPlan(plan: Partial<BroadbandPlan>): {
+  isValid: boolean;
+  errors: PlanValidationError[];
+} {
+  const errors: PlanValidationError[] = [];
+
+  if (!plan.name || plan.name.trim().length === 0) {
+    errors.push({ field: 'name', message: 'Plan name is required.' });
+  }
+
+  if (!plan.providerId || plan.providerId.trim().length === 0) {
+    errors.push({ field: 'providerId', message: 'Provider identifier is required.' });
+  }
+
+  if (!plan.speed || plan.speed.trim().length === 0) {
+    errors.push({ field: 'speed', message: 'Plan speed is required (e.g. 100 Mbps).' });
+  }
+
+  if (typeof plan.price !== 'number' || isNaN(plan.price) || plan.price < 0) {
+    errors.push({ field: 'price', message: 'Price must be a valid non-negative number.' });
+  }
+
+  if (
+    plan.originalPrice !== undefined &&
+    (typeof plan.originalPrice !== 'number' || isNaN(plan.originalPrice) || plan.originalPrice < 0)
+  ) {
+    errors.push({ field: 'originalPrice', message: 'Original price must be a valid non-negative number if provided.' });
+  }
+
+  if (!plan.currency || plan.currency.trim().length === 0) {
+    errors.push({ field: 'currency', message: 'Currency code is required (e.g. INR).' });
+  }
+
+  if (
+    plan.displayOrder !== undefined &&
+    (typeof plan.displayOrder !== 'number' || isNaN(plan.displayOrder))
+  ) {
+    errors.push({ field: 'displayOrder', message: 'Display order must be a valid number.' });
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateBroadbandProvider(provider: Partial<BroadbandProvider>): {
+  isValid: boolean;
+  errors: PlanValidationError[];
+} {
+  const errors: PlanValidationError[] = [];
+
+  if (!provider.id || provider.id.trim().length === 0) {
+    errors.push({ field: 'id', message: 'Provider ID is required.' });
+  }
+
+  if (!provider.name || provider.name.trim().length === 0) {
+    errors.push({ field: 'name', message: 'Provider name is required.' });
+  }
+
+  if (
+    provider.displayOrder !== undefined &&
+    (typeof provider.displayOrder !== 'number' || isNaN(provider.displayOrder))
+  ) {
+    errors.push({ field: 'displayOrder', message: 'Display order must be a valid number.' });
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
 }
 
 export interface Service {
@@ -155,19 +285,41 @@ export type UserRole =
   | 'am_admin'
   | 'cp_plus_admin'
   | 'one_broadband_admin'
-  | 'networking_admin';
+  | 'networking_admin'
+  | 'customer';
+
+export interface CustomerDeliveryAddress {
+  address: string;
+  city: string;
+  state: string;
+  postcode: string;
+  country: string;
+  additionalDeliveryInfo?: string;
+}
+
+export interface CustomerRegistrationData {
+  displayName: string;
+  email: string;
+  phone: string;
+  password: string;
+  deliveryAddress: CustomerDeliveryAddress;
+}
 
 export interface AdminUser {
   uid: string;
   displayName: string;
   email: string;
-  password?: string;
   role: UserRole;
   assignedBrandId?: BrandId | 'all';
+  phone?: string;
+  deliveryAddress?: CustomerDeliveryAddress;
   active: boolean;
   createdAt: string;
   lastLogin?: string;
+  updatedAt?: string;
 }
+
+export type UserProfile = AdminUser;
 
 export interface AuditLog {
   id: string;
@@ -186,8 +338,19 @@ export interface SiteBanner {
   subtitle: string;
   ctaText: string;
   ctaLink: string;
+  secondaryCtaText?: string;
+  secondaryCtaLink?: string;
+  badge?: string;
   active: boolean;
   imageUrl?: string;
+  supportPhone?: string;
+  supportEmail?: string;
+  officeAddress?: string;
+  workingHours?: string;
+  showHero?: boolean;
+  showTeam?: boolean;
+  showFaqs?: boolean;
+  showContact?: boolean;
 }
 
 export interface SeoSettings {
@@ -201,5 +364,25 @@ export interface SeoSettings {
     linkedin?: string;
     twitter?: string;
     facebook?: string;
+    instagram?: string;
   };
+}
+
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+  deptType: 'tech' | 'logistics' | 'leadership' | 'operations';
+  division?: 'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors';
+  image: string;
+  specialty: string;
+  tag: string;
+  circleBorder: string;
+  circleShadow: string;
+  circleHoverShadow: string;
+  badgeBg: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

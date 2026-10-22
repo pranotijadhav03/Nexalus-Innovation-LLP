@@ -14,15 +14,28 @@ import {
   PhoneCall
 } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
+import { OurTeamSection } from '../../../components/common/OurTeamSection';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
-import { getProducts } from '../../../firebase/services';
+import { getProducts, subscribeToBanners } from '../../../firebase/services';
+import { SiteBanner } from '../../../types';
 import { initialProducts } from '../../../data/initialData';
 import { Product } from '../../../types';
 
 export const NexalusInnovationsPage: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
+  const [heroBanner, setHeroBanner] = useState<SiteBanner | null>(() => {
+    try {
+      const saved = localStorage.getItem('nexalus_site_banners');
+      if (saved) {
+        const list: SiteBanner[] = JSON.parse(saved);
+        const found = list.find(b => b.id === 'ban-innovations' || b.brandId === 'nexalus-innovations');
+        if (found) return found;
+      }
+    } catch {}
+    return null;
+  });
 
   // Independent toggle states for the 3 Z-pattern product sections (default open)
   const [showCctvProducts, setShowCctvProducts] = useState(true);
@@ -41,6 +54,15 @@ export const NexalusInnovationsPage: React.FC = () => {
       }
     }
     load();
+
+    const unsubBanners = subscribeToBanners((banners) => {
+      const b = banners.find(ban => ban.id === 'ban-innovations' || ban.brandId === 'nexalus-innovations');
+      if (b) setHeroBanner(b);
+    }, 'nexalus-innovations');
+
+    return () => {
+      unsubBanners();
+    };
   }, []);
 
   const getProduct = (id: string): Product => {
@@ -79,10 +101,16 @@ export const NexalusInnovationsPage: React.FC = () => {
                   <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block animate-pulse" />
                   <span>Division of Nexalus Innovations LLP • Commercial Infrastructure</span>
                 </div>
+                {heroBanner?.badge && (
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 text-xs font-bold shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                    <span>{heroBanner.badge}</span>
+                  </div>
+                )}
               </div>
 
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-                Nexalus Innovations
+                {heroBanner?.title || 'Nexalus Innovations'}
               </h1>
 
               <p className="text-base sm:text-xl text-cyan-300 font-bold">
@@ -721,6 +749,13 @@ export const NexalusInnovationsPage: React.FC = () => {
           </div>
         )}
       </section>
+
+      {/* =========================================================================
+          OUR TEAM - NEXALUS INNOVATIONS TECH DIVISION
+          ========================================================================= */}
+      {heroBanner?.showTeam !== false && (
+        <OurTeamSection division="nexalus-innovations" bgClassName="bg-slate-50/50" />
+      )}
 
       {/* =========================================================================
           SECTION 4: TECHNICAL OPERATIONS & SITE SURVEY DESK (DEEP MIDNIGHT BLUE)

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -11,10 +13,12 @@ import { ServiceArea } from '../../types';
 import { Input, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
-import { Plus, Edit2, Trash2, MapPin, ShieldAlert } from 'lucide-react';
+import { Plus, Edit2, Trash2, MapPin, ShieldAlert, ArrowRight } from 'lucide-react';
 
 export const AdminServiceAreasPage: React.FC = () => {
-  const { isAmAdmin } = useAuth();
+  const { isAmAdmin, isSuperAdmin } = useAuth();
+  const outletCtx = useOutletContext<AdminOutletContext>();
+  const activeConsole = outletCtx?.activeConsole || 'master';
   const { success, error } = useToast();
 
   const [areas, setAreas] = useState<ServiceArea[]>([]);
@@ -49,13 +53,13 @@ export const AdminServiceAreasPage: React.FC = () => {
     loadData();
   }, []);
 
-  if (isAmAdmin) {
+  if (!isSuperAdmin) {
     return (
-      <div className="p-8 bg-white rounded-3xl border border-rose-200 text-center max-w-lg mx-auto space-y-4">
+      <div className="p-8 bg-white rounded-3xl border border-rose-200 text-center max-w-lg mx-auto space-y-4 shadow-sm my-12 animate-in fade-in duration-150">
         <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto" />
         <h2 className="text-lg font-bold text-slate-900">Access Restricted</h2>
         <p className="text-xs text-slate-600">
-          Fiber internet service area management belongs to Nexalus Innovations (CCTV, Internet, Network).
+          Fiber internet service areas belong exclusively to the Corporate Master panel.
         </p>
       </div>
     );

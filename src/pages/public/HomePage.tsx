@@ -19,12 +19,18 @@ import {
   Wrench,
   Store,
   Home,
-  Truck
+  Truck,
+  Zap,
+  Clock,
+  PhoneCall
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
+import { OurTeamSection } from '../../components/common/OurTeamSection';
 import { QuoteModal } from '../../components/common/QuoteModal';
 import { ServiceCard } from '../../components/brand/ServiceCard';
-import { Service } from '../../types';
+import { Service, BroadbandPlan, InternetPlan, SiteBanner } from '../../types';
+import { subscribeToBroadbandPlans, subscribeToInternetPlans, formatBroadbandPrice, subscribeToBanners } from '../../firebase/services';
+import { initialBanners } from '../../data/initialData';
 
 // Simple, clear services for Nexalus Innovations LLP
 const NEXALUS_CORE_SERVICES: Service[] = [
@@ -94,30 +100,73 @@ export const HomePage: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [activePlace, setActivePlace] = useState<'offices' | 'residential' | 'retail' | 'factories'>('offices');
 
+  // Broadband Plans Section State
+  const [homeProviderTab, setHomeProviderTab] = useState<'airtel' | 'bsnl' | 'railwire' | 'one-broadband'>('airtel');
+  const [homeBroadbandPlans, setHomeBroadbandPlans] = useState<BroadbandPlan[]>([]);
+  const [homeOnePlans, setHomeOnePlans] = useState<InternetPlan[]>([]);
+  const [planQuoteItem, setPlanQuoteItem] = useState<{
+    providerName: string;
+    planName: string;
+    speed: string;
+    brandId: 'one-broadband' | 'nexalus-innovations';
+  } | null>(null);
+  const [isPlanQuoteOpen, setIsPlanQuoteOpen] = useState(false);
+
+  const [heroBanner, setHeroBanner] = useState<SiteBanner>(() => {
+    try {
+      const saved = localStorage.getItem('nexalus_site_banners');
+      if (saved) {
+        const list: SiteBanner[] = JSON.parse(saved);
+        const found = list.find(b => b.id === 'ban-parent' || b.brandId === 'nexalus');
+        if (found) return found;
+      }
+    } catch {}
+    return initialBanners.find(b => b.id === 'ban-parent') || initialBanners[0];
+  });
+
+  useEffect(() => {
+    const unsubBB = subscribeToBroadbandPlans((plans) => {
+      setHomeBroadbandPlans(plans);
+    }, { publishedOnly: true });
+
+    const unsubLegacy = subscribeToInternetPlans((plans) => {
+      setHomeOnePlans(plans);
+    }, true);
+
+    const unsubBanners = subscribeToBanners((banners) => {
+      const b = banners.find(x => x.id === 'ban-parent' || x.brandId === 'nexalus');
+      if (b) setHeroBanner(b);
+    }, 'nexalus');
+
+    return () => {
+      unsubBB();
+      unsubLegacy();
+      unsubBanners();
+    };
+  }, []);
+
   // Typewriter effect for Website Name in Hero
   const fullBrandName = 'Nexalus Innovations LLP';
   const [typedTitle, setTypedTitle] = useState('');
-  const [isDeletingTitle, setIsDeletingTitle] = useState(false);
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
 
   useEffect(() => {
     let timer: any;
-    if (!isDeletingTitle && typedTitle.length < fullBrandName.length) {
+    if (typedTitle.length < fullBrandName.length) {
       timer = setTimeout(() => {
-        setTypedTitle(fullBrandName.slice(0, typedTitle.length + 1));
-      }, 95);
-    } else if (!isDeletingTitle && typedTitle.length === fullBrandName.length) {
-      timer = setTimeout(() => {
-        setIsDeletingTitle(true);
-      }, 3500);
-    } else if (isDeletingTitle && typedTitle.length > 0) {
-      timer = setTimeout(() => {
-        setTypedTitle(fullBrandName.slice(0, typedTitle.length - 1));
-      }, 45);
-    } else if (isDeletingTitle && typedTitle.length === 0) {
-      setIsDeletingTitle(false);
+        const nextText = fullBrandName.slice(0, typedTitle.length + 1);
+        setTypedTitle(nextText);
+        if (nextText.length === fullBrandName.length) {
+          setTimeout(() => {
+            setIsTypingComplete(true);
+          }, 150);
+        }
+      }, 85);
+    } else {
+      setIsTypingComplete(true);
     }
     return () => clearTimeout(timer);
-  }, [typedTitle, isDeletingTitle]);
+  }, [typedTitle]);
 
   return (
     <div className="flex flex-col w-full">
@@ -138,43 +187,59 @@ export const HomePage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/98 via-[#0f2444]/90 via-45% md:via-40% to-transparent pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/80 via-transparent to-[#0a1628]/50 pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36 flex items-center min-h-[520px] lg:min-h-[620px]">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32 flex items-center min-h-[520px] lg:min-h-[600px]">
           <div className="max-w-4xl lg:max-w-5xl space-y-5 text-white mr-auto">
-            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white whitespace-nowrap min-h-[1.2em] flex items-center">
-              <span className="inline-flex items-center whitespace-nowrap">
-                <span>{typedTitle}</span>
-                <span className="inline-block w-[3px] sm:w-1 h-[0.8em] bg-cyan-400 ml-1.5 animate-pulse rounded-full shrink-0 align-middle" />
+            {/* Top Badges: Brand Name + Announcement Badge */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/30 border border-blue-400/40 text-blue-200 text-xs sm:text-sm font-bold tracking-wide backdrop-blur-xs">
+                <span>{typedTitle || fullBrandName}</span>
+                {!isTypingComplete && (
+                  <span className="inline-block w-1.5 h-3 bg-cyan-400 animate-pulse rounded-full" />
+                )}
               </span>
+
+              {heroBanner?.badge && (
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 text-xs sm:text-sm font-semibold tracking-wide shadow-sm backdrop-blur-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span>{heroBanner.badge}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Main Headline Title - Configured in Admin Content */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+              {heroBanner?.title || 'Connecting Businesses. Protecting What Matters.'}
             </h1>
 
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-sky-300 tracking-tight leading-snug">
-              Internet, Network &amp; CCTV Services
-            </p>
+            {/* Subtitle, Description & CTAs */}
+            <div className="space-y-5 transition-all duration-300">
+              <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl pt-1">
+                {heroBanner?.subtitle || (
+                  <>Your trusted technology infrastructure partner. Operating under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>, we engineer ultra-fast <strong className="text-white font-bold">gigabit optical fiber</strong> leased lines, managed Layer-2/3 network switching, and certified <strong className="text-white font-bold">video surveillance</strong> systems to empower local businesses.</>
+                )}
+              </p>
 
-            <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-xl pt-1">
-              Your trusted technology infrastructure partner. Operating under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>, we engineer ultra-fast <strong className="text-white font-bold">gigabit optical fiber</strong> leased lines, managed Layer-2/3 network switching, and certified <strong className="text-white font-bold">video surveillance</strong> systems to empower local businesses.
-            </p>
-
-            {/* CTA Action Buttons */}
-            <div className="pt-3 flex flex-wrap items-center gap-4">
-              <Button
-                variant="primary"
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/50 px-6 py-3.5 rounded-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-95"
-                icon={<ArrowRight className="w-4 h-4" />}
-                onClick={() => setIsQuoteModalOpen(true)}
-              >
-                Request a Quotation
-              </Button>
-              <Link to="/products">
+              {/* CTA Action Buttons */}
+              <div className="pt-3 flex flex-wrap items-center gap-4">
                 <Button
-                  variant="outline-white"
+                  variant="primary"
                   size="lg"
-                  className="border-slate-700 hover:bg-white/10 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg backdrop-blur-xs"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/50 px-6 py-3.5 rounded-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                  onClick={() => setIsQuoteModalOpen(true)}
                 >
-                  Explore Solutions
+                  {heroBanner?.ctaText || 'Request a Quotation'}
                 </Button>
-              </Link>
+                <Link to={heroBanner?.secondaryCtaLink || '/products'}>
+                  <Button
+                    variant="outline-white"
+                    size="lg"
+                    className="border-slate-700 hover:bg-white/10 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg backdrop-blur-xs"
+                  >
+                    {heroBanner?.secondaryCtaText || 'Explore Solutions'}
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -321,6 +386,13 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* =========================================================================
+          SECTION: OUR TEAM (SLIDING FOCUS SLIDER)
+          ========================================================================= */}
+      {heroBanner?.showTeam !== false && (
+        <OurTeamSection division="corporate" />
+      )}
 
       {/* =========================================================================
           SECTION 3: INTEGRATED TECHNOLOGY INFRASTRUCTURE (3 PILLARS - RICH CORPORATE BLUE)
@@ -527,129 +599,704 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* =========================================================================
-          SECTION 4: FEATURED EQUIPMENT & HARDWARE SHOWCASE (CLEAN WHITE THEME)
+          SECTION 4: THREE DEDICATED HARDWARE SHOWCASE SUBSECTIONS
+          1. CCTV Surveillance (White Background)
+          2. Fiber Internet & Connectivity (Light Off-White / Blue Background)
+          3. Enterprise IT Networking (White Background)
           ========================================================================= */}
+
+      {/* 4.1: CCTV Surveillance */}
       <section className="w-full bg-white text-slate-900 py-16 sm:py-20 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-200 pb-5">
-            <div className="space-y-2 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-wider border border-blue-200">
-                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                <span>Certified Commercial Equipment</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
+          <div className="space-y-2 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold tracking-wider border border-blue-200/60">
+              <Shield className="w-3.5 h-3.5 text-blue-600" />
+              <span>CCTV Surveillance</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
+              Security &amp; Surveillance
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Explore CCTV cameras and surveillance equipment for commercial, industrial, and institutional environments.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {/* CCTV Card 1 */}
+            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                  <img
+                    src="/images/products/cp-bullet.jpg"
+                    alt="CP-UNC-TA41ZL4-MDS 4MP Smart IR Network Bullet Camera"
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 space-y-2.5">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    CP-PLUS • Model CP-UNC-TA41ZL4-MDS
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    CP-UNC-TA41ZL4-MDS 4MP Smart IR Network Bullet Camera
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    High-performance 4 Megapixel outdoor network bullet camera featuring motorized varifocal lens, Starlight low-light sensitivity, and perimeter intrusion detection.
+                  </p>
+                </div>
               </div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-                Featured Commercial Hardware
+              <div className="p-5 sm:p-6 pt-0">
+                <div className="pt-4 border-t border-slate-100">
+                  <Link to="/products?brand=cp-plus" className="block w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                      View Product
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* CCTV Card 2 */}
+            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                  <img
+                    src="/images/products/cp-dome.jpg"
+                    alt="CP-UNC-DA41L3 4MP Full-Color Starlight Fixed Dome Camera"
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 space-y-2.5">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    CP-PLUS • Model CP-UNC-DA41L3
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    CP-UNC-DA41L3 4MP Full-Color Starlight Fixed Dome Camera
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    24/7 Full-Color dome surveillance camera with warm white LED supplemental lighting, built-in microphone for synchronized audio, and vandal-proof dome casing.
+                  </p>
+                </div>
+              </div>
+              <div className="p-5 sm:p-6 pt-0">
+                <div className="pt-4 border-t border-slate-100">
+                  <Link to="/products?brand=cp-plus" className="block w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                      View Product
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* CCTV Card 3 */}
+            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                  <img
+                    src="/images/products/cp-nvr.jpg"
+                    alt="CP-UNR-416T2-V2 16-Channel 4K Network Video Recorder (NVR)"
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 space-y-2.5">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    CP-PLUS • Model CP-UNR-416T2-V2
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    CP-UNR-416T2-V2 16-Channel 4K Network Video Recorder (NVR)
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    Ultra HD 16-channel standalone network video recorder with 4K HDMI output, dual SATA interfaces up to 20TB storage, and remote cloud surveillance app.
+                  </p>
+                </div>
+              </div>
+              <div className="p-5 sm:p-6 pt-0">
+                <div className="pt-4 border-t border-slate-100">
+                  <Link to="/products?brand=cp-plus" className="block w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                      View Product
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center pt-2 sm:pt-4">
+            <Link to="/products?brand=cp-plus">
+              <Button
+                variant="outline"
+                size="md"
+                className="font-bold border-blue-600 text-blue-600 hover:bg-blue-50"
+                icon={<ArrowRight className="w-4 h-4" />}
+              >
+                View All CCTV Products
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 4.2: Fiber Internet & Connectivity */}
+      <section className="w-full bg-slate-50/80 text-slate-900 py-16 sm:py-20 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
+          <div className="space-y-2 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-semibold tracking-wider border border-teal-200/60">
+              <Wifi className="w-3.5 h-3.5 text-teal-600" />
+              <span>Fiber Internet</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
+              Fiber Internet &amp; Connectivity
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Explore fiber connectivity equipment, ONT devices, Wi-Fi solutions, and related networking products.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {/* Fiber Card 1 */}
+            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                  <img
+                    src="/images/products/wifi6-router.jpg"
+                    alt="NexFiber Wi-Fi 6 AX3000 Dual-Band Gigabit ONT Router"
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 space-y-2.5">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    ONE BROADBAND • Model OB-AX3000-ONT
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    NexFiber Wi-Fi 6 AX3000 Dual-Band Gigabit ONT Router
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    High-speed GPON Optical Network Terminal with built-in Wi-Fi 6, 4 Gigabit Ethernet LAN ports, VoIP FXS port, and OFDMA low-latency technology.
+                  </p>
+                </div>
+              </div>
+              <div className="p-5 sm:p-6 pt-0">
+                <div className="pt-4 border-t border-slate-100">
+                  <Link to="/products?brand=one-broadband" className="block w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                      View Product
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Fiber Card 2 */}
+            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                  <img
+                    src="/images/products/mesh-wifi-v2.jpg"
+                    alt="NexMesh AX3000 Whole-Home Tri-Band Wi-Fi 6 Mesh System (3-Pack)"
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 space-y-2.5">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    ONE BROADBAND • Model OB-MESH-AX3000-3PK
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    NexMesh AX3000 Whole-Home Tri-Band Wi-Fi 6 Mesh System (3-Pack)
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    Whole-home dead-zone killer mesh Wi-Fi system covering up to 6,000 sq.ft. with seamless single-SSID roaming, gigabit Ethernet backhaul, and zero buffering.
+                  </p>
+                </div>
+              </div>
+              <div className="p-5 sm:p-6 pt-0">
+                <div className="pt-4 border-t border-slate-100">
+                  <Link to="/products?brand=one-broadband" className="block w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                      View Product
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Fiber Card 3 */}
+            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                  <img
+                    src="/images/products/fiber-modem.jpg"
+                    alt="NexFiber Gigabit XPON / GPON Optical Fiber Bridge Modem (ONU)"
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 space-y-2.5">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    ONE BROADBAND • Model OB-ONU-1000G
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    NexFiber Gigabit XPON / GPON Optical Fiber Bridge Modem (ONU)
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    Ultra-compact high-speed Gigabit XPON/GPON optical network terminal (ONU) with 1 SC/UPC optical port, 1 Gigabit RJ45 LAN port, and lightning surge protection.
+                  </p>
+                </div>
+              </div>
+              <div className="p-5 sm:p-6 pt-0">
+                <div className="pt-4 border-t border-slate-100">
+                  <Link to="/products?brand=one-broadband" className="block w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                      View Product
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center pt-2 sm:pt-4">
+            <Link to="/products?brand=one-broadband">
+              <Button
+                variant="outline"
+                size="md"
+                className="font-bold border-teal-600 text-teal-700 hover:bg-teal-50"
+                icon={<ArrowRight className="w-4 h-4" />}
+              >
+                View All Internet Products
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 4.3: Enterprise IT Networking */}
+      <section className="w-full bg-white text-slate-900 py-16 sm:py-20 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
+          <div className="space-y-2 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold tracking-wider border border-indigo-200/60">
+              <Server className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Enterprise IT Networking</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
+              Enterprise Networking Equipment
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Explore networking hardware for business connectivity, structured infrastructure, and enterprise network deployments.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {/* Networking Card 1 */}
+            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                  <img
+                    src="/images/products/poe-switch.jpg"
+                    alt="Sophos XGS 2100 Next-Gen Hardware Firewall & UTM Security Gateway"
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 space-y-2.5">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    ITTI • Model ITTI-XGS-2100
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    Sophos XGS 2100 Next-Gen Hardware Firewall &amp; UTM Security Gateway
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    Enterprise rackmount Next-Gen Firewall powered by Xstream dual-processor architecture with deep packet inspection, TLS 1.3 decryption, and advanced SD-WAN.
+                  </p>
+                </div>
+              </div>
+              <div className="p-5 sm:p-6 pt-0">
+                <div className="pt-4 border-t border-slate-100">
+                  <Link to="/products?brand=itti-networking" className="block w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                      View Product
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Networking Card 2 */}
+            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                  <img
+                    src="/images/products/poe-switch.jpg"
+                    alt="ITTI 48-Port Gigabit Layer-3 Managed Core Switch with 4x 10G SFP+ Uplinks"
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 space-y-2.5">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    ITTI • Model ITTI-SW-L3-48G
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    ITTI 48-Port Gigabit Layer-3 Managed Core Switch with 4x 10G SFP+ Uplinks
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    High-density enterprise Layer-3 core switch delivering 176 Gbps switching fabric, OSPF/BGP dynamic routing, static routing, and quad 10-Gigabit optical uplink ports.
+                  </p>
+                </div>
+              </div>
+              <div className="p-5 sm:p-6 pt-0">
+                <div className="pt-4 border-t border-slate-100">
+                  <Link to="/products?brand=itti-networking" className="block w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                      View Product
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Networking Card 3 */}
+            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                  <img
+                    src="/images/products/server-rack.jpg"
+                    alt="ITTI 24U Floor Standing Enterprise Server Rack Cabinet (600x800mm)"
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-5 sm:p-6 space-y-2.5">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                    ITTI • Model ITTI-RC-24U-800
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    ITTI 24U Floor Standing Enterprise Server Rack Cabinet (600x800mm)
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                    Heavy duty 24U network and server cabinet with perforated front and rear mesh doors for optimal thermal airflow, 4-way cooling fan unit, and 800 kg static load capacity.
+                  </p>
+                </div>
+              </div>
+              <div className="p-5 sm:p-6 pt-0">
+                <div className="pt-4 border-t border-slate-100">
+                  <Link to="/products?brand=itti-networking" className="block w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                      View Product
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center pt-2 sm:pt-4">
+            <Link to="/products?brand=itti-networking">
+              <Button
+                variant="outline"
+                size="md"
+                className="font-bold border-indigo-600 text-indigo-600 hover:bg-indigo-50"
+                icon={<ArrowRight className="w-4 h-4" />}
+              >
+                View All Networking Products
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+{/* =========================================================================
+          SECTION: BROADBAND PLANS & PRICING SHOWCASE (MULTI-PROVIDER)
+          ========================================================================= */}
+      <section className="w-full bg-slate-900 text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
+        {/* Subtle Background Glow */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-12 relative z-10">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-cyan-300 text-xs font-black uppercase tracking-wider border border-blue-400/30">
+                <Wifi className="w-3.5 h-3.5 text-cyan-400" />
+                <span>HIGH-SPEED BROADBAND INFRASTRUCTURE</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+                High-Speed Broadband Plans &amp; Tariffs
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Genuine OEM certified security cameras, optical fiber terminals, and managed switches with on-site deployment warranty by Nexalus Innovations.
+              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+                Connect your business or home with symmetrical optical fiber internet powered by leading tier-1 providers with local installation and maintenance by Nexalus.
               </p>
             </div>
-            <Link to="/products" className="shrink-0">
-              <Button variant="primary" size="sm" className="font-bold shadow-md shadow-blue-500/20" icon={<ArrowRight className="w-4 h-4" />}>
-                Browse All Hardware
+
+            <Link to="/plans">
+              <Button
+                variant="outline"
+                size="md"
+                className="font-bold border-cyan-400 text-cyan-300 hover:bg-cyan-500/10 whitespace-nowrap cursor-pointer"
+                icon={<ArrowRight className="w-4 h-4" />}
+              >
+                View Full Plans &amp; Comparison
               </Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Featured Hardware 1: CCTV */}
-            <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-300 transition-all group flex flex-col justify-between">
-              <div>
-                <div className="relative h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center">
-                  <img
-                    src="/images/products/cp-bullet.jpg"
-                    alt="4K Ultra-HD IR Bullet Camera"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider bg-blue-600 text-white px-2.5 py-1 rounded-md shadow-xs">
-                    CCTV Surveillance
-                  </span>
-                </div>
-                <div className="p-5 space-y-2">
-                  <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">CP-PLUS • Model CP-UNR-4K</span>
-                  <h4 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                    4K Ultra-HD IR Bullet Camera
-                  </h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    IP67 weatherproof metal casing, 50-meter infrared night vision, and human motion tracking.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 pt-0">
-                <Link to="/products?brand=cp-plus">
-                  <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
-                    View Product
-                  </Button>
-                </Link>
-              </div>
-            </div>
+          {/* Provider Selector Tabs */}
+          <div className="inline-flex flex-wrap p-1.5 bg-slate-800/90 rounded-2xl border border-slate-700/80 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setHomeProviderTab('airtel')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                homeProviderTab === 'airtel'
+                  ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              <span>Airtel Xstream Fiber</span>
+            </button>
 
-            {/* Featured Hardware 2: Fiber */}
-            <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-teal-300 transition-all group flex flex-col justify-between">
-              <div>
-                <div className="relative h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center">
-                  <img
-                    src="/images/products/wifi6-router.jpg"
-                    alt="Gigabit Wi-Fi 6 Dual-Band Router"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider bg-teal-600 text-white px-2.5 py-1 rounded-md shadow-xs">
-                    Fiber Broadband
-                  </span>
-                </div>
-                <div className="p-5 space-y-2">
-                  <span className="text-[11px] font-bold text-teal-600 uppercase tracking-wider">ONE BROADBAND • Model ONE-G600AX</span>
-                  <h4 className="text-base font-bold text-slate-900 group-hover:text-teal-600 transition-colors">
-                    Gigabit Wi-Fi 6 Dual-Band Router
-                  </h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Up to 3 Gbps combined wireless speed, 4 high-gain antennas, and ultra-low latency for HD calls.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 pt-0">
-                <Link to="/products?brand=one-broadband">
-                  <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-teal-600 group-hover:text-teal-600">
-                    View Product
-                  </Button>
-                </Link>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setHomeProviderTab('bsnl')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                homeProviderTab === 'bsnl'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              <span>BSNL Bharat Fiber</span>
+            </button>
 
-            {/* Featured Hardware 3: Networking */}
-            <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all group flex flex-col justify-between">
-              <div>
-                <div className="relative h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center">
-                  <img
-                    src="/images/products/poe-switch.jpg"
-                    alt="24-Port Gigabit Managed PoE+ Switch"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <span className="absolute top-3 left-3 text-[10px] font-black uppercase tracking-wider bg-indigo-600 text-white px-2.5 py-1 rounded-md shadow-xs">
-                    IT Networking
-                  </span>
+            <button
+              type="button"
+              onClick={() => setHomeProviderTab('railwire')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                homeProviderTab === 'railwire'
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              <span>RailWire Broadband</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setHomeProviderTab('one-broadband')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                homeProviderTab === 'one-broadband'
+                  ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              <span>One Broadband (FTTH)</span>
+            </button>
+          </div>
+
+          {/* Plans Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {homeProviderTab === 'one-broadband' ? (
+              // Legacy One Broadband Plans Preview
+              homeOnePlans.slice(0, 3).map((plan) => (
+                <div
+                  key={plan.id}
+                  className="rounded-3xl bg-slate-800/80 border border-slate-700/80 hover:border-teal-500/60 transition-all duration-300 p-6 sm:p-8 flex flex-col justify-between shadow-xl group relative"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                        {plan.speed}
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        One Broadband
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xl font-bold text-white group-hover:text-teal-300 transition-colors">
+                        {plan.name}
+                      </h3>
+                      <div className="mt-3 flex items-baseline gap-1.5">
+                        <span className="text-3xl sm:text-4xl font-black text-white">
+                          ₹{plan.price}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-400">
+                          /{plan.billingPeriod || 'month'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-700/60 space-y-2.5">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        Included Features
+                      </div>
+                      <ul className="space-y-2 text-xs text-slate-300">
+                        <li className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-teal-400 shrink-0" />
+                          <span>{plan.dataAllowance || 'Truly Unlimited Data'}</span>
+                        </li>
+                        {plan.includedFeatures?.slice(0, 3).map((feat, idx) => (
+                          <li key={idx} className="flex items-center gap-2">
+                            <Check className="w-4 h-4 text-teal-400 shrink-0" />
+                            <span>{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 mt-6 border-t border-slate-700/60">
+                    <Button
+                      variant="primary"
+                      className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold cursor-pointer"
+                      onClick={() => {
+                        setPlanQuoteItem({
+                          providerName: 'One Broadband',
+                          planName: plan.name,
+                          speed: plan.speed,
+                          brandId: 'one-broadband'
+                        });
+                        setIsPlanQuoteOpen(true);
+                      }}
+                    >
+                      Enquire Connection
+                    </Button>
+                  </div>
                 </div>
-                <div className="p-5 space-y-2">
-                  <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">ITTI • Model ITTI-GS24-POE</span>
-                  <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                    24-Port Gigabit Managed PoE+ Switch
-                  </h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    370W total PoE power budget, 4 SFP fiber uplink ports, VLAN segmentation, and QoS traffic priority.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 pt-0">
-                <Link to="/products?brand=itti-networking">
-                  <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-indigo-600 group-hover:text-indigo-600">
-                    View Product
-                  </Button>
-                </Link>
-              </div>
-            </div>
+              ))
+            ) : (
+              // Multi-Provider (Airtel, BSNL, RailWire) Plans Preview
+              (() => {
+                const currentPlans = homeBroadbandPlans
+                  .filter(p => p.providerId === homeProviderTab)
+                  .slice(0, 3);
+
+                if (currentPlans.length === 0) {
+                  return (
+                    <div className="col-span-full py-12 px-6 rounded-3xl bg-slate-800/40 border border-slate-700/60 text-center space-y-3">
+                      <Wifi className="w-10 h-10 text-slate-500 mx-auto" />
+                      <div className="text-base font-bold text-white">
+                        {homeProviderTab.toUpperCase()} Broadband Plans
+                      </div>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">
+                        High-speed fiber connectivity for {homeProviderTab.toUpperCase()} is available across service areas. Request a quote or coverage check to view custom speed tariffs.
+                      </p>
+                      <div className="pt-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setPlanQuoteItem({
+                              providerName: homeProviderTab.toUpperCase(),
+                              planName: 'Fiber Connection Enquiry',
+                              speed: 'High-Speed Fiber',
+                              brandId: 'nexalus-innovations'
+                            });
+                            setIsPlanQuoteOpen(true);
+                          }}
+                        >
+                          Enquire for {homeProviderTab.toUpperCase()} Availability
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return currentPlans.map((plan) => {
+                  const providerTheme = {
+                    airtel: { border: 'hover:border-rose-500/60', badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-500/30', btn: 'bg-rose-600 hover:bg-rose-500' },
+                    bsnl: { border: 'hover:border-blue-500/60', badgeBg: 'bg-blue-500/20 text-blue-300 border-blue-500/30', btn: 'bg-blue-600 hover:bg-blue-500' },
+                    railwire: { border: 'hover:border-amber-500/60', badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/30', btn: 'bg-amber-600 hover:bg-amber-500' }
+                  }[homeProviderTab] || { border: 'hover:border-blue-500/60', badgeBg: 'bg-blue-500/20 text-blue-300 border-blue-500/30', btn: 'bg-blue-600 hover:bg-blue-500' };
+
+                  return (
+                    <div
+                      key={plan.id}
+                      className={`rounded-3xl bg-slate-800/80 border border-slate-700/80 ${providerTheme.border} transition-all duration-300 p-6 sm:p-8 flex flex-col justify-between shadow-xl group relative`}
+                    >
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${providerTheme.badgeBg} border`}>
+                            {plan.speed}
+                          </span>
+                          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            {plan.providerId.toUpperCase()} FIBER
+                          </span>
+                        </div>
+
+                        <div>
+                          <h3 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">
+                            {plan.name}
+                          </h3>
+                          <div className="mt-3 flex items-baseline gap-2">
+                            <span className="text-3xl sm:text-4xl font-black text-white">
+                              {formatBroadbandPrice(plan.price, plan.currency)}
+                            </span>
+                            {plan.originalPrice && (
+                              <span className="text-sm text-slate-500 line-through">
+                                {formatBroadbandPrice(plan.originalPrice, plan.currency)}
+                              </span>
+                            )}
+                            <span className="text-xs font-semibold text-slate-400">
+                              /{plan.billingPeriod || 'month'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-slate-700/60 space-y-2.5">
+                          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                            Plan Highlights
+                          </div>
+                          <ul className="space-y-2 text-xs text-slate-300">
+                            <li className="flex items-center gap-2">
+                              <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                              <span>{plan.dataAllowance || 'Truly Unlimited Data'}</span>
+                            </li>
+                            {plan.features?.slice(0, 3).map((feat, idx) => (
+                              <li key={idx} className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                                <span>{feat}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="pt-6 mt-6 border-t border-slate-700/60">
+                        <Button
+                          variant="primary"
+                          className={`w-full text-white font-bold cursor-pointer ${providerTheme.btn}`}
+                          onClick={() => {
+                            setPlanQuoteItem({
+                              providerName: plan.providerId.toUpperCase(),
+                              planName: plan.name,
+                              speed: plan.speed,
+                              brandId: 'nexalus-innovations'
+                            });
+                            setIsPlanQuoteOpen(true);
+                          }}
+                        >
+                          Enquire Connection
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                });
+              })()
+            )}
           </div>
         </div>
       </section>
+
+
 
       {/* =========================================================================
           SLIDE 6: WHERE OUR SERVICES ARE USED (CLEAN WHITE THEME)
@@ -1167,6 +1814,21 @@ export const HomePage: React.FC = () => {
         onClose={() => setIsQuoteModalOpen(false)}
         brandId="general"
       />
+
+      {/* Plan-Specific Quote Modal */}
+      {planQuoteItem && (
+        <QuoteModal
+          isOpen={isPlanQuoteOpen}
+          onClose={() => {
+            setIsPlanQuoteOpen(false);
+            setPlanQuoteItem(null);
+          }}
+          brandId={planQuoteItem.brandId}
+          itemName={`${planQuoteItem.providerName}: ${planQuoteItem.planName} (${planQuoteItem.speed})`}
+          itemType="plan"
+          sourcePage="/"
+        />
+      )}
     </div>
   );
 };

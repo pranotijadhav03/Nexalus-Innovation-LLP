@@ -9,7 +9,8 @@ import {
   CheckCircle2,
   Droplets,
   IceCream,
-  Milk
+  Milk,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
 import { submitEnquiry } from '../../../firebase/services';
@@ -253,6 +254,45 @@ export const AmDistributorsContactPage: React.FC = () => {
                 </form>
               )}
             </div>
+          </div>
+        </div>
+      </section>
+      {/* Interactive Google Map Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl bg-white border border-slate-200 overflow-hidden shadow-sm">
+          <div className="p-6 sm:p-8 bg-slate-900 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 text-xs font-bold text-teal-400 uppercase tracking-widest">
+                <MapPin className="w-4 h-4 text-teal-400" />
+                <span>Depot &amp; Distribution Operations Map</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white">
+                Find Us on Google Maps
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
+                Shop No.5, Sankalp Enclave Chowk, 100 Feet Rd, near Dhamani Road, Vishrambag, Sangli-Miraj-Kupwad, Maharashtra 416415
+              </p>
+            </div>
+            <a
+              href="https://maps.app.goo.gl/Tat1sb8HKBcjtEMC8?g_st=awb"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-lg shadow-teal-600/30 shrink-0 cursor-pointer"
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Open in Google Maps</span>
+              <ExternalLink className="w-3.5 h-3.5 ml-0.5" />
+            </a>
+          </div>
+          <div className="w-full h-80 sm:h-96 bg-slate-100 relative">
+            <iframe
+              title="A.M. Distributors Operations Map"
+              src="https://maps.google.com/maps?q=Shop+No.5,+NEXALUS+INNOVATIONS,+Sankalp+Enclave,+Chowk,+100+Feet+Rd,+near+Dhamani+Road,+opposite+of+Kokitkar+Garden,+Vishrambag,+Sangli+Miraj+Kupwad,+Maharashtra+416415&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed"
+              className="w-full h-full border-0"
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </div>
         </div>
       </section>

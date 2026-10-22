@@ -3,6 +3,14 @@
 @layer base {
   :root {
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    
+    /* Admin Design Tokens */
+    --color-admin-bg: #F7F9FC;
+    --color-admin-border: #D5DBE5;
+    --color-admin-primary: #1D4ED8;
+    --color-admin-primary-hover: #1E40AF;
+    --color-admin-primary-active: #1E3A8A;
+    --radius-admin-button: 10px;
   }
   
   html {
@@ -190,4 +198,100 @@
   transform: scale(1.08);
 }
 
+@keyframes adminFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
+.animate-admin-fade-in {
+  animation: adminFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-admin-fade-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+
+
+
+/* Infinite Auto-scrolling Horizontal Team Marquee */
+@keyframes teamScrollLeft {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-team-scroll {
+  display: flex;
+  width: max-content;
+  animation: teamScrollLeft 35s linear infinite;
+  will-change: transform;
+}
+
+.animate-team-scroll:hover,
+.animate-team-scroll:active {
+  animation-play-state: paused;
+}
+
+/* Card Zoom In & Out Hover Effects */
+.card-zoom-hover {
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.card-zoom-hover:hover {
+  transform: translateY(-8px) scale(1.025);
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.2), 0 0 25px 0 rgba(37, 99, 235, 0.15);
+}
+
+.img-zoom-hover {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.card-zoom-hover:hover .img-zoom-hover {
+  transform: scale(1.12);
+}
+
+/* Card Colored Glow Hover Shadows */
+.card-hover-glow-blue {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover-glow-blue:hover {
+  transform: translateY(-8px) scale(1.025);
+  border-color: rgba(59, 130, 246, 0.8) !important;
+  box-shadow: 0 24px 48px -12px rgba(37, 99, 235, 0.35), 0 0 30px 0 rgba(59, 130, 246, 0.2);
+}
+
+.card-hover-glow-teal {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover-glow-teal:hover {
+  transform: translateY(-8px) scale(1.025);
+  border-color: rgba(45, 212, 191, 0.8) !important;
+  box-shadow: 0 24px 48px -12px rgba(20, 184, 166, 0.45), 0 0 25px 0 rgba(20, 184, 166, 0.25);
+}
+
+.card-hover-elevate {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+.card-hover-elevate:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.15), 0 0 20px 0 rgba(37, 99, 235, 0.12);
+}

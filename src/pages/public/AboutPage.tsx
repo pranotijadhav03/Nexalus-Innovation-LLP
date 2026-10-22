@@ -6,7 +6,6 @@ import {
   Shield,
   Wifi,
   Server,
-  ArrowRight,
   CheckCircle2,
   Target,
   Compass,
@@ -14,7 +13,8 @@ import {
   Sparkles,
   Layers,
   Wrench,
-  Check
+  Check,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 
@@ -237,43 +237,6 @@ export const AboutPage: React.FC = () => {
               <p className="text-xs text-slate-500 leading-relaxed">
                 99.9% uptime leased lines, proactive quarterly CCTV maintenance audits, and dedicated enterprise account engineers.
               </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          SLIDE 6: CTA BANNER (ROYAL NAVY GRADIENT THEME)
-          ========================================================================= */}
-      <section className="w-full py-14 sm:py-20 bg-gradient-to-b from-slate-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-indigo-950 text-white p-8 sm:p-14 shadow-2xl overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 border border-blue-900/50">
-            <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] opacity-15 [background-size:20px_20px] pointer-events-none" />
-
-            <div className="relative space-y-3 text-center md:text-left max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-900/60 text-sky-400 text-xs font-bold border border-blue-700/50 backdrop-blur-xs">
-                <span className="w-2 h-2 rounded-full bg-sky-400 inline-block animate-pulse" />
-                <span>Free Engineering Consultation</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-                Ready to Partner with Nexalus Innovations LLP?
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Contact our engineering desk today for an onsite survey, customized optical network proposal, or CCTV quotation.
-              </p>
-            </div>
-
-            <div className="relative flex flex-col sm:flex-row items-center gap-3 shrink-0">
-              <Link to="/contact">
-                <Button
-                  variant="white"
-                  size="lg"
-                  className="px-8 py-4 font-black shadow-xl shadow-blue-950/40 hover:scale-[1.03] active:scale-95 transition-all text-slate-950 bg-white hover:bg-sky-50"
-                  icon={<ArrowRight className="w-4 h-4" />}
-                >
-                  Contact Sales Desk
-                </Button>
-              </Link>
             </div>
           </div>
         </div>

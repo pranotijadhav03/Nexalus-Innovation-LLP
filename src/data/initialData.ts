@@ -3,6 +3,8 @@ import {
   ProductCategory,
   Product,
   InternetPlan,
+  BroadbandProvider,
+  BroadbandPlan,
   Service,
   Project,
   Enquiry,
@@ -10,7 +12,8 @@ import {
   FAQ,
   AdminUser,
   SiteBanner,
-  SeoSettings
+  SeoSettings,
+  TeamMember
 } from '../types';
 
 export const initialBrands: Brand[] = [
@@ -19,7 +22,7 @@ export const initialBrands: Brand[] = [
     name: 'Nexalus Innovations',
     tagline: 'Turnkey CCTV Surveillance, High-Speed Optical Fiber Internet & Enterprise Networking',
     shortDescription: 'Premier technology and enterprise infrastructure provider under Nexalus Innovations LLP, delivering certified CCTV security systems, high-speed optical fiber internet, and enterprise networking hardware.',
-    fullDescription: 'Nexalus Innovations operates as a premier multi-sector technology and enterprise infrastructure provider under Nexalus Innovations LLP. Our technical portfolio encompasses high-performance commercial CCTV surveillance systems, high-speed Gigabit optical fiber broadband, and enterprise IT networking infrastructure.',
+    fullDescription: 'Nexalus Innovations operates as a premier multi-sector technology and enterprise infrastructure provider under Nexalus Innovations LLP. Our technical portfolio encompasses high-performance AI CCTV surveillance systems, high-speed Gigabit optical fiber broadband, and enterprise IT networking infrastructure.',
     slug: 'nexalus-innovations',
     primaryColor: '#0284c7', // Sky / Navy
     accentColor: '#0369a1',
@@ -28,7 +31,7 @@ export const initialBrands: Brand[] = [
     websitePath: '/brands/nexalus-innovations',
     published: true,
     features: [
-      '4K Commercial CCTV Surveillance Systems & NVR Storage',
+      '4K AI CCTV Surveillance Systems & NVR Storage',
       'High-Speed Gigabit Optical Fiber Internet (FTTH)',
       'Enterprise Managed Switches & UTM Firewalls',
       'Server Racks & Structured Cat6/Fiber Cabling',
@@ -61,8 +64,12 @@ export const initialBrands: Brand[] = [
 ];
 
 export const initialCategories: ProductCategory[] = [
+  // Nexalus Innovations LLP Corporate Parent Categories
+  { id: 'cat-corp-infra', brandId: 'nexalus', name: 'Turnkey IT & Security Infrastructure', slug: 'turnkey-it-security-infra', description: 'Enterprise turnkey fiber backbone, multi-WAN switching, and centralized facility surveillance architecture.' },
+  { id: 'cat-corp-enterprise', brandId: 'nexalus', name: 'Corporate Networking & Security Solutions', slug: 'corporate-networking-security', description: 'Enterprise-grade structured cabling systems, core server switching, and high-availability solutions.' },
+
   // Nexalus Innovations Categories (CCTV, Internet, Networking, Cabling)
-  { id: 'cat-nex-cctv', brandId: 'nexalus-innovations', name: 'CCTV & Video Surveillance Systems', slug: 'cctv-surveillance', description: 'Commercial 4K CCTV surveillance cameras, NVR servers, and video monitoring hardware.' },
+  { id: 'cat-nex-cctv', brandId: 'nexalus-innovations', name: 'AI CCTV & Surveillance Systems', slug: 'cctv-surveillance', description: 'Commercial 4K CCTV surveillance cameras, NVR servers, and video monitoring hardware.' },
   { id: 'cat-nex-internet', brandId: 'nexalus-innovations', name: 'High-Speed Fiber Internet & Routers', slug: 'fiber-internet', description: 'Gigabit fiber optical terminal routers, mesh Wi-Fi, and broadband equipment.' },
   { id: 'cat-nex-networking', brandId: 'nexalus-innovations', name: 'Enterprise Networking & Switches', slug: 'networking-switches', description: 'Layer-2/Layer-3 managed PoE+ switches, firewalls, and server racks.' },
   { id: 'cat-nex-electronics', brandId: 'nexalus-innovations', name: 'Structured Cabling & Hardware', slug: 'cabling-hardware', description: 'Pure copper Cat6A drums, patch panels, connectors, and precision tools.' },
@@ -74,23 +81,97 @@ export const initialCategories: ProductCategory[] = [
 ];
 
 export const initialProducts: Product[] = [
+  // Nexalus Innovations LLP Corporate Parent Products
+  {
+    id: 'prod-corp-1',
+    brandId: 'nexalus',
+    name: 'Turnkey Optical Fiber Backbone & Campus Network Architecture',
+    slug: 'turnkey-optical-fiber-backbone-campus',
+    modelNumber: 'NEX-CORP-FTTH-BB',
+    categoryId: 'cat-corp-infra',
+    categoryName: 'Turnkey IT & Security Infrastructure',
+    description: 'Enterprise turnkey fiber optical backbone installation with 10G optical uplinks, fusion splicing, and centralized patch room distribution.',
+    specifications: {
+      'Category': 'Turnkey IT & Security Infrastructure',
+      'Optical Core': '12/24-Core Single Mode Outdoor Armored Fiber',
+      'Bandwidth': 'Up to 10 Gbps SFP+ Non-Blocking Backplane',
+      'Deployment': 'Commercial Complexes, Industrial Parks & Campuses',
+      'SLA Support': '24/7 Dedicated Network Operation Center (NOC)'
+    },
+    images: ['/images/products/fiber-ont.jpg'],
+    price: 65000,
+    currency: 'INR',
+    availability: 'in_stock',
+    featured: true,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'prod-corp-2',
+    brandId: 'nexalus',
+    name: 'Enterprise Integrated Surveillance & Security Command Center Fabric',
+    slug: 'enterprise-surveillance-command-center-fabric',
+    modelNumber: 'NEX-CORP-SEC-CMD',
+    categoryId: 'cat-corp-infra',
+    categoryName: 'Turnkey IT & Security Infrastructure',
+    description: 'High-availability unified security fabric connecting multi-facility 4K CCTV surveillance feeds to a centralized monitoring and AI analytics hub.',
+    specifications: {
+      'Capacity': '64 to 128 Channels 4K Real-Time Stream Ingestion',
+      'Redundancy': 'Dual Hot-Swappable Enterprise Power Supplies & RAID-6',
+      'Analytics': 'Perimeter Intrusion, License Plate Recognition & Facial AI',
+      'Integration': 'Unified Cloud Mobile + On-Premises Monitoring Console'
+    },
+    images: ['/images/products/cp-nvr.jpg'],
+    price: 115000,
+    currency: 'INR',
+    availability: 'in_stock',
+    featured: true,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'prod-corp-3',
+    brandId: 'nexalus',
+    name: 'High-Density Structured Cat6A Pure Copper Cabling System',
+    slug: 'high-density-structured-cat6a-cabling-system',
+    modelNumber: 'NEX-CORP-CAT6A-HD',
+    categoryId: 'cat-corp-enterprise',
+    categoryName: 'Corporate Networking & Security Solutions',
+    description: '100% solid oxygen-free copper 10-Gigabit certified Cat6A cabling infrastructure with industrial keystones, 48-port patch panels, and Fluke channel certification.',
+    specifications: {
+      'Rating': 'TIA/EIA 568-C.2 Cat6A 10G Standard (500 MHz)',
+      'Jacket': 'Low Smoke Zero Halogen (LSZH) Fire Retardant',
+      'Warranty': '25-Year Performance & Component Warranty'
+    },
+    images: ['/images/products/cat6-cable.jpg'],
+    price: 24500,
+    currency: 'INR',
+    availability: 'in_stock',
+    featured: true,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+
   // Nexalus Innovations Division Products
   {
     id: 'prod-nex-1',
     brandId: 'nexalus-innovations',
-    name: '4K Ultra-HD Network CCTV Surveillance Dome Camera',
-    slug: 'nex-4k-cctv-dome',
+    name: '4K Ultra-HD AI Network CCTV Surveillance Dome Camera',
+    slug: 'nex-4k-ai-cctv-dome',
     modelNumber: 'NEX-CCTV-4K-DOME',
     categoryId: 'cat-nex-cctv',
     categoryName: 'Sales & Networking (CCTV)',
-    description: 'Commercial 4K Ultra-HD surveillance dome camera with Starlight full-color night vision, perimeter intrusion detection, built-in mic, and motorized optical zoom.',
+    description: 'Commercial 4K Ultra-HD surveillance dome camera with Starlight full-color night vision, AI tripwire perimeter detection, built-in mic, and motorized optical zoom.',
     specifications: {
       'Category': 'Sales & Networking (CCTV)',
       'Resolution': '4K Ultra-HD (3840 × 2160) @ 30fps',
       'Night Vision': 'Starlight Full Color up to 40m',
       'Protection': 'IP67 Weatherproof & IK10 Vandal-Proof',
       'Power': 'PoE+ (802.3at) / 12V DC',
-      'Detection': 'Human & Vehicle Motion Classification'
+      'Analytics': 'AI Human/Vehicle Classification'
     },
     images: ['/images/products/cp-dome.jpg'],
     price: 5400,
@@ -179,17 +260,17 @@ export const initialProducts: Product[] = [
   {
     id: 'prod-nex-5',
     brandId: 'nexalus-innovations',
-    name: 'Enterprise 32-Channel 4K Network Video Recorder (NVR)',
-    slug: 'nex-32ch-4k-nvr-server',
+    name: 'Enterprise 32-Channel 4K AI Network Video Recorder (NVR)',
+    slug: 'nex-32ch-4k-ai-nvr-server',
     modelNumber: 'NEX-NVR-4K-32CH',
     categoryId: 'cat-nex-cctv',
-    categoryName: 'CCTV & Video Surveillance Systems',
-    description: 'Commercial 32-Channel 4K Ultra HD Network Video Recorder supporting up to 4x 10TB SATA hard drives, dual HDMI outputs, face recognition, and remote smartphone monitoring.',
+    categoryName: 'AI CCTV & Surveillance Systems',
+    description: 'Commercial 32-Channel 4K Ultra HD AI Network Video Recorder supporting up to 4x 10TB SATA hard drives, dual HDMI outputs, face recognition, and remote smartphone monitoring.',
     specifications: {
       'Channels': '32 IP Channels up to 12MP/4K decoding',
       'Storage': '4 SATA III ports (up to 40TB total RAID support)',
       'Bandwidth': '384 Mbps incoming recording bandwidth',
-      'Smart Analytics': 'Facial recognition, vehicle ANPR, perimeter tripwire',
+      'AI Capabilities': 'Facial recognition, vehicle ANPR, perimeter tripwire',
       'Outputs': '2 × HDMI (4K Ultra-HD) + 1 × VGA'
     },
     images: ['/images/products/cp-nvr.jpg'],
@@ -211,15 +292,15 @@ export const initialProducts: Product[] = [
     modelNumber: 'AM-WATER-20L-CAN',
     categoryId: 'cat-am-water',
     categoryName: 'Packaged Mineral Water (Chiplun)',
-    description: 'Hygienically bottled 20-litre natural mineral water dispenser jar with tamper-evident hermetic seal. Daily morning doorstep route delivery across Chiplun city, Khed, and surrounding commercial establishments.',
+    description: 'Hygienically bottled 20-litre natural mineral water dispenser jar with tamper-evident seal. Daily morning doorstep route delivery across Chiplun city and surrounding industrial areas.',
     specifications: {
-      'Volume': '20 Litre Food-Grade Heavy-Duty Dispenser Jar',
-      'Quality': 'Bacteriologically Tested, Pure Mineral Balance & pH Balanced',
-      'Doorstep Routes': 'Chiplun Town, Khed, Guhagar & Industrial Corridors',
-      'Sanitization': 'Automated 5-Stage High-Pressure Steam Washed',
-      'Subscription': 'Daily / Weekly Regular Office, Hospital & Home Supply'
+      'Volume': '20 Litre Heavy-Duty Food Grade Jar',
+      'Quality': 'Bacteriologically Tested, Pure Mineral Balance',
+      'Doorstep Routes': 'Chiplun Town, Khed, Guhagar & Industrial Zones',
+      'Cleaning Cycle': 'Automated High-Pressure Steam Washed',
+      'Subscription': 'Daily / Weekly Regular Office & Home Supply'
     },
-    images: ['/images/products/am-water-jar-20l.jpg'],
+    images: ['/images/projects/am-distributors-chiplun.jpg'],
     price: 85,
     currency: 'INR',
     availability: 'in_stock',
@@ -231,21 +312,21 @@ export const initialProducts: Product[] = [
   {
     id: 'prod-am-2',
     brandId: 'am-distributors',
-    name: 'Packaged Drinking Water (500ml & 1L Bottles Retail Crates)',
-    slug: 'am-packaged-water-retail-bottles',
-    modelNumber: 'AM-WATER-RETAIL-CRATE',
-    categoryId: 'cat-am-water',
-    categoryName: 'Packaged Mineral Water (Chiplun)',
-    description: 'Carton and crate distribution of 500ml and 1-Litre shrink-wrapped packaged natural mineral water bottles for supermarkets, convenience shops, weddings, hotels, and travel bus operators in Chiplun.',
+    name: 'Commercial Ice Cream Assortment (Bulk Tubs, Cones & Bars)',
+    slug: 'am-ice-cream-commercial-assortment',
+    modelNumber: 'AM-ICECREAM-COLD-CHAIN',
+    categoryId: 'cat-am-icecream',
+    categoryName: 'Ice Cream Distribution',
+    description: 'Complete commercial ice cream range distributed via certified -18°C refrigerated trucks. Supplies retail freezer cabinets, banquet halls, hotels, and restaurants in Chiplun.',
     specifications: {
-      'Packaging': '24 × 500ml Bottles / 12 × 1000ml Bottles per shrink-wrap tray',
-      'Bottle Material': '100% Recyclable Food-Grade PET with Tamper Cap',
-      'Purity Standard': 'Multi-Stage Reverse Osmosis, UV Sterilization & Ozonation',
-      'Logistics': 'Daily Bulk Dispatch via Regional Logistics Fleet',
-      'Target Channels': 'Retail Stores, Hotels, Banquets, Caterers & Highway Eateries'
+      'Cold Chain': '-18°C Insulated & Refrigerated Fleet',
+      'Product Types': 'Bulk 5L Tubs, Premium Waffle Cones, Chocobars',
+      'Flavors': 'Vanilla, Mango, Chocolate, Butterscotch, Kulfi',
+      'Supply Fleet': 'Temperature-Monitored Reefer Delivery Vans',
+      'Coverage': 'Chiplun, Ratnagiri District & Konkan Belt'
     },
-    images: ['/images/products/am-water-bottles-retail.jpg'],
-    price: 240,
+    images: ['/images/projects/am-distributors-chiplun.jpg'],
+    price: 360,
     currency: 'INR',
     availability: 'in_stock',
     featured: true,
@@ -256,21 +337,21 @@ export const initialProducts: Product[] = [
   {
     id: 'prod-am-3',
     brandId: 'am-distributors',
-    name: 'Commercial Ice Cream Bulk Tubs (5-Litre Institutional Pack)',
-    slug: 'am-ice-cream-commercial-bulk-tubs',
-    modelNumber: 'AM-ICECREAM-BULK-5L',
-    categoryId: 'cat-am-icecream',
-    categoryName: 'Ice Cream Distribution',
-    description: 'Commercial 5-Litre ice cream institutional tubs distributed in temperature-monitored -18°C refrigerated trucks. Ideal for wedding caterers, banquet halls, hotels, and ice cream dessert parlors in Chiplun.',
+    name: 'Farm-Fresh Pasteurized Milk (500ml / 1L Daily Supply Crates)',
+    slug: 'am-pasteurized-fresh-milk-crates',
+    modelNumber: 'AM-DAIRY-MILK-CRATE',
+    categoryId: 'cat-am-dairy',
+    categoryName: 'Milk, Butter & All Dairy Products',
+    description: 'Nutrient-rich, lab-tested pasteurized standardized cow and buffalo milk pouches packed in distribution crates. Daily 4:00 AM distribution fleet supply across Chiplun.',
     specifications: {
-      'Cold Chain': '-18°C Insulated & Monitored Reefer Fleet',
-      'Pack Size': '5-Litre High-Density Institutional Foodservice Tub',
-      'Popular Flavors': 'Exotic Vanilla, Real Alphonso Mango, Rich Belgian Chocolate, Kesar Pista',
-      'Supply Fleet': 'Temperature-Monitored Reefer Delivery Vans with Cold Depot Backup',
-      'Coverage': 'Chiplun, Ratnagiri District & Konkan Highway Zone'
+      'Packs': '500ml & 1000ml Heat-Sealed Pouches (12/24 units per crate)',
+      'Fat / SNF Content': 'Standardized Fat 4.5%, SNF 8.5%',
+      'Distribution Slot': 'Daily Early Morning 4:00 AM – 7:00 AM',
+      'Clients': 'Dairy Outlets, Groceries, Hospitals & Residential Societies',
+      'Quality Compliance': 'Daily Microbiological & Chilling Audits'
     },
-    images: ['/images/products/am-icecream-tub.jpg'],
-    price: 680,
+    images: ['/images/projects/am-distributors-chiplun.jpg'],
+    price: 34,
     currency: 'INR',
     availability: 'in_stock',
     featured: true,
@@ -281,93 +362,21 @@ export const initialProducts: Product[] = [
   {
     id: 'prod-am-4',
     brandId: 'am-distributors',
-    name: 'Premium Ice Cream Cones, Cups & Chocobars (Retail Master Pack)',
-    slug: 'am-ice-cream-retail-master-pack',
-    modelNumber: 'AM-ICECREAM-IMPULSE-MASTER',
-    categoryId: 'cat-am-icecream',
-    categoryName: 'Ice Cream Distribution',
-    description: 'Complete impulse ice cream portfolio including crispy waffle cones, real Belgian chocobars, kulfis, and cups packed in insulated master cartons for retail freezer display cabinets across Chiplun.',
-    specifications: {
-      'Pack Configuration': 'Master Carton (30 to 48 Units assorted per carton)',
-      'Sub-Zero Guarantee': 'Zero-Thaw Guarantee during transit from Depot',
-      'Retail Support': 'Freezer Maintenance Support & Point-of-Sale Merchandising',
-      'Turnaround': 'Next-Day Replenishment for Local Retail Outlets'
-    },
-    images: ['/images/products/am-icecream-cones.jpg'],
-    price: 950,
-    currency: 'INR',
-    availability: 'in_stock',
-    featured: true,
-    published: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'prod-am-5',
-    brandId: 'am-distributors',
-    name: 'Farm-Fresh Pasteurized Cow Milk (500ml / 1L Daily Supply Crates)',
-    slug: 'am-pasteurized-fresh-milk-crates',
-    modelNumber: 'AM-DAIRY-MILK-CRATE',
+    name: 'Pure Churned Table Butter, Ghee & Processed Cheese Blocks',
+    slug: 'am-pure-butter-cheese-dairy-pack',
+    modelNumber: 'AM-DAIRY-BUTTER-CHEESE',
     categoryId: 'cat-am-dairy',
     categoryName: 'Milk, Butter & All Dairy Products',
-    description: 'Nutrient-rich, lab-tested pasteurized standardized cow and buffalo milk pouches packed in distribution crates. Daily 4:00 AM punctual distribution fleet supply across Chiplun and nearby towns.',
+    description: 'Golden table butter, pure cow ghee, and cheddar cheese blocks for institutional caterers, bakeries, cafes, and supermarkets throughout Chiplun and Konkan.',
     specifications: {
-      'Packs': '500ml & 1000ml Heat-Sealed Pouches (12/24 units per crate)',
-      'Fat / SNF Content': 'Standardized Fat 4.5%, SNF 8.5% Guaranteed',
-      'Distribution Slot': 'Daily Early Morning 4:00 AM – 7:00 AM Strict Route SLA',
-      'Clients': 'Dairy Outlets, Groceries, Hospitals, Hotels & Residential Societies',
-      'Quality Compliance': 'Daily Microbiological, Adulteration & Chilling Audits'
-    },
-    images: ['/images/products/am-fresh-milk-dairy.jpg'],
-    price: 34,
-    currency: 'INR',
-    availability: 'in_stock',
-    featured: true,
-    published: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'prod-am-6',
-    brandId: 'am-distributors',
-    name: 'Pure Desi Cow Ghee & Churned Table Butter (Wholesale Packs)',
-    slug: 'am-pure-butter-ghee-pack',
-    modelNumber: 'AM-DAIRY-BUTTER-GHEE',
-    categoryId: 'cat-am-dairy',
-    categoryName: 'Milk, Butter & All Dairy Products',
-    description: 'Golden salted table butter (100g, 500g bricks) and aromatic pure cow ghee tins for institutional bakeries, sweet shops, cafes, and supermarkets throughout Chiplun and Konkan.',
-    specifications: {
-      'Varieties': 'Salted Table Butter (100g, 500g), Pure Desi Cow Ghee (1L & 5L Tins)',
+      'Varieties': 'Salted Table Butter (100g, 500g), Pure Desi Cow Ghee (1L)',
+      'Cheese Blocks': '1kg & 2.5kg Processed Block Cheese',
       'Chilling Standard': 'Maintained at 0°C to 4°C in Chiplun Cold Depot',
-      'FSSAI Certified': '100% Genuine Lab-Tested Dairy Guarantee',
-      'Ordering': 'Daily Wholesale Dispatch & Retail Counter Replenishment'
+      'FSSAI Certified': '100% Genuine Dairy Quality Guarantee',
+      'Ordering': 'Daily Wholesale Dispatch & Retail replenishment'
     },
-    images: ['/images/products/am-butter-block.jpg'],
-    price: 295,
-    currency: 'INR',
-    availability: 'in_stock',
-    featured: true,
-    published: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'prod-am-7',
-    brandId: 'am-distributors',
-    name: 'Processed Cheddar Cheese & Diced Mozzarella Blocks (Foodservice 1kg)',
-    slug: 'am-cheddar-mozzarella-cheese-pack',
-    modelNumber: 'AM-DAIRY-CHEESE-BLOCKS',
-    categoryId: 'cat-am-dairy',
-    categoryName: 'Milk, Butter & All Dairy Products',
-    description: 'High-melting processed cheddar cheese blocks, sandwich slices, and diced mozzarella for cafes, pizza outlets, burger joints, and cloud kitchens in Chiplun.',
-    specifications: {
-      'Pack Size': '1kg Block / 2kg Foodservice Block & Shredded Mozzarella',
-      'Melting Quality': 'Superb Melt & Stretch for Pizzas, Sandwiches & Dosas',
-      'Storage': 'Refrigerated Cold Chain at 2°C – 4°C',
-      'Shelf Life': '9 Months under proper refrigeration'
-    },
-    images: ['/images/products/am-cheese-block.jpg'],
-    price: 430,
+    images: ['/images/projects/am-distributors-chiplun.jpg'],
+    price: 275,
     currency: 'INR',
     availability: 'in_stock',
     featured: true,
@@ -385,7 +394,7 @@ export const initialProducts: Product[] = [
     modelNumber: 'CP-UNC-TA41ZL4-MDS',
     categoryId: 'cat-bullet',
     categoryName: 'Bullet Cameras',
-    description: 'High-performance 4 Megapixel outdoor network bullet camera featuring motorized varifocal lens, Starlight low-light sensitivity, and perimeter intrusion detection.',
+    description: 'High-performance 4 Megapixel outdoor network bullet camera featuring motorized varifocal lens, Starlight low-light sensitivity, and AI perimeter intrusion detection.',
     specifications: {
       'Resolution': '4 Megapixel (2560 × 1440) @ 30fps',
       'Lens': '2.7mm–13.5mm Motorized Varifocal',
@@ -469,7 +478,7 @@ export const initialProducts: Product[] = [
     slug: 'cp-v34g-4g-smart-pt-camera',
     modelNumber: 'CP-V34G',
     categoryId: 'cat-ip',
-    categoryName: 'IP & Network Cameras',
+    categoryName: 'IP & Smart AI Cameras',
     description: 'Standalone 4G SIM-card enabled wireless pan-tilt camera with solar support, motion tracking, siren alert, and two-way voice communication for remote sites.',
     specifications: {
       'Connectivity': '4G LTE SIM Card slot (No Wi-Fi needed)',
@@ -548,7 +557,7 @@ export const initialProducts: Product[] = [
   {
     id: 'prod-cp-7',
     brandId: 'cp-plus',
-    name: 'CP-UNR-432T4-V2 32-Channel 4K Enterprise Network Video Recorder',
+    name: 'CP-UNR-432T4-V2 32-Channel 4K Enterprise AI Network Video Recorder',
     slug: 'cp-unr-432t4-v2-32ch-enterprise-nvr',
     modelNumber: 'CP-UNR-432T4-V2',
     categoryId: 'cat-nvr',
@@ -557,7 +566,7 @@ export const initialProducts: Product[] = [
     specifications: {
       'Channels': '32 IP Channels up to 12MP decoding',
       'HDD Capacity': '4 SATA ports (up to 10TB per HDD, 40TB total)',
-      'Smart Processing': 'Facial recognition & vehicle ANPR supported',
+      'AI Processing': 'Facial recognition & vehicle ANPR supported',
       'Bandwidth': '256 Mbps incoming bandwidth',
       'Redundancy': 'RAID 0/1/5/6/10 support'
     },
@@ -579,7 +588,7 @@ export const initialProducts: Product[] = [
     slug: 'cp-e25a-2mp-smart-pt-camera',
     modelNumber: 'CP-E25A',
     categoryId: 'cat-ip',
-    categoryName: 'IP & Network Cameras',
+    categoryName: 'IP & Smart AI Cameras',
     description: 'Affordable wireless smart camera with 360° panoramic view, human body detection, two-way voice call, privacy mode, and Amazon Alexa / Google Assistant integration.',
     specifications: {
       'Resolution': '1080P Full HD (1920 × 1080)',
@@ -1167,25 +1176,59 @@ export const initialInternetPlans: InternetPlan[] = [
   }
 ];
 
+export const initialBroadbandProviders: BroadbandProvider[] = [
+  {
+    id: 'airtel',
+    name: 'Airtel',
+    slug: 'airtel',
+    description: 'Airtel Xstream Fiber broadband services offering high-speed connectivity and entertainment benefits.',
+    enabled: true,
+    displayOrder: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'bsnl',
+    name: 'BSNL',
+    slug: 'bsnl',
+    description: 'BSNL Bharat Fiber broadband services delivering dependable nationwide optical fiber coverage.',
+    enabled: true,
+    displayOrder: 2,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'railwire',
+    name: 'RailWire',
+    slug: 'railwire',
+    description: 'RailWire broadband services powered by RailTel Corporation of India with expansive regional connectivity.',
+    enabled: true,
+    displayOrder: 3,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+export const initialBroadbandPlans: BroadbandPlan[] = [];
+
 export const initialServices: Service[] = [
   // Nexalus Integrated Solutions
-  // Nexalus Core Engineering Services
   {
     id: 'srv-nex-1',
     brandId: 'nexalus',
-    title: 'Optical Fiber Internet & Office Network Setup',
-    slug: 'fiber-internet-office-network-setup',
-    shortDescription: 'Direct optical fiber line pulling, core fusion splicing, dual-band Wi-Fi 6 router setup, and structured LAN cabling.',
-    fullDescription: 'Our experienced local technicians provide complete on-site fiber internet installation and office LAN network setup. We handle end-to-end cable pulling, fusion splicing, rack mounting, and Wi-Fi configuration with guaranteed low latency and high stability.',
-    iconName: 'Wifi',
+    title: 'Integrated Enterprise IT & Security Infrastructure',
+    slug: 'integrated-it-security-infrastructure',
+    shortDescription: 'Unified deployment combining high-speed fiber backbone networks with smart CCTV monitoring for complete facility oversight.',
+    fullDescription: 'Nexalus Innovations LLP architects turnkey IT and security infrastructure. Rather than managing separate vendors for CCTV surveillance and internet connectivity, our engineers design a cohesive structured cabling, switching, and monitoring ecosystem with single-window service and accountability.',
+    iconName: 'Building2',
     features: [
-      'Direct Optical Fiber Cable Laying & Precision Splicing',
-      'Gigabit Dual-Band Wi-Fi 6 Router Setup & Testing',
-      'Structured Cat6 LAN Cabling with Patch Panels & Server Racks',
-      'Low Ping Connection for CCTV Streaming & Video Calls',
-      '24/7 Local Support by Experienced Technical Engineers'
+      'Single-Contract Structured Cabling & Networking',
+      'Optimized Bandwidth Allocation for Security Video Streams',
+      'Unified Power Backup (UPS) & Equipment Racks',
+      'Centralized Monitoring Operations Control Center',
+      'Comprehensive Annual Maintenance Contracts (AMC)'
     ],
-    targetAudience: ['Commercial Offices', 'Apartments', 'Retail Shops', 'Warehouses'],
+    targetAudience: ['Commercial Offices', 'Industrial Parks', 'Warehouses', 'Educational Campuses'],
     featured: true,
     published: true,
     createdAt: new Date().toISOString(),
@@ -1196,19 +1239,19 @@ export const initialServices: Service[] = [
   {
     id: 'srv-cp-1',
     brandId: 'cp-plus',
-    title: 'CCTV Camera Installation & Setup',
-    slug: 'cctv-camera-installation-setup',
-    shortDescription: 'Professional on-site camera installation, concealed wiring, DVR/NVR hard drive setup, and mobile live-view configuration.',
-    fullDescription: 'We install high-definition CP PLUS HD and IP surveillance cameras with neat, concealed casing. Our technicians eliminate blind spots, configure NVR/DVR storage recording, and set up live viewing on your smartphone.',
+    title: 'Turnkey CCTV Installation & Configuration',
+    slug: 'turnkey-cctv-installation',
+    shortDescription: 'Professional site survey, camera positioning, high-grade cabling, and multi-display control room configuration.',
+    fullDescription: 'Our certified CP PLUS security engineers conduct physical site assessments to determine optimal focal points, eliminate blind spots, and install indoor/outdoor surveillance cameras using ISI-marked fire-retardant cabling and secure mounting hardware.',
     iconName: 'ShieldCheck',
     features: [
-      'Indoor & Outdoor Camera Mounting with Neat Concealed Conduit',
-      'Angle Alignment to Cover Key Gates & Blind Spots',
-      'NVR/DVR Hard Drive Setup & Motion Recording',
-      'Mobile App Live View & Playback Setup on Smartphones',
-      'On-Site Testing & Free Customer Demo'
+      'Comprehensive Site Vulnerability Assessment',
+      'Neat Concealed Conduit & Weatherproof Wiring',
+      'NVR Storage Optimization & Motion Scheduling',
+      'Mobile App Configuration for Anywhere Viewing',
+      'Onsite Handover & Staff Operation Training'
     ],
-    targetAudience: ['Homes & Villas', 'Retail Showrooms', 'Apartment Societies', 'Offices'],
+    targetAudience: ['Residential Villas', 'Retail Showrooms', 'Apartment Societies', 'Factories'],
     featured: true,
     published: true,
     createdAt: new Date().toISOString(),
@@ -1217,19 +1260,19 @@ export const initialServices: Service[] = [
   {
     id: 'srv-cp-2',
     brandId: 'cp-plus',
-    title: 'CCTV Repair & Annual AMC Maintenance',
-    slug: 'cctv-repair-annual-amc-maintenance',
-    shortDescription: 'Regular preventive servicing, lens cleaning, hard disk backup health checks, and quick on-site repair visits.',
-    fullDescription: 'Keep your surveillance system operational 24/7. Our annual maintenance contracts include regular on-site servicing, lens cleaning, power supply diagnostics, and priority technician dispatch for any issue.',
+    title: 'Surveillance Maintenance & AMC Support',
+    slug: 'surveillance-maintenance-amc',
+    shortDescription: 'Proactive quarterly health audits, lens cleaning, storage integrity checks, and rapid repair dispatch.',
+    fullDescription: 'Never let critical security cameras go offline unnoticed. Our preventive maintenance contracts cover scheduled camera diagnostics, power supply testing, firmware security updates, and urgent onsite breakdown replacement.',
     iconName: 'Wrench',
     features: [
-      'Scheduled Quarterly Camera Lens Cleaning & Health Checks',
-      'Power Supply, Connector & Hard Drive Testing',
-      'Emergency Same-Day On-Site Repair Support',
-      'Standby Replacement Cameras During Major Repairs',
-      'Affordable Annual Maintenance Contracts (AMC)'
+      'Scheduled Quarterly Physical & Digital Audits',
+      'Standby Equipment Provision During Major Repairs',
+      '24-Hour Emergency Dispatch SLA',
+      'Hard Disk Health & Recording Integrity Verification',
+      'Transparent Logbooks & Maintenance Reports'
     ],
-    targetAudience: ['Hotels & Restaurants', 'Hospitals', 'Offices', 'Societies'],
+    targetAudience: ['Enterprises', 'Hospitals', 'Hotels', 'Residential Associations'],
     featured: true,
     published: true,
     createdAt: new Date().toISOString(),
@@ -1238,10 +1281,10 @@ export const initialServices: Service[] = [
   {
     id: 'srv-cp-3',
     brandId: 'cp-plus',
-    title: 'Industrial Video Analytics & Perimeter Monitoring',
-    slug: 'industrial-video-analytics',
+    title: 'Industrial & AI Video Analytics Setup',
+    slug: 'industrial-ai-video-analytics',
     shortDescription: 'Smart automated surveillance featuring license plate recognition (ANPR), perimeter breach alerts, and facial verification.',
-    fullDescription: 'Elevate passive recording to active prevention. We deploy automated surveillance solutions that instantly trigger alarms upon detecting unauthorized entry, fire hazard indicators, vehicle registration matches, and queue congestion.',
+    fullDescription: 'Elevate passive recording to active prevention. We deploy edge-computing AI surveillance solutions that instantly trigger alarms upon detecting unauthorized entry, fire hazard indicators, vehicle registration matches, and queue congestion.',
     iconName: 'Cpu',
     features: [
       'Automatic Number Plate Recognition (ANPR)',
@@ -1320,6 +1363,50 @@ export const initialServices: Service[] = [
     published: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
+  },
+
+  // A.M. Distributors Chiplun Services
+  {
+    id: 'srv-am-1',
+    brandId: 'am-distributors',
+    title: 'Bulk Packaged Mineral Water & Institutional Supply',
+    slug: 'bulk-packaged-mineral-water-distribution',
+    shortDescription: 'Reliable route distribution of 20L sanitized bubble top jars, 500ml & 1L bottled water to commercial, retail, and event partners.',
+    fullDescription: 'A.M. Distributors operates dedicated daily delivery routes across Chiplun and surrounding Konkan areas. We supply certified ISI packaged mineral water in tamper-evident sealed packaging to retail grocers, hospitality establishments, corporate canteens, and construction worksites with scheduled refill frequency.',
+    iconName: 'Building2',
+    features: [
+      'Scheduled 20L Bubble Top Jar Route Delivery',
+      'Carton & Case Supply for 500ml & 1L Bottles',
+      'Dispenser Stand & Tap Hardware Support',
+      'Guaranteed Batch Purity & Tamper-Proof Seals',
+      'Flexible Credit & Invoicing for Bulk Institutional Clients'
+    ],
+    targetAudience: ['Retail Grocers', 'Hotels & Restaurants', 'Offices & Banks', 'Event Venues'],
+    featured: true,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'srv-am-2',
+    brandId: 'am-distributors',
+    title: 'Cold-Chain Dairy & Commercial Ice Cream Logistics',
+    slug: 'cold-chain-dairy-ice-cream-logistics',
+    shortDescription: 'Temperature-monitored refrigerated transit and 4:00 AM dispatch ensuring uninterrupted fresh dairy and -18°C ice cream supply.',
+    fullDescription: 'Preserving freshness through strict cold-chain compliance. A.M. Distributors manages temperature-controlled delivery vehicles and insulated transport for daily fresh milk pouches, butter crates, dairy products, and commercial ice cream tubs, ensuring zero thermal abuse from central depot to neighborhood retail freezers.',
+    iconName: 'Server',
+    features: [
+      'Daily 4:00 AM Morning Route Dispatch',
+      '-18°C Deep Freeze Transit for Commercial Ice Creams',
+      'Chilled Storage Compliance for Milk, Butter & Paneer',
+      'Deep Freezer Maintenance & Replacement Assistance',
+      'Real-Time Route Tracking & Delivery Confirmation'
+    ],
+    targetAudience: ['Supermarkets & Kiranas', 'Ice Cream Parlors', 'Bakeries & Sweet Marts', 'Hospitality Hubs'],
+    featured: true,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 
@@ -1332,9 +1419,9 @@ export const initialProjects: Project[] = [
     clientType: 'Enterprise',
     location: 'Electronic City, Bengaluru',
     description: 'Turnkey deployment of redundant 1 Gbps fiber leased connectivity paired with an enterprise 128-camera CP PLUS 4K surveillance grid across 4 interconnected office towers.',
-    solutionProvided: 'Nexalus engineered a dual-ring fiber backbone, deployed 24-port PoE switching arrays, and installed certified perimeter dome and bullet cameras tied into a central security command center.',
+    solutionProvided: 'Nexalus engineered a dual-ring fiber backbone, deployed 24-port PoE switching arrays, and installed AI-enabled perimeter dome and bullet cameras tied into a central security command center.',
     scope: [
-      '128 × CP PLUS 4MP & 4K Starlight Cameras',
+      '128 × CP PLUS 4MP & 4K AI Cameras',
       'Redundant 1 Gbps Symmetrical Leased Line by One Broadband',
       '4 × 32-Channel Enterprise NVRs with 80TB RAID Storage',
       'Whole-Campus Managed Wi-Fi with 45 Cloud APs',
@@ -1472,34 +1559,67 @@ export const initialFaqs: FAQ[] = [
 
 export const initialBanners: SiteBanner[] = [
   {
-    id: 'ban-1',
+    id: 'ban-parent',
     brandId: 'nexalus',
     title: 'Connecting Businesses. Protecting What Matters.',
     subtitle: 'Nexalus Innovations LLP delivers connectivity, security and networking solutions designed for homes, businesses and modern enterprises.',
+    badge: 'Enterprise Networking & Multi-Company Solutions',
     ctaText: 'Explore Our Solutions',
-    ctaLink: '/solutions',
+    ctaLink: '/services',
+    secondaryCtaText: 'Request Quotation',
+    secondaryCtaLink: '/quote',
     active: true,
-    imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1600&q=80'
+    imageUrl: '/images/hero-server.jpg',
+    supportPhone: '+91 98765 43210',
+    supportEmail: 'contact@nexalusinnovations.com',
+    officeAddress: 'Chiplun Central Office, Maharashtra 415605',
+    workingHours: 'Mon - Sat: 9:00 AM - 7:00 PM',
+    showHero: true,
+    showTeam: true,
+    showFaqs: true,
+    showContact: true
   },
   {
-    id: 'ban-2',
-    brandId: 'cp-plus',
-    title: 'Smart Surveillance & Perimeter Defense',
-    subtitle: 'High-definition 4K cameras, optical zoom tracking, and industrial CCTV recording systems installed by certified security engineers.',
-    ctaText: 'Browse CCTV Products',
-    ctaLink: '/brands/cp-plus/products',
+    id: 'ban-innovations',
+    brandId: 'nexalus-innovations',
+    title: 'Nexalus Innovations',
+    subtitle: 'The specialized engineering division of Nexalus Innovations LLP. We architect and deploy certified 4K CCTV surveillance grids, high-speed optical fiber connectivity, and managed enterprise networking across Maharashtra.',
+    badge: 'Optical Fiber Broadband & CCTV Surveillance',
+    ctaText: 'View Tech Products & Plans',
+    ctaLink: '/brands/nexalus-innovations/products',
+    secondaryCtaText: 'View Fiber Tariffs',
+    secondaryCtaLink: '/plans',
     active: true,
-    imageUrl: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=1600&q=80'
+    imageUrl: '/images/simple-cctv-camera.jpg',
+    supportPhone: '+91 98765 43211',
+    supportEmail: 'support@nexalusinnovations.com',
+    officeAddress: 'Tech Engineering Depot, Chiplun 415605',
+    workingHours: 'Mon - Sun: 8:00 AM - 8:00 PM',
+    showHero: true,
+    showTeam: true,
+    showFaqs: true,
+    showContact: true
   },
   {
-    id: 'ban-3',
-    brandId: 'one-broadband',
-    title: 'Uncompromised Gigabit Fiber Connectivity',
-    subtitle: 'Truly unlimited high-speed internet, Wi-Fi 6 hardware, and enterprise leased lines engineered for 99.9% uptime.',
-    ctaText: 'View Internet Plans',
-    ctaLink: '/brands/one-broadband/plans',
+    id: 'ban-am',
+    brandId: 'am-distributors',
+    title: 'A.M. Distributors Chiplun',
+    subtitle: 'The dedicated regional cold-chain and commercial distribution hub for Chiplun and the Konkan region. Operating under Nexalus Innovations LLP, we manage temperature-controlled refrigerated logistics for packaged mineral water, commercial ice creams, farm-fresh milk, butter, and complete dairy supplies.',
+    badge: 'Konkan Cold-Chain & Wholesale Distribution',
+    ctaText: 'Order Wholesale Supply',
+    ctaLink: '/brands/am-distributors/products',
+    secondaryCtaText: 'Route Logistics',
+    secondaryCtaLink: '/brands/am-distributors/services',
     active: true,
-    imageUrl: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1600&q=80'
+    imageUrl: '/images/products/amul-milk.jpg',
+    supportPhone: '+91 98765 43212',
+    supportEmail: 'depot@amdistributors.com',
+    officeAddress: 'A.M. Distributors Depot, Chiplun Industrial Zone 415605',
+    workingHours: 'Daily Route Dispatch: 4:00 AM - 8:00 PM',
+    showHero: true,
+    showTeam: true,
+    showFaqs: true,
+    showContact: true
   }
 ];
 
@@ -1508,7 +1628,6 @@ export const initialUsers: AdminUser[] = [
     uid: 'admin-parent-01',
     displayName: 'Nexalus Corporate Master Admin',
     email: 'admin@nexalus.com',
-    password: 'admin123',
     role: 'super_admin',
     assignedBrandId: 'all',
     active: true,
@@ -1519,7 +1638,6 @@ export const initialUsers: AdminUser[] = [
     uid: 'admin-parent-02',
     displayName: 'Nexalus Corporate Master Admin',
     email: 'admin@nexalusinnovations.com',
-    password: 'admin123',
     role: 'super_admin',
     assignedBrandId: 'all',
     active: true,
@@ -1530,7 +1648,6 @@ export const initialUsers: AdminUser[] = [
     uid: 'admin-innovations-01',
     displayName: 'Nexalus Innovations Tech Manager (CCTV, Internet, Network)',
     email: 'innovations@nexalus.com',
-    password: 'admin123',
     role: 'innovations_admin',
     assignedBrandId: 'nexalus-innovations',
     active: true,
@@ -1541,7 +1658,6 @@ export const initialUsers: AdminUser[] = [
     uid: 'admin-innovations-02',
     displayName: 'Nexalus Innovations Tech Manager (CCTV, Internet, Network)',
     email: 'innovations.admin@nexalusinnovations.com',
-    password: 'admin123',
     role: 'innovations_admin',
     assignedBrandId: 'nexalus-innovations',
     active: true,
@@ -1552,7 +1668,6 @@ export const initialUsers: AdminUser[] = [
     uid: 'admin-am-01',
     displayName: 'A.M. Distributors Chiplun Depot Manager',
     email: 'am@nexalus.com',
-    password: 'admin123',
     role: 'am_admin',
     assignedBrandId: 'am-distributors',
     active: true,
@@ -1563,7 +1678,6 @@ export const initialUsers: AdminUser[] = [
     uid: 'admin-am-02',
     displayName: 'A.M. Distributors Chiplun Depot Manager',
     email: 'am.admin@nexalusinnovations.com',
-    password: 'admin123',
     role: 'am_admin',
     assignedBrandId: 'am-distributors',
     active: true,
@@ -1579,11 +1693,8 @@ export const initialEnquiries: Enquiry[] = [
     phone: '+91 98450 11223',
     email: 'vikram.sharma@techhorizon.in',
     brandId: 'nexalus-innovations',
-    websiteId: 'nexalus-innovations',
-    websiteName: 'Nexalus Innovations',
-    sourcePage: 'Hardware Catalog (CCTV Inquire)',
     enquiryType: 'quote',
-    productOrServiceName: '4K Commercial CCTV Surveillance Grid + 16CH NVR',
+    productOrServiceName: '4K Commercial AI CCTV Surveillance Grid + 16CH NVR',
     location: 'Koramangala 4th Block, Bengaluru',
     pincode: '560034',
     message: 'We require a 12-camera CCTV upgrade for our software engineering office premises. Need quotation including installation and warranty.',
@@ -1599,9 +1710,6 @@ export const initialEnquiries: Enquiry[] = [
     phone: '+91 99801 44556',
     email: 'ananya.deshmukh@gmail.com',
     brandId: 'nexalus-innovations',
-    websiteId: 'nexalus-innovations',
-    websiteName: 'Nexalus Innovations',
-    sourcePage: 'Contact Technology Desk',
     enquiryType: 'coverage',
     productOrServiceName: 'High-Speed 300 Mbps Optical Fiber Internet Plan',
     location: 'Indiranagar 100ft Road, Bengaluru',
@@ -1619,9 +1727,6 @@ export const initialEnquiries: Enquiry[] = [
     phone: '+91 94223 88112',
     email: 'sanjay.sawant@chiplunresorts.com',
     brandId: 'am-distributors',
-    websiteId: 'am-distributors',
-    websiteName: 'A.M. Distributors Chiplun',
-    sourcePage: 'Wholesale Depot Order Form',
     enquiryType: 'quote',
     productOrServiceName: '20L Packaged Mineral Water Bulk Supply (60 Cans/Week)',
     location: 'Bahadursheikh Naka, Chiplun',
@@ -1639,9 +1744,6 @@ export const initialEnquiries: Enquiry[] = [
     phone: '+91 98221 44550',
     email: 'kadam.dairy@gmail.com',
     brandId: 'am-distributors',
-    websiteId: 'am-distributors',
-    websiteName: 'A.M. Distributors Chiplun',
-    sourcePage: 'Contact Chiplun Depot',
     enquiryType: 'service',
     productOrServiceName: 'Commercial Ice Cream Bulk Tubs & Cold Storage Supply',
     location: 'Mumbai-Goa Highway Market, Chiplun',
@@ -1652,26 +1754,6 @@ export const initialEnquiries: Enquiry[] = [
     internalNotes: 'Provided dealer price list for ice cream varieties and morning delivery logistics.',
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
     updatedAt: new Date(Date.now() - 86400000 * 2).toISOString()
-  },
-  {
-    id: 'enq-105',
-    customerName: 'Rajesh Patil',
-    phone: '+91 98220 99881',
-    email: 'rajesh.patil@sangli-industries.com',
-    brandId: 'general',
-    websiteId: 'corporate',
-    websiteName: 'Nexalus Innovations LLP',
-    sourcePage: 'Corporate Parent Contact Us',
-    enquiryType: 'general',
-    productOrServiceName: 'Turnkey Enterprise Corporate Infrastructure Contract',
-    location: 'Kupwad MIDC, Sangli',
-    pincode: '416436',
-    message: 'We want to partner with Nexalus Innovations LLP for end-to-end industrial park infrastructure including security surveillance and supply-chain logistics.',
-    status: 'new',
-    assignedTo: 'admin@nexalusinnovations.com',
-    internalNotes: 'Executive group level lead from Sangli MIDC.',
-    createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000 * 1).toISOString()
   }
 ];
 
@@ -1685,6 +1767,146 @@ export const initialSeoSettings: SeoSettings = {
   socials: {
     linkedin: 'https://linkedin.com/company/nexalus-innovations-llp',
     twitter: 'https://twitter.com/nexalusinnovations',
-    facebook: 'https://facebook.com/nexalusinnovations'
+    facebook: 'https://facebook.com/nexalusinnovations',
+    instagram: 'https://instagram.com/nexalusinnovations'
   }
 };
+
+export const initialTeamMembers: TeamMember[] = [
+  {
+    id: 'team-1',
+    name: 'Pranav More',
+    role: 'Managing Partner & Director',
+    department: 'Corporate Leadership',
+    deptType: 'leadership',
+    division: 'all',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Enterprise Strategy & Governance',
+    tag: 'Executive Lead',
+    circleBorder: 'border-amber-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(245,158,11,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(245,158,11,0.7)] group-hover:border-amber-500',
+    badgeBg: 'bg-amber-500',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-2',
+    name: 'Aniket Shinde',
+    role: 'Lead Network Architect',
+    department: 'Optical Fiber & Telecom',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
+    specialty: 'FTTH Gigabit Backhaul & Switching',
+    tag: 'Fiber Architect',
+    circleBorder: 'border-blue-500',
+    circleShadow: 'shadow-[0_10px_30px_rgba(59,130,246,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(59,130,246,0.7)] group-hover:border-blue-400',
+    badgeBg: 'bg-blue-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-3',
+    name: 'Pooja Deshmukh',
+    role: 'Head of Electronic Security',
+    department: 'CCTV Surveillance & IoT',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
+    specialty: '4K Commercial Cameras & Control',
+    tag: 'Security Lead',
+    circleBorder: 'border-cyan-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(6,182,212,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(6,182,212,0.7)] group-hover:border-cyan-300',
+    badgeBg: 'bg-cyan-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-4',
+    name: 'Rahul Kadam',
+    role: 'Cold-Chain Operations Head',
+    department: 'A.M. Distributors Chiplun',
+    deptType: 'logistics',
+    division: 'am-distributors',
+    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Refrigerated Fleet & Chiplun Depot',
+    tag: 'Logistics Head',
+    circleBorder: 'border-teal-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(20,184,166,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(20,184,166,0.7)] group-hover:border-teal-300',
+    badgeBg: 'bg-teal-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-5',
+    name: 'Snehal Patil',
+    role: 'Enterprise Systems Engineer',
+    department: 'IT Networking & Hardware',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Managed PoE+ & Fluke Cat6A Cabling',
+    tag: 'Systems Engineer',
+    circleBorder: 'border-indigo-500',
+    circleShadow: 'shadow-[0_10px_30px_rgba(99,102,241,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(99,102,241,0.7)] group-hover:border-indigo-400',
+    badgeBg: 'bg-indigo-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-6',
+    name: 'Sachin Pawar',
+    role: 'QA & Compliance Lead',
+    department: 'A.M. Distributors Chiplun',
+    deptType: 'logistics',
+    division: 'am-distributors',
+    image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=80',
+    specialty: 'FSSAI Depot Compliance & Sanitization',
+    tag: 'QA & Compliance',
+    circleBorder: 'border-emerald-500',
+    circleShadow: 'shadow-[0_10px_30px_rgba(16,185,129,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(16,185,129,0.7)] group-hover:border-emerald-400',
+    badgeBg: 'bg-emerald-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-7',
+    name: 'Tanvi Joshi',
+    role: '24/7 NOC Support Lead',
+    department: 'Technical Support Desk',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Guaranteed SLA Uptime & Response',
+    tag: 'NOC Lead',
+    circleBorder: 'border-sky-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(56,189,248,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(56,189,248,0.7)] group-hover:border-sky-300',
+    badgeBg: 'bg-sky-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'team-8',
+    name: 'Vikram Salunkhe',
+    role: 'Senior Telecom & Splicing Lead',
+    department: 'Field Engineering & Maintenance',
+    deptType: 'tech',
+    division: 'nexalus-innovations',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+    specialty: 'Fusion Splicing & Optical Link Testing',
+    tag: 'Telecom Specialist',
+    circleBorder: 'border-blue-400',
+    circleShadow: 'shadow-[0_10px_30px_rgba(96,165,250,0.45)]',
+    circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(96,165,250,0.7)] group-hover:border-blue-300',
+    badgeBg: 'bg-blue-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];

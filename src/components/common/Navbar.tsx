@@ -4,19 +4,21 @@ import {
   Menu,
   X,
   Layers,
-  Lock,
   ChevronDown,
   Cpu,
   Truck,
   ArrowRight
 } from 'lucide-react';
 import { Button } from './Button';
+import { useAuth } from '../../context/AuthContext';
+import { User, UserCheck } from 'lucide-react';
 import { QuoteModal } from './QuoteModal';
 
 export const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const location = useLocation();
+  const { isAuthenticated, isCustomer } = useAuth();
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -141,6 +143,16 @@ export const Navbar: React.FC = () => {
                 Services
               </Link>
               <Link
+                to="/plans"
+                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                  isActive('/plans')
+                    ? 'text-blue-600 bg-blue-50/80'
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
+                }`}
+              >
+                Plans & Pricing
+              </Link>
+              <Link
                 to="/products"
                 className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
                   isActive('/products')
@@ -164,14 +176,29 @@ export const Navbar: React.FC = () => {
 
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center gap-3">
-              <Link
-                to="/admin/login"
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-blue-700 bg-slate-100 hover:bg-blue-50 border border-slate-200 rounded-lg transition-colors"
-                title="Admin Portal Login"
-              >
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
-                <span>Admin Login</span>
-              </Link>
+              {isAuthenticated && isCustomer ? (
+                <Link
+                  to="/account"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors shadow-xs"
+                  title="My Customer Account"
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                  <span>My Account</span>
+                </Link>
+              ) : !isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('open_customer_portal', { detail: { view: 'choice' } }));
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-blue-700 bg-slate-100 hover:bg-blue-50 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+                  title="Customer Portal Registration & Login"
+                >
+                  <User className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Customer Portal</span>
+                </button>
+              ) : null}
+
               <Button
                 variant="primary"
                 size="md"
@@ -240,6 +267,13 @@ export const Navbar: React.FC = () => {
               Services
             </Link>
             <Link
+              to="/plans"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-base font-semibold text-slate-800 hover:bg-slate-50"
+            >
+              Plans & Pricing
+            </Link>
+            <Link
               to="/products"
               onClick={() => setIsMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-lg text-base font-semibold text-slate-800 hover:bg-slate-50"
@@ -255,6 +289,29 @@ export const Navbar: React.FC = () => {
             </Link>
 
             <div className="pt-3 flex flex-col gap-2 border-t border-slate-100">
+              {isAuthenticated && isCustomer ? (
+                <Link
+                  to="/account"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200"
+                >
+                  <UserCheck className="w-4 h-4 text-blue-600" />
+                  <span>My Customer Account</span>
+                </Link>
+              ) : !isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    window.dispatchEvent(new CustomEvent('open_customer_portal', { detail: { view: 'choice' } }));
+                  }}
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 cursor-pointer"
+                >
+                  <User className="w-4 h-4 text-blue-600" />
+                  <span>Customer Portal (Register / Login)</span>
+                </button>
+              ) : null}
+
               <Button
                 variant="primary"
                 className="w-full"
@@ -265,14 +322,6 @@ export const Navbar: React.FC = () => {
               >
                 Get a Quote
               </Button>
-              <Link
-                to="/admin/login"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
-              >
-                <Lock className="w-3.5 h-3.5 text-slate-600" />
-                <span>Admin Login</span>
-              </Link>
             </div>
           </div>
         )}

@@ -12,6 +12,8 @@ import { SolutionsPage } from './pages/public/SolutionsPage';
 import { ProductsPage } from './pages/public/ProductsPage';
 import { QuotePage } from './pages/public/QuotePage';
 import { ContactPage } from './pages/public/ContactPage';
+import { PlansPricingPage } from './pages/public/PlansPricingPage';
+import { CustomerAccountPage } from './pages/public/CustomerAccountPage';
 import { NotFoundPage } from './pages/public/NotFoundPage';
 import { NexalusInnovationsPage } from './pages/public/divisions/NexalusInnovationsPage';
 import { AmDistributorsPage } from './pages/public/divisions/AmDistributorsPage';
@@ -50,6 +52,7 @@ import { AdminServiceAreasPage } from './pages/admin/AdminServiceAreasPage';
 import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
 import { AdminFaqsPage } from './pages/admin/AdminFaqsPage';
 import { AdminContentPage } from './pages/admin/AdminContentPage';
+import { AdminTeamPage } from './pages/admin/AdminTeamPage';
 import { AdminReportsPage } from './pages/admin/AdminReportsPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminSeoPage } from './pages/admin/AdminSeoPage';
@@ -85,9 +88,14 @@ function App() {
               <Route path="/services" element={<SolutionsPage />} />
               <Route path="/solutions" element={<Navigate to="/services" replace />} />
               <Route path="/products" element={<ProductsPage />} />
+              <Route path="/plans" element={<PlansPricingPage />} />
+              <Route path="/pricing" element={<Navigate to="/plans" replace />} />
               <Route path="/projects" element={<Navigate to="/products" replace />} />
               <Route path="/quote" element={<QuotePage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/account" element={<CustomerAccountPage />} />
+              <Route path="/login" element={<CustomerAccountPage />} />
+              <Route path="/register" element={<CustomerAccountPage />} />
             </Route>
 
             {/* Nexalus Innovations Sub-Website Portal */}
@@ -135,6 +143,7 @@ function App() {
               <Route path="categories" element={<AdminCategoriesPage />} />
               <Route path="faqs" element={<AdminFaqsPage />} />
               <Route path="content" element={<AdminContentPage />} />
+              <Route path="team" element={<AdminTeamPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="seo" element={<AdminSeoPage />} />

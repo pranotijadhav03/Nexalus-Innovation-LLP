@@ -1,13 +1,34 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AdminUser, BrandId } from '../types';
-import { getUsers, addAuditLog } from '../firebase/services';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser
+} from 'firebase/auth';
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  setDoc
+} from 'firebase/firestore';
+import { auth, db, isFirebaseConfigured } from '../firebase/config';
+import { AdminUser, BrandId, CustomerRegistrationData } from '../types';
+import { addAuditLog, registerCustomer } from '../firebase/services';
 
 interface AuthContextType {
   currentUser: AdminUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isCustomer: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  loginCustomer: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  registerCustomerAccount: (data: CustomerRegistrationData) => Promise<{ success: boolean; error?: string }>;
+  refreshUserProfile: () => Promise<void>;
+  logout: () => Promise<void>;
   canManageBrand: (brandId: BrandId | 'general' | 'nexalus' | 'nexalus-innovations' | 'am-distributors') => boolean;
   brandScope: BrandId | 'all';
   isSuperAdmin: boolean;
@@ -18,128 +39,366 @@ interface AuthContextType {
   isNetworkingAdmin: boolean;
 }
 
-const AUTH_USER_KEY = 'nexalus_admin_session';
+const LEGACY_AUTH_KEY = 'nexalus_admin_session';
 
-// Strictly purge any legacy persistent localStorage auth cache so dashboard never opens directly
+// Strictly purge legacy insecure localStorage / sessionStorage auth caches
 try {
+  sessionStorage.removeItem(LEGACY_AUTH_KEY);
   localStorage.removeItem('nexalus_auth_user');
   localStorage.removeItem('nexalus_auth_session');
-} catch (e) {}
+} catch {}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const VALID_ADMIN_ROLES = [
+  'super_admin',
+  'innovations_admin',
+  'am_admin',
+  'cp_plus_admin',
+  'one_broadband_admin',
+  'networking_admin'
+];
+
+const VALID_ALL_ROLES = [...VALID_ADMIN_ROLES, 'customer'];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Only check active tab session in sessionStorage (no persistent cross-session auto-login)
-    async function verifySavedSession() {
-      try {
-        const saved = sessionStorage.getItem(AUTH_USER_KEY);
-        if (saved) {
-          const parsed: AdminUser = JSON.parse(saved);
-          if (parsed && parsed.email) {
-            const users = await getUsers();
-            const matched = users.find(u => u.email.toLowerCase() === parsed.email.toLowerCase());
-            if (matched && matched.active) {
-              setCurrentUser({ ...matched, lastLogin: parsed.lastLogin });
-            } else {
-              sessionStorage.removeItem(AUTH_USER_KEY);
-              setCurrentUser(null);
+  // Helper to verify user profile document in Firestore (admins & customers)
+  const fetchUserProfile = async (firebaseUser: FirebaseUser): Promise<AdminUser | null> => {
+    if (!db) return null;
+
+    try {
+      // 1. Direct lookup by Firebase Auth UID
+      const docRef = doc(db, 'users', firebaseUser.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data && data.active !== false && VALID_ALL_ROLES.includes(data.role)) {
+          return {
+            uid: firebaseUser.uid,
+            displayName: data.displayName || firebaseUser.displayName || firebaseUser.email || (data.role === 'customer' ? 'Customer' : 'Administrator'),
+            email: (firebaseUser.email || data.email).toLowerCase(),
+            role: data.role,
+            phone: data.phone,
+            deliveryAddress: data.deliveryAddress,
+            assignedBrandId: data.assignedBrandId,
+            active: true,
+            createdAt: data.createdAt || new Date().toISOString(),
+            lastLogin: data.lastLogin
+          };
+        }
+      }
+
+      // 2. Fallback query by email (for accounts whose Firestore doc was keyed by legacy/seed ID)
+      if (firebaseUser.email) {
+        const q = query(
+          collection(db, 'users'),
+          where('email', '==', firebaseUser.email.toLowerCase())
+        );
+        const querySnap = await getDocs(q);
+
+        if (!querySnap.empty) {
+          const matchedDoc = querySnap.docs[0];
+          const data = matchedDoc.data();
+
+          if (data && data.active !== false && VALID_ALL_ROLES.includes(data.role)) {
+            const profile: AdminUser = {
+              uid: firebaseUser.uid,
+              displayName: data.displayName || firebaseUser.displayName || firebaseUser.email || (data.role === 'customer' ? 'Customer' : 'Administrator'),
+              email: firebaseUser.email.toLowerCase(),
+              role: data.role,
+              phone: data.phone,
+              deliveryAddress: data.deliveryAddress,
+              assignedBrandId: data.assignedBrandId,
+              active: true,
+              createdAt: data.createdAt || new Date().toISOString(),
+              lastLogin: data.lastLogin
+            };
+
+            // Sync doc to be addressable by UID going forward
+            if (matchedDoc.id !== firebaseUser.uid) {
+              try {
+                const { password: _p, ...safeData } = data;
+                await setDoc(doc(db, 'users', firebaseUser.uid), {
+                  ...safeData,
+                  uid: firebaseUser.uid,
+                  lastLogin: new Date().toISOString()
+                }, { merge: true });
+              } catch (syncErr) {
+                console.warn('Doc sync warning:', syncErr);
+              }
             }
+
+            return profile;
           }
         }
-      } catch (e) {
-        console.error('Failed reading session state:', e);
-        sessionStorage.removeItem(AUTH_USER_KEY);
+      }
+    } catch (err) {
+      console.error('Failed to verify user profile against Firestore:', err);
+    }
+
+    return null;
+  };
+
+  const refreshUserProfile = useCallback(async () => {
+    if (auth && auth.currentUser) {
+      const profile = await fetchUserProfile(auth.currentUser);
+      if (profile) {
+        setCurrentUser(profile);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const activeAuth = auth;
+    if (!isFirebaseConfigured || !activeAuth) {
+      console.warn('Firebase Authentication is not configured or offline.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Subscribe to genuine Firebase Authentication state listener
+    const unsubscribe = onAuthStateChanged(activeAuth, async (firebaseUser: FirebaseUser | null) => {
+      if (!firebaseUser) {
+        setCurrentUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const userProfile = await fetchUserProfile(firebaseUser);
+
+        if (userProfile) {
+          setCurrentUser(userProfile);
+        } else {
+          // Authenticated in Firebase Auth, but NOT an authorized user in Firestore
+          console.warn(`User ${firebaseUser.email} has no registered profile. Revoking access.`);
+          await signOut(activeAuth);
+          setCurrentUser(null);
+        }
+      } catch (err) {
+        console.error('Auth state resolution error:', err);
         setCurrentUser(null);
       } finally {
         setIsLoading(false);
       }
-    }
-    verifySavedSession();
+    });
+
+    return () => unsubscribe();
   }, []);
 
+  // Admin login handler (Restricted strictly to administrators)
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
+
+    if (!isFirebaseConfigured || !auth || !db) {
+      setIsLoading(false);
+      return {
+        success: false,
+        error: 'Authentication service is not available. Please check system configuration.'
+      };
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPass = password.trim();
+
+    if (!trimmedEmail) {
+      setIsLoading(false);
+      return { success: false, error: 'Please enter your registered administrator email.' };
+    }
+
+    if (!trimmedPass) {
+      setIsLoading(false);
+      return { success: false, error: 'Password is required to sign in.' };
+    }
+
     try {
-      if (!email || !email.trim()) {
+      // 1. Authenticate identity through Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, trimmedPass);
+      const firebaseUser = userCredential.user;
+
+      // 2. Authorize role through verified Firestore record
+      const userProfile = await fetchUserProfile(firebaseUser);
+
+      if (!userProfile) {
+        await signOut(auth);
+        setCurrentUser(null);
         setIsLoading(false);
-        return { success: false, error: 'Please enter your registered administrator email.' };
+        return {
+          success: false,
+          error: 'Access denied: This account has no active profile in the system.'
+        };
       }
 
-      if (!password || !password.trim()) {
+      if (userProfile.role === 'customer' || !VALID_ADMIN_ROLES.includes(userProfile.role)) {
+        await signOut(auth);
+        setCurrentUser(null);
         setIsLoading(false);
-        return { success: false, error: 'Password is required to unlock the Admin Dashboard.' };
+        return {
+          success: false,
+          error: 'Access denied: Customer accounts cannot access the administration console. Please use the Customer Portal to sign in.'
+        };
       }
 
-      const inputEmail = email.trim().toLowerCase();
-      const inputPass = password.trim();
-
-      const users = await getUsers();
-      let matched = users.find(u => u.email.toLowerCase() === inputEmail);
-
-      // Support simple alias if user enters just "admin" or "superadmin"
-      if (!matched && (inputEmail === 'admin' || inputEmail === 'superadmin')) {
-        matched = users.find(u => u.role === 'super_admin');
-      }
-
-      if (!matched) {
-        setIsLoading(false);
-        return { success: false, error: 'Access Denied: Unrecognized administrator email address. Try admin@nexalus.com' };
-      }
-
-      if (!matched.active) {
-        setIsLoading(false);
-        return { success: false, error: 'This admin account is currently deactivated. Contact Parent Corporate Admin.' };
-      }
-
-      // Flexible Simple Password Verification: accept admin123, admin@123 or defined password
-      const isPasswordValid =
-        matched.password === inputPass ||
-        (matched.role === 'super_admin' && (inputPass === 'admin123' || inputPass === 'admin@123' || inputPass === 'Nexalus@Admin2026')) ||
-        (matched.role === 'innovations_admin' && (inputPass === 'admin123' || inputPass === 'Innovations@2026')) ||
-        (matched.role === 'am_admin' && (inputPass === 'admin123' || inputPass === 'AmChiplun@2026'));
-
-      if (!isPasswordValid) {
-        setIsLoading(false);
-        return { success: false, error: 'Access Denied: Invalid administrator password. Try admin123' };
-      }
-
-      const userWithUpdatedLogin: AdminUser = {
-        ...matched,
-        lastLogin: new Date().toISOString()
+      const now = new Date().toISOString();
+      const updatedProfile: AdminUser = {
+        ...userProfile,
+        lastLogin: now
       };
 
-      setCurrentUser(userWithUpdatedLogin);
-      sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(userWithUpdatedLogin));
+      setCurrentUser(updatedProfile);
+
+      // Record successful login in audit logs
       try {
-        addAuditLog('ADMIN_LOGIN', `Admin signed in: ${userWithUpdatedLogin.email} (${userWithUpdatedLogin.role})`, undefined, userWithUpdatedLogin.email).catch(console.warn);
-      } catch (e) {
-        console.warn('Audit log write error:', e);
+        await addAuditLog(
+          'ADMIN_LOGIN',
+          `Admin signed in via Firebase Auth: ${updatedProfile.email} (${updatedProfile.role})`,
+          undefined,
+          updatedProfile.email
+        );
+      } catch (logErr) {
+        console.warn('Audit log write error:', logErr);
       }
 
       setIsLoading(false);
       return { success: true };
     } catch (err: any) {
       setIsLoading(false);
-      return { success: false, error: err.message || 'Login failed.' };
+
+      let errorMessage = 'Invalid email or password. Please verify your credentials and try again.';
+      if (err.code === 'auth/user-disabled') {
+        errorMessage = 'This administrator account has been deactivated. Please contact a super administrator.';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed login attempts. Access is temporarily locked. Please wait a few minutes before retrying.';
+      } else if (err.code === 'auth/network-request-failed') {
+        errorMessage = 'Network connection failed. Please check your internet connection.';
+      }
+
+      return { success: false, error: errorMessage };
     }
   };
 
-  const logout = () => {
-    if (currentUser) {
-      addAuditLog('ADMIN_LOGOUT', `Admin signed out: ${currentUser.email}`, undefined, currentUser.email);
+  // Customer login handler
+  const loginCustomer = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+
+    if (!isFirebaseConfigured || !auth || !db) {
+      setIsLoading(false);
+      return {
+        success: false,
+        error: 'Authentication service is currently offline. Please try again later.'
+      };
     }
-    setCurrentUser(null);
-    sessionStorage.removeItem(AUTH_USER_KEY);
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPass = password.trim();
+
+    if (!trimmedEmail) {
+      setIsLoading(false);
+      return { success: false, error: 'Please enter your registered email address.' };
+    }
+
+    if (!trimmedPass) {
+      setIsLoading(false);
+      return { success: false, error: 'Password is required to sign in.' };
+    }
+
     try {
+      const userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, trimmedPass);
+      const firebaseUser = userCredential.user;
+      const userProfile = await fetchUserProfile(firebaseUser);
+
+      if (!userProfile) {
+        await signOut(auth);
+        setCurrentUser(null);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'Account record could not be found. Please register or contact support.'
+        };
+      }
+
+      const now = new Date().toISOString();
+      const updatedProfile: AdminUser = {
+        ...userProfile,
+        lastLogin: now
+      };
+
+      setCurrentUser(updatedProfile);
+      setIsLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      setIsLoading(false);
+
+      let errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+      if (err.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been deactivated. Please contact customer support.';
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password. Please verify and try again.';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many attempts. Please wait a moment before trying again.';
+      } else if (err.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Customer registration handler
+  const registerCustomerAccount = async (data: CustomerRegistrationData): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    try {
+      const result = await registerCustomer(data);
+      setCurrentUser(result.user);
+      setIsLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      setIsLoading(false);
+      let msg = 'Registration failed. Please check your information and try again.';
+      if (err.code === 'auth/email-already-in-use') {
+        msg = 'An account with this email address already exists. Please log in instead.';
+      } else if (err.code === 'auth/weak-password') {
+        msg = 'Password should be at least 6 characters.';
+      } else if (err.code === 'auth/invalid-email') {
+        msg = 'The email address is not valid.';
+      } else if (err.message) {
+        msg = err.message;
+      }
+      return { success: false, error: msg };
+    }
+  };
+
+  const logout = async (): Promise<void> => {
+    if (currentUser && currentUser.role !== 'customer') {
+      try {
+        await addAuditLog('ADMIN_LOGOUT', `Admin signed out: ${currentUser.email}`, undefined, currentUser.email);
+      } catch (e) {}
+    }
+
+    setCurrentUser(null);
+
+    // Clean up any remaining legacy storage
+    try {
+      sessionStorage.removeItem(LEGACY_AUTH_KEY);
       localStorage.removeItem('nexalus_auth_user');
       localStorage.removeItem('nexalus_auth_session');
-    } catch (e) {}
+    } catch {}
+
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.warn('Firebase signOut error:', err);
+      }
+    }
   };
 
+  const isCustomer = currentUser?.role === 'customer';
+  const isAdmin = currentUser != null && currentUser.role !== 'customer';
   const isSuperAdmin = currentUser?.role === 'super_admin';
   const isInnovationsAdmin =
     currentUser?.role === 'innovations_admin' ||
@@ -161,7 +420,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Permission enforcement
   const canManageBrand = (brandId: BrandId | 'general' | 'nexalus' | 'nexalus-innovations' | 'am-distributors'): boolean => {
-    if (!currentUser) return false;
+    if (!currentUser || isCustomer) return false;
     if (isSuperAdmin) return true;
     if (isInnovationsAdmin) {
       return (
@@ -184,7 +443,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         isAuthenticated: !!currentUser,
         isLoading,
+        isCustomer,
+        isAdmin,
         login,
+        loginCustomer,
+        registerCustomerAccount,
+        refreshUserProfile,
         logout,
         canManageBrand,
         brandScope,

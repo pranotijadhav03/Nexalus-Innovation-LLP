@@ -4,15 +4,18 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getServices, createService, updateService, deleteService } from '../../firebase/services';
 import { Service, BrandId } from '../../types';
+import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { Input, TextArea, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { BrandBadge } from '../../components/common/BrandBadge';
-import { Plus, Edit2, Trash2, Wrench, Shield, Wifi, Building2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Wrench, Shield, Wifi, Building2, ArrowRight } from 'lucide-react';
 
 export const AdminServicesPage: React.FC = () => {
   const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, canManageBrand } = useAuth();
-  const { activeBrandFilter } = useOutletContext<{ activeBrandFilter: BrandId | 'all' }>();
+  const outletCtx = useOutletContext<AdminOutletContext>();
+  const activeConsole = outletCtx?.activeConsole || 'master';
+  const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
   const { success, error } = useToast();
 
   const [services, setServices] = useState<Service[]>([]);
@@ -41,7 +44,8 @@ export const AdminServicesPage: React.FC = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const data = await getServices(activeBrandFilter === 'all' ? undefined : activeBrandFilter);
+      const filter = activeConsole === 'master' ? 'nexalus' : activeBrandFilter;
+      const data = await getServices(filter === 'all' ? undefined : (filter as any));
       setServices(data);
     } finally {
       setIsLoading(false);
@@ -50,12 +54,20 @@ export const AdminServicesPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [activeBrandFilter]);
+  }, [activeBrandFilter, activeConsole]);
 
   const openCreateModal = () => {
     setEditingService(null);
     setTitle('');
-    const defaultBrand = isAmAdmin ? 'am-distributors' : 'nexalus-innovations';
+    const defaultBrand = isSuperAdmin
+      ? (activeConsole === 'am-distributors'
+          ? 'am-distributors'
+          : activeConsole === 'nexalus-innovations'
+          ? 'nexalus-innovations'
+          : ('nexalus' as any))
+      : isAmAdmin
+      ? 'am-distributors'
+      : 'nexalus-innovations';
     setBrandId(defaultBrand);
     setShortDescription('');
     setFullDescription('');
@@ -142,15 +154,38 @@ export const AdminServicesPage: React.FC = () => {
     }
   };
 
+  const filteredServices = services.filter(srv => {
+    if (activeConsole === 'nexalus-innovations' || (isInnovationsAdmin && !isSuperAdmin)) {
+      return (
+        srv.brandId === 'nexalus-innovations' ||
+        srv.brandId === 'cp-plus' ||
+        srv.brandId === 'one-broadband' ||
+        srv.brandId === 'itti-networking'
+      );
+    }
+    if (activeConsole === 'am-distributors' || isAmAdmin) {
+      return srv.brandId === 'am-distributors';
+    }
+    return srv.brandId === 'nexalus';
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Service Offerings Management
+            {activeConsole === 'nexalus-innovations'
+              ? 'Nexalus Innovations Services'
+              : activeConsole === 'am-distributors'
+              ? 'A.M. Distributors Services'
+              : 'Corporate Parent Services Portfolio'}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Configure installation services, surveillance maintenance contracts, and fiber deployments.
+            {activeConsole === 'nexalus-innovations'
+              ? 'Configure CCTV installation, optical fiber maintenance contracts, and network cabling deployments.'
+              : activeConsole === 'am-distributors'
+              ? 'Configure refrigerated fleet delivery, cold-chain distribution, and wholesale supply services.'
+              : 'Turnkey optical fiber engineering, centralized surveillance control rooms, and parent infrastructure.'}
           </p>
         </div>
 
@@ -158,6 +193,32 @@ export const AdminServicesPage: React.FC = () => {
           Add New Service
         </Button>
       </div>
+
+      {/* Corporate Super Admin Workspace Context Link */}
+      {isSuperAdmin && activeConsole === 'master' && (
+        <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-blue-900 font-medium">
+            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+            <span>You are viewing <strong>Corporate Parent</strong> services only. Child company services are strictly separated in their own workspaces.</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => outletCtx?.openChildConsole('nexalus-innovations')}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 transition-all cursor-pointer shadow-2xs"
+            >
+              Nexalus Innovations Workspace →
+            </button>
+            <button
+              type="button"
+              onClick={() => outletCtx?.openChildConsole('am-distributors')}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-teal-100 text-teal-700 font-bold border border-teal-200 transition-all cursor-pointer shadow-2xs"
+            >
+              A.M. Distributors Workspace →
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -172,7 +233,7 @@ export const AdminServicesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {services.map(srv => (
+              {filteredServices.map(srv => (
                 <tr key={srv.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-slate-900">
                     <div>{srv.title}</div>
@@ -242,8 +303,9 @@ export const AdminServicesPage: React.FC = () => {
                 value={brandId}
                 onChange={e => setBrandId(e.target.value as any)}
                 options={[
-                  { value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' },
-                  { value: 'am-distributors', label: 'A.M. Distributors Chiplun (Cold-Chain)' }
+                  ...(activeConsole === 'master' ? [{ value: 'nexalus', label: 'Nexalus Corporate Parent (Turnkey & Infrastructure)' }] : []),
+                  ...(activeConsole === 'nexalus-innovations' || activeConsole === 'master' ? [{ value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' }] : []),
+                  ...(activeConsole === 'am-distributors' || activeConsole === 'master' ? [{ value: 'am-distributors', label: 'A.M. Distributors Chiplun (Cold-Chain)' }] : [])
                 ]}
               />
             ) : (

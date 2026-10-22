@@ -4,34 +4,44 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getCategories, createCategory, deleteCategory } from '../../firebase/services';
 import { ProductCategory, BrandId } from '../../types';
+import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { Input, TextArea, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { BrandBadge } from '../../components/common/BrandBadge';
-import { Plus, Trash2, Layers } from 'lucide-react';
+import { Plus, Trash2, Layers, Shield, Building, ArrowRight } from 'lucide-react';
 
 export const AdminCategoriesPage: React.FC = () => {
-  const { isSuperAdmin, isAmAdmin, canManageBrand } = useAuth();
-  const { activeBrandFilter } = useOutletContext<{ activeBrandFilter: BrandId | 'all' }>();
+  const { isSuperAdmin, isAmAdmin, isInnovationsAdmin, canManageBrand } = useAuth();
+  const outletCtx = useOutletContext<AdminOutletContext>();
+  const activeConsole = outletCtx?.activeConsole || 'master';
+  const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
   const { success, error } = useToast();
 
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState('');
-  const [brandId, setBrandId] = useState<BrandId>(isAmAdmin ? 'am-distributors' : 'nexalus-innovations');
+  const [brandId, setBrandId] = useState<BrandId>(
+    isAmAdmin || activeConsole === 'am-distributors'
+      ? 'am-distributors'
+      : activeConsole === 'nexalus-innovations' || isInnovationsAdmin
+      ? 'nexalus-innovations'
+      : ('nexalus' as any)
+  );
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const [deleteCandidate, setDeleteCandidate] = useState<ProductCategory | null>(null);
 
   const loadData = async () => {
-    const data = await getCategories(activeBrandFilter === 'all' ? undefined : activeBrandFilter);
+    const filter = activeConsole === 'master' ? 'nexalus' : activeBrandFilter;
+    const data = await getCategories(filter === 'all' ? undefined : filter as any);
     setCategories(data);
   };
 
   useEffect(() => {
     loadData();
-  }, [activeBrandFilter]);
+  }, [activeBrandFilter, activeConsole]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,15 +85,38 @@ export const AdminCategoriesPage: React.FC = () => {
     }
   };
 
+  const filteredCategories = categories.filter(c => {
+    if (activeConsole === 'nexalus-innovations' || (isInnovationsAdmin && !isSuperAdmin)) {
+      return c.brandId === 'nexalus-innovations' || c.brandId === 'cp-plus' || c.brandId === 'one-broadband' || c.brandId === 'itti-networking';
+    }
+    if (activeConsole === 'am-distributors' || isAmAdmin) {
+      return c.brandId === 'am-distributors';
+    }
+    return c.brandId === 'nexalus';
+  });
+
+  const nexalusCatCount = categories.filter(
+    c => c.brandId === 'nexalus-innovations' || c.brandId === 'cp-plus' || c.brandId === 'one-broadband' || c.brandId === 'itti-networking'
+  ).length;
+  const amCatCount = categories.filter(c => c.brandId === 'am-distributors').length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Product Categories Management
+            {activeConsole === 'nexalus-innovations'
+              ? 'Nexalus Innovations Categories'
+              : activeConsole === 'am-distributors'
+              ? 'A.M. Distributors Categories'
+              : 'Product Categories Management'}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Configure surveillance & networking categories used in public product filters.
+            {activeConsole === 'nexalus-innovations'
+              ? 'Configure CCTV, optical fiber, and network equipment taxonomy classifications.'
+              : activeConsole === 'am-distributors'
+              ? 'Configure packaged water, commercial dairy, and cold-chain FMCG categories.'
+              : 'Configure surveillance, networking, and cold-chain categories across all subsidiaries.'}
           </p>
         </div>
 
@@ -91,6 +124,32 @@ export const AdminCategoriesPage: React.FC = () => {
           Add Category
         </Button>
       </div>
+
+      {/* Corporate Super Admin Workspace Context Link */}
+      {isSuperAdmin && activeConsole === 'master' && (
+        <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-blue-900 font-medium">
+            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+            <span>You are viewing <strong>Corporate Parent</strong> categories only. Child company categories are strictly separated in their own workspaces.</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => outletCtx?.openChildConsole('nexalus-innovations')}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 transition-all cursor-pointer shadow-2xs"
+            >
+              Nexalus Innovations Workspace →
+            </button>
+            <button
+              type="button"
+              onClick={() => outletCtx?.openChildConsole('am-distributors')}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-teal-100 text-teal-700 font-bold border border-teal-200 transition-all cursor-pointer shadow-2xs"
+            >
+              A.M. Distributors Workspace →
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -104,7 +163,7 @@ export const AdminCategoriesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {categories.map(cat => (
+              {filteredCategories.map(cat => (
                 <tr key={cat.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-slate-900">
                     {cat.name}
@@ -152,8 +211,9 @@ export const AdminCategoriesPage: React.FC = () => {
               value={brandId}
               onChange={e => setBrandId(e.target.value as any)}
               options={[
-                { value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' },
-                { value: 'am-distributors', label: 'A.M. Distributors Chiplun (Cold-Chain & Logistics)' }
+                ...(activeConsole === 'master' ? [{ value: 'nexalus', label: 'Nexalus Corporate Parent (Turnkey & Enterprise)' }] : []),
+                ...(activeConsole === 'nexalus-innovations' || activeConsole === 'master' ? [{ value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' }] : []),
+                ...(activeConsole === 'am-distributors' || activeConsole === 'master' ? [{ value: 'am-distributors', label: 'A.M. Distributors Chiplun (Cold-Chain & Logistics)' }] : [])
               ]}
             />
           ) : (
