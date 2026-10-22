@@ -12,6 +12,7 @@ import {
   FAQ,
   AdminUser,
   SiteBanner,
+  HeroSlide,
   SeoSettings,
   TeamMember
 } from '../types';
@@ -1786,6 +1787,61 @@ export const initialFaqs: FAQ[] = [
   }
 ];
 
+export const DEFAULT_AM_SLIDES: HeroSlide[] = [
+  {
+    id: 'slide-am-1',
+    title: 'A.M. Distributors Chiplun',
+    subtitle: 'Packaged Mineral Water \u2022 Ice Cream Distributor \u2022 Milk, Butter & All Dairy Products',
+    description: "Chiplun's cold-chain and commercial distribution hub operating under Nexalus Innovations LLP.",
+    imageUrl: '/images/projects/real-warehouse-distribution.jpg',
+    badge: 'Chiplun Regional Cold-Chain & Commercial Wholesale Logistics',
+    primaryCtaText: 'Order Wholesale Supply',
+    primaryCtaLink: '/brands/am-distributors/products',
+    secondaryCtaText: 'Contact Chiplun Depot',
+    secondaryCtaLink: '/contact',
+    order: 1
+  },
+  {
+    id: 'slide-am-2',
+    title: 'Packaged Mineral Water Supply',
+    subtitle: '20-Litre Hermetic Sealed Dispensers & 500ml / 1L Bottled Water Cases',
+    description: 'Automated steam-sanitized hermetic bottles with scheduled doorstep delivery.',
+    imageUrl: '/images/products/am-water-jar-20l.jpg',
+    badge: 'Ozone-Treated & Automated Steam-Sanitized Jars',
+    primaryCtaText: 'Book Water Route Subscription',
+    primaryCtaLink: '/brands/am-distributors/products',
+    secondaryCtaText: 'View Mineral Water Specs',
+    secondaryCtaLink: '/brands/am-distributors/products',
+    order: 2
+  },
+  {
+    id: 'slide-am-3',
+    title: 'Commercial Bulk Ice Cream Tubs',
+    subtitle: 'Amul, Vadilal & Regional Gourmet Assortments for Parlors & Banquets',
+    description: 'Certified -18\u00b0C refrigerated fleet guaranteeing crystal-free, un-melted texture.',
+    imageUrl: '/images/products/am-icecream-tub.jpg',
+    badge: 'Certified -18\u00b0C Deep-Freeze Transport Fleet',
+    primaryCtaText: 'Inquire Ice Cream Wholesale',
+    primaryCtaLink: '/brands/am-distributors/products',
+    secondaryCtaText: 'Explore Flavor Portfolio',
+    secondaryCtaLink: '/brands/am-distributors/products',
+    order: 3
+  },
+  {
+    id: 'slide-am-4',
+    title: 'Farm-Fresh Milk & Pure Dairy',
+    subtitle: 'Standardized 4.5% Fat Milk, Pure Cow Ghee & Table Butter Blocks',
+    description: 'Chilled within 2 hours of milking with 4:00 AM morning delivery routes.',
+    imageUrl: '/images/products/am-fresh-milk-dairy.jpg',
+    badge: 'Daily 4:00 AM Direct Farm Sourcing',
+    primaryCtaText: 'Join Morning Milk Route',
+    primaryCtaLink: '/brands/am-distributors/products',
+    secondaryCtaText: 'Dairy Price Breakdown',
+    secondaryCtaLink: '/brands/am-distributors/products',
+    order: 4
+  }
+];
+
 export const initialBanners: SiteBanner[] = [
   {
     id: 'ban-parent',
@@ -1848,7 +1904,8 @@ export const initialBanners: SiteBanner[] = [
     showHero: true,
     showTeam: true,
     showFaqs: true,
-    showContact: true
+    showContact: true,
+    slides: DEFAULT_AM_SLIDES
   }
 ];
 

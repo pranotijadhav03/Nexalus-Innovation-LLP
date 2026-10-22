@@ -369,6 +369,20 @@ export interface AuditLog {
   brandId?: BrandId | 'general';
 }
 
+export interface HeroSlide {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  imageUrl: string;
+  badge?: string;
+  primaryCtaText?: string;
+  primaryCtaLink?: string;
+  secondaryCtaText?: string;
+  secondaryCtaLink?: string;
+  order?: number;
+}
+
 export interface SiteBanner {
   id: string;
   brandId: BrandId | 'nexalus';
@@ -389,6 +403,7 @@ export interface SiteBanner {
   showTeam?: boolean;
   showFaqs?: boolean;
   showContact?: boolean;
+  slides?: HeroSlide[];
 }
 
 export interface SeoSettings {

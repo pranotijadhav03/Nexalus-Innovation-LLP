@@ -27,7 +27,7 @@ import { subscribeToBanners, getProducts, getCachedProducts } from '../../../fir
 import { SiteBanner, Product } from '../../../types';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
-import { initialProducts } from '../../../data/initialData';
+import { initialProducts, DEFAULT_AM_SLIDES } from '../../../data/initialData';
 
 export const AmDistributorsPage: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
@@ -81,78 +81,61 @@ export const AmDistributorsPage: React.FC = () => {
     };
   }, []);
 
-  // Dynamically build 4 rich, coordinated slides using uploaded product imagery & matching tailored copy
+  // Dynamically build 4 rich, coordinated slides using admin slides or default slides
   const heroSlides = useMemo(() => {
-    const waterProd = divisionProducts.find(p => p.categoryId?.includes('water') || p.id === 'prod-am-1');
-    const icecreamProd = divisionProducts.find(p => p.categoryId?.includes('icecream') || p.id === 'prod-am-2');
-    const milkProd = divisionProducts.find(p => p.categoryId?.includes('dairy') || p.id === 'prod-am-3');
-    const butterProd = divisionProducts.find(p => p.id === 'prod-am-4');
+    const rawSlides = (heroBanner?.slides && heroBanner.slides.length > 0)
+      ? heroBanner.slides
+      : DEFAULT_AM_SLIDES;
 
-    const waterImg = waterProd?.images?.[0] || '/images/products/am-water-jar-20l.jpg';
-    const icecreamImg = icecreamProd?.images?.[0] || '/images/products/am-icecream-tub.jpg';
-    const dairyImg = milkProd?.images?.[0] || butterProd?.images?.[0] || '/images/products/am-fresh-milk-dairy.jpg';
-    const hubImg = '/images/projects/real-warehouse-distribution.jpg';
-
-    return [
+    const themes = [
       {
-        id: 'overview',
-        image: hubImg,
-        badge: 'Chiplun Regional Cold-Chain & Commercial Wholesale Logistics',
-        title: heroBanner?.title || 'A.M. Distributors Chiplun',
-        subtitle: 'Packaged Mineral Water • Ice Cream Distributor • Milk, Butter & All Dairy Products',
-        description:
-          heroBanner?.subtitle ||
-          'The dedicated regional cold-chain and commercial distribution hub for Chiplun and the Konkan region. Operating under Nexalus Innovations LLP, we manage temperature-controlled refrigerated logistics for packaged mineral water, commercial ice creams, farm-fresh milk, butter, and complete dairy supplies.',
-        primaryCta: 'Order Wholesale / Distribution Supply',
-        secondaryCta: 'Contact Chiplun Depot',
         badgeTheme: 'bg-emerald-950/70 border-emerald-500/40 text-emerald-300',
         gradientText: 'from-emerald-300 via-teal-200 to-cyan-300',
         tabLabel: 'Depot Overview'
       },
       {
-        id: 'mineral-water',
-        image: waterImg,
-        badge: 'Ozone-Treated & Automated Steam-Sanitized Jars',
-        title: 'Packaged Mineral Water Supply',
-        subtitle: '20-Litre Hermetic Sealed Dispensers & 500ml / 1L Bottled Water Cases',
-        description:
-          'Pure, laboratory-tested natural mineral water for corporate campuses, hotels, factories, and residences across Chiplun, Khed, and Guhagar. Tamper-evident hermetic sealing with daily punctual doorstep replenishment routes.',
-        primaryCta: 'Book Water Route Subscription',
-        secondaryCta: 'View Mineral Water Specs',
         badgeTheme: 'bg-cyan-950/70 border-cyan-500/40 text-cyan-300',
         gradientText: 'from-cyan-300 via-teal-200 to-sky-300',
         tabLabel: 'Mineral Water'
       },
       {
-        id: 'ice-cream',
-        image: icecreamImg,
-        badge: 'Certified -18°C Deep-Freeze Transport Fleet',
-        title: 'Commercial Bulk Ice Cream Tubs',
-        subtitle: 'Amul, Vadilal & Regional Gourmet Assortments for Parlors & Banquets',
-        description:
-          'Unbroken sub-zero cold-chain transport for banquet halls, luxury hotels, restaurants, and retail parlors across Chiplun and the Konkan belt. Temperature-monitored reefer vans ensuring zero melting and crystal-free gourmet texture.',
-        primaryCta: 'Inquire Ice Cream Wholesale',
-        secondaryCta: 'Explore Flavor Portfolio',
         badgeTheme: 'bg-amber-950/70 border-amber-500/40 text-amber-300',
         gradientText: 'from-amber-300 via-orange-200 to-teal-300',
         tabLabel: 'Ice Creams'
       },
       {
-        id: 'dairy-milk',
-        image: dairyImg,
-        badge: 'Daily 4:00 AM Direct Farm Sourcing',
-        title: 'Farm-Fresh Milk & Pure Dairy',
-        subtitle: 'Standardized 4.5% Fat Milk, Pure Cow Ghee & Table Butter Blocks',
-        description:
-          'Nutrient-rich, lab-tested standardized milk chilled within two hours of milking. Delivering morning freshness to dairy counters, groceries, hospitals, and bakeries with unbroken morning cold-chains.',
-        primaryCta: 'Join Morning Milk Route',
-        secondaryCta: 'Dairy Price Breakdown',
         badgeTheme: 'bg-teal-950/70 border-teal-500/40 text-teal-300',
         gradientText: 'from-emerald-300 via-teal-200 to-amber-200',
         tabLabel: 'Milk & Dairy'
       }
     ];
-  }, [divisionProducts, heroBanner]);
+
+    return rawSlides.map((slide, index) => {
+      const theme = themes[index % themes.length];
+      const titleLower = (slide.title || '').toLowerCase();
+      let tab = 'Slide ' + (index + 1);
+      if (titleLower.includes('water')) tab = 'Mineral Water';
+      else if (titleLower.includes('ice cream')) tab = 'Ice Creams';
+      else if (titleLower.includes('milk') || titleLower.includes('dairy')) tab = 'Milk & Dairy';
+      else if (index === 0 || titleLower.includes('distributor') || titleLower.includes('depot')) tab = 'Depot Overview';
+
+      return {
+        id: slide.id || `slide-${index}`,
+        image: slide.imageUrl || '/images/projects/real-warehouse-distribution.jpg',
+        badge: slide.badge || 'A.M. Distributors Chiplun',
+        title: slide.title,
+        subtitle: slide.subtitle,
+        description: slide.description,
+        primaryCta: slide.primaryCtaText || 'Order Wholesale Supply',
+        primaryCtaLink: slide.primaryCtaLink || '/brands/am-distributors/products',
+        secondaryCta: slide.secondaryCtaText || 'Contact Chiplun Depot',
+        secondaryCtaLink: slide.secondaryCtaLink || '/contact',
+        badgeTheme: theme.badgeTheme,
+        gradientText: theme.gradientText,
+        tabLabel: tab
+      };
+    });
+  }, [heroBanner]);
 
   // Automatic slide rotation every 5 seconds
   useEffect(() => {
@@ -175,8 +158,8 @@ export const AmDistributorsPage: React.FC = () => {
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-20">
-      {/* 1. HERO BANNER WITH SLIDING PRODUCT IMAGES, DYNAMIC CONTENT & FADE OVERLAY */}
-      <section className="relative overflow-hidden bg-slate-950 text-white pt-20 pb-28 border-b border-slate-800 select-none min-h-[580px] sm:min-h-[640px] flex flex-col justify-center">
+      {/* 1. HERO BANNER WITH SLIDING PRODUCT IMAGES, DYNAMIC CONTENT & REDUCED FADE OVERLAY */}
+      <section className="relative overflow-hidden bg-slate-950 text-white pt-20 pb-24 border-b border-slate-800 select-none min-h-[560px] sm:min-h-[620px] flex flex-col justify-center">
         {/* Animated Sliding Background Track with Smooth Cross-Fade */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           {heroSlides.map((slide, index) => {
@@ -185,13 +168,13 @@ export const AmDistributorsPage: React.FC = () => {
               <div
                 key={slide.id}
                 className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                  isActive ? 'opacity-80 z-10' : 'opacity-0 z-0 pointer-events-none'
+                  isActive ? 'opacity-90 z-10' : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
                 <img
                   src={slide.image}
                   alt={slide.title}
-                  className={`w-full h-full object-cover filter brightness-95 contrast-105 transition-transform duration-7000 ease-out ${
+                  className={`w-full h-full object-cover filter brightness-100 contrast-105 transition-transform duration-7000 ease-out ${
                     isActive ? 'scale-105' : 'scale-100'
                   }`}
                 />
@@ -199,9 +182,9 @@ export const AmDistributorsPage: React.FC = () => {
             );
           })}
 
-          {/* Fade Overlay Gradient: Soft dark vignette ensuring vivid image colors while text remains razor sharp */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/45 backdrop-blur-[0.5px] z-10" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(2,6,23,0.85)_100%)] z-10" />
+          {/* Crisp, clean, luminous background with subtle bottom & top contrast protection */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/35 to-slate-950/20 z-10" />
+          <div className="absolute inset-0 bg-slate-950/25 z-10" />
         </div>
 
         {/* Previous / Next Arrow Controls (Desktop) */}
@@ -227,33 +210,18 @@ export const AmDistributorsPage: React.FC = () => {
         {/* Dynamic Foreground Content with Staggered Slide Animations */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-4xl py-6">
           <div key={currentSlide} className="space-y-6">
-            {/* Top Badges */}
-            <div className="animate-hero-down flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-teal-200 hover:text-white font-bold text-xs sm:text-sm border border-teal-500/40 shadow-xs transition-all group backdrop-blur-md"
-              >
-                <ArrowLeft className="w-4 h-4 text-teal-400 group-hover:-translate-x-1 transition-transform" />
-                <span>Back to Main Website (Nexalus Innovations LLP)</span>
-              </Link>
-              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold border backdrop-blur-sm transition-all shadow-xs ${activeSlide.badgeTheme}`}>
-                <span className="w-2 h-2 rounded-full bg-teal-400 inline-block animate-pulse" />
-                <span>{activeSlide.badge}</span>
-              </div>
-            </div>
-
             {/* Main Slide Title */}
-            <h1 className="animate-hero-up text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight drop-shadow-sm">
+            <h1 className="animate-hero-up text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_14px_rgba(0,0,0,0.9)]">
               {activeSlide.title}
             </h1>
 
             {/* Tailored Subtitle with Gradient Text Shimmer */}
-            <p className={`animate-hero-up text-base sm:text-xl font-bold bg-gradient-to-r ${activeSlide.gradientText} bg-clip-text text-transparent [animation-delay:120ms]`}>
+            <p className={`animate-hero-up text-base sm:text-xl font-bold bg-gradient-to-r ${activeSlide.gradientText} bg-clip-text text-transparent [animation-delay:120ms] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]`}>
               {activeSlide.subtitle}
             </p>
 
             {/* Description Paragraph */}
-            <p className="animate-hero-up text-sm sm:text-base text-slate-300 max-w-3xl mx-auto leading-relaxed [animation-delay:220ms]">
+            <p className="animate-hero-up text-sm sm:text-base text-slate-200 max-w-3xl mx-auto leading-relaxed [animation-delay:220ms] font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
               {activeSlide.description}
             </p>
 
@@ -268,7 +236,7 @@ export const AmDistributorsPage: React.FC = () => {
               >
                 {activeSlide.primaryCta}
               </Button>
-              <Link to="/contact">
+              <Link to={activeSlide.secondaryCtaLink || '/contact'}>
                 <Button variant="outline-white" size="lg" className="backdrop-blur-sm hover:bg-white/10 font-bold">
                   {activeSlide.secondaryCta}
                 </Button>
