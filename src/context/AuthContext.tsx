@@ -192,7 +192,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    return null;
+    // 5. Default customer profile for any authenticated non-admin user
+    const defaultCustomerProfile: AdminUser = {
+      uid: firebaseUser.uid,
+      displayName: firebaseUser.displayName || (cleanEmail ? cleanEmail.split('@')[0] : 'Customer'),
+      email: cleanEmail,
+      role: 'customer',
+      phone: firebaseUser.phoneNumber || '',
+      active: true,
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString()
+    };
+    if (db) {
+      withTimeout(setDoc(doc(db, 'users', firebaseUser.uid), defaultCustomerProfile, { merge: true }), 3000).catch(() => {});
+    }
+    return defaultCustomerProfile;
   };
 
   const refreshUserProfile = useCallback(async () => {

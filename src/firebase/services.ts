@@ -2105,6 +2105,12 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
 
     await setDoc(doc(db, 'users', uid), customerUser, { merge: true });
 
+    try {
+      await addAuditLog('CUSTOMER_REGISTER', `New customer registered: ${displayName} (${cleanEmail})`, undefined, cleanEmail);
+    } catch (logErr) {
+      console.warn('Could not record customer registration audit log:', logErr);
+    }
+
     // Sync to local state
     const currentUsers = await getUsers();
     const existingIdx = currentUsers.findIndex(u => u.uid === uid || u.email.toLowerCase() === cleanEmail);

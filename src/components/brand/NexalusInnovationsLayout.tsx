@@ -23,10 +23,15 @@ import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
 import { ScrollToTop } from '../common/PublicLayout';
 import { FloatingWhatsAppButton } from '../common/FloatingWhatsAppButton';
+import { CustomerChoiceModal } from '../common/CustomerChoiceModal';
+import { useAuth } from '../../context/AuthContext';
+import { User, UserCheck } from 'lucide-react';
 
 export const NexalusInnovationsLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const { isAuthenticated, isCustomer } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -131,6 +136,26 @@ export const NexalusInnovationsLayout: React.FC = () => {
 
           {/* Right Header Action Button */}
           <div className="hidden sm:flex items-center gap-3">
+            {isAuthenticated && isCustomer ? (
+              <Link
+                to="/account"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors shadow-xs"
+                title="My Customer Account"
+              >
+                <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+                <span>My Account</span>
+              </Link>
+            ) : !isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => setIsCustomerModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-700 bg-slate-100 hover:bg-indigo-50 border border-slate-200 transition-colors cursor-pointer"
+                title="Customer Portal Registration & Login"
+              >
+                <User className="w-3.5 h-3.5 text-slate-500" />
+                <span>Customer Portal</span>
+              </button>
+            ) : null}
             <a
               href="tel:+919158886444"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 transition-colors"
@@ -387,6 +412,12 @@ export const NexalusInnovationsLayout: React.FC = () => {
       />
 
       {/* Quote Modal */}
+      <CustomerChoiceModal
+        isOpen={isCustomerModalOpen}
+        onClose={() => setIsCustomerModalOpen(false)}
+        initialView="login"
+      />
+
       <QuoteModal
         isOpen={isQuoteOpen}
         onClose={() => setIsQuoteOpen(false)}
