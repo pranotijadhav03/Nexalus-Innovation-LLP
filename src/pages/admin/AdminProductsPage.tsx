@@ -243,11 +243,9 @@ export const AdminProductsPage: React.FC = () => {
       p.modelNumber.toLowerCase().includes(search.toLowerCase());
     const matchesCat = selectedCatFilter === 'all' || p.categoryId === selectedCatFilter;
     const matchesCompany =
-      activeConsole === 'nexalus-innovations' || isInnovationsAdmin
-        ? (p.brandId === 'nexalus-innovations' || p.brandId === 'cp-plus' || p.brandId === 'one-broadband' || p.brandId === 'itti-networking')
-        : activeConsole === 'am-distributors' || isAmAdmin
-        ? (p.brandId === 'am-distributors')
-        : true;
+      activeConsole === 'am-distributors' || isAmAdmin
+        ? p.brandId === 'am-distributors'
+        : p.brandId !== 'am-distributors';
 
     return matchesSearch && matchesCat && matchesCompany;
   });
@@ -278,13 +276,31 @@ export const AdminProductsPage: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={openCreateModal}
-          icon={<Plus className="w-4 h-4" />}
-        >
-          Add New Product
-        </Button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <a
+            href={
+              activeConsole === 'am-distributors'
+                ? '/brands/am-distributors/products'
+                : activeConsole === 'nexalus-innovations'
+                ? '/brands/nexalus-innovations/products'
+                : '/products'
+            }
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all cursor-pointer"
+            title="Open customer-facing products landing page in a new tab"
+          >
+            <span>View Live Store ↗</span>
+          </a>
+
+          <Button
+            variant="primary"
+            onClick={openCreateModal}
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Add New Product
+          </Button>
+        </div>
       </div>
 
       {/* Corporate Super Admin Workspace Context Link */}
@@ -407,6 +423,19 @@ export const AdminProductsPage: React.FC = () => {
 
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
+                      <a
+                        href={
+                          product.brandId === 'am-distributors'
+                            ? '/brands/am-distributors/products'
+                            : '/products'
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                        title="View product on public store"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </a>
                       <button
                         onClick={() => openEditModal(product)}
                         className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

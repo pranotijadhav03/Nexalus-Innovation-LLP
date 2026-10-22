@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getProducts, getCategories } from '../../../firebase/services';
+import { getProducts, getCategories, getCachedProducts, getCachedCategories } from '../../../firebase/services';
 import { Product, ProductCategory } from '../../../types';
 import { initialProducts, initialCategories } from '../../../data/initialData';
 import { ProductCard } from '../../../components/brand/ProductCard';
@@ -32,31 +32,39 @@ const DEFAULT_AM_CATEGORIES: ProductCategory[] = [
 export const AmDistributorsProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [products, setProducts] = useState<Product[]>(() =>
-    initialProducts.filter(p => p.brandId === 'am-distributors')
+    getCachedProducts('am-distributors')
   );
   const [categories, setCategories] = useState<ProductCategory[]>(() => {
-    const initCats = initialCategories.filter(c => c.brandId === 'am-distributors');
-    return initCats.length > 0 ? initCats : DEFAULT_AM_CATEGORIES;
+    const cached = getCachedCategories('am-distributors');
+    return cached.length > 0 ? cached : DEFAULT_AM_CATEGORIES;
   });
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [prods, cats] = await Promise.all([
-          getProducts('am-distributors', true),
-          getCategories('am-distributors')
-        ]);
-        if (prods && prods.length > 0) {
-          setProducts(prods);
-        }
-        if (cats && cats.length > 0) {
-          setCategories(cats);
-        }
-      } catch (err) {
-        console.warn('Could not load AM Distributors catalog data:', err);
+  const loadData = async () => {
+    try {
+      const [prods, cats] = await Promise.all([
+        getProducts('am-distributors', true),
+        getCategories('am-distributors')
+      ]);
+      if (prods && prods.length > 0) {
+        setProducts(prods);
       }
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    } catch (err) {
+      console.warn('Could not load AM Distributors catalog data:', err);
     }
+  };
+
+  useEffect(() => {
     loadData();
+
+    // Listen for real-time updates when admin creates/edits/deletes products or categories
+    const handleUpdate = () => {
+      loadData();
+    };
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    return () => window.removeEventListener('nexalus_data_update', handleUpdate);
   }, []);
 
   // Filter products by selected category
@@ -133,27 +141,28 @@ export const AmDistributorsProductsPage: React.FC = () => {
     <div className="space-y-12 sm:space-y-16 pb-20">
       {/* Header with Dynamic Category Background Image */}
       <section className="relative overflow-hidden bg-slate-950 text-white py-16 sm:py-24 border-b border-slate-800 transition-all duration-700 ease-in-out">
-        {/* Dynamic Category Background Image with Dual Gradient Overlays */}
+        {/* Dynamic Category Background Image with Crisp Clear Visibility */}
         <div className="absolute inset-0">
           <img
             key={currentBgImage}
             src={currentBgImage}
             alt={heroTitle}
-            className="w-full h-full object-cover object-center opacity-30 filter brightness-90 contrast-105 scale-105 transition-all duration-700 ease-out animate-in fade-in"
+            className="w-full h-full object-cover object-center opacity-80 filter brightness-90 contrast-110 scale-100 transition-all duration-700 ease-out animate-in fade-in"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/70" />
-          <div className="absolute inset-0 bg-teal-950/30 backdrop-blur-[1px]" />
+          {/* Subtle vignette gradient: leaves center clear to show the product clearly while keeping text readable */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-transparent to-slate-950/75" />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-900/70 text-teal-300 text-xs font-semibold border border-teal-500/40 backdrop-blur-md shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-950/80 text-teal-300 text-xs font-bold border border-teal-500/50 backdrop-blur-md shadow-md">
             <Truck className="w-3.5 h-3.5 text-teal-400" />
             <span>Wholesale Supply Catalog • A.M. Distributors Chiplun</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.85)]">
             {heroTitle}
           </h1>
-          <p className="text-sm sm:text-base text-slate-200 max-w-2xl mx-auto leading-relaxed font-medium">
+          <p className="text-sm sm:text-base text-slate-100 max-w-2xl mx-auto leading-relaxed font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
             {heroDesc}
           </p>
         </div>

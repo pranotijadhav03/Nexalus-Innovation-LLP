@@ -17,7 +17,8 @@ import {
   Mail,
   MapPin,
   Clock,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { QuoteModal } from '../common/QuoteModal';
@@ -297,6 +298,15 @@ export const AmDistributorsLayout: React.FC = () => {
                 ))}
                 <li>
                   <Link
+                    to="/admin/login"
+                    className="text-slate-400 hover:text-teal-300 transition-colors flex items-center gap-1.5 pt-1.5 font-medium"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-teal-400" />
+                    <span>Depot Admin Login</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     to="/"
                     className="text-teal-400 hover:text-teal-300 font-semibold transition-colors flex items-center gap-1 pt-2"
                   >
@@ -357,13 +367,18 @@ export const AmDistributorsLayout: React.FC = () => {
             <div>
               &copy; {new Date().getFullYear()} A.M. Distributors Chiplun. All rights reserved. An operating company of Nexalus Innovations LLP.
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <Link to="/brands/am-distributors/about" className="hover:text-slate-400">
                 About Depot
               </Link>
               <span>•</span>
               <Link to="/brands/am-distributors/contact" className="hover:text-slate-400">
                 Contact Depot
+              </Link>
+              <span>•</span>
+              <Link to="/admin/login" className="text-slate-400 hover:text-teal-400 flex items-center gap-1 font-medium">
+                <Lock className="w-3 h-3 text-teal-400" />
+                <span>Admin Login</span>
               </Link>
               <span>•</span>
               <Link to="/" className="text-teal-400 hover:text-teal-300 font-semibold">
