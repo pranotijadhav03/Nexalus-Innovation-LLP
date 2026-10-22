@@ -1476,7 +1476,49 @@ export async function deleteEnquiry(id: string): Promise<boolean> {
 // SERVICE AREAS (One Broadband Coverage Check)
 // ----------------------------------------------------
 export async function getServiceAreas(): Promise<ServiceArea[]> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const snap = await withTimeout(getDocs(collection(db, 'service_areas')), 1800);
+      if (!snap.empty) {
+        const list: ServiceArea[] = [];
+        snap.forEach(d => list.push(d.data() as ServiceArea));
+        setLocalItem(STORAGE_KEYS.SERVICE_AREAS, list);
+        return list;
+      }
+    } catch (e) {
+      console.warn('Firestore getServiceAreas error, using local fallback:', e);
+    }
+  }
   return getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
+}
+
+export function subscribeToServiceAreas(callback: (areas: ServiceArea[]) => void): () => void {
+  callback(getCachedServiceAreas());
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = collection(db, 'service_areas');
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          const list: ServiceArea[] = [];
+          snapshot.forEach(doc => list.push(doc.data() as ServiceArea));
+          setLocalItem(STORAGE_KEYS.SERVICE_AREAS, list);
+          callback(list);
+        }
+      }, (err) => console.warn('Service areas subscription error:', err));
+      return unsubscribe;
+    } catch (e) {
+      console.warn('Could not attach Firestore onSnapshot for service_areas:', e);
+    }
+  }
+
+  const handleUpdate = (e: any) => {
+    if (!e.detail?.key || e.detail.key.includes('service_areas')) {
+      callback(getCachedServiceAreas());
+    }
+  };
+  window.addEventListener('nexalus_data_update', handleUpdate);
+  return () => window.removeEventListener('nexalus_data_update', handleUpdate);
 }
 
 export async function checkCoverage(queryStr: string, brandFilter?: string): Promise<{
@@ -1536,9 +1578,18 @@ export async function createServiceArea(area: Omit<ServiceArea, 'id' | 'updatedA
     id: 'sa-' + Date.now(),
     updatedAt: new Date().toISOString()
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'service_areas', newArea.id), newArea), 3000);
+    } catch (e) {
+      console.warn('Firestore createServiceArea error:', e);
+    }
+  }
+
   const areas = getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
   setLocalItem(STORAGE_KEYS.SERVICE_AREAS, [...areas, newArea]);
-  await addAuditLog('CREATE_SERVICE_AREA', `Added coverage zone: ${newArea.locality} (${newArea.pincode})`, 'one-broadband');
+  await addAuditLog('CREATE_SERVICE_AREA', `Added coverage zone: ${newArea.city} - ${newArea.locality} (${newArea.pincode})`, newArea.brandId === 'am-distributors' ? 'am-distributors' : 'general');
   return newArea;
 }
 
@@ -1552,9 +1603,18 @@ export async function updateServiceArea(id: string, updates: Partial<ServiceArea
     ...updates,
     updatedAt: new Date().toISOString()
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(updateDoc(doc(db, 'service_areas', id), { ...updates, updatedAt: updated.updatedAt }), 3000);
+    } catch (e) {
+      console.warn('Firestore updateServiceArea error:', e);
+    }
+  }
+
   areas[index] = updated;
   setLocalItem(STORAGE_KEYS.SERVICE_AREAS, areas);
-  await addAuditLog('UPDATE_SERVICE_AREA', `Updated coverage zone: ${updated.locality}`, 'one-broadband');
+  await addAuditLog('UPDATE_SERVICE_AREA', `Updated coverage zone: ${updated.city} - ${updated.locality}`, updated.brandId === 'am-distributors' ? 'am-distributors' : 'general');
   return updated;
 }
 
@@ -1563,9 +1623,17 @@ export async function deleteServiceArea(id: string): Promise<boolean> {
   const target = areas.find(a => a.id === id);
   if (!target) return false;
 
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(deleteDoc(doc(db, 'service_areas', id)), 3000);
+    } catch (e) {
+      console.warn('Firestore deleteServiceArea error:', e);
+    }
+  }
+
   const updated = areas.filter(a => a.id !== id);
   setLocalItem(STORAGE_KEYS.SERVICE_AREAS, updated);
-  await addAuditLog('DELETE_SERVICE_AREA', `Deleted coverage zone: ${target.locality}`, 'one-broadband');
+  await addAuditLog('DELETE_SERVICE_AREA', `Deleted coverage zone: ${target.city} - ${target.locality}`, target.brandId === 'am-distributors' ? 'am-distributors' : 'general');
   return true;
 }
 

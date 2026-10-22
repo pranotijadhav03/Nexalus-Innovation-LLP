@@ -316,6 +316,17 @@ export const AdminServiceAreasPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Cloud Firestore Live Status Banner */}
+      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="font-black text-slate-900">Cloud Firestore Synced (service_areas):</span>
+          <span className="text-slate-600">
+            Any city, locality, or services added here are immediately saved to Firebase and updated on the public website.
+          </span>
+        </div>
+      </div>
+
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-4">

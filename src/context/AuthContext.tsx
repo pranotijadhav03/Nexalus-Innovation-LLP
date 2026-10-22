@@ -12,7 +12,8 @@ import {
   query,
   where,
   getDocs,
-  setDoc
+  setDoc,
+  updateDoc
 } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from '../firebase/config';
 import { AdminUser, BrandId, CustomerRegistrationData } from '../types';
@@ -392,6 +393,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...userProfile,
         lastLogin: now
       };
+
+      if (isFirebaseConfigured && db && firebaseUser?.uid) {
+        updateDoc(doc(db, 'users', firebaseUser.uid), { lastLogin: now, updatedAt: now }).catch(console.warn);
+        addAuditLog('CUSTOMER_LOGIN', `Customer logged in: ${updatedProfile.displayName} (${updatedProfile.email})`, undefined, updatedProfile.email).catch(console.warn);
+      }
+
+      // Update cached users in local storage
+      try {
+        const savedUsers = getCachedUsers();
+        const uIdx = savedUsers.findIndex(u => u.uid === firebaseUser.uid || u.email.toLowerCase() === trimmedEmail);
+        if (uIdx >= 0) {
+          savedUsers[uIdx] = { ...savedUsers[uIdx], lastLogin: now };
+          localStorage.setItem('v10_nexalus_store_users', JSON.stringify(savedUsers));
+          window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: 'v10_nexalus_store_users' } }));
+        }
+      } catch (e) {
+        console.warn('Could not update cached users on login:', e);
+      }
 
       setCurrentUser(updatedProfile);
       setIsLoading(false);
