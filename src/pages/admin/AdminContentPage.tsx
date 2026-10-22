@@ -848,6 +848,38 @@ export const AdminContentPage: React.FC = () => {
                           </div>
                         )}
                       </div>
+
+                      {/* One-Click Infrastructure Presets */}
+                      <div className="pt-2">
+                        <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                          Quick Presets (Internet, Networking & CCTV Infrastructure)
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                          {[
+                            { name: 'Server Datacenter', path: '/images/fermilab-blue-racks-real.jpg' },
+                            { name: 'Gigabit Fiber', path: '/images/fiber-optic-glowing.jpg' },
+                            { name: 'Managed Switches', path: '/images/network-hero-banner.jpg' },
+                            { name: 'CCTV Surveillance', path: '/images/cctv-hero-banner.jpg' },
+                            { name: 'Commercial Campus', path: '/images/projects/tech-park-real.jpg' }
+                          ].map(preset => (
+                            <button
+                              key={preset.path}
+                              type="button"
+                              onClick={() => setImageUrl(preset.path)}
+                              className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                                imageUrl === preset.path
+                                  ? 'border-blue-600 bg-blue-50/80 text-blue-900 ring-2 ring-blue-500/20 font-bold'
+                                  : 'border-slate-200 hover:border-slate-300 bg-slate-50 text-slate-700 hover:bg-white'
+                              }`}
+                            >
+                              <div className="h-10 rounded-lg overflow-hidden mb-1.5 border border-slate-200">
+                                <img src={preset.path} alt={preset.name} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="text-[10px] font-bold truncate">{preset.name}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
 
                     <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 pt-2">
