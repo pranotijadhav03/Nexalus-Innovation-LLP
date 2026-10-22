@@ -49,7 +49,7 @@ import {
   getCachedInternetPlans,
   getCachedBanners
 } from '../../firebase/services';
-import { initialBanners } from '../../data/initialData';
+import { initialBanners, DEFAULT_NEXALUS_SLIDES } from '../../data/initialData';
 import { useToast } from '../../context/ToastContext';
 
 // Simple, clear services for Nexalus Innovations LLP
@@ -227,101 +227,122 @@ export const HomePage: React.FC = () => {
   }, []);
 
   // =========================================================================
-  // HERO BACKGROUND SLIDESHOW CONFIGURATION & ROTATION
+  // HERO SLIDESHOW: DYNAMIC MULTI-SLIDE ROTATION WITH FRESH THEME & ANIMATIONS
   // =========================================================================
-  interface HeroSlide {
-    id: string;
-    imageUrl: string;
-    tag: string;
-    subTag: string;
-    focusPosition: string;
-    alt: string;
-  }
+  const heroSlides = React.useMemo(() => {
+    let rawSlides = (heroBanner?.slides && heroBanner.slides.length > 0)
+      ? heroBanner.slides
+      : DEFAULT_NEXALUS_SLIDES;
 
-  const DEFAULT_HERO_SLIDES: HeroSlide[] = [
-    {
-      id: 'server-datacenter',
-      imageUrl: '/images/fermilab-blue-racks-real.jpg',
-      tag: 'Enterprise Datacenter & Server Infrastructure',
-      subTag: 'Tier-3 Datacenter Racks & High-Speed Optical Backbones',
-      focusPosition: 'object-[75%_center] lg:object-[82%_center]',
-      alt: 'Nexalus Innovations Enterprise Server Rack & Optical Data Center'
-    },
-    {
-      id: 'fiber-broadband',
-      imageUrl: '/images/fiber-optic-glowing.jpg',
-      tag: 'Gigabit Optical Fiber Internet Connectivity',
-      subTag: 'Ultra-Fast Dedicated Leased Lines & Low-Latency Broadband',
-      focusPosition: 'object-center',
-      alt: 'High-Speed Optical Fiber Internet Connectivity Infrastructure'
-    },
-    {
-      id: 'managed-networking',
-      imageUrl: '/images/network-hero-banner.jpg',
-      tag: 'Enterprise Networking & Wi-Fi Routers',
-      subTag: 'Layer-2/3 Managed Core Switches & High-Throughput Routing',
-      focusPosition: 'object-[70%_center]',
-      alt: 'Enterprise Managed Network Switching and Routing Infrastructure'
-    },
-    {
-      id: 'cctv-surveillance',
-      imageUrl: '/images/cctv-hero-banner.jpg',
-      tag: 'AI CCTV & Security Surveillance',
-      subTag: 'Commercial HD Security Cameras, Dome Units & 24/7 Monitoring',
-      focusPosition: 'object-[80%_center]',
-      alt: 'Nexalus Commercial CCTV Security Surveillance Cameras'
-    },
-    {
-      id: 'commercial-techpark',
-      imageUrl: '/images/projects/tech-park-real.jpg',
-      tag: 'Modern Commercial Building & IT Campus',
-      subTag: 'Turnkey Enterprise Corporate Infrastructure & Structured Cabling',
-      focusPosition: 'object-[65%_center]',
-      alt: 'Modern Commercial Business Tech Park Infrastructure'
-    }
-  ];
-
-  // Dynamic hero slides list: preserves custom admin hero banner while rotating through 5 core domains
-  const heroSlides: HeroSlide[] = React.useMemo(() => {
-    if (heroBanner?.imageUrl && !DEFAULT_HERO_SLIDES.some(s => s.imageUrl === heroBanner.imageUrl)) {
-      return [
+    // If admin configured a custom banner image that is not part of default slides, honor it
+    if (heroBanner?.imageUrl && !rawSlides.some(s => s.imageUrl === heroBanner.imageUrl)) {
+      rawSlides = [
         {
-          id: 'custom-admin-banner',
+          id: 'custom-admin-slide',
+          title: heroBanner.title || 'Connecting Businesses. Protecting What Matters.',
+          subtitle: heroBanner.subtitle || 'Tier-3 Datacenter Racks, Optical Backbones & Cloud Switching',
+          description: 'High-availability infrastructure engineered for 99.99% uptime under Nexalus Innovations LLP.',
           imageUrl: heroBanner.imageUrl,
-          tag: 'Featured Infrastructure',
-          subTag: heroBanner.badge || 'Official Enterprise Solution',
-          focusPosition: 'object-center',
-          alt: heroBanner.title || 'Nexalus Innovations Enterprise Infrastructure'
+          badge: heroBanner.badge || 'Official Enterprise Solution',
+          primaryCtaText: heroBanner.ctaText || 'Request Quotation',
+          primaryCtaLink: heroBanner.ctaLink || '/quote',
+          secondaryCtaText: heroBanner.secondaryCtaText || 'Explore Solutions',
+          secondaryCtaLink: heroBanner.secondaryCtaLink || '/brands/nexalus-innovations',
+          order: 0
         },
-        ...DEFAULT_HERO_SLIDES
+        ...rawSlides
       ];
     }
-    return DEFAULT_HERO_SLIDES;
-  }, [heroBanner?.imageUrl, heroBanner?.badge, heroBanner?.title]);
+
+    const themes = [
+      {
+        badgeTheme: 'bg-blue-950/70 border-blue-500/40 text-blue-300',
+        gradientText: 'from-cyan-300 via-sky-200 to-blue-300',
+        tabLabel: 'Datacenter Racks'
+      },
+      {
+        badgeTheme: 'bg-cyan-950/70 border-cyan-500/40 text-cyan-300',
+        gradientText: 'from-sky-300 via-cyan-200 to-teal-300',
+        tabLabel: 'Optical Fiber'
+      },
+      {
+        badgeTheme: 'bg-indigo-950/70 border-indigo-500/40 text-indigo-300',
+        gradientText: 'from-blue-300 via-indigo-200 to-cyan-300',
+        tabLabel: 'Network Switches'
+      },
+      {
+        badgeTheme: 'bg-sky-950/70 border-sky-500/40 text-sky-300',
+        gradientText: 'from-cyan-300 via-teal-200 to-sky-300',
+        tabLabel: 'CCTV Surveillance'
+      },
+      {
+        badgeTheme: 'bg-slate-900/80 border-blue-400/40 text-blue-200',
+        gradientText: 'from-sky-300 via-blue-200 to-indigo-300',
+        tabLabel: 'IT Tech Campus'
+      }
+    ];
+
+    return rawSlides.map((slide, index) => {
+      const theme = themes[index % themes.length];
+      const titleLower = ((slide.title || '') + ' ' + (slide.badge || '')).toLowerCase();
+      let tab = 'Slide ' + (index + 1);
+      if (titleLower.includes('datacenter') || titleLower.includes('server')) tab = 'Datacenter Racks';
+      else if (titleLower.includes('fiber') || titleLower.includes('broadband')) tab = 'Optical Fiber';
+      else if (titleLower.includes('network') || titleLower.includes('switch') || titleLower.includes('router')) tab = 'Network Switches';
+      else if (titleLower.includes('cctv') || titleLower.includes('surveillance') || titleLower.includes('camera')) tab = 'CCTV Surveillance';
+      else if (titleLower.includes('campus') || titleLower.includes('commercial') || titleLower.includes('building')) tab = 'IT Tech Campus';
+      else if (index === 0) tab = 'Datacenter Racks';
+
+      return {
+        id: slide.id || `slide-${index}`,
+        image: slide.imageUrl || '/images/fermilab-blue-racks-real.jpg',
+        badge: slide.badge || 'Enterprise Infrastructure',
+        title: slide.title,
+        subtitle: slide.subtitle,
+        description: slide.description,
+        primaryCta: slide.primaryCtaText || 'Request Quotation',
+        primaryCtaLink: slide.primaryCtaLink || '/quote',
+        secondaryCta: slide.secondaryCtaText || 'Explore Solutions',
+        secondaryCtaLink: slide.secondaryCtaLink || '/brands/nexalus-innovations',
+        badgeTheme: theme.badgeTheme,
+        gradientText: theme.gradientText,
+        tabLabel: tab
+      };
+    });
+  }, [heroBanner]);
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isSlidePaused, setIsSlidePaused] = useState(false);
+
+  // Bounds check when slides change
+  useEffect(() => {
+    if (currentSlideIndex >= heroSlides.length) {
+      setCurrentSlideIndex(0);
+    }
+  }, [heroSlides.length, currentSlideIndex]);
 
   // Preload all slideshow images for instant, smooth crossfading without flash
   useEffect(() => {
     heroSlides.forEach(slide => {
       const img = new Image();
-      img.src = slide.imageUrl;
+      img.src = slide.image;
     });
   }, [heroSlides]);
 
   // Automatic slideshow rotation every 5 seconds (5000ms)
   useEffect(() => {
-    if (isSlidePaused) return;
+    if (isSlidePaused || heroSlides.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentSlideIndex(prev => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(interval);
   }, [isSlidePaused, heroSlides.length]);
 
+  const activeSlide = heroSlides[currentSlideIndex] || heroSlides[0];
+
   const handlePrevSlide = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setCurrentSlideIndex(prev => (prev === 0 ? heroSlides.length - 1 : prev - 1));
+    setCurrentSlideIndex(prev => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
 
   const handleNextSlide = (e?: React.MouseEvent) => {
@@ -355,182 +376,178 @@ export const HomePage: React.FC = () => {
   return (
     <div className="flex flex-col w-full">
       {/* =========================================================================
-          SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER (AUTOMATIC BACKGROUND SLIDESHOW)
+          SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER (DYNAMIC SLIDESHOW & FRESH THEME)
           ========================================================================= */}
       <section 
-        className="relative w-full overflow-hidden bg-[#070e20] border-b border-slate-800 select-none"
+        className="relative overflow-hidden bg-slate-950 text-white pt-20 pb-20 sm:pb-24 border-b border-slate-800 select-none min-h-[580px] sm:min-h-[640px] flex flex-col justify-center"
         onMouseEnter={() => setIsSlidePaused(true)}
         onMouseLeave={() => setIsSlidePaused(false)}
       >
-        {/* Layer 1: Automatic Background Image Slideshow with Smooth Crossfade & Cinematic Scale */}
-        <div className="absolute inset-0 bg-[#070e20]">
-          {heroSlides.map((slide, idx) => {
-            const isActive = idx === currentSlideIndex;
+        {/* Animated Sliding Background Track with Smooth Cross-Fade & Ken Burns Zoom */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          {heroSlides.map((slide, index) => {
+            const isActive = index === currentSlideIndex;
             return (
               <div
                 key={slide.id}
-                aria-hidden={!isActive}
                 className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                  isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                  isActive ? 'opacity-90 z-10' : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
                 <img
-                  src={slide.imageUrl}
-                  alt={slide.alt}
-                  className={`w-full h-full object-cover transition-transform duration-[6000ms] ease-out will-change-transform ${
-                    slide.focusPosition
-                  } ${isActive ? 'scale-105' : 'scale-100'}`}
-                  loading={idx === 0 ? 'eager' : 'lazy'}
+                  src={slide.image}
+                  alt={slide.title}
+                  className={`w-full h-full object-cover filter brightness-100 contrast-105 transition-transform duration-7000 ease-out ${
+                    isActive ? 'scale-105' : 'scale-100'
+                  }`}
+                  loading={index === 0 ? 'eager' : 'lazy'}
                 />
               </div>
             );
           })}
+
+          {/* Crisp, luminous corporate contrast protection overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/92 via-slate-950/45 to-slate-950/25 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-950/40 to-slate-950/75 z-10" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(37,99,235,0.25),transparent_65%)] z-10" />
         </div>
 
-        {/* Layer 2: Corporate Directional Contrast Scrims (Ensures 100% Readable Text Across All Backgrounds) */}
-        {/* Left-to-right directional readability gradient */}
-        <div className="absolute inset-0 z-20 bg-gradient-to-r from-[#060e1e]/98 via-[#091734]/90 via-55% md:via-45% to-[#08142b]/35 pointer-events-none" />
-        {/* Top-and-bottom framing vignette */}
-        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#060e1e] via-transparent via-60% to-[#060e1e]/70 pointer-events-none" />
-        {/* Subtle royal blue ambient accent glow */}
-        <div className="absolute inset-0 z-20 bg-[radial-gradient(ellipse_at_top_left,rgba(37,99,235,0.22),transparent_65%)] pointer-events-none" />
+        {/* Previous / Next Floating Arrow Controls (Desktop Glass Chevrons) */}
+        {heroSlides.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={handlePrevSlide}
+              className="hidden lg:flex absolute left-4 xl:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-2xl bg-slate-950/60 hover:bg-slate-900/90 text-slate-300 hover:text-white border border-blue-500/30 backdrop-blur-md items-center justify-center transition-all hover:scale-105 shadow-lg group cursor-pointer"
+              title="Previous slide"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft className="w-6 h-6 group-hover:-translate-x-0.5 transition-transform text-cyan-400 group-hover:text-white" />
+            </button>
+            <button
+              type="button"
+              onClick={handleNextSlide}
+              className="hidden lg:flex absolute right-4 xl:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-2xl bg-slate-950/60 hover:bg-slate-900/90 text-slate-300 hover:text-white border border-blue-500/30 backdrop-blur-md items-center justify-center transition-all hover:scale-105 shadow-lg group cursor-pointer"
+              title="Next slide"
+              aria-label="Next slide"
+            >
+              <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform text-cyan-400 group-hover:text-white" />
+            </button>
+          </>
+        )}
 
-        {/* Layer 3: Main Hero Text, Badges & CTA Content (Preserved Exactly) */}
-        <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-28 flex items-center min-h-[520px] lg:min-h-[580px]">
-          <div className="max-w-4xl lg:max-w-5xl space-y-5 text-white mr-auto">
-            {/* Top Badges: Brand Name + Announcement Badge */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/30 border border-blue-400/40 text-blue-200 text-xs sm:text-sm font-bold tracking-wide backdrop-blur-xs">
+        {/* Dynamic Foreground Content with Staggered Slide Animations */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-4xl py-6">
+          <div key={currentSlideIndex} className="space-y-6">
+            {/* Top Badges: Brand Typewriter + Slide Domain Badge */}
+            <div className="animate-hero-up flex flex-wrap items-center justify-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/30 border border-blue-400/40 text-blue-200 text-xs sm:text-sm font-bold tracking-wide backdrop-blur-xs shadow-md">
                 <span>{typedTitle || fullBrandName}</span>
                 {!isTypingComplete && (
                   <span className="inline-block w-1.5 h-3 bg-cyan-400 animate-pulse rounded-full" />
                 )}
               </span>
 
-              {heroBanner?.badge && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 text-xs sm:text-sm font-semibold tracking-wide shadow-sm backdrop-blur-xs">
+              {activeSlide.badge && (
+                <div className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full border text-xs sm:text-sm font-semibold tracking-wide shadow-md backdrop-blur-xs ${activeSlide.badgeTheme}`}>
                   <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                  <span>{heroBanner.badge}</span>
+                  <span>{activeSlide.badge}</span>
                 </div>
               )}
             </div>
 
-            {/* Main Headline Title - Configured in Admin Content */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
-              {heroBanner?.title || 'Connecting Businesses. Protecting What Matters.'}
+            {/* Main Slide Title */}
+            <h1 className="animate-hero-up text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_14px_rgba(0,0,0,0.9)]">
+              {activeSlide.title}
             </h1>
 
-            {/* Subtitle, Description & CTAs */}
-            <div className="space-y-5 transition-all duration-300">
-              <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl pt-1">
-                {heroBanner?.subtitle || (
-                  <>Your trusted technology infrastructure partner. Operating under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>, we engineer ultra-fast <strong className="text-white font-bold">gigabit optical fiber</strong> leased lines, managed Layer-2/3 network switching, and certified <strong className="text-white font-bold">video surveillance</strong> systems to empower local businesses.</>
-                )}
-              </p>
+            {/* Tailored Subtitle with Gradient Text Shimmer */}
+            <p className={`animate-hero-up text-base sm:text-xl font-bold bg-gradient-to-r ${activeSlide.gradientText} bg-clip-text text-transparent [animation-delay:120ms] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]`}>
+              {activeSlide.subtitle}
+            </p>
 
-              {/* CTA Action Buttons */}
-              <div className="pt-3 flex flex-wrap items-center gap-4">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/50 px-6 py-3.5 rounded-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-95"
-                  icon={<ArrowRight className="w-4 h-4" />}
-                  onClick={() => setIsQuoteModalOpen(true)}
-                >
-                  {heroBanner?.ctaText || 'Request a Quotation'}
-                </Button>
-                <Link to={heroBanner?.secondaryCtaLink || '/products'}>
+            {/* Description Paragraph */}
+            <p className="animate-hero-up text-sm sm:text-base text-slate-200 max-w-3xl mx-auto leading-relaxed [animation-delay:220ms] font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+              {activeSlide.description}
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="animate-hero-up flex flex-wrap items-center justify-center gap-4 pt-2 [animation-delay:320ms]">
+              <Button
+                variant="primary"
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-500/30 px-6 py-3.5 rounded-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                icon={<ArrowRight className="w-4 h-4" />}
+                onClick={() => {
+                  if (activeSlide.primaryCtaLink === '/quote' || activeSlide.primaryCtaLink?.includes('quote')) {
+                    setIsQuoteModalOpen(true);
+                  } else if (activeSlide.primaryCtaLink === '/plans' || activeSlide.primaryCtaLink?.includes('plans')) {
+                    const el = document.getElementById('broadband-plans-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    else setIsQuoteModalOpen(true);
+                  } else if (activeSlide.primaryCtaLink?.startsWith('/')) {
+                    window.location.href = activeSlide.primaryCtaLink;
+                  } else {
+                    setIsQuoteModalOpen(true);
+                  }
+                }}
+              >
+                {activeSlide.primaryCta}
+              </Button>
+
+              {activeSlide.secondaryCtaLink?.startsWith('/') ? (
+                <Link to={activeSlide.secondaryCtaLink}>
                   <Button
                     variant="outline-white"
                     size="lg"
-                    className="border-slate-700 hover:bg-white/10 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg backdrop-blur-xs"
+                    className="border-slate-700 hover:bg-white/10 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg backdrop-blur-md transition-all hover:scale-[1.02]"
                   >
-                    {heroBanner?.secondaryCtaText || 'Explore Solutions'}
+                    {activeSlide.secondaryCta}
                   </Button>
                 </Link>
-              </div>
+              ) : (
+                <Button
+                  variant="outline-white"
+                  size="lg"
+                  className="border-slate-700 hover:bg-white/10 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg backdrop-blur-md transition-all hover:scale-[1.02]"
+                  onClick={() => setIsQuoteModalOpen(true)}
+                >
+                  {activeSlide.secondaryCta}
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Layer 4: Interactive Slideshow Indicators, Category Pill & Navigation Controls */}
-        <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 sm:pb-8 pt-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-white/10">
-            {/* Active Infrastructure Domain Indicator */}
-            <div className="flex items-center gap-3">
-              <span className="flex h-2.5 w-2.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
-              </span>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="font-mono font-bold text-cyan-300">
-                  0{currentSlideIndex + 1} / 0{heroSlides.length}
-                </span>
-                <span className="text-slate-500">•</span>
-                <span className="font-semibold text-slate-200">
-                  {heroSlides[currentSlideIndex]?.tag}
-                </span>
-                <span className="hidden md:inline text-slate-400">
-                  ({heroSlides[currentSlideIndex]?.subTag})
-                </span>
-              </div>
-            </div>
-
-            {/* Slide Navigation Progress Pills & Arrows */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                {heroSlides.map((slide, idx) => {
-                  const isActive = idx === currentSlideIndex;
-                  return (
-                    <button
-                      key={slide.id}
-                      type="button"
-                      onClick={() => setCurrentSlideIndex(idx)}
-                      className={`relative h-2 rounded-full transition-all duration-300 cursor-pointer overflow-hidden ${
-                        isActive
-                          ? 'w-10 bg-white/20'
-                          : 'w-2.5 bg-white/25 hover:bg-white/40'
+        {/* Interactive Bottom Slide Navigation Tabs */}
+        {heroSlides.length > 1 && (
+          <div className="relative z-10 pt-8 flex flex-col items-center justify-center gap-2.5 px-4">
+            <div className="flex flex-wrap items-center justify-center gap-2 bg-slate-950/80 backdrop-blur-md px-3 py-2 rounded-2xl border border-blue-500/30 shadow-xl">
+              {heroSlides.map((slide, dotIdx) => {
+                const isActive = dotIdx === currentSlideIndex;
+                return (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    onClick={() => setCurrentSlideIndex(dotIdx)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                      isActive
+                        ? 'bg-blue-600/30 text-cyan-200 border border-cyan-400/50 shadow-inner'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent'
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        isActive ? 'bg-cyan-400 scale-125 shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'bg-slate-600'
                       }`}
-                      title={`View ${slide.tag}`}
-                      aria-label={`View slide ${idx + 1}: ${slide.tag}`}
-                    >
-                      {isActive && (
-                        <span
-                          key={`progress-${currentSlideIndex}`}
-                          className={`absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full ${
-                            !isSlidePaused ? 'animate-hero-progress' : 'w-full'
-                          }`}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Prev / Next Subtle Glass Arrow Buttons */}
-              <div className="flex items-center gap-1 ml-2">
-                <button
-                  type="button"
-                  onClick={handlePrevSlide}
-                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-white flex items-center justify-center transition-colors cursor-pointer"
-                  title="Previous Slide"
-                  aria-label="Previous Slide"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextSlide}
-                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-white flex items-center justify-center transition-colors cursor-pointer"
-                  title="Next Slide"
-                  aria-label="Next Slide"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+                    />
+                    <span>{slide.tabLabel}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* =========================================================================
@@ -1338,7 +1355,7 @@ export const HomePage: React.FC = () => {
 {/* =========================================================================
           SECTION: BROADBAND PLANS & PRICING SHOWCASE (MULTI-PROVIDER)
           ========================================================================= */}
-      <section className="w-full bg-slate-900 text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
+      <section id="broadband-plans-section" className="w-full bg-slate-900 text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
         {/* Subtle Background Glow */}
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />

@@ -1888,6 +1888,74 @@ export const DEFAULT_AM_SLIDES: HeroSlide[] = [
   }
 ];
 
+export const DEFAULT_NEXALUS_SLIDES: HeroSlide[] = [
+  {
+    id: 'slide-nex-1',
+    title: 'Connecting Businesses. Protecting What Matters.',
+    subtitle: 'Tier-3 Datacenter Racks, Optical Backbones & Cloud Switching',
+    description: 'High-availability server rack deployments, enterprise routing, and resilient digital infrastructure engineered for 99.99% uptime under Nexalus Innovations LLP.',
+    imageUrl: '/images/fermilab-blue-racks-real.jpg',
+    badge: 'Enterprise Server Infrastructure',
+    primaryCtaText: 'Request Quotation',
+    primaryCtaLink: '/quote',
+    secondaryCtaText: 'Explore Solutions',
+    secondaryCtaLink: '/brands/nexalus-innovations',
+    order: 1
+  },
+  {
+    id: 'slide-nex-2',
+    title: 'Gigabit Optical Fiber Internet Connectivity',
+    subtitle: 'Dedicated Leased Lines, Symmetric Bandwidth & Ultra-Low Latency',
+    description: 'Direct fiber-to-the-business broadband with zero packet loss, burstable speeds, and 24/7 proactive network operations center monitoring.',
+    imageUrl: '/images/fiber-optic-glowing.jpg',
+    badge: 'Gigabit Optical Fiber',
+    primaryCtaText: 'View Fiber Plans',
+    primaryCtaLink: '/plans',
+    secondaryCtaText: 'Check Coverage',
+    secondaryCtaLink: '/coverage',
+    order: 2
+  },
+  {
+    id: 'slide-nex-3',
+    title: 'Enterprise Managed Networking & Core Switching',
+    subtitle: 'Layer-2/3 Managed Switches, Structured Cabling & Wi-Fi 6 Mesh',
+    description: 'Robust enterprise switching fabrics, VLAN network segmentation, high-density office cabling, and high-throughput routing designed for zero downtime.',
+    imageUrl: '/images/network-hero-banner.jpg',
+    badge: 'Enterprise IT Networking',
+    primaryCtaText: 'Network Consultation',
+    primaryCtaLink: '/quote',
+    secondaryCtaText: 'Explore Hardware',
+    secondaryCtaLink: '/products',
+    order: 3
+  },
+  {
+    id: 'slide-nex-4',
+    title: 'Commercial AI CCTV & Smart Surveillance Grids',
+    subtitle: '4K Night Vision IP Cameras, Face Recognition & Cloud Remote Monitoring',
+    description: 'Advanced video surveillance solutions featuring intelligent human/vehicle tracking, weather-resistant commercial dome cameras, and live mobile monitoring.',
+    imageUrl: '/images/cctv-hero-banner.jpg',
+    badge: 'AI Video Surveillance',
+    primaryCtaText: 'Book Security Survey',
+    primaryCtaLink: '/quote',
+    secondaryCtaText: 'View Camera Systems',
+    secondaryCtaLink: '/brands/nexalus-innovations',
+    order: 4
+  },
+  {
+    id: 'slide-nex-5',
+    title: 'Modern Commercial Building & IT Campus Solutions',
+    subtitle: 'Turnkey Enterprise Corporate Infrastructure & Multi-Facility Operations',
+    description: 'Complete campus technology architecture combining high-speed fiber backbones, structured copper runs, wireless coverage, and centralized security control.',
+    imageUrl: '/images/projects/tech-park-real.jpg',
+    badge: 'Turnkey Enterprise Campus',
+    primaryCtaText: 'Request Quotation',
+    primaryCtaLink: '/quote',
+    secondaryCtaText: 'Explore All Divisions',
+    secondaryCtaLink: '/brands/nexalus-innovations',
+    order: 5
+  }
+];
+
 export const initialBanners: SiteBanner[] = [
   {
     id: 'ban-parent',
@@ -1908,7 +1976,8 @@ export const initialBanners: SiteBanner[] = [
     showHero: true,
     showTeam: true,
     showFaqs: true,
-    showContact: true
+    showContact: true,
+    slides: DEFAULT_NEXALUS_SLIDES
   },
   {
     id: 'ban-innovations',

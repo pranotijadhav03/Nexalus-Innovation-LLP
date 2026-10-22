@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getBanners, updateBanner, getCachedBanners, uploadImageFile } from '../../firebase/services';
-import { initialBanners, DEFAULT_AM_SLIDES } from '../../data/initialData';
+import { initialBanners, DEFAULT_AM_SLIDES, DEFAULT_NEXALUS_SLIDES } from '../../data/initialData';
 import { SiteBanner, HeroSlide, CustomSection } from '../../types';
 import { Input, TextArea } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -171,7 +171,8 @@ export const AdminContentPage: React.FC = () => {
     setSlides(reordered);
     // Instant live persistence
     try {
-      await updateBanner('ban-am', { slides: reordered });
+      const targetId = getTargetDocId(activeScope);
+      await updateBanner(targetId, { slides: reordered });
     } catch {}
     success('Sequence Updated', `Slide moved ${direction} and synchronized live.`);
   };
@@ -189,7 +190,8 @@ export const AdminContentPage: React.FC = () => {
     }
     // Instant live persistence
     try {
-      await updateBanner('ban-am', { slides: newSlides });
+      const targetId = getTargetDocId(activeScope);
+      await updateBanner(targetId, { slides: newSlides });
     } catch {}
     success('Slide Removed', 'Slide deleted and synchronized live.');
   };
@@ -237,7 +239,8 @@ export const AdminContentPage: React.FC = () => {
     setEditingSlide(null);
     // Instant live persistence
     try {
-      await updateBanner('ban-am', { slides: updated });
+      const targetId = getTargetDocId(activeScope);
+      await updateBanner(targetId, { slides: updated });
     } catch {}
     success('Slide Applied', 'Slide details updated and synchronized live.');
   };
@@ -435,7 +438,7 @@ export const AdminContentPage: React.FC = () => {
         showFaqs,
         showContact,
         customSections,
-        ...(activeScope === 'am-distributors' ? { slides } : {})
+        ...(activeScope === 'am-distributors' || activeScope === 'corporate' ? { slides } : {})
       };
 
       await updateBanner(targetId, payload);
@@ -617,7 +620,7 @@ export const AdminContentPage: React.FC = () => {
             {/* TAB 1: HERO & BRANDING */}
             {activeTab === 'hero' && (
               <div className="space-y-6 animate-in fade-in duration-150">
-                {activeScope === 'am-distributors' ? (
+                {(activeScope === 'am-distributors' || activeScope === 'corporate') ? (
                   <div className="space-y-5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-teal-900/10 via-emerald-900/10 to-transparent border border-teal-500/20">
                       <div>
@@ -1150,7 +1153,7 @@ export const AdminContentPage: React.FC = () => {
               />
             )}
 
-            {activeScope === 'am-distributors' && slides.length > 0 ? (
+            {(activeScope === 'am-distributors' || activeScope === 'corporate') && slides.length > 0 ? (
               <div className="relative z-10 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-wider text-teal-300 bg-teal-950/80 px-2.5 py-1 rounded-full border border-teal-500/30">
