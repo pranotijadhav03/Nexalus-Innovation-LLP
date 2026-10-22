@@ -1701,6 +1701,28 @@ export const initialServiceAreas: ServiceArea[] = [
     ],
     notes: 'Currently accepting advance site survey bookings; weekly dedicated installation slots',
     updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sa-jaysingpur',
+    brandId: 'all',
+    locality: 'Jaysingpur MIDC',
+    city: 'Jaysinghpur',
+    state: 'Maharashtra',
+    pincode: '416103',
+    status: 'fully_operational',
+    services: [
+      '20-Litre Packaged Drinking Water',
+      'Premium Bulk Ice Cream Delivery',
+      'Farm Fresh Cow & Buffalo Milk',
+      'Cold-Chain Logistics & Transport',
+      '4K CCTV Surveillance',
+      'Enterprise Networking & Switching',
+      'Annual Maintenance Contract (AMC)',
+      'Structured Cabling & Rack Setup',
+      'Optical Fiber Internet'
+    ],
+    notes: 'Operational delivery and technical support hub active across Jaysingpur MIDC and commercial corridors.',
+    updatedAt: new Date().toISOString()
   }
 ];
 

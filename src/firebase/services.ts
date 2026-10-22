@@ -268,8 +268,29 @@ export function getCachedFaqs(brandId?: BrandId | 'nexalus'): FAQ[] {
   return faqs;
 }
 
+export function mergeWithInitialServiceAreas(incomingAreas: ServiceArea[]): ServiceArea[] {
+  const map = new Map<string, ServiceArea>();
+
+  // 1. Populate all initial baseline cities (Chiplun, Ratnagiri, Sangli, Kolhapur, Pune, Mumbai, Khed, Satara, Jaysingpur)
+  initialServiceAreas.forEach(a => {
+    map.set(a.city.toLowerCase().trim(), a);
+  });
+
+  // 2. Overlay or add any items from Firestore / Admin additions
+  (incomingAreas || []).forEach(a => {
+    if (a && a.city) {
+      const key = a.city.toLowerCase().trim();
+      const existing = map.get(key);
+      map.set(key, { ...(existing || {}), ...a });
+    }
+  });
+
+  return Array.from(map.values());
+}
+
 export function getCachedServiceAreas(): ServiceArea[] {
-  return getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
+  const local = getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
+  return mergeWithInitialServiceAreas(local);
 }
 
 // ----------------------------------------------------
@@ -1480,16 +1501,43 @@ export async function getServiceAreas(): Promise<ServiceArea[]> {
     try {
       const snap = await withTimeout(getDocs(collection(db, 'service_areas')), 1800);
       if (!snap.empty) {
-        const list: ServiceArea[] = [];
-        snap.forEach(d => list.push(d.data() as ServiceArea));
-        setLocalItem(STORAGE_KEYS.SERVICE_AREAS, list);
-        return list;
+        const firestoreList: ServiceArea[] = [];
+        snap.forEach(d => firestoreList.push(d.data() as ServiceArea));
+        const merged = mergeWithInitialServiceAreas(firestoreList);
+        setLocalItem(STORAGE_KEYS.SERVICE_AREAS, merged);
+
+        // Sync any baseline cities that are not yet in Firestore
+        initialServiceAreas.forEach(baseArea => {
+          const exists = firestoreList.some(f => f.city.toLowerCase().trim() === baseArea.city.toLowerCase().trim());
+          if (!exists && db) {
+            setDoc(doc(db, 'service_areas', baseArea.id), baseArea).catch(() => {});
+          }
+        });
+
+        return merged;
       }
     } catch (e) {
       console.warn('Firestore getServiceAreas error, using local fallback:', e);
     }
   }
-  return getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
+  const localList = getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas);
+  return mergeWithInitialServiceAreas(localList);
+}
+
+export async function syncAllStandardServiceAreas(): Promise<ServiceArea[]> {
+  const allMerged = mergeWithInitialServiceAreas(getLocalItem<ServiceArea[]>(STORAGE_KEYS.SERVICE_AREAS, initialServiceAreas));
+  setLocalItem(STORAGE_KEYS.SERVICE_AREAS, allMerged);
+
+  if (isFirebaseConfigured && db) {
+    for (const area of allMerged) {
+      try {
+        await withTimeout(setDoc(doc(db, 'service_areas', area.id), area), 2000);
+      } catch (e) {
+        console.warn('Error syncing service area to Firestore:', area.city, e);
+      }
+    }
+  }
+  return allMerged;
 }
 
 export function subscribeToServiceAreas(callback: (areas: ServiceArea[]) => void): () => void {
@@ -1500,10 +1548,13 @@ export function subscribeToServiceAreas(callback: (areas: ServiceArea[]) => void
       const q = collection(db, 'service_areas');
       const unsubscribe = onSnapshot(q, (snapshot) => {
         if (!snapshot.empty) {
-          const list: ServiceArea[] = [];
-          snapshot.forEach(doc => list.push(doc.data() as ServiceArea));
-          setLocalItem(STORAGE_KEYS.SERVICE_AREAS, list);
-          callback(list);
+          const firestoreList: ServiceArea[] = [];
+          snapshot.forEach(doc => firestoreList.push(doc.data() as ServiceArea));
+          const merged = mergeWithInitialServiceAreas(firestoreList);
+          setLocalItem(STORAGE_KEYS.SERVICE_AREAS, merged);
+          callback(merged);
+        } else {
+          callback(mergeWithInitialServiceAreas([]));
         }
       }, (err) => console.warn('Service areas subscription error:', err));
       return unsubscribe;

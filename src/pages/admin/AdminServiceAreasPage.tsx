@@ -8,7 +8,8 @@ import {
   createServiceArea,
   updateServiceArea,
   deleteServiceArea,
-  getCachedServiceAreas
+  getCachedServiceAreas,
+  syncAllStandardServiceAreas
 } from '../../firebase/services';
 import { ServiceArea, BrandId } from '../../types';
 import { Input, Select } from '../../components/common/Input';
@@ -80,6 +81,7 @@ export const AdminServiceAreasPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const [deleteCandidate, setDeleteCandidate] = useState<ServiceArea | null>(null);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
 
   // Sync initial brand selection with active console
   useEffect(() => {
@@ -99,6 +101,19 @@ export const AdminServiceAreasPage: React.FC = () => {
       error('Failed to Load', err?.message || 'Could not fetch service areas.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSyncAllHubs = async () => {
+    setIsSyncingAll(true);
+    try {
+      const all = await syncAllStandardServiceAreas();
+      setAreas(all);
+      success('Standard Hubs Synced', `All ${all.length} Maharashtra hubs (Chiplun, Ratnagiri, Sangli, Kolhapur, Pune, Mumbai, Khed, Satara, Jaysinghpur) are active and synced.`);
+    } catch (err: any) {
+      error('Sync Failed', err?.message || 'Could not sync hubs');
+    } finally {
+      setIsSyncingAll(false);
     }
   };
 
@@ -294,7 +309,17 @@ export const AdminServiceAreasPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          <Button
+            variant="outline"
+            size="md"
+            onClick={handleSyncAllHubs}
+            isLoading={isSyncingAll}
+            icon={<Sparkles className="w-4 h-4 text-amber-500" />}
+            title="Populate and sync all standard Maharashtra operational cities into Firestore"
+          >
+            Sync All Cities
+          </Button>
           <Button
             variant="outline"
             size="md"
