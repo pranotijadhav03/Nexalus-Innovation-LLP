@@ -72,21 +72,24 @@ export const QuotePage: React.FC = () => {
 
   return (
     <div className="space-y-16 pb-20">
-      <section className="bg-gradient-to-b from-blue-900/10 via-slate-50 to-white py-16 sm:py-20 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
-          <span className="text-xs font-extrabold text-blue-600 uppercase tracking-widest">
-            Fast Proposal
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mt-2">
+      <section className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white py-16 sm:py-20 border-b border-slate-800 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] opacity-15 [background-size:24px_24px] pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-cyan-300 text-xs font-bold uppercase tracking-wider mb-3">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span>Fast Proposal</span>
+          </div>
+          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mt-2">
             Get an Official Quotation
           </h1>
-          <p className="text-base text-slate-600 mt-4 leading-relaxed">
+          <p className="text-base text-slate-300 mt-4 leading-relaxed font-normal">
             Specify your requirements for CCTV cameras, high-speed fiber broadband, or combined IT infrastructure. Our engineering team prepares a tailored itemized quotation with zero obligation.
           </p>
         </div>
       </section>
 
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="w-full bg-white py-14 sm:py-20 border-b border-slate-200/90">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-sm">
           {submittedId ? (
             <div className="py-12 text-center space-y-4">
@@ -199,6 +202,7 @@ export const QuotePage: React.FC = () => {
               </div>
             </form>
           )}
+        </div>
         </div>
       </section>
     </div>

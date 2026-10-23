@@ -28,15 +28,16 @@ export const SolutionsPage: React.FC = () => {
   return (
     <div className="space-y-16 sm:space-y-24 pb-20">
       {/* Header */}
-      <section className="bg-gradient-to-b from-blue-900/10 via-slate-50 to-white py-16 sm:py-20 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
-          <span className="text-xs font-extrabold text-blue-600 uppercase tracking-widest px-3 py-1 bg-blue-50 border border-blue-200 rounded-full inline-block">
+      <section className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white py-16 sm:py-20 border-b border-slate-800 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] opacity-15 [background-size:24px_24px] pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
+          <span className="text-xs font-black text-cyan-300 uppercase tracking-widest px-3.5 py-1.5 bg-blue-500/20 border border-blue-400/30 rounded-full inline-block">
             Our Services
           </span>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mt-3">
-            Professional Security, Fiber & Networking Services
+          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mt-3">
+            Professional Security, Fiber &amp; Networking Services
           </h1>
-          <p className="text-base text-slate-600 mt-4 leading-relaxed">
+          <p className="text-base text-slate-300 mt-4 leading-relaxed font-normal">
             Turnkey CCTV installation, optical fiber networking, enterprise structured cabling, and 24/7 AMC maintenance delivered by certified Nexalus engineers across residential and commercial sectors.
           </p>
 
@@ -46,8 +47,8 @@ export const SolutionsPage: React.FC = () => {
               onClick={() => setSelectedBrandFilter('all')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedBrandFilter === 'all'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/80'
               }`}
             >
               All Services ({services.length})
@@ -56,41 +57,42 @@ export const SolutionsPage: React.FC = () => {
               onClick={() => setSelectedBrandFilter('cp-plus')}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedBrandFilter === 'cp-plus'
-                  ? 'bg-sky-600 text-white shadow-sm'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/30'
+                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/80'
               }`}
             >
-              <Shield className="w-3.5 h-3.5 text-sky-500" />
+              <Shield className="w-3.5 h-3.5 text-sky-400" />
               CCTV Surveillance Services
             </button>
             <button
               onClick={() => setSelectedBrandFilter('one-broadband')}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedBrandFilter === 'one-broadband'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30'
+                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/80'
               }`}
             >
-              <Wifi className="w-3.5 h-3.5 text-blue-500" />
+              <Wifi className="w-3.5 h-3.5 text-teal-400" />
               Fiber Internet Services
             </button>
             <button
               onClick={() => setSelectedBrandFilter('itti-networking')}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedBrandFilter === 'itti-networking'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/80'
               }`}
             >
-              <Server className="w-3.5 h-3.5 text-indigo-500" />
+              <Server className="w-3.5 h-3.5 text-indigo-400" />
               Enterprise Networking &amp; AMC
             </button>
           </div>
         </div>
       </section>
 
-      {/* Services Grid (Customer-Focused Service Display) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Services Grid (WHITE THEME) */}
+      <section className="w-full bg-white py-14 sm:py-20 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
             <span className="text-xs font-extrabold text-blue-600 uppercase tracking-widest">
@@ -120,23 +122,25 @@ export const SolutionsPage: React.FC = () => {
             <ServiceCard key={srv.id} service={srv} />
           ))}
         </div>
+        </div>
       </section>
 
-      {/* Featured Architecture Overview */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-8 sm:p-12 rounded-3xl bg-white border border-slate-200/90 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      {/* Featured Architecture Overview (RICH CORPORATE BLUE THEME) */}
+      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-14 sm:py-20 border-b border-blue-900/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="p-8 sm:p-12 rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-6 space-y-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
-              Why Integrated Deployment?
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-snug">
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                Why Integrated Deployment?
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-snug">
               Surveillance and Broadband are Naturally Symbiotic
             </h2>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Modern CCTV cameras don't just record locally — they stream 4K video to mobile phones, sync footage to cloud vaults, and run off-site video analytics. Without a high-speed, uncontended fiber internet connection, remote surveillance lags and buffers.
+            <p className="text-sm text-slate-300 leading-relaxed">
+                Modern CCTV cameras don't just record locally — they stream 4K video to mobile phones, sync footage to cloud vaults, and run off-site video analytics. Without a high-speed, uncontended fiber internet connection, remote surveillance lags and buffers.
             </p>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Nexalus Innovations LLP optimizes bandwidth allocation between business internet and video streams, builds redundant power backup racks, and maintains everything under a single Annual Maintenance Contract.
+            <p className="text-sm text-slate-300 leading-relaxed">
+                Nexalus Innovations LLP optimizes bandwidth allocation between business internet and video streams, builds redundant power backup racks, and maintains everything under a single Annual Maintenance Contract.
             </p>
             <div className="pt-2">
               <Button
@@ -194,10 +198,12 @@ export const SolutionsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </section>
 
-      {/* Visual Infrastructure Demonstration Cards */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Visual Infrastructure Demonstration Cards (WHITE THEME) */}
+      <section className="w-full bg-white py-14 sm:py-20 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="rounded-3xl overflow-hidden border border-slate-200/90 shadow-md bg-white group">
             <div className="relative h-64 sm:h-72 w-full overflow-hidden">
@@ -238,6 +244,7 @@ export const SolutionsPage: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </section>
 

@@ -245,7 +245,8 @@ export const NexalusInnovationsPage: React.FC = () => {
           Z-TYPE ARCHITECTURE: SECTION 1 (CCTV SURVEILLANCE & SECURITY)
           ROW 1: LEFT = CCTV CARD (SLIDE IN LEFT) | RIGHT = CCTV INFO (SLIDE IN RIGHT)
           ========================================================================= */}
-      <section id="section-cctv" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 w-full">
+      <section id="section-cctv" className="w-full bg-white py-14 sm:py-20 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Z-1 LEFT: CCTV BOX / CARD (Slide In Left animation) */}
           <div className="lg:col-span-5 rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group animate-slide-left">
@@ -415,6 +416,7 @@ export const NexalusInnovationsPage: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </section>
 
       {/* =========================================================================
@@ -422,7 +424,8 @@ export const NexalusInnovationsPage: React.FC = () => {
           ROW 2: LEFT = FIBER INFO (SLIDE IN LEFT) | RIGHT = FIBER CARD (SLIDE IN RIGHT)
           [REVERSED ZIGZAG ROW]
           ========================================================================= */}
-      <section id="section-internet" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 w-full">
+      <section id="section-internet" className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-14 sm:py-20 border-b border-blue-900/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Z-2 LEFT: FIBER INTERNET INFORMATION (Slide In Left animation) */}
           <div className="lg:col-span-7 rounded-3xl bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 text-white p-6 sm:p-9 border border-teal-900/40 shadow-xl flex flex-col justify-between space-y-6 order-2 lg:order-1 animate-slide-left">
@@ -592,13 +595,15 @@ export const NexalusInnovationsPage: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </section>
 
       {/* =========================================================================
           Z-TYPE ARCHITECTURE: SECTION 3 (ENTERPRISE IT NETWORKING & SWITCHES)
           ROW 3: LEFT = NETWORK CARD (SLIDE IN LEFT) | RIGHT = NETWORK INFO (SLIDE IN RIGHT)
           ========================================================================= */}
-      <section id="section-networking" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 w-full">
+      <section id="section-networking" className="w-full bg-white py-14 sm:py-20 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Z-3 LEFT: NETWORKING BOX / CARD (Slide In Left animation) */}
           <div className="lg:col-span-5 rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group animate-slide-left">
@@ -768,6 +773,7 @@ export const NexalusInnovationsPage: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </section>
 
 

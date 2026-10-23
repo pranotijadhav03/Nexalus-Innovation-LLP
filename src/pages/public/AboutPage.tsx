@@ -157,34 +157,34 @@ export const AboutPage: React.FC = () => {
       {/* =========================================================================
           SLIDE 4: VISION & MISSION (COOL AMBIENT SKY & SLATE SLIDE THEME)
           ========================================================================= */}
-      <section className="w-full bg-gradient-to-b from-blue-50/70 via-white to-slate-50 py-16 sm:py-24 border-b border-slate-200/90">
+      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-24 border-b border-blue-900/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-xs font-black text-blue-600 uppercase tracking-widest">
+            <span className="text-xs font-black text-cyan-400 uppercase tracking-widest px-3 py-1 bg-blue-500/10 border border-blue-400/20 rounded-full inline-block">
               Strategic Blueprint
             </span>
-            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
               Our Vision &amp; Purpose
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="p-8 sm:p-10 rounded-3xl bg-white border border-slate-200 shadow-md space-y-4 hover:shadow-xl hover:border-blue-300 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold shadow-xs">
-                <Compass className="w-6 h-6" />
+            <div className="p-8 sm:p-10 rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl space-y-4 hover:border-cyan-400/60 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/20 text-cyan-300 border border-blue-400/30 flex items-center justify-center font-bold shadow-xs">
+                <Compass className="w-6 h-6 text-cyan-400" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900">Our Vision</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <h3 className="text-xl font-bold text-white">Our Vision</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
                 To be Maharashtra&apos;s benchmark technology infrastructure enterprise, recognized for unmatched engineering excellence in commercial CCTV surveillance, high-speed optical fiber connectivity, and resilient enterprise IT networks.
               </p>
             </div>
 
-            <div className="p-8 sm:p-10 rounded-3xl bg-white border border-slate-200 shadow-md space-y-4 hover:shadow-xl hover:border-sky-300 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center font-bold shadow-xs">
-                <Target className="w-6 h-6" />
+            <div className="p-8 sm:p-10 rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl space-y-4 hover:border-cyan-400/60 transition-all">
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/20 text-sky-300 border border-sky-400/30 flex items-center justify-center font-bold shadow-xs">
+                <Target className="w-6 h-6 text-sky-400" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900">Our Mission</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <h3 className="text-xl font-bold text-white">Our Mission</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
                 To empower corporate offices, industrial hubs, residential townships, and institutions with dependable turnkey technology solutions backed by authentic OEM hardware, transparent engineering, and certified onsite support.
               </p>
             </div>

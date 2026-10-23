@@ -295,11 +295,11 @@ export const AmDistributorsPage: React.FC = () => {
 
       {/* OUR TEAM - A.M. DISTRIBUTORS CHIPLUN (DIRECTLY AFTER HERO) */}
       {heroBanner?.showTeam !== false && (
-        <OurTeamSection division="am-distributors" bgClassName="bg-slate-50/50" />
+        <OurTeamSection division="am-distributors" theme="light" />
       )}
 
       {/* PROJECT GALLERY */}
-      <ProjectGallerySection division="am-distributors" />
+      <ProjectGallerySection division="am-distributors" theme="dark" />
 
       {/* 2. CORE BUSINESS VERTICALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -527,7 +527,7 @@ export const AmDistributorsPage: React.FC = () => {
       </section>
 
       {/* AREAS COVERED & SERVICE AVAILABILITY CHECKER */}
-      <AreasCoveredSection division="am-distributors" />
+      <AreasCoveredSection division="am-distributors" theme="light" />
 
       {/* Modal */}
       <QuoteModal

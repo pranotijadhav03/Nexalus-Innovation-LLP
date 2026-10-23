@@ -31,8 +31,9 @@ export const BrandsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. Division 1: Commercial CCTV Surveillance */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 2. Division 1: Commercial CCTV Surveillance (WHITE THEME) */}
+      <section className="w-full bg-white py-14 sm:py-20 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl bg-white border border-slate-200 shadow-sm p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center hover:shadow-xl hover:border-blue-300 transition-all">
           <div className="lg:col-span-7 space-y-5">
             <div className="flex items-center gap-3">
@@ -98,32 +99,34 @@ export const BrandsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </section>
 
-      {/* 3. Division 2: Optical Fiber Internet */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-white border border-slate-200 shadow-sm p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center hover:shadow-xl hover:border-blue-300 transition-all">
+      {/* 3. Division 2: Optical Fiber Internet (RICH CORPORATE BLUE THEME) */}
+      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-14 sm:py-20 border-b border-blue-900/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-3xl bg-[#0c1c38]/90 border border-teal-900/50 shadow-2xl p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center hover:border-teal-400/60 transition-all">
           <div className="lg:col-span-7 space-y-5">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-600/30">
                 <Wifi className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[11px] font-bold text-sky-700 uppercase tracking-wider block">
+                <span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider block">
                   Broadband &amp; Connectivity Division
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
                   High-Speed Optical Fiber Internet
                 </h2>
               </div>
             </div>
 
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="text-sm text-slate-300 leading-relaxed">
               Ultra-fast gigabit broadband and dedicated 1:1 symmetrical leased lines engineered over redundant fiber ring backbones. Delivering low latency, guaranteed 99.9% uptime SLAs, and 24/7 proactive network monitoring.
             </p>
 
             <div className="space-y-1.5 pt-2">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              <div className="text-xs font-bold text-teal-400 uppercase tracking-wider">
                 Connectivity Capabilities:
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -135,8 +138,8 @@ export const BrandsPage: React.FC = () => {
                   '24/7 Network Operations Center (NOC) Monitoring',
                   'Guaranteed 45-Minute Emergency Response SLA'
                 ].map((feat, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />
+                  <div key={idx} className="flex items-center gap-2 text-xs text-slate-300 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
                     <span>{feat}</span>
                   </div>
                 ))}
@@ -167,10 +170,12 @@ export const BrandsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </section>
 
-      {/* 4. Division 3: Enterprise IT Networking */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 4. Division 3: Enterprise IT Networking (WHITE THEME) */}
+      <section className="w-full bg-white py-14 sm:py-20 border-b border-slate-200/90">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl bg-white border border-slate-200 shadow-sm p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center hover:shadow-xl hover:border-blue-300 transition-all">
           <div className="lg:col-span-7 space-y-5">
             <div className="flex items-center gap-3">
@@ -236,10 +241,12 @@ export const BrandsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </section>
 
-      {/* 5. Corporate Single-Window Integration */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 5. Corporate Single-Window Integration (BLUE THEME) */}
+      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-14 sm:py-20 border-b border-blue-900/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl bg-slate-900 text-white p-8 sm:p-12 text-center max-w-4xl mx-auto space-y-4 border border-slate-800 shadow-xl">
           <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center mx-auto shadow-md">
             <Layers className="w-6 h-6" />
@@ -261,7 +268,8 @@ export const BrandsPage: React.FC = () => {
             </Link>
           </div>
         </div>
-      </section>
-    </div>
-  );
+      </div>
+    </section>
+  </div>
+);
 };
