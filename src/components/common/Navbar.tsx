@@ -233,17 +233,7 @@ export const Navbar: React.FC = () => {
                 </button>
               )}
 
-              {/* Discrete shortcut for logged-in admin user */}
-              {isAuthenticated && !isCustomer && (
-                <Link
-                  to="/admin"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors shadow-xs"
-                  title="Admin Console"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-                  <span className="hidden xl:inline">Admin</span>
-                </Link>
-              )}
+
 
               <Button
                 variant="primary"
@@ -374,16 +364,7 @@ export const Navbar: React.FC = () => {
                 </button>
               )}
 
-              {isAuthenticated && !isCustomer && (
-                <Link
-                  to="/admin"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 shadow-xs"
-                >
-                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                  <span>Admin Panel Console</span>
-                </Link>
-              )}
+
 
               <Button
                 variant="primary"
