@@ -41,10 +41,13 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
         if (isMounted) {
           // If child division, filter initially to that brand or related
           let filtered = data;
-          if (division === 'nexalus-innovations') {
-            filtered = data.filter(p => p.brandId === 'nexalus' || p.brandId === 'cp-plus' || p.brandId === 'one-broadband');
-          } else if (division === 'am-distributors') {
+          if (division === 'am-distributors') {
             filtered = data.filter(p => p.brandId === 'am-distributors');
+          } else {
+            // Corporate (Nexalus parent site) and nexalus-innovations:
+            // Strictly display only Nexalus Innovations tech projects (CP PLUS, One Broadband, Nexalus)
+            // Completely filter out all A.M. Distributors projects!
+            filtered = data.filter(p => p.brandId !== 'am-distributors');
           }
           setProjects(filtered);
         }
@@ -91,8 +94,8 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
     return [
       { id: 'all', label: 'All Completed Projects' },
       { id: 'cctv', label: '4K CCTV Surveillance' },
-      { id: 'network', label: 'Fiber & Enterprise IT' },
-      { id: 'logistics', label: 'Cold-Chain & Depot Supply' }
+      { id: 'fiber', label: 'Optical Fiber FTTH' },
+      { id: 'network', label: 'Enterprise Switching & IT' }
     ];
   };
 
@@ -101,7 +104,7 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
     const text = `${p.title} ${p.description} ${p.solutionProvided || ''} ${(p.scope || []).join(' ')}`.toLowerCase();
     if (activeFilter === 'cctv') return text.includes('cctv') || text.includes('camera') || p.brandId === 'cp-plus';
     if (activeFilter === 'fiber') return text.includes('fiber') || text.includes('broadband') || p.brandId === 'one-broadband';
-    if (activeFilter === 'network') return text.includes('switch') || text.includes('network') || text.includes('cabling') || text.includes('fiber');
+    if (activeFilter === 'network') return text.includes('switch') || text.includes('network') || text.includes('cabling') || text.includes('server') || text.includes('gpon');
     if (activeFilter === 'logistics') return text.includes('cold') || text.includes('water') || text.includes('dairy') || text.includes('ice cream') || p.brandId === 'am-distributors';
     if (activeFilter === 'water') return text.includes('water') || text.includes('bottle') || text.includes('jar');
     if (activeFilter === 'icecream') return text.includes('ice cream') || text.includes('refrigerat');
@@ -123,7 +126,7 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
       ? 'Explore our regional cold-chain operations, daily automated mineral water delivery, and commercial dairy distribution routes across Chiplun and Maharashtra.'
       : division === 'nexalus-innovations'
       ? 'Real turnkey projects delivered by our certified field engineers — covering commercial 4K CCTV grids, optical fiber leased lines, and corporate server networks.'
-      : 'Explore real-world deployments completed by Nexalus Innovations LLP and operating companies — verified installations across industrial zones, tech parks, commercial depots, and residential communities.';
+      : 'Explore real-world engineering deployments completed by Nexalus Innovations LLP — verified installations across industrial zones, enterprise tech parks, and residential communities.';
 
   return (
     <section className={`w-full ${isLight ? 'bg-white text-slate-900 border-slate-200/90' : 'bg-slate-900 text-white border-slate-800'} py-16 sm:py-24 border-b relative overflow-hidden`}>
@@ -201,6 +204,7 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
 
               const isAm = proj.brandId === 'am-distributors';
               const isCctv = proj.brandId === 'cp-plus';
+              const isFiber = proj.brandId === 'one-broadband';
 
               return (
                 <BlurZoomReveal
@@ -235,9 +239,11 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
                               ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
                               : isCctv
                               ? 'bg-sky-950/80 text-sky-300 border-sky-500/40'
+                              : isFiber
+                              ? 'bg-indigo-950/80 text-indigo-300 border-indigo-500/40'
                               : 'bg-blue-950/80 text-cyan-300 border-blue-500/40'
                           }`}>
-                            {isAm ? 'A.M. Distributors' : isCctv ? 'CP PLUS Security' : 'Nexalus Innovations'}
+                            {isAm ? 'A.M. Distributors' : isCctv ? 'CP PLUS Security' : isFiber ? 'One Broadband FTTH' : 'Nexalus Innovations'}
                           </span>
 
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-900/80 text-slate-200 border border-slate-700 backdrop-blur-sm">

@@ -1203,7 +1203,7 @@ export async function deleteService(id: string): Promise<boolean> {
 // ----------------------------------------------------
 export async function getProjects(brandId?: BrandId | 'nexalus', publishedOnly = false): Promise<Project[]> {
   let projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
-  const needsSync = projects.some(p => p.images?.[0]?.includes('unsplash.com'));
+  const needsSync = projects.some(p => p.images?.[0]?.includes('unsplash.com')) || projects.length < initialProjects.length;
   if (needsSync) {
     projects = initialProjects;
     setLocalItem(STORAGE_KEYS.PROJECTS, initialProjects);

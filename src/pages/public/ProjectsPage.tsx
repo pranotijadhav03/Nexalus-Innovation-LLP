@@ -11,7 +11,8 @@ export const ProjectsPage: React.FC = () => {
   useEffect(() => {
     async function load() {
       const data = await getProjects(undefined, true);
-      setProjects(data);
+      // Strictly exclude AM Distributors from Nexalus corporate portfolio
+      setProjects(data.filter(p => p.brandId !== 'am-distributors'));
     }
     load();
   }, []);
@@ -32,7 +33,7 @@ export const ProjectsPage: React.FC = () => {
             Completed Projects
           </h1>
           <p className="text-base text-slate-600 mt-4 leading-relaxed">
-            Explore our real-world deployments across tech parks, residential societies, corporate campuses, and logistics hubs.
+            Explore our real-world engineering deployments across tech parks, residential societies, corporate campuses, and enterprise networks.
           </p>
 
           {/* Filter Pills */}

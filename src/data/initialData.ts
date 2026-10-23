@@ -1556,6 +1556,54 @@ export const initialProjects: Project[] = [
     completionDate: '2026-02-10',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-7',
+    brandId: 'one-broadband',
+    title: 'Chiplun Urban GPON Metro Optical Fiber Backbone Network',
+    slug: 'chiplun-urban-gpon-metro-fiber',
+    clientType: 'Enterprise',
+    location: 'Chiplun Commercial Hub & City Corridor, Maharashtra',
+    description: 'Underground and aerial 24-core single-mode optical fiber ring deployment delivering high-speed symmetrical FTTH internet to commercial parks and residential complexes.',
+    solutionProvided: 'Engineered high-density optical distribution frames (ODF), fusion-spliced zero-loss junctions, and 10G OLT core switching ensuring 99.9% uptime with dual-ring failover.',
+    scope: [
+      '28 km Armored 24-Core Single-Mode Fiber Ring',
+      'High-Capacity 10G GPON OLT Core Station',
+      'Sub-15ms Low-Latency Bandwidth Delivery',
+      '24/7 Redundant Fiber Ring Failover Architecture'
+    ],
+    images: [
+      '/images/fiber-technician.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2026-01-15',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-8',
+    brandId: 'cp-plus',
+    title: 'Konkan Highway Smart Traffic & ANPR Surveillance Grid',
+    slug: 'konkan-highway-smart-traffic-anpr',
+    clientType: 'Government',
+    location: 'NH-66 Highway Gateway & Chiplun Toll Sector, Maharashtra',
+    description: 'Turnkey public safety video surveillance installation equipped with ultra-low light AI automated license plate recognition (ANPR) and 360-degree PTZ speed dome cameras.',
+    solutionProvided: 'Integrated 4K optical zoom speed domes with an edge-AI central command control room, industrial PoE+ switches, and solar-backed uninterruptible power supply arrays.',
+    scope: [
+      '36 × CP PLUS AI Starlight 4K Speed Dome PTZs',
+      'Dual-Lane Automated License Plate Recognition (ANPR)',
+      'Solar-Backed 48V Off-Grid Industrial UPS Arrays',
+      'Direct Encrypted Feed to Municipal Command Center'
+    ],
+    images: [
+      '/images/cctv-control-room.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2026-03-12',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
 ];
 
