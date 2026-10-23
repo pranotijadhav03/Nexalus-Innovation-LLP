@@ -8,13 +8,11 @@ import { BlurZoomReveal } from './BlurZoomReveal';
 interface OurTeamSectionProps {
   division?: 'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors';
   bgClassName?: string;
-  theme?: 'light' | 'dark';
 }
 
 export const OurTeamSection: React.FC<OurTeamSectionProps> = ({
   division = 'all',
-  bgClassName,
-  theme = 'light',
+  bgClassName = 'bg-slate-50',
 }) => {
   const [members, setMembers] = useState<TeamMember[]>(initialTeamMembers);
 
@@ -83,56 +81,27 @@ export const OurTeamSection: React.FC<OurTeamSectionProps> = ({
     ? 'bg-blue-100 text-blue-800 border-blue-200'
     : 'bg-blue-100 text-blue-800 border-blue-200';
 
-  const isDark = theme === 'dark';
-  const defaultBg = isDark
-    ? 'bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] border-b border-blue-900/40 text-white'
-    : 'bg-slate-50 border-b border-slate-200/90';
-  const resolvedBg = bgClassName || defaultBg;
-
-  const resolvedBadgeClass = isDark
-    ? 'bg-blue-500/15 text-cyan-300 border-blue-400/30'
-    : badgeClass;
-
-  const cardHoverBorder = isDark
-    ? 'hover:border-cyan-400'
-    : isAm
-    ? 'hover:border-teal-400'
-    : 'hover:border-blue-400';
-
-  const cardHoverShadow = isDark
-    ? 'hover:shadow-cyan-500/20'
-    : isAm
-    ? 'hover:shadow-teal-500/20'
-    : 'hover:shadow-blue-500/20';
-
-  const cardRoleColor = isDark
-    ? 'text-cyan-400'
-    : isAm
-    ? 'text-teal-600'
-    : 'text-blue-600';
-
-  const cardHoverTextColor = isDark
-    ? 'group-hover:text-cyan-300'
-    : isAm
-    ? 'group-hover:text-teal-600'
-    : 'group-hover:text-blue-600';
+  const cardHoverBorder = isAm ? 'hover:border-teal-400' : 'hover:border-blue-400';
+  const cardHoverShadow = isAm ? 'hover:shadow-teal-500/20' : 'hover:shadow-blue-500/20';
+  const cardRoleColor = isAm ? 'text-teal-600' : 'text-blue-600';
+  const cardHoverTextColor = isAm ? 'group-hover:text-teal-600' : 'group-hover:text-blue-600';
 
   return (
     <section
       id="our-team"
-      className={`w-full ${resolvedBg} py-16 sm:py-24 overflow-hidden relative select-none scroll-mt-20`}
+      className={`w-full ${bgClassName} py-16 sm:py-24 border-b border-slate-200/90 overflow-hidden relative select-none scroll-mt-20`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <BlurZoomReveal direction="up" delay={50}>
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border shadow-2xs ${resolvedBadgeClass}`}>
+            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border shadow-2xs ${badgeClass}`}>
               <Users className="w-3.5 h-3.5" />
               <span>{badgeText}</span>
             </div>
-            <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
               Our Team
             </h2>
-            <p className={`text-xs sm:text-sm font-medium max-w-2xl mx-auto leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
               {subtitle}
             </p>
           </div>
@@ -143,16 +112,12 @@ export const OurTeamSection: React.FC<OurTeamSectionProps> = ({
       <div className="relative mt-10 w-full overflow-hidden py-4">
         {/* Subtle Edge Gradients for Smooth Peeking */}
         <div className={`absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r ${
-          isDark
-            ? 'from-[#0a1628] via-[#0a1628]/85 to-transparent'
-            : resolvedBg.includes('bg-white')
+          bgClassName.includes('bg-white')
             ? 'from-white via-white/80 to-transparent'
             : 'from-slate-50 via-slate-50/80 to-transparent'
         } z-20 pointer-events-none`} />
         <div className={`absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l ${
-          isDark
-            ? 'from-[#0a1628] via-[#0a1628]/85 to-transparent'
-            : resolvedBg.includes('bg-white')
+          bgClassName.includes('bg-white')
             ? 'from-white via-white/80 to-transparent'
             : 'from-slate-50 via-slate-50/80 to-transparent'
         } z-20 pointer-events-none`} />
@@ -162,11 +127,7 @@ export const OurTeamSection: React.FC<OurTeamSectionProps> = ({
           {marqueeMembers.map((member, idx) => (
             <div
               key={`${member.id}-${idx}`}
-              className={`w-[285px] sm:w-[320px] shrink-0 rounded-3xl ${
-                isDark
-                  ? 'bg-slate-900/95 border border-slate-700/80 shadow-2xl text-white'
-                  : 'bg-white border border-slate-200/90 shadow-md text-slate-900'
-              } hover:shadow-2xl ${cardHoverShadow} ${cardHoverBorder} hover:-translate-y-2 hover:scale-[1.02] p-6 sm:p-7 flex flex-col items-center text-center transition-all duration-300 group cursor-pointer relative overflow-hidden`}
+              className={`w-[285px] sm:w-[320px] shrink-0 rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl ${cardHoverShadow} ${cardHoverBorder} hover:-translate-y-2 hover:scale-[1.02] p-6 sm:p-7 flex flex-col items-center text-center transition-all duration-300 group cursor-pointer relative overflow-hidden`}
             >
               <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isAm ? 'from-teal-500 via-teal-400 to-emerald-400' : 'from-blue-600 via-blue-500 to-cyan-500'}`} />
               {/* Category Tag Indicator */}
@@ -219,19 +180,19 @@ export const OurTeamSection: React.FC<OurTeamSectionProps> = ({
               {/* Team Member Details */}
               <div className="space-y-1.5 w-full flex-1 flex flex-col justify-between pt-2">
                 <div>
-                  <h3 className={`text-lg sm:text-xl font-black ${isDark ? 'text-white' : 'text-slate-900'} ${cardHoverTextColor} transition-colors`}>
+                  <h3 className={`text-lg sm:text-xl font-black text-slate-900 ${cardHoverTextColor} transition-colors`}>
                     {member.name}
                   </h3>
                   <p className={`text-xs font-bold ${cardRoleColor} uppercase tracking-wide mt-1`}>
                     {member.role}
                   </p>
-                  <p className={`text-[11px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'} mt-1`}>
+                  <p className="text-[11px] font-semibold text-slate-500 mt-1">
                     {member.department}
                   </p>
                 </div>
 
-                <div className={`pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'} w-full mt-3`}>
-                  <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'} leading-relaxed font-medium`}>
+                <div className="pt-3 border-t border-slate-100 w-full mt-3">
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
                     {member.specialty}
                   </p>
                 </div>

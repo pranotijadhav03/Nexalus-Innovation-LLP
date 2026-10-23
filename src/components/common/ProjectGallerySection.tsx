@@ -23,15 +23,13 @@ interface ProjectGallerySectionProps {
   title?: string;
   subtitle?: string;
   maxProjects?: number;
-  theme?: 'light' | 'dark';
 }
 
 export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
   division = 'corporate',
   title,
   subtitle,
-  maxProjects = 6,
-  theme = 'dark'
+  maxProjects = 6
 }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -130,31 +128,23 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
       ? 'Real turnkey projects delivered by our certified field engineers — covering commercial 4K CCTV grids, optical fiber leased lines, and corporate server networks.'
       : 'Explore real-world deployments completed by Nexalus Innovations LLP and operating companies — verified installations across industrial zones, tech parks, commercial depots, and residential communities.';
 
-  const isLight = theme === 'light';
-
   return (
-    <section className={`w-full ${isLight ? 'bg-slate-50/90 text-slate-900 border-b border-slate-200/90' : 'bg-slate-900 text-white border-b border-slate-800'} py-16 sm:py-24 relative overflow-hidden`}>
+    <section className="w-full bg-slate-900 text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
       {/* Background radial glow */}
-      {!isLight && (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-blue-500/5 blur-3xl pointer-events-none" />
-      )}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-blue-500/5 blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10">
         {/* Section Header */}
         <BlurZoomReveal direction="up" delay={0}>
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-              isLight
-                ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                : 'bg-blue-500/10 text-cyan-400 border border-blue-400/20'
-            }`}>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 text-cyan-400 border border-blue-400/20 text-xs font-bold uppercase tracking-wider">
               <FolderGit2 className="w-3.5 h-3.5" />
               <span>Verified Project Gallery</span>
             </div>
-            <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
               {title || defaultTitle}
             </h2>
-            <p className={`text-xs sm:text-sm leading-relaxed max-w-2xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl mx-auto">
               {subtitle || defaultSubtitle}
             </p>
           </div>
@@ -171,8 +161,6 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
                 className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                   activeFilter === tab.id
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-bold scale-[1.02]'
-                    : isLight
-                    ? 'bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200 shadow-2xs'
                     : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/60'
                 }`}
               >
@@ -221,11 +209,7 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
                   scale={0.93}
                   className="h-full flex flex-col"
                 >
-                  <div className={`rounded-3xl ${
-  isLight
-    ? 'bg-white border border-slate-200/90 hover:border-blue-400 shadow-md hover:shadow-xl'
-    : 'bg-slate-800/90 border border-slate-700/80 hover:border-cyan-400/60 shadow-xl hover:shadow-2xl hover:shadow-cyan-500/10'
-} transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full`}>
+                  <div className="rounded-3xl bg-slate-800/90 border border-slate-700/80 hover:border-cyan-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group shadow-xl hover:shadow-2xl hover:shadow-cyan-500/10 h-full">
                     <div>
                       {/* Image Preview Container */}
                       <div className="relative h-56 bg-slate-950 overflow-hidden">
@@ -263,20 +247,20 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
 
                       {/* Content Area */}
                       <div className="p-6 space-y-3">
-                        <h3 className={`text-base sm:text-lg font-bold ${isLight ? 'text-slate-900 group-hover:text-blue-600' : 'text-white group-hover:text-cyan-300'} transition-colors line-clamp-2 leading-snug`}>
+                        <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-cyan-300 transition-colors line-clamp-2 leading-snug">
                           {proj.title}
                         </h3>
 
-                        <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'} leading-relaxed line-clamp-3`}>
+                        <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
                           {proj.description}
                         </p>
 
                         {/* Scope Highlights Preview */}
                         {proj.scope && proj.scope.length > 0 && (
-                          <div className={`space-y-1.5 pt-2 border-t ${isLight ? 'border-slate-100' : 'border-slate-700/60'}`}>
+                          <div className="space-y-1.5 pt-2 border-t border-slate-700/60">
                             {proj.scope.slice(0, 3).map((item, i) => (
-                              <div key={i} className={`flex items-center gap-2 text-[11px] ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-                                <CheckCircle2 className={`w-3.5 h-3.5 ${isLight ? 'text-blue-600' : 'text-cyan-400'} shrink-0`} />
+                              <div key={i} className="flex items-center gap-2 text-[11px] text-slate-300">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                                 <span className="truncate">{item}</span>
                               </div>
                             ))}
