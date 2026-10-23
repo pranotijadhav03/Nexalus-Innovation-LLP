@@ -1462,22 +1462,166 @@ export const initialProjects: Project[] = [
     updatedAt: new Date().toISOString()
   },
   {
-    id: 'proj-3',
+    id: 'proj-am-water-1',
     brandId: 'am-distributors',
-    title: 'A.M. Distributors Chiplun Cold-Chain & Regional Depot Hub',
-    slug: 'am-distributors-chiplun-depot-hub',
-    clientType: 'Logistics',
+    title: 'Chiplun MIDC Packaged 20L Mineral Water Bottling & Distribution',
+    slug: 'chiplun-packaged-20l-mineral-water-distribution',
+    clientType: 'Commercial',
     location: 'Kherdi MIDC, Chiplun 415605, Maharashtra',
-    description: 'Establishment of state-of-the-art temperature-controlled cold-room storage and a dedicated refrigerated fleet delivering packaged mineral water, bulk ice cream, and dairy.',
-    solutionProvided: 'Built zero-break cold-chain corridors with GPS temperature logging vehicles, 20L bottle automated sanitation docks, and daily 4:00 AM dispatch routes across Konkan.',
+    description: 'Automated sanitization and bulk dispatch hub supplying 3,500+ daily hermetically sealed 20-litre natural mineral water dispenser jars to commercial offices, industrial plants, and residential societies.',
+    solutionProvided: 'Installed multi-stage reverse osmosis, ozonization, and automated steam-rinsing docks ensuring 100% bacterial sterility and scheduled daily doorstep van delivery across Chiplun and Khed.',
     scope: [
-      '20L Mineral Water Automated Dispatch Dock (3,000 Jars/Day)',
-      'Refrigerated Fleet Supporting -18°C Ice Cream Logistics',
-      '4:00 AM Doorstep Milk Pouch & Pure Butter Supply Route',
-      'FSSAI Certified Cold Storage Warehouse Operations'
+      '3,500+ Daily 20L Hermetically Sealed Dispenser Jars',
+      'Automated 5-Stage Steam Sanitization & Rinsing Docks',
+      'Dedicated Doorstep Delivery to 220+ Offices & Homes',
+      'Regular BIS & FSSAI Lab Testing Certification'
     ],
     images: [
-      '/images/projects/chiplun-depot-real.jpg'
+      '/images/products/am-water-jar-20l.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2025-10-01',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-am-water-2',
+    brandId: 'am-distributors',
+    title: 'Konkan Hospitality & Retail Bottled Mineral Water Distribution',
+    slug: 'konkan-hospitality-bottled-water-distribution',
+    clientType: 'Wholesale',
+    location: 'Chiplun, Guhagar Coastal Belt & Ratnagiri Highway',
+    description: 'Wholesale packaged drinking water distribution supplying 500ml and 1-litre retail shrink-wrapped bottle crates to hotels, resorts, wedding banquets, and highway travel hubs.',
+    solutionProvided: 'Built palletized crate dispatch infrastructure with guaranteed same-day replenishment for hospitality banquets, roadside convenience stores, and Konkan tourist corridors.',
+    scope: [
+      '500ml & 1L Packaged Drinking Water Crates Wholesale',
+      'Bulk Dispatch to 85+ Konkan Hotels, Resorts & Banquets',
+      'Shrink-Wrapped Heavy-Duty Pallets with Punctual Delivery',
+      'Doorstep Reorder & Same-Day Emergency Delivery'
+    ],
+    images: [
+      '/images/products/am-water-bottles-retail.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2025-11-20',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-am-icecream-1',
+    brandId: 'am-distributors',
+    title: 'Sub-Zero (-18°C) Commercial Bulk Ice Cream Cold-Chain Depot',
+    slug: 'sub-zero-commercial-ice-cream-cold-chain',
+    clientType: 'Logistics',
+    location: 'Chiplun Central Deep-Freeze Cold Room Depot',
+    description: 'Dedicated -18°C deep-freeze cold storage and temperature-controlled reefer fleet supplying commercial 5-litre bulk ice cream tubs to parlor chains, resorts, and wedding caterers.',
+    solutionProvided: 'Operates unbroken cold-chain corridors with real-time digital temperature data logging, preventing crystal formation and ensuring rich, creamy un-melted delivery from depot to freezer cabinet.',
+    scope: [
+      'Bulk 5L Commercial Tubs (Amul, Vadilal & Regional Flavors)',
+      '-18°C Insulated Reefer Vans with Live GPS Temperature Log',
+      'Zero-Melting Assurance from Central Depot to Freezer Cabinet',
+      'Priority Summer & Festival Stock Replenishment Routes'
+    ],
+    images: [
+      '/images/products/am-icecream-tub.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2025-12-15',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-am-icecream-2',
+    brandId: 'am-distributors',
+    title: 'Retail Freezer Display Cabinets & Ice Cream Novelty Restocking',
+    slug: 'retail-freezer-ice-cream-novelty-restocking',
+    clientType: 'Retail',
+    location: 'Chiplun, Khed, Dapoli & Mahad Retail Outlets',
+    description: 'Scheduled cold-chain restocking of over 150 retail display freezer cabinets with premium waffle cones, chocobars, kulfis, and family novelty ice cream packs.',
+    solutionProvided: 'Refrigerated van routes operating on strict daily timetables with direct-to-freezer loading, minimizing temperature fluctuation and preserving texture.',
+    scope: [
+      'Premium Cones, Chocobars, Kulfis & Family Novelty Packs',
+      'Supplying 150+ Retail Display Freezer Cabinets',
+      'Weekly Scheduled Restocking & Expiry Management',
+      'FSSAI Certified Deep-Freeze Cold-Room Staging'
+    ],
+    images: [
+      '/images/products/am-icecream-cones.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2026-01-10',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-am-dairy-1',
+    brandId: 'am-distributors',
+    title: 'Daily 4:00 AM Fresh Pasteurized Milk Pouch Distribution Network',
+    slug: 'daily-4am-fresh-pasteurized-milk-network',
+    clientType: 'Logistics',
+    location: 'Chiplun, Khed & Guhagar Morning Dairy Routes',
+    description: 'Early morning 4:00 AM dispatch network delivering chilled standardized pasteurized milk pouches in sterilized food-grade crates to dairy booths and residential housing societies.',
+    solutionProvided: 'Direct farm-to-depot chilled routing within 2 hours of pasteurization, ensuring pure, unadulterated freshness on breakfast tables across Chiplun by 6:30 AM.',
+    scope: [
+      'Standardized 4.5% Fat & 8.5% SNF Fresh Pasteurized Cow Milk',
+      'Chilled Crates Dispatched Daily at 4:00 AM Before Sunrise',
+      'Unbroken 2°C–4°C Insulated Chilled Vehicle Network',
+      'Supplying 140+ Dairy Counters Across Chiplun Taluka'
+    ],
+    images: [
+      '/images/products/am-fresh-milk-dairy.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2026-02-01',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-am-dairy-2',
+    brandId: 'am-distributors',
+    title: 'Institutional Pure Table Butter, Cow Ghee & Dairy Block Wholesale',
+    slug: 'institutional-pure-butter-cow-ghee-cheese',
+    clientType: 'Wholesale',
+    location: 'Chiplun Commercial Bakery & Hotel Supply Hub',
+    description: 'Wholesale dairy distribution supplying commercial bakeries, sweet marts, and restaurants with pure table butter blocks, Agmark certified desi cow ghee, and cheese.',
+    solutionProvided: 'Temperature-controlled cold-room storage for bulk dairy fats, butter slabs, and mozzarella cheese blocks with scheduled institutional invoicing and volume discounts.',
+    scope: [
+      'Pure Salted Table Butter (100g, 500g & 5kg Bulk Blocks)',
+      'Agmark Certified Desi Cow Ghee Tins (15kg Catering Tins)',
+      'Fresh Malai Paneer & Mozzarella Pizza Cheese Blocks',
+      'Daily Morning Delivery Direct to Professional Kitchens'
+    ],
+    images: [
+      '/images/products/am-butter-block.jpg'
+    ],
+    featured: true,
+    published: true,
+    completionDate: '2026-02-28',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'proj-am-hub',
+    brandId: 'am-distributors',
+    title: 'A.M. Distributors Chiplun Central Logistics & Cold-Storage Depot',
+    slug: 'am-distributors-chiplun-central-depot',
+    clientType: 'Logistics',
+    location: 'Kherdi MIDC, Chiplun 415605, Maharashtra',
+    description: 'State-of-the-art multi-chamber cold storage facility and dedicated fleet headquarters coordinating mineral water bottling docks, sub-zero ice cream chambers, and daily morning dairy distribution.',
+    solutionProvided: 'Engineered central depot with insulated loading bays, 24/7 backup refrigeration generators, automated 20L bottle steam docks, and GPS-monitored distribution vehicles.',
+    scope: [
+      'Multi-Chamber Cold Room Storage (-18°C Deep-Freeze to 4°C Chilled)',
+      'Dedicated Fleet of Insulated Temperature-Controlled Delivery Vans',
+      'Automated Loading Docks for Mineral Water Jars & Dairy Crates',
+      'Konkan Industrial Corridor Strategic Wholesale Distribution Hub'
+    ],
+    images: [
+      '/images/am-warehouse-depot.jpg'
     ],
     featured: true,
     published: true,
@@ -1506,30 +1650,6 @@ export const initialProjects: Project[] = [
     featured: true,
     published: true,
     completionDate: '2026-02-18',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'proj-5',
-    brandId: 'am-distributors',
-    title: 'Konkan Institutional & Supermarket Dairy Logistics Fleet',
-    slug: 'konkan-supermarket-dairy-fleet',
-    clientType: 'Wholesale',
-    location: 'Chiplun, Khed & Guhagar Route, Maharashtra',
-    description: 'Wholesale cold-chain distribution network supplying commercial bulk ice cream tubs, bottled mineral water cases, and dairy products to supermarkets and hotels.',
-    solutionProvided: 'Structured daily morning supply SLAs with dedicated refrigerated vans ensuring zero melting and guaranteed doorstep delivery before 7:00 AM.',
-    scope: [
-      'Bulk Ice Cream Supply to 120+ Retailers (Amul / Vadilal)',
-      'Bottled Mineral Water Cases (500ml & 1L) Wholesale',
-      'Dairy & Pure Ghee Institutional Catering Tins',
-      'Daily 4:00 AM Dispatch Guarantee'
-    ],
-    images: [
-      '/images/projects/dairy-fleet-real.jpg'
-    ],
-    featured: true,
-    published: true,
-    completionDate: '2026-03-05',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },

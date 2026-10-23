@@ -108,7 +108,7 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
     if (activeFilter === 'logistics') return text.includes('cold') || text.includes('water') || text.includes('dairy') || text.includes('ice cream') || p.brandId === 'am-distributors';
     if (activeFilter === 'water') return text.includes('water') || text.includes('bottle') || text.includes('jar');
     if (activeFilter === 'icecream') return text.includes('ice cream') || text.includes('refrigerat');
-    if (activeFilter === 'dairy') return text.includes('dairy') || text.includes('milk') || text.includes('ghee');
+    if (activeFilter === 'dairy') return text.includes('dairy') || text.includes('milk') || text.includes('ghee') || text.includes('butter') || text.includes('cheese');
     return true;
   });
 

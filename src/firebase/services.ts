@@ -1215,10 +1215,12 @@ export async function deleteService(id: string): Promise<boolean> {
 // ----------------------------------------------------
 export async function getProjects(brandId?: BrandId | 'nexalus', publishedOnly = false): Promise<Project[]> {
   let projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
-  const needsSync = projects.some(p => p.images?.[0]?.includes('unsplash.com')) || projects.length < initialProjects.length;
+  const needsSync = projects.some(p => p.images?.[0]?.includes('unsplash.com')) || 
+    projects.length < initialProjects.length ||
+    !projects.some(p => p.id === 'proj-am-water-1');
   if (needsSync) {
     projects = initialProjects;
-    setLocalItem(STORAGE_KEYS.PROJECTS, initialProjects);
+    setLocalItem(STORAGE_KEYS.PROJECTS, initialProjects, false);
   }
   if (brandId) {
     projects = projects.filter(p => p.brandId === brandId);

@@ -297,7 +297,7 @@ export const AmDistributorsPage: React.FC = () => {
       )}
 
       {/* PROJECT GALLERY */}
-      <ProjectGallerySection division="am-distributors" theme="dark" />
+      <ProjectGallerySection division="am-distributors" theme="dark" maxProjects={12} />
 
       {/* 2. CORE BUSINESS VERTICALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
