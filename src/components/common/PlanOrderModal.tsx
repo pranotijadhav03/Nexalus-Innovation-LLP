@@ -38,18 +38,6 @@ export interface PlanOrderModalProps {
   onOrderSuccess?: (orderId: string) => void;
 }
 
-const MAHARASHTRA_CITIES = [
-  'Chiplun',
-  'Ratnagiri',
-  'Sangli',
-  'Kolhapur',
-  'Pune',
-  'Mumbai',
-  'Khed',
-  'Satara',
-  'Other'
-];
-
 export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   isOpen,
   onClose,
@@ -63,8 +51,8 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('Chiplun');
-  const [pincode, setPincode] = useState('415605');
+  const [city, setCity] = useState('');
+  const [pincode, setPincode] = useState('');
   const [preferredSlot, setPreferredSlot] = useState('Immediate / Next Working Day');
   const [paymentMethod, setPaymentMethod] = useState<PlanOrder['paymentMethod']>('pay_on_installation');
   const [notes, setNotes] = useState('');
@@ -76,35 +64,57 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   useEffect(() => {
     if (currentUser) {
       if (currentUser.displayName) setCustomerName(currentUser.displayName);
-      if (currentUser.phone) setPhone(currentUser.phone);
+      if (currentUser.phone) setPhone(currentUser.phone.replace(/\D/g, '').slice(0, 10));
       if (currentUser.email) setEmail(currentUser.email);
       if (currentUser.deliveryAddress) {
         if (currentUser.deliveryAddress.address) setAddress(currentUser.deliveryAddress.address);
         if (currentUser.deliveryAddress.city) setCity(currentUser.deliveryAddress.city);
-        if (currentUser.deliveryAddress.postcode) setPincode(currentUser.deliveryAddress.postcode);
+        if (currentUser.deliveryAddress.postcode) setPincode(currentUser.deliveryAddress.postcode.replace(/\D/g, '').slice(0, 6));
       }
     }
   }, [currentUser, isOpen]);
 
-  // Reset state on open
+  // Reset state on open if guest
   useEffect(() => {
     if (isOpen) {
       setCompletedOrder(null);
+      if (!currentUser) {
+        setCustomerName('');
+        setPhone('');
+        setEmail('');
+        setAddress('');
+        setCity('');
+        setPincode('');
+        setNotes('');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, currentUser]);
 
   if (!isOpen || !plan) return null;
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!customerName.trim() || !phone.trim() || !email.trim()) {
-      error('Validation Error', 'Please enter your full name, mobile number, and email.');
+    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPin = pincode.replace(/\D/g, '');
+
+    if (!customerName.trim() || !cleanPhone || !email.trim()) {
+      error('Validation Error', 'Please enter your full name, 10-digit mobile number, and email.');
       return;
     }
 
-    if (!address.trim() || !city.trim() || !pincode.trim()) {
-      error('Validation Error', 'Please provide complete installation address, city, and PIN code.');
+    if (cleanPhone.length !== 10) {
+      error('Validation Error', 'Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    if (!address.trim() || !city.trim() || !cleanPin) {
+      error('Validation Error', 'Please provide complete installation address, city, and 6-digit PIN code.');
+      return;
+    }
+
+    if (cleanPin.length !== 6) {
+      error('Validation Error', 'Please enter a valid 6-digit PIN code.');
       return;
     }
 
@@ -119,11 +129,11 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
         billingPeriod: plan.billingPeriod || 'monthly',
         brandId: plan.brandId || 'one-broadband',
         customerName: customerName.trim(),
-        phone: phone.trim(),
+        phone: cleanPhone,
         email: email.trim().toLowerCase(),
         address: address.trim(),
         city: city.trim(),
-        pincode: pincode.trim(),
+        pincode: cleanPin,
         preferredSlot,
         paymentMethod,
         notes: notes.trim()
@@ -294,9 +304,12 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                     <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]{10}"
                       placeholder="10-digit mobile number"
                       value={phone}
-                      onChange={e => setPhone(e.target.value)}
+                      onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      maxLength={10}
                       required
                       className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
                     />
@@ -346,17 +359,12 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    list="order-cities"
+                    placeholder="Enter city (e.g. Chiplun)"
                     value={city}
                     onChange={e => setCity(e.target.value)}
                     required
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
                   />
-                  <datalist id="order-cities">
-                    {MAHARASHTRA_CITIES.map(c => (
-                      <option key={c} value={c} />
-                    ))}
-                  </datalist>
                 </div>
 
                 <div>
@@ -365,9 +373,10 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    placeholder="415605"
+                    inputMode="numeric"
+                    placeholder="e.g. 415605"
                     value={pincode}
-                    onChange={e => setPincode(e.target.value)}
+                    onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     required
                     maxLength={6}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors font-mono"
