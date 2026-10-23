@@ -387,29 +387,29 @@ export const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Division 1: Nexalus Innovations */}
             <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-blue-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group">
-              <div className="relative h-64 overflow-hidden bg-slate-100">
+              <Link to="/brands/nexalus-innovations" className="block relative h-64 overflow-hidden bg-slate-100 cursor-pointer">
                 <img
                   src="/images/server-racks-4508751.jpg"
                   alt="Nexalus Innovations Technology & Network Infrastructure Division"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-              </div>
+              </Link>
 
               <div className="p-7 sm:p-8 space-y-5 flex-1 flex flex-col justify-between">
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold shrink-0">
+                  <Link to="/brands/nexalus-innovations" className="flex items-center gap-3 group/brand cursor-pointer">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold shrink-0 group-hover/brand:bg-blue-600 group-hover/brand:text-white transition-colors">
                       <Cpu className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 group-hover/brand:text-blue-600 transition-colors">
                         Nexalus Innovations
                       </h3>
                       <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                         CCTV Surveillance, Fiber &amp; IT Networking
                       </p>
                     </div>
-                  </div>
+                  </Link>
 
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-1">
                     Turnkey enterprise technology solutions including certified 4K CCTV video surveillance, ultra-fast gigabit optical fiber leased lines, managed Layer-2/3 network switching, and structured office cabling.
@@ -447,29 +447,29 @@ export const HomePage: React.FC = () => {
 
             {/* Division 2: A.M. Distributors Chiplun */}
             <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-teal-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group">
-              <div className="relative h-64 overflow-hidden bg-slate-100">
+              <Link to="/brands/am-distributors" className="block relative h-64 overflow-hidden bg-slate-100 cursor-pointer">
                 <img
                   src="/images/projects/real-warehouse-distribution.jpg"
                   alt="A.M. Distributors Chiplun Cold-Chain & FMCG Distribution Facility"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-              </div>
+              </Link>
 
               <div className="p-7 sm:p-8 space-y-5 flex-1 flex flex-col justify-between">
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center font-bold shrink-0">
+                  <Link to="/brands/am-distributors" className="flex items-center gap-3 group/brand cursor-pointer">
+                    <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center font-bold shrink-0 group-hover/brand:bg-teal-600 group-hover/brand:text-white transition-colors">
                       <Truck className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-black text-slate-900 group-hover:text-teal-600 transition-colors">
+                      <h3 className="text-2xl font-black text-slate-900 group-hover:text-teal-600 group-hover/brand:text-teal-600 transition-colors">
                         A.M. Distributors Chiplun
                       </h3>
                       <p className="text-xs font-bold text-teal-600 uppercase tracking-wider">
                         Beverage, Dairy &amp; Cold Storage Logistics
                       </p>
                     </div>
-                  </div>
+                  </Link>
 
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-1">
                     Authorised master distributor and logistics operator for premium 20L packaged drinking water jars, dairy milk, ice cream cold storage, and daily retail distribution across Chiplun and the Konkan belt.

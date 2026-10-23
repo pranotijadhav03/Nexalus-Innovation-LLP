@@ -59,16 +59,11 @@ export const AdminDashboardPage: React.FC = () => {
   const consoleParam = searchParams.get('console');
   const activeConsole: AdminConsoleMode = (consoleParam === 'am-distributors' || consoleParam === 'nexalus-innovations' || consoleParam === 'master')
     ? (consoleParam as AdminConsoleMode)
-    : (outletCtx?.activeConsole || 'master');
+    : isSuperAdmin ? 'master' : (outletCtx?.activeConsole || 'master');
   const setActiveConsole = outletCtx?.setActiveConsole || (() => {});
   const returnToMaster = outletCtx?.returnToMaster || (() => {});
 
-  const getNavPath = (path: string) => {
-    if (isSuperAdmin && activeConsole && activeConsole !== 'master') {
-      return `${path}?console=${activeConsole}`;
-    }
-    return path;
-  };
+  const getNavPath = (path: string) => path;
 
   const initialProds = getCachedProducts(undefined);
   const initialEnqs = getCachedEnquiries('all');

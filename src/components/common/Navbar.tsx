@@ -102,7 +102,7 @@ export const Navbar: React.FC = () => {
                   <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
                 </Link>
 
-                <div className="absolute top-full left-0 w-80 pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                <div className="absolute top-full left-0 w-80 pt-2 before:absolute before:-top-3 before:left-0 before:w-full before:h-4 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
                   <div className="p-2.5 bg-white rounded-2xl shadow-xl border border-slate-200/90 space-y-1">
                     <Link
                       to="/brands/nexalus-innovations"

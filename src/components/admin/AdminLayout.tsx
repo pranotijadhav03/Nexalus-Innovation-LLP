@@ -43,6 +43,8 @@ export const AdminLayout: React.FC = () => {
     ? 'am-distributors'
     : (paramConsole === 'nexalus-innovations' || paramConsole === 'am-distributors' || paramConsole === 'master')
     ? (paramConsole as AdminConsoleMode)
+    : isSuperAdmin
+    ? 'master'
     : (savedConsole === 'nexalus-innovations' || savedConsole === 'am-distributors' || savedConsole === 'master')
     ? savedConsole
     : 'master';
@@ -95,14 +97,14 @@ export const AdminLayout: React.FC = () => {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // Active brand filter for products/services/enquiries
-  let activeBrandFilter: BrandId | 'corporate' | 'all' = 'corporate';
+  // Active brand filter for products/services/enquiries: 'all' by default for corporate master view
+  let activeBrandFilter: BrandId | 'corporate' | 'all' = 'all';
   if (effectiveConsole === 'nexalus-innovations') {
     activeBrandFilter = 'nexalus-innovations';
   } else if (effectiveConsole === 'am-distributors') {
     activeBrandFilter = 'am-distributors';
   } else {
-    activeBrandFilter = isSuperAdmin ? 'corporate' : ((brandScope as BrandId) || 'corporate');
+    activeBrandFilter = isSuperAdmin ? 'all' : ((brandScope as BrandId) || 'corporate');
   }
 
   const outletContext: AdminOutletContext = {
@@ -131,13 +133,13 @@ export const AdminLayout: React.FC = () => {
           onConsoleChange={setActiveConsole}
         />
 
-        {/* Prominent Super Admin Child Workspace Banner */}
+        {/* Super Admin Child Workspace Banner */}
         {isSuperAdmin && effectiveConsole !== 'master' && (
           <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2 sm:px-6 text-xs font-bold flex items-center justify-between border-b border-amber-600/30 shrink-0 shadow-xs">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-slate-950 animate-ping" />
               <span>
-                Active Workspace: <strong className="font-extrabold uppercase tracking-wide">{effectiveConsole === 'nexalus-innovations' ? 'Nexalus Innovations' : 'A.M. Distributors Chiplun'}</strong>. All operations and forms are scoped strictly to this entity.
+                Active Filter Mode: <strong className="font-extrabold uppercase tracking-wide">{effectiveConsole === 'nexalus-innovations' ? 'Nexalus Innovations' : 'A.M. Distributors Chiplun'}</strong>.
               </span>
             </div>
             <button
@@ -145,15 +147,12 @@ export const AdminLayout: React.FC = () => {
               className="px-3 py-1 bg-slate-950 hover:bg-slate-900 text-amber-400 rounded-lg text-xs font-black flex items-center gap-1 transition-all cursor-pointer shadow-xs shrink-0"
               title="Return to Corporate Master Admin Panel"
             >
-              <span>← Return to Corporate Master</span>
+              <span>← View All Master Data</span>
             </button>
           </div>
         )}
 
-        <main
-          key={`${location.pathname}?console=${effectiveConsole}`}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto"
-        >
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet context={outletContext} />
         </main>
       </div>
