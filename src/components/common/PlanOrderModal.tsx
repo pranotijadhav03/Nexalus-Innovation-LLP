@@ -98,25 +98,23 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
     const cleanPhone = phone.replace(/\D/g, '');
     const cleanPin = pincode.replace(/\D/g, '');
 
-    if (!customerName.trim() || !cleanPhone || !email.trim()) {
-      error('Validation Error', 'Please enter your full name, 10-digit mobile number, and email.');
+    if (!customerName.trim()) {
+      error('Validation Error', 'Please enter your full name.');
       return;
     }
 
     if (cleanPhone.length !== 10) {
-      error('Validation Error', 'Please enter a valid 10-digit mobile number.');
+      error('Validation Error', 'Mobile number must be exactly 10 digits.');
       return;
     }
 
-    if (!address.trim() || !city.trim() || !cleanPin) {
-      error('Validation Error', 'Please provide complete installation address, city, and 6-digit PIN code.');
+    if (!address.trim() || !city.trim()) {
+      error('Validation Error', 'Please provide complete installation address and city.');
       return;
     }
 
-    if (cleanPin.length !== 6) {
-      error('Validation Error', 'Please enter a valid 6-digit PIN code.');
-      return;
-    }
+    const emailToSave = email.trim() ? email.trim().toLowerCase() : `${cleanPhone}@customer.nexalus.com`;
+    const pinToSave = cleanPin || '415605';
 
     setIsSubmitting(true);
     try {
@@ -130,10 +128,10 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
         brandId: plan.brandId || 'one-broadband',
         customerName: customerName.trim(),
         phone: cleanPhone,
-        email: email.trim().toLowerCase(),
+        email: emailToSave,
         address: address.trim(),
         city: city.trim(),
-        pincode: cleanPin,
+        pincode: pinToSave,
         preferredSlot,
         paymentMethod,
         notes: notes.trim()
@@ -248,7 +246,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
           </div>
         ) : (
           /* ORDER CHECKOUT FORM */
-          <form onSubmit={handleSubmitOrder} className="p-6 sm:p-8 space-y-4">
+          <form onSubmit={handleSubmitOrder} noValidate className="p-6 sm:p-8 space-y-4">
             {/* Plan Summary Card */}
             <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-200/80 flex items-center justify-between gap-4">
               <div>
@@ -297,38 +295,80 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Mobile / WhatsApp <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Mobile / WhatsApp <span className="text-rose-500">*</span>
+                    </label>
+                    <span className={`text-[10px] font-bold ${
+                      phone.length === 10
+                        ? 'text-emerald-600'
+                        : phone.length > 0
+                        ? 'text-amber-600'
+                        : 'text-slate-400'
+                    }`}>
+                      {phone.length === 10
+                        ? '✓ 10 digits valid'
+                        : `${phone.length}/10 digits`}
+                    </span>
+                  </div>
                   <div className="relative">
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Phone className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${
+                      phone.length === 10 ? 'text-emerald-500' : 'text-slate-400'
+                    }`} />
                     <input
                       type="tel"
                       inputMode="numeric"
-                      pattern="[0-9]{10}"
                       placeholder="10-digit mobile number"
                       value={phone}
-                      onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      onChange={e => {
+                        let digits = e.target.value.replace(/\D/g, '');
+                        if (digits.length === 12 && digits.startsWith('91')) {
+                          digits = digits.slice(2);
+                        } else if (digits.length === 11 && digits.startsWith('0')) {
+                          digits = digits.slice(1);
+                        }
+                        setPhone(digits.slice(0, 10));
+                      }}
+                      onKeyDown={e => {
+                        if (
+                          !/[0-9]/.test(e.key) &&
+                          !['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(e.key) &&
+                          !e.ctrlKey &&
+                          !e.metaKey
+                        ) {
+                          e.preventDefault();
+                        }
+                      }}
                       maxLength={10}
                       required
-                      className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      className={`w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border rounded-xl focus:outline-none transition-colors ${
+                        phone.length === 10
+                          ? 'border-emerald-500 bg-emerald-50/20 focus:border-emerald-600 focus:bg-white'
+                          : phone.length > 0
+                          ? 'border-amber-400 bg-amber-50/20 focus:border-amber-500 focus:bg-white'
+                          : 'border-slate-200 focus:border-blue-600 focus:bg-white'
+                      }`}
                     />
                   </div>
+                  {phone.length > 0 && phone.length < 10 && (
+                    <p className="text-[10px] text-amber-600 font-medium mt-1">
+                      Must be exactly 10 digits ({10 - phone.length} more needed)
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Email Address <span className="text-rose-500">*</span>
+                  Email Address <span className="text-slate-400 font-normal lowercase">(optional)</span>
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
-                    placeholder="name@example.com"
+                    placeholder="name@example.com (optional)"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    required
                     className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
                   />
                 </div>
@@ -369,7 +409,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    6-Digit PIN <span className="text-rose-500">*</span>
+                    PIN Code <span className="text-slate-400 font-normal lowercase">(optional)</span>
                   </label>
                   <input
                     type="text"
@@ -377,7 +417,6 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                     placeholder="e.g. 415605"
                     value={pincode}
                     onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    required
                     maxLength={6}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors font-mono"
                   />
