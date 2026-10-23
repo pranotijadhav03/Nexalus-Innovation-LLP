@@ -1858,7 +1858,7 @@ export const initialServiceAreas: ServiceArea[] = [
   {
     id: 'sa-satara',
     brandId: 'nexalus',
-    locality: 'Karad MIDC, Satara City Center & Highway Corridor',
+    locality: 'Satara MIDC, Satara City Center & Highway Corridor',
     city: 'Satara',
     state: 'Maharashtra',
     pincode: '415001',
@@ -1870,6 +1870,25 @@ export const initialServiceAreas: ServiceArea[] = [
       'Advance Project Site Surveys'
     ],
     notes: 'Currently accepting advance site survey bookings; weekly dedicated installation slots',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sa-karad',
+    brandId: 'all',
+    locality: 'Karad MIDC, Malkapur, Vidyanagar & Karad City Core',
+    city: 'Karad',
+    state: 'Maharashtra',
+    pincode: '415110',
+    status: 'fully_operational',
+    services: [
+      'Commercial 4K CCTV Video Surveillance',
+      'High-Speed Optical Fiber Internet',
+      'Enterprise Networking & Managed Switches',
+      '20-Litre Packaged Mineral Water Jars',
+      'Commercial Bulk Ice Cream Wholesale',
+      'Advance Project Site Surveys'
+    ],
+    notes: 'Direct operational hub and route coverage across Karad MIDC, Malkapur and central Karad',
     updatedAt: new Date().toISOString()
   },
   {

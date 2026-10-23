@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   MapPin,
   Search,
@@ -52,9 +52,9 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
           // If division is specified and not corporate/all, filter
           let filtered = data;
           if (division === 'nexalus-innovations') {
-            filtered = data.filter(a => a.brandId === 'nexalus' || a.brandId === 'cp-plus' || a.brandId === 'one-broadband');
+            filtered = data.filter(a => a.brandId === 'nexalus' || a.brandId === 'cp-plus' || a.brandId === 'one-broadband' || a.brandId === 'all');
           } else if (division === 'am-distributors') {
-            filtered = data.filter(a => a.brandId === 'am-distributors');
+            filtered = data.filter(a => a.brandId === 'am-distributors' || a.brandId === 'all');
           }
           setAreas(filtered);
         }
@@ -96,15 +96,30 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
     ? availableCities.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase().trim()))
     : [];
 
-  // Filter matched areas after user performs search
-  const matchedAreas = searchedCity
-    ? areas.filter(a =>
-        a.city.toLowerCase() === searchedCity.toLowerCase() ||
-        a.city.toLowerCase().includes(searchedCity.toLowerCase()) ||
-        a.locality.toLowerCase().includes(searchedCity.toLowerCase()) ||
-        a.pincode.includes(searchedCity.trim())
-      )
-    : [];
+  // Filter matched areas after user performs search - prioritized strictly so searching a city never shows another city
+  const matchedAreas = useMemo(() => {
+    if (!searchedCity.trim()) return [];
+    const q = searchedCity.toLowerCase().trim();
+
+    // 1. Exact city match (e.g. searching "karad" strictly matches Karad)
+    const exactCity = areas.filter(a => a.city.toLowerCase().trim() === q);
+    if (exactCity.length > 0) return exactCity;
+
+    // 2. City prefix match (e.g. "kara" matches "Karad")
+    const prefixCity = areas.filter(a => a.city.toLowerCase().trim().startsWith(q));
+    if (prefixCity.length > 0) return prefixCity;
+
+    // 3. Exact Pincode match (e.g. "415110" or "415001")
+    const pinMatch = areas.filter(a => a.pincode && a.pincode.trim() === q);
+    if (pinMatch.length > 0) return pinMatch;
+
+    // 4. Substring in city name (e.g. "chipl" -> "Chiplun")
+    const citySub = areas.filter(a => a.city.toLowerCase().includes(q));
+    if (citySub.length > 0) return citySub;
+
+    // 5. Fallback: locality match only if query did not match any city
+    return areas.filter(a => a.locality.toLowerCase().includes(q));
+  }, [searchedCity, areas]);
 
   const executeSearch = (cityToSearch?: string) => {
     const target = (cityToSearch || searchTerm).trim();

@@ -335,7 +335,7 @@ export function getCachedFaqs(brandId?: BrandId | 'nexalus'): FAQ[] {
 export function mergeWithInitialServiceAreas(incomingAreas: ServiceArea[]): ServiceArea[] {
   const map = new Map<string, ServiceArea>();
 
-  // 1. Populate all initial baseline cities (Chiplun, Ratnagiri, Sangli, Kolhapur, Pune, Mumbai, Khed, Satara, Jaysingpur)
+  // 1. Populate all initial baseline cities (Chiplun, Ratnagiri, Sangli, Kolhapur, Pune, Mumbai, Khed, Satara, Karad, Jaysingpur)
   initialServiceAreas.forEach(a => {
     map.set(a.city.toLowerCase().trim(), a);
   });
@@ -345,7 +345,12 @@ export function mergeWithInitialServiceAreas(incomingAreas: ServiceArea[]): Serv
     if (a && a.city) {
       const key = a.city.toLowerCase().trim();
       const existing = map.get(key);
-      map.set(key, { ...(existing || {}), ...a });
+      const mergedArea = { ...(existing || {}), ...a };
+      // Sanitize Satara if cached local storage or database had obsolete Karad reference in locality
+      if (mergedArea.city?.toLowerCase().trim() === 'satara' && mergedArea.locality?.toLowerCase().includes('karad')) {
+        mergedArea.locality = 'Satara MIDC, Satara City Center & Highway Corridor';
+      }
+      map.set(key, mergedArea);
     }
   });
 

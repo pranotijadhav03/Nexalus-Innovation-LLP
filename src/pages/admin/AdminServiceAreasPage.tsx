@@ -110,7 +110,7 @@ export const AdminServiceAreasPage: React.FC = () => {
     try {
       const all = await syncAllStandardServiceAreas();
       setAreas(all);
-      success('Standard Hubs Synced', `All ${all.length} Maharashtra hubs (Chiplun, Ratnagiri, Sangli, Kolhapur, Pune, Mumbai, Khed, Satara, Jaysinghpur) are active and synced.`);
+      success('Standard Hubs Synced', `All ${all.length} Maharashtra hubs (Chiplun, Ratnagiri, Sangli, Kolhapur, Pune, Mumbai, Khed, Satara, Karad, Jaysinghpur) are active and synced.`);
     } catch (err: any) {
       error('Sync Failed', err?.message || 'Could not sync hubs');
     } finally {
