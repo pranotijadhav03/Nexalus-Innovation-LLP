@@ -471,13 +471,13 @@ export const HomePage: React.FC = () => {
           SECTION: OUR TEAM (SLIDING FOCUS SLIDER)
           ========================================================================= */}
       {heroBanner?.showTeam !== false && (
-        <OurTeamSection division="corporate" />
+        <OurTeamSection division="corporate" theme="dark" />
       )}
 
       {/* =========================================================================
           SECTION: PROJECT GALLERY
           ========================================================================= */}
-      <ProjectGallerySection division="corporate" />
+      <ProjectGallerySection division="corporate" theme="light" />
 
       {/* =========================================================================
           SECTION 3: INTEGRATED TECHNOLOGY INFRASTRUCTURE (3 PILLARS - RICH CORPORATE BLUE)
@@ -857,27 +857,31 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4.2: Fiber Internet & Connectivity */}
-      <section className="w-full bg-slate-50/80 text-slate-900 py-16 sm:py-20 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
+      {/* 4.2: Fiber Internet & Connectivity (Alternating Dark Section with Glowing Teal Accents) */}
+      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0d223f] to-[#0a1628] text-white py-16 sm:py-24 border-b border-blue-900/40 relative overflow-hidden">
+        {/* Ambient Fiber Optic Glows */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10 relative z-10">
           <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-semibold tracking-wider border border-teal-200/60">
-              <Wifi className="w-3.5 h-3.5 text-teal-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/15 text-teal-300 text-xs font-bold tracking-wider border border-teal-400/30">
+              <Wifi className="w-3.5 h-3.5 text-teal-400" />
               <span>Fiber Internet</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
               Fiber Internet &amp; Connectivity
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               Explore fiber connectivity equipment, ONT devices, Wi-Fi solutions, and related networking products.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Fiber Card 1 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <div className="rounded-2xl bg-slate-900/90 border border-slate-700/80 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                <div className="relative h-52 sm:h-56 bg-slate-950/70 overflow-hidden p-5 flex items-center justify-center border-b border-slate-800">
                   <img
                     src="/images/products/wifi6-router.jpg"
                     alt="NexFiber Wi-Fi 6 AX3000 Dual-Band Gigabit ONT Router"
@@ -886,21 +890,21 @@ export const HomePage: React.FC = () => {
                   />
                 </div>
                 <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
                     ONE BROADBAND • Model OB-AX3000-ONT
                   </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
                     NexFiber Wi-Fi 6 AX3000 Dual-Band Gigabit ONT Router
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
                     High-speed GPON Optical Network Terminal with built-in Wi-Fi 6, 4 Gigabit Ethernet LAN ports, VoIP FXS port, and OFDMA low-latency technology.
                   </p>
                 </div>
               </div>
               <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-slate-800">
                   <Link to="/products?brand=one-broadband" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                    <Button variant="outline-white" size="sm" className="w-full justify-center font-bold border-slate-700 hover:border-teal-400 hover:text-teal-300 text-white">
                       View Product
                     </Button>
                   </Link>
@@ -909,9 +913,9 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Fiber Card 2 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <div className="rounded-2xl bg-slate-900/90 border border-slate-700/80 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                <div className="relative h-52 sm:h-56 bg-slate-950/70 overflow-hidden p-5 flex items-center justify-center border-b border-slate-800">
                   <img
                     src="/images/products/mesh-wifi-v2.jpg"
                     alt="NexMesh AX3000 Whole-Home Tri-Band Wi-Fi 6 Mesh System (3-Pack)"
@@ -920,21 +924,21 @@ export const HomePage: React.FC = () => {
                   />
                 </div>
                 <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
                     ONE BROADBAND • Model OB-MESH-AX3000-3PK
                   </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
                     NexMesh AX3000 Whole-Home Tri-Band Wi-Fi 6 Mesh System (3-Pack)
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
                     Whole-home dead-zone killer mesh Wi-Fi system covering up to 6,000 sq.ft. with seamless single-SSID roaming, gigabit Ethernet backhaul, and zero buffering.
                   </p>
                 </div>
               </div>
               <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-slate-800">
                   <Link to="/products?brand=one-broadband" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                    <Button variant="outline-white" size="sm" className="w-full justify-center font-bold border-slate-700 hover:border-teal-400 hover:text-teal-300 text-white">
                       View Product
                     </Button>
                   </Link>
@@ -943,9 +947,9 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Fiber Card 3 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <div className="rounded-2xl bg-slate-900/90 border border-slate-700/80 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                <div className="relative h-52 sm:h-56 bg-slate-950/70 overflow-hidden p-5 flex items-center justify-center border-b border-slate-800">
                   <img
                     src="/images/products/fiber-modem.jpg"
                     alt="NexFiber Gigabit XPON / GPON Optical Fiber Bridge Modem (ONU)"
@@ -954,21 +958,21 @@ export const HomePage: React.FC = () => {
                   />
                 </div>
                 <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
                     ONE BROADBAND • Model OB-ONU-1000G
                   </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
                     NexFiber Gigabit XPON / GPON Optical Fiber Bridge Modem (ONU)
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
                     Ultra-compact high-speed Gigabit XPON/GPON optical network terminal (ONU) with 1 SC/UPC optical port, 1 Gigabit RJ45 LAN port, and lightning surge protection.
                   </p>
                 </div>
               </div>
               <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-slate-800">
                   <Link to="/products?brand=one-broadband" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                    <Button variant="outline-white" size="sm" className="w-full justify-center font-bold border-slate-700 hover:border-teal-400 hover:text-teal-300 text-white">
                       View Product
                     </Button>
                   </Link>
@@ -980,9 +984,9 @@ export const HomePage: React.FC = () => {
           <div className="text-center pt-2 sm:pt-4">
             <Link to="/products?brand=one-broadband">
               <Button
-                variant="outline"
+                variant="primary"
                 size="md"
-                className="font-bold border-teal-600 text-teal-700 hover:bg-teal-50"
+                className="font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-900/40 border-0"
                 icon={<ArrowRight className="w-4 h-4" />}
               >
                 View All Internet Products
@@ -2044,7 +2048,7 @@ export const HomePage: React.FC = () => {
       {/* =========================================================================
           SECTION: AREAS COVERED & SERVICE AVAILABILITY CHECKER
           ========================================================================= */}
-      <AreasCoveredSection division="corporate" />
+      <AreasCoveredSection division="corporate" theme="light" />
 
       {/* =========================================================================
           SLIDE 8: BUSINESS ENQUIRY & SITE SURVEY CTA BANNER (CLEAN WHITE THEME)

@@ -22,13 +22,15 @@ interface AreasCoveredSectionProps {
   title?: string;
   subtitle?: string;
   className?: string;
+  theme?: 'light' | 'dark';
 }
 
 export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
   division = 'corporate',
   title,
   subtitle,
-  className = ''
+  className = '',
+  theme = 'dark'
 }) => {
   const [areas, setAreas] = useState<ServiceArea[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -134,27 +136,37 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
     setIsQuoteOpen(true);
   };
 
+  const isLight = theme === 'light';
+
   return (
     <section
       id="areas-covered"
-      className={`w-full bg-slate-950 text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden ${className}`}
+      className={`w-full ${isLight ? 'bg-slate-50/90 text-slate-900 border-b border-slate-200/90' : 'bg-slate-950 text-white border-b border-slate-800'} py-16 sm:py-24 relative overflow-hidden ${className}`}
     >
       {/* Background Lighting Gradients */}
-      <div className="absolute top-1/4 -left-48 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+      {!isLight && (
+        <>
+          <div className="absolute top-1/4 -left-48 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+        </>
+      )}
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10">
         {/* Section Header */}
         <BlurZoomReveal direction="up" delay={0}>
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 text-cyan-300 border border-blue-400/20 text-xs font-bold uppercase tracking-wider">
-              <Compass className="w-3.5 h-3.5 text-cyan-400" />
+            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+              isLight
+                ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                : 'bg-blue-500/10 text-cyan-300 border border-blue-400/20'
+            }`}>
+              <Compass className={`w-3.5 h-3.5 ${isLight ? 'text-blue-600' : 'text-cyan-400'}`} />
               <span>Service Coverage Search</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+            <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
               {title || defaultTitle}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl mx-auto">
+            <p className={`text-xs sm:text-sm leading-relaxed max-w-2xl mx-auto ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
               {subtitle || defaultSubtitle}
             </p>
           </div>
@@ -163,8 +175,14 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
         {/* Google-Style Search Interface */}
         <BlurZoomReveal direction="up" delay={80}>
           <div ref={searchContainerRef} className="max-w-2xl mx-auto relative">
-            <div className="relative flex items-center bg-slate-900/95 border-2 border-slate-700 focus-within:border-cyan-400 rounded-full shadow-2xl transition-all p-1.5 pl-5 sm:pl-6 focus-within:ring-4 focus-within:ring-cyan-500/20">
-              <Search className="w-5 h-5 text-cyan-400 shrink-0 pointer-events-none" />
+            <div className={`relative flex items-center ${
+              isLight
+                ? 'bg-white border-2 border-slate-300 focus-within:border-blue-600 shadow-xl'
+                : 'bg-slate-900/95 border-2 border-slate-700 focus-within:border-cyan-400 shadow-2xl'
+            } rounded-full transition-all p-1.5 pl-5 sm:pl-6 focus-within:ring-4 ${
+              isLight ? 'focus-within:ring-blue-500/20' : 'focus-within:ring-cyan-500/20'
+            }`}>
+              <Search className={`w-5 h-5 ${isLight ? 'text-blue-600' : 'text-cyan-400'} shrink-0 pointer-events-none`} />
 
               <input
                 type="text"
@@ -187,14 +205,16 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                   }
                 }}
                 placeholder="Enter city or area (e.g. Chiplun, Ratnagiri, Sangli, Pune, Mumbai, Kolhapur)..."
-                className="w-full px-3 py-3 sm:py-3.5 bg-transparent text-white placeholder-slate-400 text-sm sm:text-base outline-none"
+                className={`w-full px-3 py-3 sm:py-3.5 bg-transparent ${
+                  isLight ? 'text-slate-900 placeholder-slate-400' : 'text-white placeholder-slate-400'
+                } text-sm sm:text-base outline-none`}
               />
 
               {searchTerm && (
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="p-2 text-slate-400 hover:text-white transition-colors cursor-pointer mr-1"
+                  className={`p-2 ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-slate-400 hover:text-white'} transition-colors cursor-pointer mr-1`}
                   title="Clear search"
                 >
                   <X className="w-5 h-5" />
@@ -213,8 +233,12 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
 
             {/* Google-Style Autocomplete Dropdown */}
             {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-slate-800">
-                <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-950/60">
+              <div className={`absolute left-0 right-0 top-full mt-2 ${
+                isLight ? 'bg-white border border-slate-200 shadow-2xl divide-slate-100' : 'bg-slate-900 border border-slate-700/80 shadow-2xl divide-slate-800'
+              } rounded-2xl overflow-hidden z-50 divide-y`}>
+                <div className={`px-4 py-2 text-[11px] font-bold uppercase tracking-wider ${
+                  isLight ? 'text-slate-500 bg-slate-50' : 'text-slate-400 bg-slate-950/60'
+                }`}>
                   Available Hub Locations:
                 </div>
                 {suggestions.map(city => (
@@ -222,15 +246,17 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                     key={city}
                     type="button"
                     onClick={() => executeSearch(city)}
-                    className="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-slate-800/80 transition-colors cursor-pointer group"
+                    className={`w-full px-4 py-3 text-left flex items-center justify-between ${
+                      isLight ? 'hover:bg-slate-50 text-slate-900' : 'hover:bg-slate-800/80 text-white'
+                    } transition-colors cursor-pointer group`}
                   >
                     <div className="flex items-center gap-3">
-                      <MapPin className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
-                      <span className="font-semibold text-white text-sm group-hover:text-cyan-300">
+                      <MapPin className={`w-4 h-4 ${isLight ? 'text-blue-600' : 'text-cyan-400'} group-hover:scale-110 transition-transform`} />
+                      <span className={`font-semibold text-sm ${isLight ? 'group-hover:text-blue-600 text-slate-900' : 'group-hover:text-cyan-300 text-white'}`}>
                         {city}
                       </span>
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                       ✓ Service Available
                     </span>
                   </button>
@@ -240,8 +266,8 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
 
             {/* Search Prompt when no search made yet */}
             {!hasSearched && (
-              <p className="text-center text-xs text-slate-400 mt-3">
-                💡 Tip: Type your city name in the search box above and click <span className="text-cyan-300 font-semibold">&ldquo;Search&rdquo;</span> or press Enter.
+              <p className={`text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'} mt-3`}>
+                💡 Tip: Type your city name in the search box above and click <span className={`${isLight ? 'text-blue-600' : 'text-cyan-300'} font-semibold`}>&ldquo;Search&rdquo;</span> or press Enter.
               </p>
             )}
           </div>
@@ -257,7 +283,11 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                   const isAm = area.brandId === 'am-distributors';
                   return (
                     <BlurZoomReveal key={area.id || idx} direction="up" delay={idx * 60}>
-                      <div className="rounded-3xl bg-slate-900/95 border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden group hover:border-cyan-500/50 transition-all">
+                      <div className={`rounded-3xl ${
+  isLight
+    ? 'bg-white border border-slate-200/90 shadow-xl hover:border-blue-400'
+    : 'bg-slate-900/95 border border-slate-800 shadow-2xl hover:border-cyan-500/50'
+} p-6 sm:p-8 space-y-6 relative overflow-hidden group transition-all`}>
                         {/* Top Accent Stripe */}
                         <div
                           className={`absolute top-0 left-0 right-0 h-1.5 ${
@@ -278,15 +308,17 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                               >
                                 <MapPin className="w-5 h-5" />
                               </div>
-                              <h3 className="text-2xl font-black text-white tracking-tight">
+                              <h3 className={`text-2xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
                                 {area.city}, {area.state}
                               </h3>
-                              <span className="font-mono text-xs font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+                              <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md border ${
+                                isLight ? 'text-slate-600 bg-slate-100 border-slate-200' : 'text-slate-400 bg-slate-800 border-slate-700'
+                              }`}>
                                 PIN: {area.pincode}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-300 font-medium pl-11">
-                              Coverage Zone: <span className="text-white font-semibold">{area.locality}</span>
+                            <p className={`text-xs font-medium pl-11 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                              Coverage Zone: <span className={`font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{area.locality}</span>
                             </p>
                           </div>
 
@@ -318,16 +350,20 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                             ]).map((svc, sIdx) => (
                               <div
                                 key={sIdx}
-                                className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/40 hover:bg-slate-800 transition-all group/item"
+                                className={`flex items-start gap-3 p-3.5 rounded-2xl transition-all group/item ${
+  isLight
+    ? 'bg-slate-50 border border-slate-200 hover:border-blue-400 hover:bg-white'
+    : 'bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/40 hover:bg-slate-800'
+}`}
                               >
                                 <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/20 group-hover/item:scale-110 transition-transform">
                                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                                 </div>
                                 <div>
-                                  <div className="text-xs font-bold text-white group-hover/item:text-cyan-300 transition-colors">
+                                  <div className={`text-xs font-bold ${isLight ? 'text-slate-900 group-hover/item:text-blue-600' : 'text-white group-hover/item:text-cyan-300'} transition-colors`}>
                                     {svc}
                                   </div>
-                                  <div className="text-[11px] text-slate-400 mt-0.5">
+                                  <div className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'} mt-0.5`}>
                                     Active Coverage • Fast Installation SLA
                                   </div>
                                 </div>
@@ -337,7 +373,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                         </div>
 
                         {/* Operational Notes & Quick Book */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-800/80 text-xs text-slate-300">
+                        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t ${isLight ? 'border-slate-200 text-slate-600' : 'border-slate-800/80 text-slate-300'} text-xs`}>
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
                             <span>
