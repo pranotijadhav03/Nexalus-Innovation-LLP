@@ -133,9 +133,30 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
             />
             <Input
               label="Phone Number"
-              placeholder="+91 98450 12345"
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="10-digit mobile number"
               value={phone}
-              onChange={e => setPhone(e.target.value)}
+              onChange={e => {
+                let digits = e.target.value.replace(/\D/g, '');
+                if (digits.length === 12 && digits.startsWith('91')) {
+                  digits = digits.slice(2);
+                } else if (digits.length === 11 && digits.startsWith('0')) {
+                  digits = digits.slice(1);
+                }
+                setPhone(digits.slice(0, 10));
+              }}
+              onKeyDown={e => {
+                if (
+                  !/[0-9]/.test(e.key) &&
+                  !['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(e.key) &&
+                  !e.ctrlKey &&
+                  !e.metaKey
+                ) {
+                  e.preventDefault();
+                }
+              }}
               required
             />
           </div>
