@@ -15,6 +15,8 @@ import { Button } from './Button';
 import { useAuth } from '../../context/AuthContext';
 import { User, UserCheck } from 'lucide-react';
 import { QuoteModal } from './QuoteModal';
+import { PlanCartModal } from './PlanCartModal';
+import { PlanOrderModal } from './PlanOrderModal';
 import { getPlanCart } from '../../firebase/services';
 
 export const Navbar: React.FC = () => {
@@ -29,14 +31,26 @@ export const Navbar: React.FC = () => {
       return 0;
     }
   });
+  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+  const [selectedPlanForOrder, setSelectedPlanForOrder] = useState<any>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   React.useEffect(() => {
     const handleCartUpdate = (e: any) => {
-      const items = e.detail || getPlanCart();
+      const items = e?.detail || getPlanCart();
       setCartCount(Array.isArray(items) ? items.length : 0);
     };
+    const handleOpenCart = () => {
+      setIsCartModalOpen(true);
+    };
+
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
-    return () => window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+    window.addEventListener('open_plan_cart', handleOpenCart);
+
+    return () => {
+      window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+      window.removeEventListener('open_plan_cart', handleOpenCart);
+    };
   }, []);
 
   const isActive = (path: string) => {
@@ -196,10 +210,11 @@ export const Navbar: React.FC = () => {
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center gap-3">
               {/* Broadband Cart Badge Icon */}
-              <Link
-                to="/plans"
-                className="relative inline-flex items-center justify-center p-2 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-slate-100 transition-colors"
-                title="View Broadband Cart"
+              <button
+                type="button"
+                onClick={() => setIsCartModalOpen(true)}
+                className="relative inline-flex items-center justify-center p-2 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                title="Open Broadband Cart"
               >
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
@@ -207,7 +222,7 @@ export const Navbar: React.FC = () => {
                     {cartCount}
                   </span>
                 )}
-              </Link>
+              </button>
 
               {/* Customer Portal Action - Always visible on home page */}
               {isAuthenticated && isCustomer ? (
@@ -325,10 +340,13 @@ export const Navbar: React.FC = () => {
             </Link>
 
             <div className="pt-3 flex flex-col gap-2 border-t border-slate-100">
-              <Link
-                to="/plans"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200"
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsCartModalOpen(true);
+                }}
+                className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200 cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="w-4 h-4 text-orange-500" />
@@ -339,7 +357,7 @@ export const Navbar: React.FC = () => {
                     {cartCount} item{cartCount > 1 ? 's' : ''}
                   </span>
                 )}
-              </Link>
+              </button>
 
               {isAuthenticated && isCustomer ? (
                 <Link
@@ -386,6 +404,32 @@ export const Navbar: React.FC = () => {
         isOpen={isQuoteModalOpen}
         onClose={() => setIsQuoteModalOpen(false)}
       />
+
+      {/* Global Plan Cart Modal */}
+      <PlanCartModal
+        isOpen={isCartModalOpen}
+        onClose={() => setIsCartModalOpen(false)}
+        onProceedToOrder={(plan) => {
+          setSelectedPlanForOrder(plan);
+          setIsOrderModalOpen(true);
+        }}
+      />
+
+      {/* Direct Plan Order Modal when checking out from Cart */}
+      {selectedPlanForOrder && (
+        <PlanOrderModal
+          isOpen={isOrderModalOpen}
+          onClose={() => {
+            setIsOrderModalOpen(false);
+            setSelectedPlanForOrder(null);
+          }}
+          plan={selectedPlanForOrder}
+          onOrderSuccess={() => {
+            setIsOrderModalOpen(false);
+            setSelectedPlanForOrder(null);
+          }}
+        />
+      )}
     </>
   );
 };
