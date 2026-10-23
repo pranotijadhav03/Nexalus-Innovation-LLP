@@ -227,35 +227,74 @@ export const HomePage: React.FC = () => {
   }, []);
 
   // =========================================================================
-  // HERO FULL-WIDTH EDGE-TO-EDGE BANNER (ORIGINAL STARTING CONTENT & AUTHENTIC HARDWARE)
+  // HERO FULL-WIDTH EDGE-TO-EDGE BANNER (OFFICIAL PARENT COMPANY HEADLINE)
   // =========================================================================
-  // Typewriter effect for Website Name in Hero
-  const fullBrandName = 'Nexalus Innovations LLP';
-  const [typedTitle, setTypedTitle] = useState('');
-  const [isTypingComplete, setIsTypingComplete] = useState(false);
+  // Typewriter effect for Website Name ('Nexalus Innovations LLP') and the badge next to it
+  const brandTarget = 'Nexalus Innovations LLP';
+  const badgeTarget = React.useMemo(() => {
+    const raw = heroBanner?.badge;
+    if (!raw) return 'Enterprise Networking & Multi-Company Solutions';
+    const cleaned = raw.replace(/\.?a{3,}\b/gi, '').trim();
+    return cleaned.length > 5 ? cleaned : 'Enterprise Networking & Multi-Company Solutions';
+  }, [heroBanner?.badge]);
+
+  const [typedBrand, setTypedBrand] = useState('');
+  const [typedBadge, setTypedBadge] = useState('');
+  const [isBrandDone, setIsBrandDone] = useState(false);
+  const [isBadgeDone, setIsBadgeDone] = useState(false);
 
   useEffect(() => {
     let timer: any;
-    if (typedTitle.length < fullBrandName.length) {
+    if (typedBrand.length < brandTarget.length) {
       timer = setTimeout(() => {
-        const nextText = fullBrandName.slice(0, typedTitle.length + 1);
-        setTypedTitle(nextText);
-        if (nextText.length === fullBrandName.length) {
-          setTimeout(() => {
-            setIsTypingComplete(true);
-          }, 150);
-        }
-      }, 85);
+        setTypedBrand(brandTarget.slice(0, typedBrand.length + 1));
+      }, 70);
     } else {
-      setIsTypingComplete(true);
+      setIsBrandDone(true);
+      if (typedBadge.length < badgeTarget.length) {
+        timer = setTimeout(() => {
+          setTypedBadge(badgeTarget.slice(0, typedBadge.length + 1));
+        }, 40);
+      } else {
+        setIsBadgeDone(true);
+      }
     }
     return () => clearTimeout(timer);
-  }, [typedTitle]);
+  }, [typedBrand, typedBadge, badgeTarget]);
+
+  // Clean title, subtitle, buttons removing any test 'aaa'
+  const cleanHeroTitle = React.useMemo(() => {
+    const raw = heroBanner?.title;
+    if (!raw) return 'Connecting Businesses. Protecting What Matters.';
+    const cleaned = raw.replace(/\.?a{3,}\b/gi, '').trim();
+    return cleaned.length > 5 ? cleaned : 'Connecting Businesses. Protecting What Matters.';
+  }, [heroBanner?.title]);
+
+  const cleanHeroSubtitle = React.useMemo(() => {
+    const raw = heroBanner?.subtitle;
+    if (!raw) return 'Nexalus Innovations LLP delivers connectivity, security and networking solutions designed for homes, businesses and modern enterprises.';
+    const cleaned = raw.replace(/\.?a{3,}\b/gi, '').trim();
+    return cleaned.length > 10 ? cleaned : 'Nexalus Innovations LLP delivers connectivity, security and networking solutions designed for homes, businesses and modern enterprises.';
+  }, [heroBanner?.subtitle]);
+
+  const cleanCtaText = React.useMemo(() => {
+    const raw = heroBanner?.ctaText;
+    if (!raw) return 'Explore Our Solutions';
+    const cleaned = raw.replace(/\.?a{3,}\b/gi, '').trim();
+    return cleaned || 'Explore Our Solutions';
+  }, [heroBanner?.ctaText]);
+
+  const cleanSecondaryCtaText = React.useMemo(() => {
+    const raw = heroBanner?.secondaryCtaText;
+    if (!raw) return 'Request Quotation';
+    const cleaned = raw.replace(/\.?a{3,}\b/gi, '').trim();
+    return cleaned || 'Request Quotation';
+  }, [heroBanner?.secondaryCtaText]);
 
   return (
     <div className="flex flex-col w-full">
       {/* =========================================================================
-          SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER (ORIGINAL STARTING HERO)
+          SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER
           ========================================================================= */}
       <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 select-none">
         {/* Photographic background image showcasing authentic enterprise server rack on the right */}
@@ -274,28 +313,35 @@ export const HomePage: React.FC = () => {
         {/* Content strictly positioned on the left side, leaving right side clear for high-res authentic hardware */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36 flex items-center min-h-[520px] lg:min-h-[620px]">
           <div className="max-w-4xl lg:max-w-5xl space-y-5 text-white mr-auto">
-            {/* Operating Entity Badge */}
-            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 text-sky-400 text-xs font-semibold tracking-wide uppercase backdrop-blur-md shadow-sm">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block animate-pulse shadow-xs shadow-emerald-400/50" />
-              <span>Operating Company — Nexalus Innovations LLP</span>
+            {/* Top Badges: Brand Name + Announcement Badge (with Typewriter Animation) */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-600/35 border border-blue-400/50 text-blue-100 text-xs sm:text-sm font-bold tracking-wide backdrop-blur-xs shadow-md">
+                <span>{typedBrand || brandTarget}</span>
+                {!isBrandDone && (
+                  <span className="inline-block w-1.5 h-3 bg-cyan-400 animate-pulse rounded-full" />
+                )}
+              </span>
+
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 text-xs sm:text-sm font-semibold tracking-wide shadow-md backdrop-blur-xs">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                <span>{typedBadge || badgeTarget}</span>
+                {isBrandDone && !isBadgeDone && (
+                  <span className="inline-block w-1.5 h-3 bg-cyan-300 animate-pulse rounded-full" />
+                )}
+              </div>
             </div>
 
-            {/* Main Headline Title: Nexalus Innovations LLP */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight leading-[1.12] text-white">
-              Nexalus Innovations LLP
+            {/* Main Headline Title: Connecting Businesses. Protecting What Matters. */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]">
+              {cleanHeroTitle}
             </h1>
 
-            {/* Subtitle: Internet, Network & CCTV Services */}
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-sky-300 tracking-tight leading-snug">
-              Internet, Network &amp; CCTV Services
+            {/* Subtitle / Description */}
+            <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl pt-1 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+              {cleanHeroSubtitle}
             </p>
 
-            {/* Description: The original starting text */}
-            <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl pt-1">
-              Your trusted technology infrastructure partner. Operating under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>, we engineer ultra-fast <strong className="text-white font-bold">gigabit optical fiber</strong> leased lines, managed Layer-2/3 network switching, and certified <strong className="text-white font-bold">video surveillance</strong> systems to empower local businesses.
-            </p>
-
-            {/* CTA Action Buttons: Original starting buttons */}
+            {/* CTA Action Buttons: Clean without any 'aaa' */}
             <div className="pt-3 flex flex-wrap items-center gap-4">
               <Button
                 variant="primary"
@@ -304,15 +350,15 @@ export const HomePage: React.FC = () => {
                 icon={<ArrowRight className="w-4 h-4" />}
                 onClick={() => setIsQuoteModalOpen(true)}
               >
-                Request a Quotation
+                {cleanCtaText}
               </Button>
-              <Link to="/products">
+              <Link to={heroBanner?.secondaryCtaLink || '/products'}>
                 <Button
                   variant="outline-white"
                   size="lg"
                   className="border-slate-700 hover:bg-white/10 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg backdrop-blur-xs"
                 >
-                  Explore Solutions
+                  {cleanSecondaryCtaText}
                 </Button>
               </Link>
             </div>
