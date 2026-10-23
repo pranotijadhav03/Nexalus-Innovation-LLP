@@ -122,6 +122,26 @@ function notifyDataUpdate(key: string): void {
   }
 }
 
+function sanitizeStoredBanners(parsed: any): any {
+  if (!Array.isArray(parsed)) return parsed;
+  return parsed.map((b: any) => {
+    if (!b) return b;
+    let t = b.title;
+    let s = b.subtitle;
+    let c1 = b.ctaText;
+    let c2 = b.secondaryCtaText;
+    if (t && (t.includes('aaa') || t.includes('.aaa') || t.toLowerCase() === 'aaa')) {
+      t = 'Connecting Businesses. Protecting What Matters.';
+    }
+    if (s && (s.includes('aaaa') || s.includes('aaa') || s.toLowerCase() === 'aaa')) {
+      s = 'Nexalus Innovations LLP delivers connectivity, security and networking solutions designed for homes, businesses and modern enterprises.';
+    }
+    if (c1 && c1.includes('aaa')) c1 = 'Request a Quotation';
+    if (c2 && c2.includes('aaa')) c2 = 'Explore Solutions';
+    return { ...b, title: t, subtitle: s, ctaText: c1, secondaryCtaText: c2 };
+  });
+}
+
 // Generic Local Storage Helpers
 function getLocalItem<T>(key: string, defaultValue: T): T {
   try {
@@ -136,7 +156,11 @@ function getLocalItem<T>(key: string, defaultValue: T): T {
       }
       return defaultValue;
     }
-    return JSON.parse(saved);
+    const parsed = JSON.parse(saved);
+    if (key === STORAGE_KEYS.BANNERS || key === 'nexalus_site_banners') {
+      return sanitizeStoredBanners(parsed);
+    }
+    return parsed;
   } catch {
     return defaultValue;
   }

@@ -227,7 +227,7 @@ export const HomePage: React.FC = () => {
   }, []);
 
   // =========================================================================
-  // HERO SECTION: CINEMATIC LOOPING BACKGROUND VIDEO (NEXALUS INNOVATIONS LLP)
+  // HERO FULL-WIDTH EDGE-TO-EDGE BANNER (ORIGINAL STARTING CONTENT & AUTHENTIC HARDWARE)
   // =========================================================================
   // Typewriter effect for Website Name in Hero
   const fullBrandName = 'Nexalus Innovations LLP';
@@ -252,120 +252,74 @@ export const HomePage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [typedTitle]);
 
-  // Sanitize title to guarantee no test text like ".aaa" appears
-  const cleanHeroTitle = React.useMemo(() => {
-    const raw = heroBanner?.title?.trim();
-    if (!raw || raw.toLowerCase() === 'aaa' || raw.toLowerCase() === '.aaa' || raw.length < 5) {
-      return 'Connecting Businesses. Protecting What Matters.';
-    }
-    return raw;
-  }, [heroBanner?.title]);
-
-  const cleanHeroBadge = React.useMemo(() => {
-    const raw = heroBanner?.badge?.trim();
-    if (!raw || raw.toLowerCase().includes('aaa')) {
-      return 'Enterprise Networking & Multi-Company Solutions';
-    }
-    return raw;
-  }, [heroBanner?.badge]);
-
-  const cleanHeroSubtitle = React.useMemo(() => {
-    const raw = heroBanner?.subtitle?.trim();
-    if (!raw || raw.toLowerCase() === 'aaa' || raw.length < 10) {
-      return null;
-    }
-    return raw;
-  }, [heroBanner?.subtitle]);
-
   return (
     <div className="flex flex-col w-full">
       {/* =========================================================================
-          SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER (CINEMATIC BACKGROUND VIDEO)
+          SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER (ORIGINAL STARTING HERO)
           ========================================================================= */}
-      <section className="relative w-full overflow-hidden bg-[#07132f] border-b border-blue-950/60 select-none min-h-[540px] sm:min-h-[600px] lg:min-h-[640px] flex items-center">
-        {/* Layer 1: High-Performance Looping Background Video for Nexalus Innovations LLP */}
-        <div className="absolute inset-0 z-0 overflow-hidden bg-[#07132f]">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="/images/fermilab-blue-racks-real.jpg"
-            className="w-full h-full object-cover filter brightness-105 contrast-105 saturate-110 pointer-events-none scale-[1.01]"
-          >
-            <source src="/videos/hero-background.mp4" type="video/mp4" />
-            <source src="/videos/hero-network.mp4" type="video/mp4" />
-            {/* Fallback image */}
-            <img
-              src="/images/fermilab-blue-racks-real.jpg"
-              alt="Nexalus Innovations Enterprise Infrastructure"
-              className="w-full h-full object-cover"
-            />
-          </video>
+      <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 select-none">
+        {/* Photographic background image showcasing authentic enterprise server rack on the right */}
+        <div className="absolute inset-0">
+          <img
+            src="/images/fermilab-blue-racks-real.jpg"
+            alt="Nexalus Innovations LLP Enterprise Server Rack, Optical Fiber & CCTV Surveillance Infrastructure"
+            className="w-full h-full object-cover object-[75%_center] lg:object-[82%_center]"
+          />
         </div>
 
-        {/* Layer 2: Corporate Royal Blue Directional Scrim (Vivid, Luminous & Clean) */}
-        {/* Soft directional gradient protecting left-side text while keeping right-side video bright and open */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#06122d]/90 via-[#081a3e]/65 via-50% to-[#081a3e]/20 pointer-events-none" />
-        {/* Ambient Royal Blue glow matching Nexalus corporate identity */}
-        <div className="absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_top_left,rgba(37,99,235,0.35),transparent_65%)] pointer-events-none" />
-        {/* Soft top-bottom framing vignette */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#06122d]/80 via-transparent to-[#06122d]/35 pointer-events-none" />
+        {/* Clean directional contrast scrim from left to right matching the rest of the website */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/98 via-[#0f2444]/90 via-48% md:via-42% to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/80 via-transparent to-[#0a1628]/50 pointer-events-none" />
 
-        {/* Layer 3: Main Hero Text, Badges & CTA Content (Fixed Parent Website Content) */}
-        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-32 flex items-center w-full">
+        {/* Content strictly positioned on the left side, leaving right side clear for high-res authentic hardware */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36 flex items-center min-h-[520px] lg:min-h-[620px]">
           <div className="max-w-4xl lg:max-w-5xl space-y-5 text-white mr-auto">
-            {/* Top Badges: Brand Name + Announcement Badge */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/35 border border-blue-400/50 text-blue-100 text-xs sm:text-sm font-bold tracking-wide backdrop-blur-xs shadow-md">
-                <span>{typedTitle || fullBrandName}</span>
-                {!isTypingComplete && (
-                  <span className="inline-block w-1.5 h-3 bg-cyan-400 animate-pulse rounded-full" />
-                )}
-              </span>
-
-              {cleanHeroBadge && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 text-xs sm:text-sm font-semibold tracking-wide shadow-md backdrop-blur-xs">
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                  <span>{cleanHeroBadge}</span>
-                </div>
-              )}
+            {/* Operating Entity Badge */}
+            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 text-sky-400 text-xs font-semibold tracking-wide uppercase backdrop-blur-md shadow-sm">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block animate-pulse shadow-xs shadow-emerald-400/50" />
+              <span>Operating Company — Nexalus Innovations LLP</span>
             </div>
 
-            {/* Main Headline Title (Clean Official Parent Website Heading) */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]">
-              {cleanHeroTitle}
+            {/* Main Headline Title: Nexalus Innovations LLP with Typewriter Animation */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight min-h-[1.2em] flex items-center">
+              <span className="inline-flex items-center">
+                <span>{typedTitle || fullBrandName}</span>
+                {!isTypingComplete && (
+                  <span className="inline-block w-1 sm:w-1.5 h-[0.8em] bg-cyan-400 ml-2 animate-pulse rounded-full align-middle" />
+                )}
+              </span>
             </h1>
 
-            {/* Subtitle / Description (Clean Parent Website Copy) */}
-            <div className="space-y-5">
-              <p className="text-sm sm:text-base lg:text-lg text-slate-100 leading-relaxed font-normal max-w-2xl pt-1 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-                {cleanHeroSubtitle || (
-                  <>Your trusted technology infrastructure partner. Operating under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>, we engineer ultra-fast <strong className="text-white font-bold">gigabit optical fiber</strong> leased lines, managed Layer-2/3 network switching, and certified <strong className="text-white font-bold">video surveillance</strong> systems to empower local businesses.</>
-                )}
-              </p>
+            {/* Subtitle: Internet, Network & CCTV Services */}
+            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-sky-300 tracking-tight leading-snug">
+              Internet, Network &amp; CCTV Services
+            </p>
 
-              {/* CTA Action Buttons */}
-              <div className="pt-3 flex flex-wrap items-center gap-4">
+            {/* Description: The original starting text */}
+            <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl pt-1">
+              Your trusted technology infrastructure partner. Operating under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>, we engineer ultra-fast <strong className="text-white font-bold">gigabit optical fiber</strong> leased lines, managed Layer-2/3 network switching, and certified <strong className="text-white font-bold">video surveillance</strong> systems to empower local businesses.
+            </p>
+
+            {/* CTA Action Buttons: Original starting buttons */}
+            <div className="pt-3 flex flex-wrap items-center gap-4">
+              <Button
+                variant="primary"
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/50 px-6 py-3.5 rounded-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                icon={<ArrowRight className="w-4 h-4" />}
+                onClick={() => setIsQuoteModalOpen(true)}
+              >
+                Request a Quotation
+              </Button>
+              <Link to="/products">
                 <Button
-                  variant="primary"
+                  variant="outline-white"
                   size="lg"
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-600/40 px-6 py-3.5 rounded-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-95"
-                  icon={<ArrowRight className="w-4 h-4" />}
-                  onClick={() => setIsQuoteModalOpen(true)}
+                  className="border-slate-700 hover:bg-white/10 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg backdrop-blur-xs"
                 >
-                  {heroBanner?.ctaText || 'Request a Quotation'}
+                  Explore Solutions
                 </Button>
-                <Link to={heroBanner?.secondaryCtaLink || '/products'}>
-                  <Button
-                    variant="outline-white"
-                    size="lg"
-                    className="border-white/30 hover:bg-white/10 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg backdrop-blur-xs transition-all hover:scale-[1.02]"
-                  >
-                    {heroBanner?.secondaryCtaText || 'Explore Solutions'}
-                  </Button>
-                </Link>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
