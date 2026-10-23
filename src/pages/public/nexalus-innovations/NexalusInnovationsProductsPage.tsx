@@ -58,10 +58,10 @@ export const NexalusInnovationsProductsPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-900/60 text-sky-400 text-xs font-semibold border border-blue-700/50">
             <Cpu className="w-3.5 h-3.5" />
-            <span>Hardware Catalog • Nexalus Innovations</span>
+            <span>Products • Nexalus Innovations</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Commercial Hardware Catalog
+            Commercial Products
           </h1>
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
             Authentic commercial-grade 4K CCTV cameras, optical fiber Wi-Fi 6 ONT gateways, managed Layer-2/3 PoE+ switches, and certified structured cabling accessories.

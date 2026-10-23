@@ -42,7 +42,7 @@ export const NexalusInnovationsLayout: React.FC = () => {
   const navLinks = [
     { label: 'Home', path: '/brands/nexalus-innovations' },
     { label: 'About Us', path: '/brands/nexalus-innovations/about' },
-    { label: 'Hardware Catalog', path: '/brands/nexalus-innovations/products' },
+    { label: 'Products', path: '/brands/nexalus-innovations/products' },
     { label: 'Services & AMC', path: '/brands/nexalus-innovations/services' },
     { label: 'Contact & Sales', path: '/brands/nexalus-innovations/contact' }
   ];
@@ -56,7 +56,7 @@ export const NexalusInnovationsLayout: React.FC = () => {
 
   const getSubPageTitle = () => {
     if (location.pathname.includes('/about')) return 'About Nexalus Innovations';
-    if (location.pathname.includes('/products')) return 'Hardware Catalog & Specifications';
+    if (location.pathname.includes('/products')) return 'Commercial Products & Specifications';
     if (location.pathname.includes('/services')) return 'Engineering Services & AMC';
     if (location.pathname.includes('/contact')) return 'Contact Technical Sales Desk';
     return 'Operating Portal';
@@ -147,16 +147,7 @@ export const NexalusInnovationsLayout: React.FC = () => {
                 <UserCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                 <span className="whitespace-nowrap">My Account</span>
               </Link>
-            ) : isAuthenticated && !isCustomer ? (
-              <Link
-                to="/admin"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors shadow-xs whitespace-nowrap shrink-0"
-                title="Admin Console"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                <span className="whitespace-nowrap">Admin Panel</span>
-              </Link>
-            ) : (
+) : (
               <button
                 type="button"
                 onClick={() => setIsCustomerModalOpen(true)}

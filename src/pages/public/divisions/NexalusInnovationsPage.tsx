@@ -157,7 +157,7 @@ export const NexalusInnovationsPage: React.FC = () => {
                     size="lg"
                     className="border-slate-800 hover:bg-white/5 text-slate-300 font-semibold px-4 py-3 rounded-xl"
                   >
-                    Hardware Catalog
+                    Products
                   </Button>
                 </Link>
               </div>

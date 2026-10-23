@@ -294,7 +294,7 @@ export const BrandsPage: React.FC = () => {
                 </Link>
                 <Link to="/products">
                   <Button variant="outline" size="md">
-                    View Hardware Catalog
+                    View Products
                   </Button>
                 </Link>
               </div>

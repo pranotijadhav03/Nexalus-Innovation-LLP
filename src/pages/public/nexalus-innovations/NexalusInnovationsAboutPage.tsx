@@ -103,7 +103,7 @@ export const NexalusInnovationsAboutPage: React.FC = () => {
             <div className="pt-2 flex flex-wrap gap-3">
               <Link to="/brands/nexalus-innovations/products">
                 <Button variant="primary" size="md" icon={<ArrowRight className="w-4 h-4" />}>
-                  Explore Hardware Catalog
+                  Explore Products
                 </Button>
               </Link>
               <Link to="/brands/nexalus-innovations/services">

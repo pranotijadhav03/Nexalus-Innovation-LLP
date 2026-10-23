@@ -12,7 +12,7 @@ export const IttiNetworkingLayout: React.FC = () => {
 
   const navLinks = [
     { label: 'Home', path: '/brands/itti-networking' },
-    { label: 'Hardware Catalog', path: '/products?brand=itti-networking' },
+    { label: 'Products', path: '/products?brand=itti-networking' },
     { label: 'Services', path: '/services' },
     { label: 'Contact & AMC', path: '/contact' }
   ];
