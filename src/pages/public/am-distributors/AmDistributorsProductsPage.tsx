@@ -69,17 +69,14 @@ export const AmDistributorsProductsPage: React.FC = () => {
       if (freshCats && freshCats.length > 0) {
         setCategories(freshCats);
       }
-      loadData();
     };
 
     window.addEventListener('nexalus_data_update', handleUpdate);
-    window.addEventListener('focus', handleUpdate);
-    document.addEventListener('visibilitychange', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
 
     return () => {
       window.removeEventListener('nexalus_data_update', handleUpdate);
-      window.removeEventListener('focus', handleUpdate);
-      document.removeEventListener('visibilitychange', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
     };
   }, []);
 

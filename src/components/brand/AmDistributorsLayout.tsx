@@ -75,7 +75,7 @@ export const AmDistributorsLayout: React.FC = () => {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 hover:text-white border border-emerald-800/60 font-semibold transition-all shadow-xs group text-xs"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-amber-400 group-hover:-translate-x-1 transition-transform" />
-              <span>← Back to Nexalus Innovations LLP</span>
+              <span>Back to Nexalus Innovations LLP</span>
             </Link>
             <span className="hidden md:inline text-slate-600">•</span>
             <span className="hidden md:inline text-emerald-200 font-medium">
@@ -195,7 +195,7 @@ export const AmDistributorsLayout: React.FC = () => {
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-emerald-300 font-bold text-sm shadow-xs mb-3 border border-emerald-900"
             >
               <ArrowLeft className="w-4 h-4 text-amber-400" />
-              <span>← Back to Nexalus Innovations LLP</span>
+              <span>Back to Nexalus Innovations LLP</span>
             </Link>
             {navLinks.map((item) => (
               <Link

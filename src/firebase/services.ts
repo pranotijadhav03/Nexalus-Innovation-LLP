@@ -111,12 +111,22 @@ if (typeof window !== 'undefined') {
   });
 }
 
+const lastNotifyTimes = new Map<string, number>();
+
 function notifyDataUpdate(key: string): void {
+  const now = Date.now();
+  const lastTime = lastNotifyTimes.get(key) || 0;
+  // Eliminate rapid feedback loops and broadcast storms
+  if (now - lastTime < 400) {
+    return;
+  }
+  lastNotifyTimes.set(key, now);
+
   try {
     // 1. Dispatch event to current tab
     window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key } }));
     // 2. Broadcast immediately across all open tabs/windows
-    tabSyncChannel?.postMessage({ type: 'nexalus_data_update', key, timestamp: Date.now() });
+    tabSyncChannel?.postMessage({ type: 'nexalus_data_update', key, timestamp: now });
   } catch (err) {
     console.error('Failed to notify data update:', err);
   }
@@ -166,16 +176,18 @@ function getLocalItem<T>(key: string, defaultValue: T): T {
   }
 }
 
-function setLocalItem<T>(key: string, value: T): void {
+function setLocalItem<T>(key: string, value: T, notify = true): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
     if (key === STORAGE_KEYS.BANNERS) {
       try { localStorage.setItem("nexalus_site_banners", JSON.stringify(value)); } catch {}
     }
-    // Dispatch cross-tab update event for instant reactivity without manual refresh
-    notifyDataUpdate(key);
-    if (key === STORAGE_KEYS.BANNERS) {
-      notifyDataUpdate("nexalus_site_banners");
+    // Dispatch cross-tab update event ONLY if notify is true
+    if (notify) {
+      notifyDataUpdate(key);
+      if (key === STORAGE_KEYS.BANNERS) {
+        notifyDataUpdate("nexalus_site_banners");
+      }
     }
   } catch (err) {
     console.error("Failed to save to localStorage:", err);
@@ -516,7 +528,7 @@ export async function getProducts(brandId?: BrandId | 'nexalus' | 'corporate', p
   }
 
   if (hasStoreUpdates) {
-    setLocalItem(STORAGE_KEYS.PRODUCTS, products);
+    setLocalItem(STORAGE_KEYS.PRODUCTS, products, false);
   }
   if (brandId) {
     if (brandId === 'nexalus-innovations') {
@@ -2114,7 +2126,7 @@ export function subscribeToBanners(
           }
         });
         const mergedList = Array.from(mergedMap.values());
-        setLocalItem(STORAGE_KEYS.BANNERS, mergedList);
+        setLocalItem(STORAGE_KEYS.BANNERS, mergedList, false);
         
         let filtered = mergedList;
         if (brandId) {

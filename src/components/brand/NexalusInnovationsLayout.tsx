@@ -75,7 +75,7 @@ export const NexalusInnovationsLayout: React.FC = () => {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 hover:text-white border border-indigo-800/60 font-semibold transition-all shadow-xs group text-xs"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-cyan-400 group-hover:-translate-x-1 transition-transform" />
-              <span>← Back to Nexalus Innovations LLP</span>
+              <span>Back to Nexalus Innovations LLP</span>
             </Link>
             <span className="hidden md:inline text-slate-600">•</span>
             <span className="hidden md:inline text-indigo-200 font-medium">
@@ -187,7 +187,7 @@ export const NexalusInnovationsLayout: React.FC = () => {
               className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-indigo-300 hover:text-white font-bold text-sm shadow-xs mb-3 border border-indigo-900"
             >
               <ArrowLeft className="w-4 h-4 text-cyan-400" />
-              <span>← Back to Nexalus Innovations LLP</span>
+              <span>Back to Nexalus Innovations LLP</span>
             </Link>
             {navLinks.map((item) => (
               <Link

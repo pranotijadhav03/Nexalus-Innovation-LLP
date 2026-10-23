@@ -66,33 +66,31 @@ export const AmDistributorsPage: React.FC = () => {
         } catch {}
       }
 
-      // 2. Refresh division products
+      // 2. Refresh division products from cache synchronously without network loops
       const cached = getCachedProducts('am-distributors');
       if (cached && cached.length > 0) {
         setDivisionProducts(cached);
       }
-      getProducts('am-distributors', true).then(prods => {
-        if (prods && prods.length > 0) {
-          setDivisionProducts(prods);
-        }
-      }).catch(err => {
-        console.warn('Could not fetch A.M. products from Firestore:', err);
-      });
     };
 
     refreshData();
 
+    // Initial Firestore sync once on mount
+    getProducts('am-distributors', true).then(prods => {
+      if (prods && prods.length > 0) {
+        setDivisionProducts(prods);
+      }
+    }).catch(err => {
+      console.warn('Could not fetch A.M. products from Firestore:', err);
+    });
+
     window.addEventListener('nexalus_data_update', refreshData);
     window.addEventListener('storage', refreshData);
-    window.addEventListener('focus', refreshData);
-    document.addEventListener('visibilitychange', refreshData);
 
     return () => {
       unsub();
       window.removeEventListener('nexalus_data_update', refreshData);
       window.removeEventListener('storage', refreshData);
-      window.removeEventListener('focus', refreshData);
-      document.removeEventListener('visibilitychange', refreshData);
     };
   }, []);
 
