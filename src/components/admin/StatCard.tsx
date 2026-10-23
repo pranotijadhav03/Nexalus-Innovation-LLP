@@ -11,6 +11,7 @@ interface StatCardProps {
     isPositive: boolean;
   };
   colorScheme?: 'blue' | 'sky' | 'teal' | 'amber' | 'emerald' | 'purple';
+  compact?: boolean;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -19,7 +20,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   subtitle,
   icon,
   trend,
-  colorScheme = 'blue'
+  colorScheme = 'blue',
+  compact = false
 }) => {
   const schemeStyles = {
     blue: 'bg-blue-50 text-blue-600 border-blue-100',
@@ -29,6 +31,46 @@ export const StatCard: React.FC<StatCardProps> = ({
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
     purple: 'bg-purple-50 text-purple-600 border-purple-100'
   }[colorScheme];
+
+  if (compact) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-3.5 shadow-2xs hover:shadow-sm transition-all hover:border-slate-300">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block truncate">
+              {title}
+            </span>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 tracking-tight truncate">
+              {value}
+            </div>
+          </div>
+          <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 [&>svg]:w-4 [&>svg]:h-4 ${schemeStyles}`}>
+            {icon}
+          </div>
+        </div>
+
+        {(subtitle || trend) && (
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] gap-1">
+            {subtitle && <span className="text-slate-500 truncate text-[10px]">{subtitle}</span>}
+            {trend && (
+              <span
+                className={`inline-flex items-center gap-0.5 font-bold shrink-0 text-[10px] ${
+                  trend.isPositive ? 'text-emerald-600' : 'text-rose-600'
+                }`}
+              >
+                {trend.isPositive ? (
+                  <ArrowUpRight className="w-3 h-3" />
+                ) : (
+                  <ArrowDownRight className="w-3 h-3" />
+                )}
+                {trend.value}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-shadow">
