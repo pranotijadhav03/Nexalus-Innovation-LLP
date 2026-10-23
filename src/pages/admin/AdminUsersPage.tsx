@@ -552,6 +552,14 @@ export const AdminUsersPage: React.FC = () => {
                             >
                               {cust.active ? 'Disable' : 'Activate'}
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteCandidate(cust)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Customer Account"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -741,7 +749,19 @@ export const AdminUsersPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => {
+                  const toDelete = inspectCustomer;
+                  setInspectCustomer(null);
+                  setDeleteCandidate(toDelete);
+                }}
+                icon={<Trash2 className="w-3.5 h-3.5" />}
+              >
+                Delete Customer Account
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setInspectCustomer(null)}>
                 Close
               </Button>
@@ -754,12 +774,13 @@ export const AdminUsersPage: React.FC = () => {
       <Modal
         isOpen={!!deleteCandidate}
         onClose={() => setDeleteCandidate(null)}
-        title="Confirm User Removal"
+        title={deleteCandidate?.role === 'customer' ? 'Confirm Customer Deletion' : 'Confirm User Removal'}
         maxWidth="sm"
       >
         <div className="space-y-4 text-xs text-slate-600">
           <p>
-            Are you sure you want to delete account <strong className="text-slate-900">{deleteCandidate?.displayName}</strong> ({deleteCandidate?.email})?
+            Are you sure you want to delete {deleteCandidate?.role === 'customer' ? 'customer account' : 'administrator account'}{' '}
+            <strong className="text-slate-900">{deleteCandidate?.displayName}</strong> ({deleteCandidate?.email})?
           </p>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" size="sm" onClick={() => setDeleteCandidate(null)}>

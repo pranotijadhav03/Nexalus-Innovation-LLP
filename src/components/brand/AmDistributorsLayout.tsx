@@ -106,51 +106,59 @@ export const AmDistributorsLayout: React.FC = () => {
 
       {/* Dedicated Brand Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2 xl:gap-4">
           {/* Brand Identity */}
           <Link
             to="/brands/am-distributors"
-            className="flex items-center gap-3 group focus:outline-none"
+            className="flex items-center gap-2.5 sm:gap-3 group focus:outline-none shrink-0"
           >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform border border-emerald-400/30">
-              <Truck className="w-6 h-6 text-amber-300" />
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform border border-emerald-400/30 shrink-0">
+              <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300" />
             </div>
             <div>
-              <div className="text-lg sm:text-xl xl:text-2xl font-black text-slate-900 tracking-tight leading-none group-hover:text-emerald-700 transition-colors whitespace-nowrap">
+              <div className="text-base sm:text-lg xl:text-xl font-black text-slate-900 tracking-tight leading-none group-hover:text-emerald-700 transition-colors whitespace-nowrap">
                 A.M. DISTRIBUTORS
               </div>
-              <div className="text-[10px] font-extrabold text-emerald-700 tracking-wider uppercase mt-1 whitespace-nowrap">
+              <div className="text-[9px] sm:text-[10px] font-extrabold text-emerald-700 tracking-wider uppercase mt-1 whitespace-nowrap">
                 Chiplun Depot • Mineral Water • Ice Cream • Dairy
               </div>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2.5">
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
             {navLinks.map((item) => {
               const active = isCurrent(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`px-2.5 xl:px-3.5 py-2 rounded-xl text-xs xl:text-sm font-bold whitespace-nowrap transition-all ${
+                  className={`px-2 xl:px-3 py-2 rounded-xl text-xs xl:text-sm font-bold whitespace-nowrap transition-all ${
                     active
                       ? 'bg-emerald-50 text-emerald-800 font-bold shadow-xs border border-emerald-200/80'
                       : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-100/90'
                   }`}
                 >
-                  {item.label}
+                  {item.path.includes('/products') ? (
+                    <>Products<span className="hidden xl:inline"> &amp; Supplies</span></>
+                  ) : item.path.includes('/services') ? (
+                    <>Cold-Chain<span className="hidden xl:inline"> &amp; Fleet</span></>
+                  ) : item.path.includes('/contact') ? (
+                    <>Contact<span className="hidden xl:inline"> &amp; Depot</span></>
+                  ) : (
+                    item.label
+                  )}
                 </Link>
               );
             })}
           </nav>
 
           {/* Right Header Action Button: Customer Portal + Quote */}
-          <div className="hidden sm:flex items-center gap-2 xl:gap-2.5">
+          <div className="hidden sm:flex items-center gap-2 xl:gap-2.5 shrink-0">
             {isAuthenticated && isCustomer ? (
               <Link
                 to="/account"
-                className="inline-flex items-center gap-1.5 px-3 xl:px-3.5 py-2 rounded-xl text-xs xl:text-sm font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all shadow-xs shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all shadow-xs shrink-0 whitespace-nowrap"
                 title="My Customer Account"
               >
                 <UserCheck className="w-4 h-4 text-emerald-600" />
@@ -160,7 +168,7 @@ export const AmDistributorsLayout: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsCustomerModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 xl:px-3.5 py-2 rounded-xl text-xs xl:text-sm font-bold text-slate-700 hover:text-emerald-700 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 transition-all cursor-pointer shadow-xs shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm font-bold text-slate-700 hover:text-emerald-700 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 transition-all cursor-pointer shadow-xs shrink-0 whitespace-nowrap"
                 title="Customer Portal Registration & Login"
               >
                 <User className="w-4 h-4 text-emerald-600" />
@@ -172,9 +180,9 @@ export const AmDistributorsLayout: React.FC = () => {
               variant="teal"
               size="md"
               onClick={() => setIsQuoteOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 font-bold shadow-md shadow-emerald-600/20 px-3.5 xl:px-4.5 py-2 rounded-xl text-xs xl:text-sm transition-all hover:scale-[1.02] shrink-0"
+              className="bg-emerald-600 hover:bg-emerald-500 font-bold shadow-md shadow-emerald-600/20 px-3.5 xl:px-4.5 py-2 rounded-xl text-xs xl:text-sm transition-all hover:scale-[1.02] shrink-0 whitespace-nowrap"
             >
-              Inquire Wholesale Supply
+              <span className="hidden xl:inline">Inquire </span>Wholesale Supply
             </Button>
           </div>
 

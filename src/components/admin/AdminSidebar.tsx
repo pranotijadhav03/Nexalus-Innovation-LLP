@@ -430,56 +430,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               </div>
             </div>
           )}
-
-          {/* 6. Live Operating Websites */}
-          <div>
-            <div className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
-              Live Operating Portals
-            </div>
-            <div className="space-y-1">
-              <a
-                href="/"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-700 hover:bg-blue-50/70 transition-colors"
-                title="Open Nexalus Innovations LLP Corporate Main Website"
-              >
-                <span className="flex items-center gap-2">
-                  <Globe className="w-3.5 h-3.5 text-blue-600" />
-                  Nexalus Corporate Site
-                </span>
-                <ExternalLink className="w-3 h-3 text-slate-400" />
-              </a>
-
-              <a
-                href="/brands/nexalus-innovations"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-blue-700 hover:text-blue-800 hover:bg-blue-50/70 transition-colors"
-                title="Open Nexalus Innovations Tech Website"
-              >
-                <span className="flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-blue-600" />
-                  Nexalus Innovations Site
-                </span>
-                <ExternalLink className="w-3 h-3 text-blue-400" />
-              </a>
-
-              <a
-                href="/brands/am-distributors"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-teal-700 hover:text-teal-800 hover:bg-teal-50/70 transition-colors"
-                title="Open A.M. Distributors Chiplun Website"
-              >
-                <span className="flex items-center gap-2">
-                  <Building className="w-3.5 h-3.5 text-teal-600" />
-                  A.M. Distributors Chiplun
-                </span>
-                <ExternalLink className="w-3 h-3 text-teal-400" />
-              </a>
-            </div>
-          </div>
         </div>
 
         {/* User Pill & Footer */}

@@ -77,7 +77,8 @@ export const AdminServiceAreasPage: React.FC = () => {
   const [status, setStatus] = useState<'fully_operational' | 'expanding_soon' | 'planned'>('fully_operational');
   const [notes, setNotes] = useState('');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [customServiceInput, setCustomServiceInput] = useState('');
+  const [customTechInput, setCustomTechInput] = useState('');
+  const [customAmInput, setCustomAmInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const [deleteCandidate, setDeleteCandidate] = useState<ServiceArea | null>(null);
@@ -160,7 +161,8 @@ export const AdminServiceAreasPage: React.FC = () => {
     setStatus('fully_operational');
     setNotes('');
     setSelectedServices(defaultServices);
-    setCustomServiceInput('');
+    setCustomTechInput('');
+    setCustomAmInput('');
     setIsModalOpen(true);
   };
 
@@ -174,7 +176,8 @@ export const AdminServiceAreasPage: React.FC = () => {
     setStatus(area.status);
     setNotes(area.notes || '');
     setSelectedServices(area.services && area.services.length > 0 ? [...area.services] : []);
-    setCustomServiceInput('');
+    setCustomTechInput('');
+    setCustomAmInput('');
     setIsModalOpen(true);
   };
 
@@ -184,15 +187,6 @@ export const AdminServiceAreasPage: React.FC = () => {
     } else {
       setSelectedServices([...selectedServices, serviceName]);
     }
-  };
-
-  const handleAddCustomService = () => {
-    const trimmed = customServiceInput.trim();
-    if (!trimmed) return;
-    if (!selectedServices.includes(trimmed)) {
-      setSelectedServices([...selectedServices, trimmed]);
-    }
-    setCustomServiceInput('');
   };
 
   const handleRemoveService = (serviceToRemove: string) => {
@@ -703,7 +697,7 @@ export const AdminServiceAreasPage: React.FC = () => {
               required
             />
             <Input
-              label="Locality / Industrial Hub / Depot *"
+              label="Areas Zone / Locality / Depot *"
               placeholder="e.g. Chiplun MIDC & Industrial Cluster"
               value={locality}
               onChange={e => setLocality(e.target.value)}
@@ -739,25 +733,52 @@ export const AdminServiceAreasPage: React.FC = () => {
 
           {/* Available Services in this Area / City */}
           <div className="space-y-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="block text-xs font-black text-slate-900">
-                  Available Services in this City / Zone *
-                </label>
-                <p className="text-[11px] text-slate-500">
-                  Select which services are operational in this city so users can see and book them.
-                </p>
+            {/* Quick 1-Click Checkboxes with Sectional Add Inputs */}
+            <div className="space-y-3">
+              {/* Nexalus Tech Section with Top Add Button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-slate-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+                    Nexalus Innovations Tech Services
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                    {selectedServices.filter(s => PRESET_TECH_SERVICES.includes(s) || !PRESET_AM_SERVICES.includes(s)).length} Selected
+                  </span>
+                </div>
+                <div className="flex gap-1.5 sm:w-80">
+                  <input
+                    type="text"
+                    placeholder="Add custom tech service..."
+                    value={customTechInput}
+                    onChange={e => setCustomTechInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (customTechInput.trim() && !selectedServices.includes(customTechInput.trim())) {
+                          setSelectedServices(prev => [...prev, customTechInput.trim()]);
+                          setCustomTechInput('');
+                        }
+                      }
+                    }}
+                    className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (customTechInput.trim() && !selectedServices.includes(customTechInput.trim())) {
+                        setSelectedServices(prev => [...prev, customTechInput.trim()]);
+                        setCustomTechInput('');
+                      }
+                    }}
+                    icon={<Plus className="w-3.5 h-3.5" />}
+                  >
+                    Add
+                  </Button>
+                </div>
               </div>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                {selectedServices.length} Selected
-              </span>
-            </div>
 
-            {/* Quick 1-Click Checkboxes */}
-            <div className="space-y-2">
-              <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Nexalus Innovations Tech Services:
-              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {PRESET_TECH_SERVICES.map(svc => {
                   const isChecked = selectedServices.includes(svc);
@@ -782,9 +803,50 @@ export const AdminServiceAreasPage: React.FC = () => {
                 })}
               </div>
 
-              <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 pt-2">
-                A.M. Distributors Wholesale Logistics:
+              {/* A.M. Distributors Section with Top Add Button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 pb-1.5 border-b border-slate-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+                    A.M. Distributors Wholesale Logistics
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                    {selectedServices.filter(s => PRESET_AM_SERVICES.includes(s)).length} Selected
+                  </span>
+                </div>
+                <div className="flex gap-1.5 sm:w-80">
+                  <input
+                    type="text"
+                    placeholder="Add custom depot/logistics service..."
+                    value={customAmInput}
+                    onChange={e => setCustomAmInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (customAmInput.trim() && !selectedServices.includes(customAmInput.trim())) {
+                          setSelectedServices(prev => [...prev, customAmInput.trim()]);
+                          setCustomAmInput('');
+                        }
+                      }
+                    }}
+                    className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (customAmInput.trim() && !selectedServices.includes(customAmInput.trim())) {
+                        setSelectedServices(prev => [...prev, customAmInput.trim()]);
+                        setCustomAmInput('');
+                      }
+                    }}
+                    icon={<Plus className="w-3.5 h-3.5" />}
+                  >
+                    Add
+                  </Button>
+                </div>
               </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {PRESET_AM_SERVICES.map(svc => {
                   const isChecked = selectedServices.includes(svc);
@@ -807,34 +869,6 @@ export const AdminServiceAreasPage: React.FC = () => {
                     </label>
                   );
                 })}
-              </div>
-            </div>
-
-            {/* Add Custom Service Input */}
-            <div className="pt-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Or type custom service (e.g. Commercial Cold-Room Storage)..."
-                  value={customServiceInput}
-                  onChange={e => setCustomServiceInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddCustomService();
-                    }
-                  }}
-                  className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddCustomService}
-                  icon={<Plus className="w-3.5 h-3.5" />}
-                >
-                  Add
-                </Button>
               </div>
             </div>
 
