@@ -1,18 +1,17 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin,
   Search,
   CheckCircle2,
   Clock,
-  Sparkles,
-  Building2,
   ArrowRight,
+  Compass,
   AlertTriangle,
   X,
-  Compass
+  Sparkles
 } from 'lucide-react';
 import { ServiceArea } from '../../types';
-import { subscribeToServiceAreas } from '../../firebase/services';
+import { getServiceAreas } from '../../firebase/services';
 import { BlurZoomReveal } from './BlurZoomReveal';
 import { Button } from './Button';
 import { QuoteModal } from './QuoteModal';
@@ -22,13 +21,15 @@ interface AreasCoveredSectionProps {
   title?: string;
   subtitle?: string;
   className?: string;
+  theme?: 'light' | 'dark';
 }
 
 export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
   division = 'corporate',
   title,
   subtitle,
-  className = ''
+  className = '',
+  theme = 'light'
 }) => {
   const [areas, setAreas] = useState<ServiceArea[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,60 +40,77 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
   const [quotePrefillCity, setQuotePrefillCity] = useState('');
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const isLight = theme === 'light';
 
   useEffect(() => {
     let isMounted = true;
 
-    const unsubscribe = subscribeToServiceAreas((allAreas) => {
-      if (!isMounted) return;
-      let filtered = allAreas;
-      if (division === 'nexalus-innovations') {
-        filtered = allAreas.filter(a => a.brandId === 'nexalus' || a.brandId === 'one-broadband' || a.brandId === 'all');
-      } else if (division === 'am-distributors') {
-        filtered = allAreas.filter(a => a.brandId === 'am-distributors' || a.brandId === 'all');
+    async function loadAreas() {
+      try {
+        const data = await getServiceAreas();
+        if (isMounted) {
+          // If division is specified and not corporate/all, filter
+          let filtered = data;
+          if (division === 'nexalus-innovations') {
+            filtered = data.filter(a => a.brandId === 'nexalus' || a.brandId === 'cp-plus' || a.brandId === 'one-broadband');
+          } else if (division === 'am-distributors') {
+            filtered = data.filter(a => a.brandId === 'am-distributors');
+          }
+          setAreas(filtered);
+        }
+      } catch (err) {
+        console.error('Failed to load service areas:', err);
       }
-      setAreas(filtered);
-    });
+    }
 
-    return () => {
-      isMounted = false;
-      unsubscribe();
+    loadAreas();
+
+    const handleUpdate = () => {
+      loadAreas();
     };
-  }, [division]);
 
-  // Close suggestions when clicking outside search bar
-  useEffect(() => {
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    // Click outside listener for suggestions dropdown
     const handleClickOutside = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setShowSuggestions(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
-  // Distinct list of covered cities from Firestore
-  const allCities = useMemo(() => {
-    const citySet = new Set<string>();
-    areas.forEach(a => {
-      if (a.city) citySet.add(a.city.trim());
-    });
-    return Array.from(citySet);
-  }, [areas]);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('nexalus_data_update', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [division]);
 
-  // Google-style autocomplete suggestions as user types
-  const suggestions = useMemo(() => {
-    const q = searchTerm.toLowerCase().trim();
-    if (!q) return [];
-    return allCities.filter(c => c.toLowerCase().includes(q));
-  }, [allCities, searchTerm]);
+  // Extract unique cities from active areas for autocomplete suggestions
+  const availableCities = Array.from(new Set(areas.map(a => a.city))).sort();
 
-  // Trigger search execution
-  const executeSearch = (target?: string) => {
-    const q = (target !== undefined ? target : searchTerm).trim();
-    if (!q) return;
-    setSearchedCity(q);
-    setSearchTerm(q);
+  // Filter autocomplete suggestions based on query
+  const suggestions = searchTerm.trim()
+    ? availableCities.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase().trim()))
+    : [];
+
+  // Filter matched areas after user performs search
+  const matchedAreas = searchedCity
+    ? areas.filter(a =>
+        a.city.toLowerCase() === searchedCity.toLowerCase() ||
+        a.city.toLowerCase().includes(searchedCity.toLowerCase()) ||
+        a.locality.toLowerCase().includes(searchedCity.toLowerCase()) ||
+        a.pincode.includes(searchedCity.trim())
+      )
+    : [];
+
+  const executeSearch = (cityToSearch?: string) => {
+    const target = (cityToSearch || searchTerm).trim();
+    if (!target) return;
+    setSearchedCity(target);
+    setSearchTerm(target);
     setHasSearched(true);
     setShowSuggestions(false);
   };
@@ -104,40 +122,33 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
     setShowSuggestions(false);
   };
 
-  // Find areas matching the searched city
-  const matchedAreas = useMemo(() => {
-    if (!hasSearched || !searchedCity) return [];
-    const q = searchedCity.toLowerCase().trim();
-    return areas.filter(a =>
-      a.city.toLowerCase().includes(q) ||
-      a.locality.toLowerCase().includes(q) ||
-      a.pincode.includes(q)
-    );
-  }, [areas, searchedCity, hasSearched]);
+  const handleBookService = (city: string) => {
+    setQuotePrefillCity(city);
+    setIsQuoteOpen(true);
+  };
 
   const defaultTitle =
     division === 'am-distributors'
-      ? 'A.M. Distributors Chiplun — Regional Delivery & Logistics Coverage'
+      ? 'A M Distributors Logistics & Cold-Chain Routes'
       : division === 'nexalus-innovations'
-      ? 'Nexalus Innovations — Active Engineering & Deployment Locations'
-      : 'Areas Covered & Service Availability Checker';
+      ? 'Turnkey CCTV, Fiber & IT Networking Deployment Hubs'
+      : 'Find Nexalus Service & Infrastructure in Your Area';
 
   const defaultSubtitle =
     division === 'am-distributors'
-      ? 'Search your city or industrial zone to verify daily morning milk routes, packaged mineral water jar delivery, and commercial bulk ice cream supply schedules.'
+      ? 'Daily automated scheduled supply routes across Chiplun, Khed, Guhagar, Ratnagiri and surrounding commercial markets.'
       : division === 'nexalus-innovations'
-      ? 'Search your city or industrial area to inspect available 4K CCTV surveillance teams, optical fiber internet connectivity, and on-site engineering SLA.'
-      : 'Type your city name or PIN code to instantly inspect which services (CCTV surveillance, optical fiber leased lines, or cold-chain wholesale supplies) are operational in your area.';
-
-  const handleBookService = (cityName: string) => {
-    setQuotePrefillCity(cityName);
-    setIsQuoteOpen(true);
-  };
+      ? 'Certified field engineer hubs with rapid response teams, local optical fiber leased line points of presence, and 4K CCTV setups.'
+      : 'Enter your city or area below to check active coverage, view operational divisions, and request rapid onsite feasibility evaluation.';
 
   return (
     <section
       id="areas-covered"
-      className={`w-full bg-slate-950 text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden ${className}`}
+      className={`w-full ${
+        isLight
+          ? 'bg-white text-slate-900 border-slate-200/90'
+          : 'bg-slate-950 text-white border-slate-800'
+      } py-16 sm:py-24 border-b relative overflow-hidden ${className}`}
     >
       {/* Background Lighting Gradients */}
       <div className="absolute top-1/4 -left-48 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -147,14 +158,18 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
         {/* Section Header */}
         <BlurZoomReveal direction="up" delay={0}>
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 text-cyan-300 border border-blue-400/20 text-xs font-bold uppercase tracking-wider">
-              <Compass className="w-3.5 h-3.5 text-cyan-400" />
+            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full ${
+              isLight
+                ? 'bg-blue-50 text-blue-700 border-blue-200/80'
+                : 'bg-blue-500/10 text-cyan-300 border-blue-400/20'
+            } text-xs font-bold uppercase tracking-wider`}>
+              <Compass className={`w-3.5 h-3.5 ${isLight ? 'text-blue-600' : 'text-cyan-400'}`} />
               <span>Service Coverage Search</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+            <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black ${isLight ? 'text-slate-900' : 'text-white'} tracking-tight`}>
               {title || defaultTitle}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl mx-auto">
+            <p className={`text-xs sm:text-sm ${isLight ? 'text-slate-600' : 'text-slate-300'} leading-relaxed max-w-2xl mx-auto`}>
               {subtitle || defaultSubtitle}
             </p>
           </div>
@@ -163,8 +178,12 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
         {/* Google-Style Search Interface */}
         <BlurZoomReveal direction="up" delay={80}>
           <div ref={searchContainerRef} className="max-w-2xl mx-auto relative">
-            <div className="relative flex items-center bg-slate-900/95 border-2 border-slate-700 focus-within:border-cyan-400 rounded-full shadow-2xl transition-all p-1.5 pl-5 sm:pl-6 focus-within:ring-4 focus-within:ring-cyan-500/20">
-              <Search className="w-5 h-5 text-cyan-400 shrink-0 pointer-events-none" />
+            <div className={`relative flex items-center ${
+              isLight
+                ? 'bg-slate-50 border-2 border-slate-200 focus-within:border-blue-500 focus-within:ring-blue-500/10'
+                : 'bg-slate-900/95 border-2 border-slate-700 focus-within:border-cyan-400 focus-within:ring-cyan-500/20'
+            } rounded-full shadow-xl transition-all p-1.5 pl-5 sm:pl-6 focus-within:ring-4`}>
+              <Search className={`w-5 h-5 ${isLight ? 'text-blue-600' : 'text-cyan-400'} shrink-0 pointer-events-none`} />
 
               <input
                 type="text"
@@ -187,14 +206,14 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                   }
                 }}
                 placeholder="Enter city or area (e.g. Chiplun, Ratnagiri, Sangli, Pune, Mumbai, Kolhapur)..."
-                className="w-full px-3 py-3 sm:py-3.5 bg-transparent text-white placeholder-slate-400 text-sm sm:text-base outline-none"
+                className={`w-full px-3 py-3 sm:py-3.5 bg-transparent ${isLight ? 'text-slate-900 placeholder-slate-400' : 'text-white placeholder-slate-400'} text-sm sm:text-base outline-none`}
               />
 
               {searchTerm && (
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="p-2 text-slate-400 hover:text-white transition-colors cursor-pointer mr-1"
+                  className={`p-2 ${isLight ? 'text-slate-400 hover:text-slate-700' : 'text-slate-400 hover:text-white'} transition-colors cursor-pointer mr-1`}
                   title="Clear search"
                 >
                   <X className="w-5 h-5" />
@@ -213,8 +232,12 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
 
             {/* Google-Style Autocomplete Dropdown */}
             {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-slate-800">
-                <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-950/60">
+              <div className={`absolute left-0 right-0 top-full mt-2 ${
+                isLight ? 'bg-white border-slate-200 divide-slate-100 text-slate-800' : 'bg-slate-900 border-slate-700/80 divide-slate-800 text-white'
+              } border rounded-2xl shadow-2xl overflow-hidden z-50 divide-y`}>
+                <div className={`px-4 py-2 text-[11px] font-bold uppercase tracking-wider ${
+                  isLight ? 'text-slate-500 bg-slate-50' : 'text-slate-400 bg-slate-950/60'
+                }`}>
                   Available Hub Locations:
                 </div>
                 {suggestions.map(city => (
@@ -222,15 +245,17 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                     key={city}
                     type="button"
                     onClick={() => executeSearch(city)}
-                    className="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-slate-800/80 transition-colors cursor-pointer group"
+                    className={`w-full px-4 py-3 text-left flex items-center justify-between ${
+                      isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/80'
+                    } transition-colors cursor-pointer group`}
                   >
                     <div className="flex items-center gap-3">
-                      <MapPin className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
-                      <span className="font-semibold text-white text-sm group-hover:text-cyan-300">
+                      <MapPin className={`w-4 h-4 ${isLight ? 'text-blue-600' : 'text-cyan-400'} group-hover:scale-110 transition-transform`} />
+                      <span className={`font-semibold ${isLight ? 'text-slate-800 group-hover:text-blue-600' : 'text-white group-hover:text-cyan-300'} text-sm`}>
                         {city}
                       </span>
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                       ✓ Service Available
                     </span>
                   </button>
@@ -240,8 +265,8 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
 
             {/* Search Prompt when no search made yet */}
             {!hasSearched && (
-              <p className="text-center text-xs text-slate-400 mt-3">
-                💡 Tip: Type your city name in the search box above and click <span className="text-cyan-300 font-semibold">&ldquo;Search&rdquo;</span> or press Enter.
+              <p className={`text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'} mt-3`}>
+                💡 Tip: Type your city name in the search box above and click <span className={`${isLight ? 'text-blue-600' : 'text-cyan-300'} font-semibold`}>&ldquo;Search&rdquo;</span> or press Enter.
               </p>
             )}
           </div>
@@ -257,7 +282,11 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                   const isAm = area.brandId === 'am-distributors';
                   return (
                     <BlurZoomReveal key={area.id || idx} direction="up" delay={idx * 60}>
-                      <div className="rounded-3xl bg-slate-900/95 border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden group hover:border-cyan-500/50 transition-all">
+                      <div className={`rounded-3xl ${
+                        isLight
+                          ? 'bg-slate-50/80 border-slate-200/90 shadow-xl'
+                          : 'bg-slate-900/95 border-slate-800 shadow-2xl'
+                      } border p-6 sm:p-8 space-y-6 relative overflow-hidden group hover:border-cyan-500/50 transition-all`}>
                         {/* Top Accent Stripe */}
                         <div
                           className={`absolute top-0 left-0 right-0 h-1.5 ${
@@ -268,30 +297,34 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                         />
 
                         {/* City Details Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+                        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b ${
+                          isLight ? 'border-slate-200' : 'border-slate-800/80'
+                        } pb-5`}>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2.5">
                               <div
                                 className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                                  isAm ? 'bg-teal-500/10 text-teal-400' : 'bg-cyan-500/10 text-cyan-400'
+                                  isAm ? 'bg-teal-500/10 text-teal-600' : isLight ? 'bg-blue-50 text-blue-600' : 'bg-cyan-500/10 text-cyan-400'
                                 }`}
                               >
                                 <MapPin className="w-5 h-5" />
                               </div>
-                              <h3 className="text-2xl font-black text-white tracking-tight">
+                              <h3 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'} tracking-tight`}>
                                 {area.city}, {area.state}
                               </h3>
-                              <span className="font-mono text-xs font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+                              <span className={`font-mono text-xs font-bold ${
+                                isLight ? 'text-slate-600 bg-slate-200/70 border-slate-300' : 'text-slate-400 bg-slate-800 border-slate-700'
+                              } px-2 py-0.5 rounded-md border`}>
                                 PIN: {area.pincode}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-300 font-medium pl-11">
-                              Coverage Zone: <span className="text-white font-semibold">{area.locality}</span>
+                            <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'} font-medium pl-11`}>
+                              Coverage Zone: <span className={`${isLight ? 'text-slate-900' : 'text-white'} font-semibold`}>{area.locality}</span>
                             </p>
                           </div>
 
                           <div className="flex items-center gap-2 self-start sm:self-auto">
-                            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">
                               <CheckCircle2 className="w-4 h-4" />
                               <span>Service Active in This Area</span>
                             </span>
@@ -301,11 +334,11 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                         {/* Available Services Grid */}
                         <div>
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                            <h4 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-blue-700' : 'text-cyan-400'} flex items-center gap-1.5`}>
                               <Sparkles className="w-3.5 h-3.5" />
                               <span>Active Services Available in {area.city}:</span>
                             </h4>
-                            <span className="text-[11px] text-slate-400">
+                            <span className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                               {(area.services || []).length} verified services operational
                             </span>
                           </div>
@@ -318,16 +351,20 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                             ]).map((svc, sIdx) => (
                               <div
                                 key={sIdx}
-                                className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60 hover:border-cyan-500/40 hover:bg-slate-800 transition-all group/item"
+                                className={`flex items-start gap-3 p-3.5 rounded-2xl ${
+                                  isLight
+                                    ? 'bg-white border-slate-200/90 hover:border-blue-400 hover:bg-blue-50/20'
+                                    : 'bg-slate-800/60 border-slate-700/60 hover:border-cyan-500/40 hover:bg-slate-800'
+                                } border transition-all group/item shadow-2xs`}
                               >
-                                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/20 group-hover/item:scale-110 transition-transform">
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-500/20 group-hover/item:scale-110 transition-transform">
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                                 </div>
                                 <div>
-                                  <div className="text-xs font-bold text-white group-hover/item:text-cyan-300 transition-colors">
+                                  <div className={`text-xs font-bold ${isLight ? 'text-slate-900 group-hover/item:text-blue-600' : 'text-white group-hover/item:text-cyan-300'} transition-colors`}>
                                     {svc}
                                   </div>
-                                  <div className="text-[11px] text-slate-400 mt-0.5">
+                                  <div className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'} mt-0.5`}>
                                     Active Coverage • Fast Installation SLA
                                   </div>
                                 </div>
@@ -337,9 +374,11 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                         </div>
 
                         {/* Operational Notes & Quick Book */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-800/80 text-xs text-slate-300">
+                        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t ${
+                          isLight ? 'border-slate-200 text-slate-600' : 'border-slate-800/80 text-slate-300'
+                        } text-xs`}>
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
+                            <Clock className={`w-4 h-4 ${isLight ? 'text-blue-600' : 'text-cyan-400'} shrink-0`} />
                             <span>
                               {area.notes || 'Local technician team and rapid on-site dispatch active.'}
                             </span>
@@ -350,7 +389,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                             size="sm"
                             onClick={() => handleBookService(area.city)}
                             className="font-bold text-xs shadow-md whitespace-nowrap w-full sm:w-auto"
-                            icon={<ArrowRight className="w-3.5 h-3.5" />}
+                            icon={<ArrowRight className="w-4 h-4" />}
                           >
                             Book Service in {area.city}
                           </Button>
@@ -363,21 +402,23 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
             ) : (
               /* Case 2: Services NOT Available in searched city */
               <BlurZoomReveal direction="up" delay={50}>
-                <div className="rounded-3xl bg-slate-900 border border-amber-500/40 p-8 sm:p-12 text-center max-w-xl mx-auto space-y-5 shadow-2xl animate-fadeIn">
-                  <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-400/30 flex items-center justify-center mx-auto">
+                <div className={`rounded-3xl ${
+                  isLight ? 'bg-slate-50 border-amber-300 shadow-xl' : 'bg-slate-900 border-amber-500/40 shadow-2xl'
+                } border p-8 sm:p-12 text-center max-w-xl mx-auto space-y-5 animate-fadeIn`}>
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-500 border border-amber-400/30 flex items-center justify-center mx-auto">
                     <AlertTriangle className="w-8 h-8" />
                   </div>
 
                   <div className="space-y-1">
-                    <h3 className="text-2xl font-black text-white">
+                    <h3 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
                       Service Currently Not Available
                     </h3>
-                    <p className="text-sm font-bold text-amber-300">
+                    <p className={`text-sm font-bold ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>
                       No active operational facility registered in &ldquo;{searchedCity}&rdquo;
                     </p>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
+                  <p className={`text-xs sm:text-sm ${isLight ? 'text-slate-600' : 'text-slate-300'} leading-relaxed max-w-md mx-auto`}>
                     We are actively expanding our optical fiber leased lines, 4K CCTV surveillance coverage, and cold-chain supply routes across Maharashtra. Submit your location below to request feasibility, and our engineering team will evaluate rapid deployment.
                   </p>
 

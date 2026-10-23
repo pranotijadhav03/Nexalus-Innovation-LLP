@@ -512,31 +512,31 @@ export const HomePage: React.FC = () => {
           SECTION: OUR TEAM (SLIDING FOCUS SLIDER)
           ========================================================================= */}
       {heroBanner?.showTeam !== false && (
-        <OurTeamSection division="corporate" />
+        <OurTeamSection division="corporate" theme="dark" />
       )}
 
       {/* =========================================================================
           SECTION: PROJECT GALLERY
           ========================================================================= */}
-      <ProjectGallerySection division="corporate" />
+      <ProjectGallerySection division="corporate" theme="light" />
 
       {/* =========================================================================
-          SECTION 3: INTEGRATED TECHNOLOGY INFRASTRUCTURE (3 PILLARS - CLEAN LIGHT CONTRAST THEME)
+          SECTION 3: INTEGRATED TECHNOLOGY INFRASTRUCTURE (3 PILLARS - RICH CORPORATE BLUE THEME)
           ========================================================================= */}
-      <section className="w-full bg-gradient-to-b from-slate-100/90 via-slate-50 to-slate-100/40 text-slate-900 py-16 sm:py-24 border-b border-slate-200/90 overflow-hidden">
+      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-24 border-b border-blue-900/40 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Header */}
           <BlurZoomReveal direction="up" delay={0} duration={700}>
             <div className="text-center max-w-3xl mx-auto space-y-3">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-wider border border-blue-200/80">
-                <Cpu className="w-3.5 h-3.5 text-blue-600" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-cyan-300 text-xs font-black uppercase tracking-wider border border-blue-400/30">
+                <Cpu className="w-3.5 h-3.5 text-cyan-400" />
                 <span>INTEGRATED TECHNOLOGY INFRASTRUCTURE</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
                 Engineered for Reliability, Speed &amp; Security
               </h2>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
-                Under <strong className="text-slate-900">Nexalus Innovations LLP</strong>, we deliver enterprise-grade CCTV surveillance, optical fiber leased lines, and office networking with guaranteed uptime and direct manufacturer warranty.
+              <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
+                Under <strong>Nexalus Innovations LLP</strong>, we deliver enterprise-grade CCTV surveillance, optical fiber leased lines, and office networking with guaranteed uptime and direct manufacturer warranty.
               </p>
             </div>
           </BlurZoomReveal>
@@ -553,8 +553,8 @@ export const HomePage: React.FC = () => {
               scale={0.92}
               className="h-full flex flex-col"
             >
-              <div className="rounded-3xl bg-white border border-slate-200/90 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:border-blue-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
-              <div className="relative h-56 overflow-hidden bg-slate-100">
+              <div className="rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl hover:border-blue-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
+              <div className="relative h-56 overflow-hidden bg-[#081222]">
                 <img
                   src="/images/simple-cctv-camera.jpg"
                   alt="Commercial 4K CCTV Video Surveillance Camera"
@@ -565,46 +565,46 @@ export const HomePage: React.FC = () => {
               <div className="p-6 sm:p-7 space-y-4 flex-1 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/60 flex items-center justify-center font-bold shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-cyan-400 border border-blue-400/20 flex items-center justify-center font-bold shrink-0">
                       <Shield className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-xl font-black text-white group-hover:text-cyan-300 transition-colors">
                         CCTV Surveillance
                       </h3>
-                      <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">
+                      <p className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">
                         COMMERCIAL 4K CAMERAS &amp; ANALYTICS
                       </p>
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Commercial 4K network IP cameras with human and vehicle motion detection, full-color night vision, and centralized multi-screen command room integration.
                   </p>
 
-                  <div className="space-y-2 pt-1 text-xs text-slate-700">
+                  <div className="space-y-2 pt-1 text-xs text-slate-300">
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
                       <span>4K Ultra-HD 8MP Resolution</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
                       <span>24/7 Starlight Color Night Vision</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
                       <span>Live View on Smartphone App</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
                       <span>Clean Concealed Wiring &amp; Conduit</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-blue-900/50">
                   <Link to="/products?brand=cp-plus" className="w-full block">
-                    <Button variant="primary" size="md" className="w-full justify-center font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20" icon={<ArrowRight className="w-4 h-4" />}>
+                    <Button variant="primary" size="md" className="w-full justify-center font-bold bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-900/40" icon={<ArrowRight className="w-4 h-4" />}>
                       View CCTV Solutions
                     </Button>
                   </Link>
@@ -623,8 +623,8 @@ export const HomePage: React.FC = () => {
               scale={0.90}
               className="h-full flex flex-col"
             >
-              <div className="rounded-3xl bg-white border border-slate-200/90 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:border-teal-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
-              <div className="relative h-56 overflow-hidden bg-slate-100">
+              <div className="rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl hover:border-teal-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
+              <div className="relative h-56 overflow-hidden bg-[#081222]">
                 <img
                   src="/images/fiber-optic-cables.jpg"
                   alt="High-Speed Optical Fiber Internet Backbone & Patch Terminal"
@@ -635,46 +635,46 @@ export const HomePage: React.FC = () => {
               <div className="p-6 sm:p-7 space-y-4 flex-1 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 border border-teal-200/60 flex items-center justify-center font-bold shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-400/20 flex items-center justify-center font-bold shrink-0">
                       <Wifi className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-slate-900 group-hover:text-teal-600 transition-colors">
+                      <h3 className="text-xl font-black text-white group-hover:text-teal-300 transition-colors">
                         Optical Fiber Internet
                       </h3>
-                      <p className="text-[11px] font-bold text-teal-600 uppercase tracking-wider">
+                      <p className="text-[11px] font-bold text-teal-400 uppercase tracking-wider">
                         GIGABIT BANDWIDTH &amp; FTTH CONNECTIVITY
                       </p>
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Symmetrical gigabit fiber internet with low latency, redundant ring backhaul, and 99.9% uptime SLA for offices, tech parks, and residential societies.
                   </p>
 
-                  <div className="space-y-2 pt-1 text-xs text-slate-700">
+                  <div className="space-y-2 pt-1 text-xs text-slate-300">
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>Symmetrical Gigabit Speeds</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>Dual-Band Wi-Fi 6 Routers</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>Whole-Premises Mesh Roaming</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
                       <span>Quick Local Technician Support</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-blue-900/50">
                   <Link to="/products?brand=one-broadband" className="w-full block">
-                    <Button variant="primary" size="md" className="w-full justify-center font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-500/20" icon={<ArrowRight className="w-4 h-4" />}>
+                    <Button variant="primary" size="md" className="w-full justify-center font-bold bg-teal-600 hover:bg-teal-500 shadow-md shadow-teal-900/40" icon={<ArrowRight className="w-4 h-4" />}>
                       Explore Fiber Plans
                     </Button>
                   </Link>
@@ -693,8 +693,8 @@ export const HomePage: React.FC = () => {
               scale={0.92}
               className="h-full flex flex-col"
             >
-              <div className="rounded-3xl bg-white border border-slate-200/90 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:border-indigo-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
-              <div className="relative h-56 overflow-hidden bg-slate-100">
+              <div className="rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-xl hover:border-indigo-400/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
+              <div className="relative h-56 overflow-hidden bg-[#081222]">
                 <img
                   src="/images/rackmount-switches-real.jpg"
                   alt="Enterprise IT Networking & Server Rack Testing Infrastructure"
@@ -705,46 +705,46 @@ export const HomePage: React.FC = () => {
               <div className="p-6 sm:p-7 space-y-4 flex-1 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/60 flex items-center justify-center font-bold shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-400/20 flex items-center justify-center font-bold shrink-0">
                       <Server className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+                      <h3 className="text-xl font-black text-white group-hover:text-indigo-300 transition-colors">
                         Enterprise IT Networking
                       </h3>
-                      <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
+                      <p className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">
                         MANAGED SWITCHES &amp; STRUCTURED CABLING
                       </p>
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Layer-2/3 managed PoE+ switching fabrics, hardware firewalls, organized server rack integration, and Fluke-certified pure copper Cat6A cabling.
                   </p>
 
-                  <div className="space-y-2 pt-1 text-xs text-slate-700">
+                  <div className="space-y-2 pt-1 text-xs text-slate-300">
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
                       <span>Layer-2/3 Managed PoE+ Switching</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
                       <span>10G SFP+ Optical Uplinks</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
                       <span>Pure Copper Cat6A Structured Cabling</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
                       <span>Organized 24U/42U Server Cabinets</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-blue-900/50">
                   <Link to="/products?brand=itti-networking" className="w-full block">
-                    <Button variant="primary" size="md" className="w-full justify-center font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20" icon={<ArrowRight className="w-4 h-4" />}>
+                    <Button variant="primary" size="md" className="w-full justify-center font-bold bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-900/40" icon={<ArrowRight className="w-4 h-4" />}>
                       Explore Network Setup
                     </Button>
                   </Link>
@@ -898,27 +898,27 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4.2: Fiber Internet & Connectivity */}
-      <section className="w-full bg-slate-50/80 text-slate-900 py-16 sm:py-20 border-b border-slate-200/90">
+      {/* 4.2: Fiber Internet & Connectivity (RICH CORPORATE BLUE THEME) */}
+      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-20 border-b border-blue-900/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
           <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-semibold tracking-wider border border-teal-200/60">
-              <Wifi className="w-3.5 h-3.5 text-teal-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-semibold tracking-wider border border-teal-400/30">
+              <Wifi className="w-3.5 h-3.5 text-teal-400" />
               <span>Fiber Internet</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
               Fiber Internet &amp; Connectivity
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               Explore fiber connectivity equipment, ONT devices, Wi-Fi solutions, and related networking products.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Fiber Card 1 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
                   <img
                     src="/images/products/wifi6-router.jpg"
                     alt="NexFiber Wi-Fi 6 AX3000 Dual-Band Gigabit ONT Router"
@@ -927,21 +927,21 @@ export const HomePage: React.FC = () => {
                   />
                 </div>
                 <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
                     ONE BROADBAND • Model OB-AX3000-ONT
                   </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
                     NexFiber Wi-Fi 6 AX3000 Dual-Band Gigabit ONT Router
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
                     High-speed GPON Optical Network Terminal with built-in Wi-Fi 6, 4 Gigabit Ethernet LAN ports, VoIP FXS port, and OFDMA low-latency technology.
                   </p>
                 </div>
               </div>
               <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-teal-900/40">
                   <Link to="/products?brand=one-broadband" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                    <Button variant="teal" size="sm" className="w-full justify-center font-bold">
                       View Product
                     </Button>
                   </Link>
@@ -950,9 +950,9 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Fiber Card 2 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
                   <img
                     src="/images/products/mesh-wifi-v2.jpg"
                     alt="NexMesh AX3000 Whole-Home Tri-Band Wi-Fi 6 Mesh System (3-Pack)"
@@ -961,21 +961,21 @@ export const HomePage: React.FC = () => {
                   />
                 </div>
                 <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
                     ONE BROADBAND • Model OB-MESH-AX3000-3PK
                   </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
                     NexMesh AX3000 Whole-Home Tri-Band Wi-Fi 6 Mesh System (3-Pack)
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
                     Whole-home dead-zone killer mesh Wi-Fi system covering up to 6,000 sq.ft. with seamless single-SSID roaming, gigabit Ethernet backhaul, and zero buffering.
                   </p>
                 </div>
               </div>
               <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-teal-900/40">
                   <Link to="/products?brand=one-broadband" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                    <Button variant="teal" size="sm" className="w-full justify-center font-bold">
                       View Product
                     </Button>
                   </Link>
@@ -984,9 +984,9 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Fiber Card 3 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
                   <img
                     src="/images/products/fiber-modem.jpg"
                     alt="NexFiber Gigabit XPON / GPON Optical Fiber Bridge Modem (ONU)"
@@ -995,21 +995,21 @@ export const HomePage: React.FC = () => {
                   />
                 </div>
                 <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
                     ONE BROADBAND • Model OB-ONU-1000G
                   </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
                     NexFiber Gigabit XPON / GPON Optical Fiber Bridge Modem (ONU)
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
                     Ultra-compact high-speed Gigabit XPON/GPON optical network terminal (ONU) with 1 SC/UPC optical port, 1 Gigabit RJ45 LAN port, and lightning surge protection.
                   </p>
                 </div>
               </div>
               <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-teal-900/40">
                   <Link to="/products?brand=one-broadband" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                    <Button variant="teal" size="sm" className="w-full justify-center font-bold">
                       View Product
                     </Button>
                   </Link>
@@ -1021,9 +1021,9 @@ export const HomePage: React.FC = () => {
           <div className="text-center pt-2 sm:pt-4">
             <Link to="/products?brand=one-broadband">
               <Button
-                variant="outline"
+                variant="primary"
                 size="md"
-                className="font-bold border-teal-600 text-teal-700 hover:bg-teal-50"
+                className="font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-900/40"
                 icon={<ArrowRight className="w-4 h-4" />}
               >
                 View All Internet Products
@@ -2085,14 +2085,14 @@ export const HomePage: React.FC = () => {
       {/* =========================================================================
           SECTION: AREAS COVERED & SERVICE AVAILABILITY CHECKER
           ========================================================================= */}
-      <AreasCoveredSection division="corporate" />
+      <AreasCoveredSection division="corporate" theme="light" />
 
       {/* =========================================================================
-          SLIDE 8: BUSINESS ENQUIRY & SITE SURVEY CTA BANNER (CLEAN WHITE THEME)
+          SLIDE 8: BUSINESS ENQUIRY & SITE SURVEY CTA BANNER (RICH CORPORATE BLUE THEME)
           ========================================================================= */}
-      <section className="w-full py-16 sm:py-24 bg-white">
+      <section className="w-full py-16 sm:py-24 bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white border-b border-blue-900/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl bg-gradient-to-r from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white p-8 sm:p-14 shadow-2xl overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 border border-blue-900/50">
+          <div className="relative rounded-3xl bg-[#0c1c38]/90 text-white p-8 sm:p-14 shadow-2xl overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 border border-blue-700/50">
             <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] opacity-15 [background-size:20px_20px] pointer-events-none" />
 
             <div className="relative space-y-3 text-center md:text-left max-w-xl">
