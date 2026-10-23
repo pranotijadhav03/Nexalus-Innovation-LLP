@@ -139,6 +139,8 @@ function App() {
               <Route path="plans" element={<AdminPlansPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="services" element={<AdminServicesPage />} />
+              <Route path="solutions" element={<Navigate to="/admin/services?tab=solutions" replace />} />
+              <Route path="solution-requirements" element={<Navigate to="/admin/services?tab=solutions" replace />} />
               <Route path="projects" element={<AdminProjectsPage />} />
               <Route path="enquiries" element={<AdminEnquiriesPage />} />
               <Route path="service-areas" element={<AdminServiceAreasPage />} />

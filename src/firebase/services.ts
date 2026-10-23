@@ -40,7 +40,8 @@ import {
   AuditLog,
   SiteBanner,
   SeoSettings,
-  TeamMember
+  TeamMember,
+  SolutionRequirement
 } from '../types';
 import {
   initialBrands,
@@ -57,7 +58,8 @@ import {
   initialUsers,
   initialEnquiries,
   initialSeoSettings,
-  initialTeamMembers
+  initialTeamMembers,
+  initialSolutionRequirements
 } from '../data/initialData';
 
 // Storage Keys for resilient local state
@@ -70,6 +72,7 @@ const STORAGE_KEYS = {
   BROADBAND_PROVIDERS: DATA_VERSION + 'nexalus_store_broadband_providers',
   BROADBAND_PLANS: DATA_VERSION + 'nexalus_store_broadband_plans',
   SERVICES: DATA_VERSION + 'nexalus_store_services',
+  SOLUTION_REQUIREMENTS: DATA_VERSION + 'nexalus_store_solution_requirements',
   PROJECTS: DATA_VERSION + 'nexalus_store_projects',
   ENQUIRIES: DATA_VERSION + 'nexalus_store_enquiries',
   PLAN_ORDERS: DATA_VERSION + 'nexalus_store_plan_orders',
@@ -1207,6 +1210,86 @@ export async function deleteService(id: string): Promise<boolean> {
   const updated = services.filter(s => s.id !== id);
   setLocalItem(STORAGE_KEYS.SERVICES, updated);
   await addAuditLog('DELETE_SERVICE', `Deleted service: ${target.title}`, target.brandId === 'nexalus' ? 'general' : target.brandId);
+  return true;
+}
+
+// ----------------------------------------------------
+// SOLUTION REQUIREMENTS (Quotation Modal Dropdown)
+// ----------------------------------------------------
+export function getCachedSolutionRequirements(brandId?: BrandId | 'general' | 'all'): SolutionRequirement[] {
+  let solutions = getLocalItem<SolutionRequirement[]>(STORAGE_KEYS.SOLUTION_REQUIREMENTS, initialSolutionRequirements);
+  if (!solutions || solutions.length === 0) {
+    solutions = initialSolutionRequirements;
+    setLocalItem(STORAGE_KEYS.SOLUTION_REQUIREMENTS, initialSolutionRequirements, false);
+  }
+  if (brandId && brandId !== 'all') {
+    solutions = solutions.filter(s => s.brandId === brandId || s.brandId === 'general' || s.brandId === 'all');
+  }
+  return [...solutions].sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
+export async function getSolutionRequirements(brandId?: BrandId | 'general' | 'all', publishedOnly = false): Promise<SolutionRequirement[]> {
+  let solutions = getLocalItem<SolutionRequirement[]>(STORAGE_KEYS.SOLUTION_REQUIREMENTS, initialSolutionRequirements);
+  if (!solutions || solutions.length === 0) {
+    solutions = initialSolutionRequirements;
+    setLocalItem(STORAGE_KEYS.SOLUTION_REQUIREMENTS, initialSolutionRequirements, false);
+  }
+  if (brandId && brandId !== 'all') {
+    solutions = solutions.filter(s => s.brandId === brandId || s.brandId === 'general' || s.brandId === 'all');
+  }
+  if (publishedOnly) {
+    solutions = solutions.filter(s => s.published);
+  }
+  return [...solutions].sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
+export async function createSolutionRequirement(
+  solutionData: Omit<SolutionRequirement, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<SolutionRequirement> {
+  const id = 'sol-' + Date.now();
+  const now = new Date().toISOString();
+  const newSolution: SolutionRequirement = {
+    ...solutionData,
+    id,
+    value: solutionData.value || id,
+    createdAt: now,
+    updatedAt: now
+  };
+
+  const current = getLocalItem<SolutionRequirement[]>(STORAGE_KEYS.SOLUTION_REQUIREMENTS, initialSolutionRequirements);
+  const updated = [...current, newSolution];
+  setLocalItem(STORAGE_KEYS.SOLUTION_REQUIREMENTS, updated);
+  await addAuditLog('CREATE_SOLUTION_REQUIREMENT', `Created quote solution requirement: ${newSolution.label}`, (newSolution.brandId as any) || 'general');
+  return newSolution;
+}
+
+export async function updateSolutionRequirement(
+  id: string,
+  updates: Partial<SolutionRequirement>
+): Promise<SolutionRequirement | null> {
+  const solutions = getLocalItem<SolutionRequirement[]>(STORAGE_KEYS.SOLUTION_REQUIREMENTS, initialSolutionRequirements);
+  const index = solutions.findIndex(s => s.id === id);
+  if (index === -1) return null;
+
+  const updated: SolutionRequirement = {
+    ...solutions[index],
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  solutions[index] = updated;
+  setLocalItem(STORAGE_KEYS.SOLUTION_REQUIREMENTS, solutions);
+  await addAuditLog('UPDATE_SOLUTION_REQUIREMENT', `Updated quote solution requirement: ${updated.label}`, (updated.brandId as any) || 'general');
+  return updated;
+}
+
+export async function deleteSolutionRequirement(id: string): Promise<boolean> {
+  const solutions = getLocalItem<SolutionRequirement[]>(STORAGE_KEYS.SOLUTION_REQUIREMENTS, initialSolutionRequirements);
+  const target = solutions.find(s => s.id === id);
+  if (!target) return false;
+
+  const updated = solutions.filter(s => s.id !== id);
+  setLocalItem(STORAGE_KEYS.SOLUTION_REQUIREMENTS, updated);
+  await addAuditLog('DELETE_SOLUTION_REQUIREMENT', `Deleted quote solution requirement: ${target.label}`, (target.brandId as any) || 'general');
   return true;
 }
 

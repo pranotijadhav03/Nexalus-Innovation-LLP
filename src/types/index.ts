@@ -252,6 +252,18 @@ export interface Service {
   updatedAt: string;
 }
 
+export interface SolutionRequirement {
+  id: string;
+  label: string;
+  value: string;
+  brandId: BrandId | 'general' | 'all';
+  description?: string;
+  order?: number;
+  published: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Project {
   id: string;
   brandId: BrandId | 'nexalus';

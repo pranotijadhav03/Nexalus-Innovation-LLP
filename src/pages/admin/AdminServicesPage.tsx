@@ -1,33 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getServices, createService, updateService, deleteService, getCachedServices } from '../../firebase/services';
-import { Service, BrandId } from '../../types';
+import {
+  getServices,
+  createService,
+  updateService,
+  deleteService,
+  getCachedServices,
+  getSolutionRequirements,
+  createSolutionRequirement,
+  updateSolutionRequirement,
+  deleteSolutionRequirement,
+  getCachedSolutionRequirements
+} from '../../firebase/services';
+import { Service, BrandId, SolutionRequirement } from '../../types';
 import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { Input, TextArea, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { BrandBadge } from '../../components/common/BrandBadge';
-import { Plus, Edit2, Trash2, Wrench, Shield, Wifi, Building2, ArrowRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Wrench, Shield, Wifi, Building2, ArrowRight, Sliders, CheckCircle2 } from 'lucide-react';
 
 export const AdminServicesPage: React.FC = () => {
   const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, canManageBrand } = useAuth();
   const outletCtx = useOutletContext<AdminOutletContext>();
   const activeConsole = outletCtx?.activeConsole || 'master';
   const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'services' | 'solutions'>(tabParam === 'solutions' ? 'solutions' : 'services');
   const { success, error } = useToast();
 
   const [services, setServices] = useState<Service[]>(() =>
     getCachedServices(activeConsole === 'master' ? undefined : activeBrandFilter)
   );
+  const [solutions, setSolutions] = useState<SolutionRequirement[]>(() =>
+    getCachedSolutionRequirements()
+  );
   const [isLoading, setIsLoading] = useState(false);
 
-  // Modal State
+  // Service Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
-  // Form
+  // Service Form
   const [title, setTitle] = useState('');
   const [brandId, setBrandId] = useState<BrandId | 'nexalus'>('nexalus');
   const [shortDescription, setShortDescription] = useState('');
@@ -40,15 +57,36 @@ export const AdminServicesPage: React.FC = () => {
   const [targetAudience, setTargetAudience] = useState('Residential, Commercial');
   const [published, setPublished] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-
   const [deleteCandidate, setDeleteCandidate] = useState<Service | null>(null);
+
+  // Solution Requirement Modal State
+  const [isSolModalOpen, setIsSolModalOpen] = useState(false);
+  const [editingSol, setEditingSol] = useState<SolutionRequirement | null>(null);
+  const [solLabel, setSolLabel] = useState('');
+  const [solValue, setSolValue] = useState('');
+  const [solBrandId, setSolBrandId] = useState<BrandId | 'general' | 'all'>('general');
+  const [solDescription, setSolDescription] = useState('');
+  const [solOrder, setSolOrder] = useState<number>(1);
+  const [solPublished, setSolPublished] = useState(true);
+  const [isSavingSol, setIsSavingSol] = useState(false);
+  const [deleteSolCandidate, setDeleteSolCandidate] = useState<SolutionRequirement | null>(null);
+
+  useEffect(() => {
+    if (tabParam === 'solutions') {
+      setActiveTab('solutions');
+    }
+  }, [tabParam]);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
       const filter = activeConsole === 'master' ? undefined : activeBrandFilter;
-      const data = await getServices(filter === 'all' ? undefined : (filter as any));
+      const [data, solData] = await Promise.all([
+        getServices(filter === 'all' ? undefined : (filter as any)),
+        getSolutionRequirements(undefined, false)
+      ]);
       setServices(data);
+      setSolutions(solData);
     } finally {
       setIsLoading(false);
     }
@@ -80,59 +118,60 @@ export const AdminServicesPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const openEditModal = (srv: Service) => {
-    if (!canManageBrand(srv.brandId)) {
-      error('Access Denied', 'You cannot modify services belonging to other brands.');
-      return;
-    }
-    setEditingService(srv);
-    setTitle(srv.title);
-    setBrandId(srv.brandId);
-    setShortDescription(srv.shortDescription);
-    setFullDescription(srv.fullDescription);
-    setIconName(srv.iconName);
-    setFeatures([...srv.features]);
-    setTargetAudience(srv.targetAudience.join(', '));
-    setPublished(srv.published);
+  const openEditModal = (service: Service) => {
+    setEditingService(service);
+    setTitle(service.title);
+    setBrandId(service.brandId);
+    setShortDescription(service.shortDescription);
+    setFullDescription(service.fullDescription);
+    setIconName(service.iconName || 'ShieldCheck');
+    setFeatures(service.features || []);
+    setTargetAudience(service.targetAudience.join(', '));
+    setPublished(service.published);
     setIsModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !shortDescription.trim()) {
-      error('Validation Error', 'Title and description are required.');
-      return;
-    }
+    if (!title.trim() || !shortDescription.trim()) return;
 
-    if (!canManageBrand(brandId)) {
-      error('Access Denied', 'You cannot create services outside your assigned brand.');
+    if (!canManageBrand(brandId === 'nexalus' ? 'general' : brandId)) {
+      error('Access Denied', 'You cannot create services outside your assigned operating entity.');
       return;
     }
 
     setIsSaving(true);
     try {
       const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      const audienceList = targetAudience.split(',').map(s => s.trim()).filter(Boolean);
-
-      const payload = {
-        title,
-        slug,
-        brandId,
-        shortDescription,
-        fullDescription,
-        iconName,
-        features: features.filter(f => f.trim() !== ''),
-        targetAudience: audienceList,
-        featured: true,
-        published
-      };
+      const audienceArr = targetAudience.split(',').map(s => s.trim()).filter(Boolean);
 
       if (editingService) {
-        await updateService(editingService.id, payload);
-        success('Service Updated', `${title} updated successfully.`);
+        await updateService(editingService.id, {
+          title,
+          slug,
+          brandId,
+          shortDescription,
+          fullDescription,
+          iconName,
+          features,
+          targetAudience: audienceArr,
+          published
+        });
+        success('Service Updated', `${title} updated.`);
       } else {
-        await createService(payload);
-        success('Service Created', `${title} created successfully.`);
+        await createService({
+          title,
+          slug,
+          brandId,
+          shortDescription,
+          fullDescription,
+          iconName,
+          features,
+          targetAudience: audienceArr,
+          published,
+          featured: false
+        });
+        success('Service Created', `${title} added.`);
       }
 
       setIsModalOpen(false);
@@ -156,7 +195,87 @@ export const AdminServicesPage: React.FC = () => {
     }
   };
 
+  // Solution Requirements Handlers
+  const openCreateSolModal = () => {
+    setEditingSol(null);
+    setSolLabel('');
+    setSolValue('');
+    const defaultBrand = activeConsole === 'am-distributors'
+      ? 'am-distributors'
+      : activeConsole === 'nexalus-innovations'
+      ? 'nexalus-innovations'
+      : 'general';
+    setSolBrandId(defaultBrand);
+    setSolDescription('');
+    setSolOrder(solutions.length + 1);
+    setSolPublished(true);
+    setIsSolModalOpen(true);
+  };
+
+  const openEditSolModal = (sol: SolutionRequirement) => {
+    setEditingSol(sol);
+    setSolLabel(sol.label);
+    setSolValue(sol.value);
+    setSolBrandId(sol.brandId);
+    setSolDescription(sol.description || '');
+    setSolOrder(sol.order || 1);
+    setSolPublished(sol.published);
+    setIsSolModalOpen(true);
+  };
+
+  const handleSaveSol = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!solLabel.trim()) return;
+
+    setIsSavingSol(true);
+    try {
+      const value = solValue.trim() || solLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      if (editingSol) {
+        await updateSolutionRequirement(editingSol.id, {
+          label: solLabel,
+          value,
+          brandId: solBrandId,
+          description: solDescription,
+          order: Number(solOrder) || 1,
+          published: solPublished
+        });
+        success('Solution Requirement Updated', `${solLabel} was successfully updated.`);
+      } else {
+        await createSolutionRequirement({
+          label: solLabel,
+          value,
+          brandId: solBrandId,
+          description: solDescription,
+          order: Number(solOrder) || 1,
+          published: solPublished
+        });
+        success('Solution Requirement Added', `${solLabel} has been added to the quotation form!`);
+      }
+      setIsSolModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      error('Failed to save solution requirement', err.message);
+    } finally {
+      setIsSavingSol(false);
+    }
+  };
+
+  const handleDeleteSol = async () => {
+    if (!deleteSolCandidate) return;
+    try {
+      await deleteSolutionRequirement(deleteSolCandidate.id);
+      success('Solution Requirement Deleted', `${deleteSolCandidate.label} was removed.`);
+      setDeleteSolCandidate(null);
+      loadData();
+    } catch (err: any) {
+      error('Delete Failed', err.message);
+    }
+  };
+
   const filteredServices = services.filter(srv => {
+    if (activeConsole === 'master') {
+      return true;
+    }
     if (activeConsole === 'nexalus-innovations' || (isInnovationsAdmin && !isSuperAdmin)) {
       return (
         srv.brandId === 'nexalus-innovations' ||
@@ -171,19 +290,35 @@ export const AdminServicesPage: React.FC = () => {
     return srv.brandId === 'nexalus';
   });
 
+  const filteredSolutions = solutions.filter(sol => {
+    if (activeConsole === 'master') return true;
+    if (activeConsole === 'nexalus-innovations') {
+      return sol.brandId === 'nexalus-innovations' || sol.brandId === 'general' || sol.brandId === 'all';
+    }
+    if (activeConsole === 'am-distributors') {
+      return sol.brandId === 'am-distributors' || sol.brandId === 'general' || sol.brandId === 'all';
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-6">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            {activeConsole === 'nexalus-innovations'
+            {activeTab === 'solutions'
+              ? 'Quote Solution Requirements'
+              : activeConsole === 'nexalus-innovations'
               ? 'Nexalus Innovations Services'
               : activeConsole === 'am-distributors'
               ? 'A.M. Distributors Services'
               : 'Corporate Parent Services Portfolio'}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {activeConsole === 'nexalus-innovations'
+            {activeTab === 'solutions'
+              ? 'Manage options in the "Solution Requirement" dropdown of the Request a Corporate Quotation popup form (2nd image).'
+              : activeConsole === 'nexalus-innovations'
               ? 'Configure CCTV installation, optical fiber maintenance contracts, and network cabling deployments.'
               : activeConsole === 'am-distributors'
               ? 'Configure refrigerated fleet delivery, cold-chain distribution, and wholesale supply services.'
@@ -191,9 +326,69 @@ export const AdminServicesPage: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="primary" onClick={openCreateModal} icon={<Plus className="w-4 h-4" />}>
-          Add New Service
-        </Button>
+        <div className="flex items-center gap-2">
+          {activeTab === 'solutions' ? (
+            <Button variant="primary" onClick={openCreateSolModal} icon={<Plus className="w-4 h-4" />}>
+              Add Solution Requirement
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={openCreateModal} icon={<Plus className="w-4 h-4" />}>
+              Add New Service
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs Bar: Services vs Solution Requirements */}
+      <div className="flex border-b border-slate-200 gap-2 sm:gap-4 overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('services');
+            setSearchParams(prev => {
+              const next = new URLSearchParams(prev);
+              next.delete('tab');
+              return next;
+            });
+          }}
+          className={`pb-3 px-3 font-bold text-xs sm:text-sm border-b-2 flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'services'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Wrench className="w-4 h-4" />
+          <span>Services Portfolio</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-bold">
+            {filteredServices.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('solutions');
+            setSearchParams(prev => {
+              const next = new URLSearchParams(prev);
+              next.set('tab', 'solutions');
+              return next;
+            });
+          }}
+          className={`pb-3 px-3 font-bold text-xs sm:text-sm border-b-2 flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'solutions'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Sliders className="w-4 h-4" />
+          <span>Quote Solution Requirements</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-50 text-indigo-700 font-bold">
+            {filteredSolutions.length}
+          </span>
+          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+            2nd Image Form
+          </span>
+        </button>
       </div>
 
       {/* Corporate Super Admin Workspace Context Link */}
@@ -201,7 +396,7 @@ export const AdminServicesPage: React.FC = () => {
         <div className="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2.5 text-blue-900 font-medium">
             <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-            <span>You are viewing <strong>Corporate Parent</strong> services only. Child company services are strictly separated in their own workspaces.</span>
+            <span>You are viewing <strong>Corporate Parent Master</strong> console.</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -222,67 +417,169 @@ export const AdminServicesPage: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
-              <tr>
-                <th className="py-3.5 px-4">Service Title</th>
-                <th className="py-3.5 px-4">Division</th>
-                <th className="py-3.5 px-4">Target Sectors</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredServices.map(srv => (
-                <tr key={srv.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3.5 px-4 font-bold text-slate-900">
-                    <div>{srv.title}</div>
-                    <div className="text-[11px] font-normal text-slate-500 truncate max-w-sm">
-                      {srv.shortDescription}
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <BrandBadge brandId={srv.brandId} size="sm" />
-                  </td>
-                  <td className="py-3.5 px-4 text-slate-600">
-                    {srv.targetAudience.join(', ')}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        srv.published ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {srv.published ? 'Published' : 'Draft'}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        onClick={() => openEditModal(srv)}
-                        className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg"
-                        title="Edit Service"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteCandidate(srv)}
-                        className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg"
-                        title="Delete Service"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+      {/* TAB 1: SERVICES PORTFOLIO */}
+      {activeTab === 'services' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
+                <tr>
+                  <th className="py-3.5 px-4">Service Title</th>
+                  <th className="py-3.5 px-4">Division</th>
+                  <th className="py-3.5 px-4">Target Sectors</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredServices.map(srv => (
+                  <tr key={srv.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-slate-900">
+                      <div>{srv.title}</div>
+                      <div className="text-[11px] font-normal text-slate-500 truncate max-w-sm">
+                        {srv.shortDescription}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <BrandBadge brandId={srv.brandId} size="sm" />
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600">
+                      {srv.targetAudience.join(', ')}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          srv.published ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {srv.published ? 'Published' : 'Draft'}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => openEditModal(srv)}
+                          className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg cursor-pointer"
+                          title="Edit Service"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteCandidate(srv)}
+                          className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg cursor-pointer"
+                          title="Delete Service"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
+      {/* TAB 2: QUOTE SOLUTION REQUIREMENTS */}
+      {activeTab === 'solutions' && (
+        <div className="space-y-4">
+          <div className="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-200/80 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <Sliders className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Solution Requirement Dropdown Management
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                These solution requirements appear in the <strong>&quot;Request a Corporate Quotation&quot;</strong> popup modal (2nd Image). When you add or edit an item here, it is automatically updated in the quotation form and recorded in customer inquiry submissions.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th className="py-3.5 px-4">Order</th>
+                    <th className="py-3.5 px-4">Solution Requirement Label</th>
+                    <th className="py-3.5 px-4">System Value / Code</th>
+                    <th className="py-3.5 px-4">Target Brand / Entity</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredSolutions.map(sol => (
+                    <tr key={sol.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-500">
+                        #{sol.order || 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        <div>{sol.label}</div>
+                        {sol.description && (
+                          <div className="text-[11px] font-normal text-slate-500 truncate max-w-md">
+                            {sol.description}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">
+                        {sol.value}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          sol.brandId === 'am-distributors'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : sol.brandId === 'nexalus-innovations'
+                            ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                        }`}>
+                          {sol.brandId === 'am-distributors'
+                            ? 'A.M. Distributors'
+                            : sol.brandId === 'nexalus-innovations'
+                            ? 'Nexalus Tech'
+                            : 'Corporate Parent / All'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            sol.published ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {sol.published ? 'Active in Form' : 'Hidden'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => openEditSolModal(sol)}
+                            className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg cursor-pointer"
+                            title="Edit Solution Requirement"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteSolCandidate(sol)}
+                            className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg cursor-pointer"
+                            title="Delete Solution Requirement"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SERVICE MODAL */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -377,6 +674,82 @@ export const AdminServicesPage: React.FC = () => {
         </form>
       </Modal>
 
+      {/* SOLUTION REQUIREMENT MODAL */}
+      <Modal
+        isOpen={isSolModalOpen}
+        onClose={() => setIsSolModalOpen(false)}
+        title={editingSol ? 'Edit Solution Requirement' : 'Add New Solution Requirement'}
+        maxWidth="md"
+      >
+        <form onSubmit={handleSaveSol} className="space-y-4">
+          <Input
+            label="Solution Requirement Label (Dropdown Text) *"
+            placeholder="e.g. Commercial CCTV Surveillance & Security Setup"
+            value={solLabel}
+            onChange={e => {
+              setSolLabel(e.target.value);
+              if (!editingSol && !solValue) {
+                setSolValue(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30));
+              }
+            }}
+            required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="System Code / Value"
+              placeholder="e.g. cctv or water-supply"
+              value={solValue}
+              onChange={e => setSolValue(e.target.value)}
+            />
+
+            <Select
+              label="Associated Division / Entity"
+              value={solBrandId}
+              onChange={e => setSolBrandId(e.target.value as any)}
+              options={[
+                { value: 'general', label: 'Corporate Parent / General' },
+                { value: 'nexalus-innovations', label: 'Nexalus Innovations (Tech)' },
+                { value: 'am-distributors', label: 'A.M. Distributors (FMCG)' },
+                { value: 'all', label: 'All Companies / Global' }
+              ]}
+            />
+          </div>
+
+          <TextArea
+            label="Description / Scope (Optional)"
+            placeholder="Brief explanation of this solution package..."
+            rows={2}
+            value={solDescription}
+            onChange={e => setSolDescription(e.target.value)}
+          />
+
+          <Input
+            label="Display Order (Sequence)"
+            type="number"
+            min={1}
+            value={solOrder}
+            onChange={e => setSolOrder(Number(e.target.value))}
+          />
+
+          <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+              <input
+                type="checkbox"
+                checked={solPublished}
+                onChange={e => setSolPublished(e.target.checked)}
+                className="rounded text-blue-600 w-4 h-4"
+              />
+              Active in Quotation Form Dropdown
+            </label>
+            <Button type="submit" variant="primary" isLoading={isSavingSol}>
+              Save Solution Requirement
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* DELETE SERVICE MODAL */}
       <Modal
         isOpen={!!deleteCandidate}
         onClose={() => setDeleteCandidate(null)}
@@ -392,6 +765,28 @@ export const AdminServicesPage: React.FC = () => {
               Cancel
             </Button>
             <Button variant="danger" size="sm" onClick={handleDelete}>
+              Confirm Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* DELETE SOLUTION REQUIREMENT MODAL */}
+      <Modal
+        isOpen={!!deleteSolCandidate}
+        onClose={() => setDeleteSolCandidate(null)}
+        title="Confirm Solution Requirement Deletion"
+        maxWidth="sm"
+      >
+        <div className="space-y-4 text-xs text-slate-600">
+          <p>
+            Are you sure you want to delete <strong className="text-slate-900">{deleteSolCandidate?.label}</strong> from the quotation dropdown options?
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setDeleteSolCandidate(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleDeleteSol}>
               Confirm Delete
             </Button>
           </div>

@@ -28,7 +28,8 @@ import {
   ArrowLeft,
   ChevronRight,
   Globe,
-  BarChart3
+  BarChart3,
+  Sliders
 } from 'lucide-react';
 import {
   getProducts,
@@ -454,6 +455,16 @@ export const AdminDashboardPage: React.FC = () => {
                 <Clock className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold text-slate-800">Audit Logs</span>
+            </Link>
+
+            <Link
+              to="/admin/services?tab=solutions"
+              className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Sliders className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800">Solution Requirements</span>
             </Link>
           </div>
         </div>

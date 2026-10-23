@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { AdminConsoleMode } from './AdminLayout';
 import {
@@ -22,7 +22,8 @@ import {
   ShieldCheck,
   Shield,
   Building,
-  ExternalLink
+  ExternalLink,
+  Sliders
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -39,6 +40,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onConsoleChange
 }) => {
   const { isSuperAdmin, isAmAdmin, isInnovationsAdmin, currentUser } = useAuth();
+  const location = useLocation();
 
   // Child admins with strict company credentials (not Super Admin)
   const isStrictAmOnly = isAmAdmin && !isSuperAdmin;
@@ -239,7 +241,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                    isActive
+                    isActive && !location.search.includes('tab=solutions')
                       ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`
@@ -247,6 +249,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               >
                 <Wrench className="w-4 h-4" />
                 Services Portfolio
+              </NavLink>
+
+              <NavLink
+                to="/admin/services?tab=solutions"
+                onClick={onClose}
+                className={() =>
+                  `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                    location.pathname === '/admin/services' && location.search.includes('tab=solutions')
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`
+                }
+              >
+                <Sliders className="w-4 h-4" />
+                Solution Requirements
               </NavLink>
 
               <NavLink

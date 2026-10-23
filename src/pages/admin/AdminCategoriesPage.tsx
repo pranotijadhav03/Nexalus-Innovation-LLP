@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getCategories, createCategory, deleteCategory, getCachedCategories } from '../../firebase/services';
@@ -9,7 +9,7 @@ import { Input, TextArea, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { BrandBadge } from '../../components/common/BrandBadge';
-import { Plus, Trash2, Layers, Shield, Building, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Layers, Shield, Building, ArrowRight, Sliders } from 'lucide-react';
 
 export const AdminCategoriesPage: React.FC = () => {
   const { isSuperAdmin, isAmAdmin, isInnovationsAdmin, canManageBrand } = useAuth();
@@ -122,9 +122,20 @@ export const AdminCategoriesPage: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="primary" onClick={() => setIsModalOpen(true)} icon={<Plus className="w-4 h-4" />}>
-          Add Category
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/admin/services?tab=solutions"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="Manage Solution Requirements in Quotation Form"
+          >
+            <Sliders className="w-4 h-4 text-indigo-600" />
+            <span>Solution Requirements</span>
+          </Link>
+
+          <Button variant="primary" onClick={() => setIsModalOpen(true)} icon={<Plus className="w-4 h-4" />}>
+            Add Category
+          </Button>
+        </div>
       </div>
 
       {/* Corporate Super Admin Workspace Context Link */}

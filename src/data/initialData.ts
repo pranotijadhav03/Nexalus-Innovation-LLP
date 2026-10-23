@@ -14,7 +14,8 @@ import {
   SiteBanner,
   HeroSlide,
   SeoSettings,
-  TeamMember
+  TeamMember,
+  SolutionRequirement
 } from '../types';
 
 export const initialBrands: Brand[] = [
@@ -2505,6 +2506,86 @@ export const initialTeamMembers: TeamMember[] = [
     circleShadow: 'shadow-[0_10px_30px_rgba(96,165,250,0.45)]',
     circleHoverShadow: 'group-hover:shadow-[0_16px_40px_rgba(96,165,250,0.7)] group-hover:border-blue-300',
     badgeBg: 'bg-blue-600',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+export const initialSolutionRequirements: SolutionRequirement[] = [
+  {
+    id: 'sol-general',
+    label: 'Nexalus Innovations LLP (Turnkey Technology Solutions)',
+    value: 'general',
+    brandId: 'general',
+    description: 'Complete corporate enterprise technology, infrastructure and turnkey deployment',
+    order: 1,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sol-cctv',
+    label: 'Commercial CCTV Surveillance & Security Setup',
+    value: 'cctv',
+    brandId: 'nexalus-innovations',
+    description: 'High-definition AI IP CCTV surveillance, NVR security systems and remote cloud monitoring',
+    order: 2,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sol-fiber',
+    label: 'High-Speed Optical Fiber Internet',
+    value: 'fiber',
+    brandId: 'nexalus-innovations',
+    description: 'Dedicated gigabit fiber broadband, enterprise lease lines and high-capacity FTTH tariffs',
+    order: 3,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sol-networking',
+    label: 'Enterprise IT Networking & Server Infrastructure',
+    value: 'networking',
+    brandId: 'nexalus-innovations',
+    description: 'Structured Cat6/Fiber cabling, managed switches, router gateways and server rack commissioning',
+    order: 4,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sol-water',
+    label: 'Commercial Packaged Drinking Water Wholesale Supply (20L Cans & Cases)',
+    value: 'am-water',
+    brandId: 'am-distributors',
+    description: 'Depot wholesale pure drinking water in 20L returnable jars, 500ml and 1L packaged cases',
+    order: 5,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sol-icecream',
+    label: 'Cold-Chain Ice Cream Wholesale & Deep Freeze Logistics (-18°C)',
+    value: 'am-icecream',
+    brandId: 'am-distributors',
+    description: 'Sub-zero refrigerated delivery, party bulk tubs, impulse cones and commercial ice cream provisioning',
+    order: 6,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'sol-dairy',
+    label: 'Morning Pure Milk & Dairy Provisions Daily Delivery',
+    value: 'am-dairy',
+    brandId: 'am-distributors',
+    description: 'Daily fresh milk pouches, cream, paneer, butter and dairy provisions on 4:00 AM route dispatch',
+    order: 7,
+    published: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }

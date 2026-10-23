@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { Input, TextArea, Select } from './Input';
 import { Button } from './Button';
-import { submitEnquiry } from '../../firebase/services';
+import { submitEnquiry, getSolutionRequirements, getCachedSolutionRequirements } from '../../firebase/services';
 import { useToast } from '../../context/ToastContext';
 import { Send, CheckCircle2 } from 'lucide-react';
-import { BrandId } from '../../types';
+import { BrandId, SolutionRequirement } from '../../types';
 
 interface QuoteModalProps {
   isOpen: boolean;
@@ -31,12 +31,43 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState<string>(brandId);
+  const [selectedSolution, setSelectedSolution] = useState<string>('');
   const [location, setLocation] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [solutions, setSolutions] = useState<SolutionRequirement[]>(() =>
+    getCachedSolutionRequirements()
+  );
   const { success, error } = useToast();
+
+  useEffect(() => {
+    getSolutionRequirements(undefined, true).then(setSolutions);
+    const handleUpdate = () => {
+      getSolutionRequirements(undefined, true).then(setSolutions);
+    };
+    window.addEventListener('nexalus_data_update', handleUpdate);
+    return () => window.removeEventListener('nexalus_data_update', handleUpdate);
+  }, []);
+
+  // Filter solutions according to brand/website scope
+  const relevantSolutions = solutions.filter(s => {
+    if (!s.published) return false;
+    if (brandId === 'am-distributors') {
+      return s.brandId === 'am-distributors' || s.brandId === 'general' || s.brandId === 'all';
+    }
+    if (brandId === 'nexalus-innovations' || brandId === 'cp-plus' || brandId === 'one-broadband' || brandId === 'itti-networking') {
+      return s.brandId === 'nexalus-innovations' || s.brandId === 'general' || s.brandId === 'all';
+    }
+    return true;
+  });
+
+  // Set default selection when solutions change
+  useEffect(() => {
+    if (relevantSolutions.length > 0 && !selectedSolution) {
+      setSelectedSolution(relevantSolutions[0].value || relevantSolutions[0].id);
+    }
+  }, [relevantSolutions, selectedSolution]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,11 +78,19 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      const selectedSolObj = solutions.find(
+        s => s.value === selectedSolution || s.id === selectedSolution || s.label === selectedSolution
+      );
+      const solutionLabel = selectedSolObj ? selectedSolObj.label : selectedSolution;
+      const effectiveBrandId = selectedSolObj?.brandId && selectedSolObj.brandId !== 'general' && selectedSolObj.brandId !== 'all'
+        ? selectedSolObj.brandId
+        : (brandId && brandId !== 'general' ? brandId : 'general');
+
       // Determine website info
       const effectiveWebsiteId = websiteId || (
-        selectedBrand === 'am-distributors'
+        effectiveBrandId === 'am-distributors'
           ? 'am-distributors'
-          : (selectedBrand === 'nexalus-innovations' || selectedBrand === 'cp-plus' || selectedBrand === 'one-broadband' || selectedBrand === 'itti-networking')
+          : (effectiveBrandId === 'nexalus-innovations' || effectiveBrandId === 'cp-plus' || effectiveBrandId === 'one-broadband' || effectiveBrandId === 'itti-networking')
           ? 'nexalus-innovations'
           : 'corporate'
       );
@@ -70,14 +109,14 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
         customerName: name,
         phone,
         email,
-        brandId: selectedBrand as any,
+        brandId: effectiveBrandId as any,
         websiteId: effectiveWebsiteId,
         websiteName: effectiveWebsiteName,
         sourcePage: effectiveSource,
         enquiryType: itemType,
-        productOrServiceName: itemName,
+        productOrServiceName: itemName || solutionLabel,
         location: location || 'Not specified',
-        message: message || (itemName ? `Requesting official pricing and quotation for ${itemName}.` : 'General corporate inquiry.')
+        message: message ? `[Solution: ${solutionLabel}] ${message}` : (itemName ? `Requesting official pricing and quotation for ${itemName} (${solutionLabel}).` : `Solution Requirement: ${solutionLabel}`)
       });
 
       setIsSuccess(true);
@@ -172,14 +211,18 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
             />
             <Select
               label="Solution Requirement"
-              value={selectedBrand}
-              onChange={e => setSelectedBrand(e.target.value)}
-              options={[
-                { value: 'general', label: 'Nexalus Innovations LLP (Turnkey Technology Solutions)' },
-                { value: 'cctv', label: 'Commercial CCTV Surveillance & Security Setup' },
-                { value: 'fiber', label: 'High-Speed Optical Fiber Internet' },
-                { value: 'networking', label: 'Enterprise IT Networking & Server Infrastructure' }
-              ]}
+              value={selectedSolution}
+              onChange={e => setSelectedSolution(e.target.value)}
+              options={
+                relevantSolutions.length > 0
+                  ? relevantSolutions.map(s => ({
+                      value: s.value || s.id,
+                      label: s.label
+                    }))
+                  : [
+                      { value: 'general', label: 'Nexalus Innovations LLP (Turnkey Technology Solutions)' }
+                    ]
+              }
             />
           </div>
 
