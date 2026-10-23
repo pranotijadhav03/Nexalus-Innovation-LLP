@@ -95,6 +95,14 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
     } catch {}
     setFormError(null);
     onClose();
+    // If visitor is currently on account/login/register screen, redirect to homepage so they can continue browsing
+    if (
+      window.location.pathname.startsWith('/account') ||
+      window.location.pathname.startsWith('/login') ||
+      window.location.pathname.startsWith('/register')
+    ) {
+      navigate('/');
+    }
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {

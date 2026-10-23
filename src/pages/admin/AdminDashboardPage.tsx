@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { AdminOutletContext } from '../../components/admin/AdminLayout';
+import { AdminOutletContext, AdminConsoleMode } from '../../components/admin/AdminLayout';
 import { StatCard } from '../../components/admin/StatCard';
 import {
   Package,
@@ -55,7 +55,11 @@ import { Product, InternetPlan, Service, Enquiry, AuditLog, TeamMember, PlanOrde
 export const AdminDashboardPage: React.FC = () => {
   const { currentUser, isSuperAdmin } = useAuth();
   const outletCtx = useOutletContext<AdminOutletContext>();
-  const activeConsole = outletCtx?.activeConsole || 'master';
+  const [searchParams] = useSearchParams();
+  const consoleParam = searchParams.get('console');
+  const activeConsole: AdminConsoleMode = (consoleParam === 'am-distributors' || consoleParam === 'nexalus-innovations' || consoleParam === 'master')
+    ? (consoleParam as AdminConsoleMode)
+    : (outletCtx?.activeConsole || 'master');
   const setActiveConsole = outletCtx?.setActiveConsole || (() => {});
   const returnToMaster = outletCtx?.returnToMaster || (() => {});
 

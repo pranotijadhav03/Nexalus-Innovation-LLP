@@ -29,48 +29,28 @@ export const AdminLayout: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Determine initial console based on role & search params
-  const getInitialConsole = (): AdminConsoleMode => {
-    if (isInnovationsAdmin) return 'nexalus-innovations';
-    if (isAmAdmin) return 'am-distributors';
-
-    const paramConsole = searchParams.get('console');
-    if (paramConsole === 'nexalus-innovations' || paramConsole === 'am-distributors' || paramConsole === 'master') {
-      return paramConsole as AdminConsoleMode;
-    }
-    const saved = sessionStorage.getItem(CONSOLE_STORAGE_KEY) as AdminConsoleMode;
-    if (saved && (saved === 'master' || saved === 'nexalus-innovations' || saved === 'am-distributors')) {
-      return saved;
-    }
-    return 'master';
-  };
-
-  const [activeConsole, setActiveConsoleState] = useState<AdminConsoleMode>(getInitialConsole);
   const location = useLocation();
 
-  // Guarantee child admins always stay strictly locked to their company workspace
-  useEffect(() => {
-    if (isInnovationsAdmin && activeConsole !== 'nexalus-innovations') {
-      setActiveConsoleState('nexalus-innovations');
-      sessionStorage.setItem(CONSOLE_STORAGE_KEY, 'nexalus-innovations');
-    } else if (isAmAdmin && activeConsole !== 'am-distributors') {
-      setActiveConsoleState('am-distributors');
-      sessionStorage.setItem(CONSOLE_STORAGE_KEY, 'am-distributors');
-    }
-  }, [isInnovationsAdmin, isAmAdmin, activeConsole]);
+  // Synchronously compute effective console on EVERY render directly from URL, role, or session
+  const paramConsole = searchParams.get('console');
+  const savedConsole = typeof window !== 'undefined'
+    ? (sessionStorage.getItem(CONSOLE_STORAGE_KEY) as AdminConsoleMode)
+    : null;
 
-  // Sync state if searchParams change
+  const effectiveConsole: AdminConsoleMode = isInnovationsAdmin
+    ? 'nexalus-innovations'
+    : isAmAdmin
+    ? 'am-distributors'
+    : (paramConsole === 'nexalus-innovations' || paramConsole === 'am-distributors' || paramConsole === 'master')
+    ? (paramConsole as AdminConsoleMode)
+    : (savedConsole === 'nexalus-innovations' || savedConsole === 'am-distributors' || savedConsole === 'master')
+    ? savedConsole
+    : 'master';
+
+  // Synchronize sessionStorage whenever effective console changes
   useEffect(() => {
-    const paramConsole = searchParams.get('console');
-    if (paramConsole && (paramConsole === 'master' || paramConsole === 'nexalus-innovations' || paramConsole === 'am-distributors')) {
-      if (paramConsole !== activeConsole) {
-        if (isSuperAdmin || (paramConsole === 'nexalus-innovations' && isInnovationsAdmin) || (paramConsole === 'am-distributors' && isAmAdmin)) {
-          setActiveConsoleState(paramConsole as AdminConsoleMode);
-          sessionStorage.setItem(CONSOLE_STORAGE_KEY, paramConsole);
-        }
-      }
-    }
-  }, [searchParams, isSuperAdmin, isInnovationsAdmin, isAmAdmin, activeConsole]);
+    sessionStorage.setItem(CONSOLE_STORAGE_KEY, effectiveConsole);
+  }, [effectiveConsole]);
 
   const setActiveConsole = (mode: AdminConsoleMode) => {
     if (!isSuperAdmin) {
@@ -78,7 +58,6 @@ export const AdminLayout: React.FC = () => {
       if (isAmAdmin && mode !== 'am-distributors') return;
     }
 
-    setActiveConsoleState(mode);
     sessionStorage.setItem(CONSOLE_STORAGE_KEY, mode);
 
     const currentParams = new URLSearchParams(searchParams);
@@ -115,13 +94,6 @@ export const AdminLayout: React.FC = () => {
   if (!currentUser && (!isAuthenticated || isCustomer)) {
     return <Navigate to="/admin/login" replace />;
   }
-
-  // Guaranteed effective console: child admins are locked to their company workspace
-  const effectiveConsole: AdminConsoleMode = isInnovationsAdmin
-    ? 'nexalus-innovations'
-    : isAmAdmin
-    ? 'am-distributors'
-    : activeConsole;
 
   // Active brand filter for products/services/enquiries
   let activeBrandFilter: BrandId | 'corporate' | 'all' = 'corporate';
@@ -178,7 +150,10 @@ export const AdminLayout: React.FC = () => {
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main
+          key={`${location.pathname}?console=${effectiveConsole}`}
+          className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto"
+        >
           <Outlet context={outletContext} />
         </main>
       </div>
