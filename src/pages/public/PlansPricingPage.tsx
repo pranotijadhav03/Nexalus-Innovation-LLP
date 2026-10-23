@@ -375,20 +375,6 @@ export const PlansPricingPage: React.FC = () => {
               <span>One Broadband (FTTH)</span>
             </button>
           </div>
-
-          {/* Cart Header Button */}
-          <button
-            type="button"
-            onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-all cursor-pointer shadow-xs ml-auto"
-            title="View Broadband Cart"
-          >
-            <ShoppingCart className="w-4 h-4 text-orange-400" />
-            <span className="hidden sm:inline">Plan Cart</span>
-            <span className="bg-orange-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded-full">
-              {cartItems.length}
-            </span>
-          </button>
         </div>
 
         {/* Provider Overview Banner */}
