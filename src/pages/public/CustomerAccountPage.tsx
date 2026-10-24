@@ -89,10 +89,12 @@ export const CustomerAccountPage: React.FC = () => {
     }
   }, [location.pathname]);
 
-  // Redirect Admin / Staff Users to the Admin Panel Console immediately
+  // Redirect Admin / Staff to Admin Console, and Customers to Homepage (Profile is in Navbar)
   useEffect(() => {
     if (isAuthenticated && !isCustomer) {
       navigate('/admin', { replace: true });
+    } else if (isAuthenticated && isCustomer) {
+      navigate('/', { replace: true });
     }
   }, [isAuthenticated, isCustomer, navigate]);
 
@@ -195,7 +197,7 @@ export const CustomerAccountPage: React.FC = () => {
         if ((res as any)?.user?.role && (res as any).user.role !== 'customer') {
           navigate('/admin', { replace: true });
         } else {
-          navigate('/account', { replace: true });
+          navigate('/', { replace: true });
         }
       } else {
         setLoginError(res.error || 'Invalid email or password.');

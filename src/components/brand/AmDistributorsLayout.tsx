@@ -27,13 +27,13 @@ import { FloatingWhatsAppButton } from '../common/FloatingWhatsAppButton';
 import { FloatingCallButton } from '../common/FloatingCallButton';
 import { CustomerChoiceModal } from '../common/CustomerChoiceModal';
 import { useAuth } from '../../context/AuthContext';
-import { User, UserCheck } from 'lucide-react';
+import { User, UserCheck, LogOut } from 'lucide-react';
 
 export const AmDistributorsLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const { isAuthenticated, isCustomer } = useAuth();
+  const { isAuthenticated, isCustomer, currentUser, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -156,14 +156,25 @@ export const AmDistributorsLayout: React.FC = () => {
           {/* Right Header Action Button: Customer Portal + Quote */}
           <div className="hidden sm:flex items-center gap-2 xl:gap-2.5 shrink-0">
             {isAuthenticated && isCustomer ? (
-              <Link
-                to="/account"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs xl:text-sm font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all shadow-xs shrink-0 whitespace-nowrap"
-                title="My Customer Account"
-              >
-                <UserCheck className="w-4 h-4 text-emerald-600" />
-                <span>My Account</span>
-              </Link>
+              <div className="inline-flex items-center gap-2 pl-1.5 pr-2 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900 shadow-2xs">
+                <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center">
+                  {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
+                </div>
+                <span className="text-xs font-bold text-slate-800 max-w-[100px] truncate">
+                  {currentUser?.displayName || 'Customer'}
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    navigate('/');
+                  }}
+                  className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ) : (
               <button
                 type="button"

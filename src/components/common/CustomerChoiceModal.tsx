@@ -142,11 +142,14 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
       navigate('/admin');
     } else {
       const currentPath = window.location.pathname;
-      if (currentPath === '/' || currentPath === '/plans' || currentPath.startsWith('/brand')) {
-        // Stay on current page so user can continue shopping
-      } else {
-        navigate('/account');
+      if (
+        currentPath.startsWith('/login') ||
+        currentPath.startsWith('/register') ||
+        currentPath.startsWith('/account')
+      ) {
+        navigate('/');
       }
+      // Otherwise stay on current page so customer can continue browsing seamlessly
     }
   };
 

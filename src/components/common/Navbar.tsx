@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Menu,
   X,
@@ -9,10 +9,15 @@ import {
   ShoppingCart,
   ShieldCheck,
   Truck,
-  ArrowRight
+  ArrowRight,
+  LogOut,
+  MapPin,
+  Phone,
+  Mail
 } from 'lucide-react';
 import { Button } from './Button';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { User, UserCheck } from 'lucide-react';
 import { QuoteModal } from './QuoteModal';
 import { PlanCartModal } from './PlanCartModal';
@@ -23,7 +28,11 @@ export const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const location = useLocation();
-  const { isAuthenticated, isCustomer } = useAuth();
+  const navigate = useNavigate();
+  const { currentUser, logout, isAuthenticated, isCustomer } = useAuth();
+  const { success } = useToast();
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [cartCount, setCartCount] = useState<number>(() => {
     try {
       return getPlanCart().length;
@@ -60,6 +69,30 @@ export const Navbar: React.FC = () => {
       window.removeEventListener('open_plan_order_direct', handleDirectOrder);
     };
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    if (isProfileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileDropdownOpen]);
+
+  const handleSignOut = async () => {
+    setIsProfileDropdownOpen(false);
+    setIsMobileMenuOpen(false);
+    await logout();
+    success('Signed Out', 'You have been logged out successfully.');
+    if (location.pathname.startsWith('/account')) {
+      navigate('/');
+    }
+  };
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -232,31 +265,54 @@ export const Navbar: React.FC = () => {
                 )}
               </button>
 
-              {/* Customer Portal Action - Always visible on home page */}
+              {/* Customer Profile & Portal Action */}
               {isAuthenticated && isCustomer ? (
-                <Link
-                  to="/account"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors shadow-xs"
-                  title="My Customer Account"
-                >
-                  <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-                  <span>My Account</span>
-                </Link>
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-950 via-[#0b1739] to-slate-900 text-white border border-slate-800 shadow-md space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm border border-white/20">
+                      {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-white truncate">
+                          {currentUser?.displayName || 'Customer'}
+                        </span>
+                        <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          Verified
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 truncate mt-0.5">
+                        {currentUser?.email}
+                      </p>
+                      {currentUser?.phone && (
+                        <p className="text-[10px] text-slate-300 truncate">
+                          {currentUser?.phone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full py-2 px-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs flex items-center justify-center gap-2 border border-rose-500/40 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => {
+                    setIsMobileMenuOpen(false);
                     window.dispatchEvent(new CustomEvent('open_customer_portal', { detail: { view: 'choice' } }));
                   }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-blue-700 bg-slate-100 hover:bg-blue-50 border border-slate-200 rounded-xl transition-colors cursor-pointer"
-                  title="Customer Portal Registration & Login"
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 cursor-pointer"
                 >
-                  <User className="w-3.5 h-3.5 text-slate-500" />
+                  <User className="w-4 h-4 text-blue-600" />
                   <span>Customer Portal</span>
                 </button>
               )}
-
-
 
               <Button
                 variant="primary"
