@@ -8,7 +8,8 @@ import {
   ShoppingBag,
   ArrowRight,
   Wifi,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import {
   getPlanCart,
@@ -118,8 +119,8 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
       } catch {}
 
       info(
-        'Account Required',
-        'Please register or sign in to complete your broadband order.'
+        'Registration & Login Required',
+        'Direct Buy Now is not permitted. Please register and log in first to purchase this plan.'
       );
 
       window.dispatchEvent(
@@ -127,7 +128,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
           detail: {
             view: 'choice',
             context: 'cart_checkout',
-            prompt: `Please register a new customer account, or log in if you already have an account, to book ${item.providerName} - ${item.planName}.`
+            prompt: `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to purchase ${item.providerName} - ${item.planName}. Once logged in, Buy Now is activated immediately.`
           }
         })
       );
@@ -256,15 +257,27 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleCheckoutItem(item)}
-                      className="py-2 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-orange-500 via-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-orange-500/20 hover:shadow-orange-500/30 transition-all group/btn"
-                      title="Proceed to Buy this Plan"
-                    >
-                      <span>Buy Now</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
-                    </button>
+                    {isAuthenticated ? (
+                      <button
+                        type="button"
+                        onClick={() => handleCheckoutItem(item)}
+                        className="py-2 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-orange-500 via-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-orange-500/20 hover:shadow-orange-500/30 transition-all group/btn"
+                        title="Proceed to Buy this Plan"
+                      >
+                        <span>Buy Now</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleCheckoutItem(item)}
+                        className="py-2 px-3.5 sm:px-4 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-slate-900/20 transition-all group/btn"
+                        title="Register and log in first to Buy Now"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Login to Buy</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"

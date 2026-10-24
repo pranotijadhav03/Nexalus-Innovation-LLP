@@ -25,7 +25,8 @@ import {
   Clock,
   PhoneCall,
   ShoppingCart,
-  Trash2
+  Trash2,
+  Lock
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { OurTeamSection } from '../../components/common/OurTeamSection';
@@ -163,13 +164,13 @@ export const HomePage: React.FC = () => {
       try {
         sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
       } catch {}
-      info('Registration / Login Required', 'Please register or log in first to buy this plan.');
+      info('Registration & Login Required', 'Direct Buy Now is not permitted. Please register your account and log in first to purchase this plan.');
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Please register a new customer account, or log in if you already have an account, to buy ${plan.providerName} - ${plan.planName} (${plan.speed}).`
+            prompt: `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to buy ${plan.providerName} - ${plan.planName} (${plan.speed}). Once logged in, Buy Now is activated immediately.`
           }
         })
       );
@@ -1241,26 +1242,50 @@ export const HomePage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const first = cartItems[0];
-                      if (!first) return;
-                      handleBuyNow({
-                        planId: first.planId,
-                        planName: first.planName,
-                        providerName: first.providerName,
-                        speed: first.speed,
-                        price: first.price,
-                        billingPeriod: first.billingPeriod,
-                        brandId: first.brandId
-                      });
-                    }}
-                    className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all transform hover:scale-102 cursor-pointer"
-                  >
-                    <Zap className="w-4 h-4 fill-current" />
-                    <span>Proceed to Order (Buy Now)</span>
-                  </button>
+                  {isAuthenticated ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const first = cartItems[0];
+                        if (!first) return;
+                        handleBuyNow({
+                          planId: first.planId,
+                          planName: first.planName,
+                          providerName: first.providerName,
+                          speed: first.speed,
+                          price: first.price,
+                          billingPeriod: first.billingPeriod,
+                          brandId: first.brandId
+                        });
+                      }}
+                      className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all transform hover:scale-102 cursor-pointer"
+                    >
+                      <Zap className="w-4 h-4 fill-current" />
+                      <span>Proceed to Order (Buy Now)</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const first = cartItems[0];
+                        if (!first) return;
+                        handleBuyNow({
+                          planId: first.planId,
+                          planName: first.planName,
+                          providerName: first.providerName,
+                          speed: first.speed,
+                          price: first.price,
+                          billingPeriod: first.billingPeriod,
+                          brandId: first.brandId
+                        });
+                      }}
+                      className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all transform hover:scale-102 cursor-pointer"
+                      title="Register and log in first to Buy Now"
+                    >
+                      <Lock className="w-4 h-4 text-amber-400" />
+                      <span>Login to Buy</span>
+                    </button>
+                  )}
                   <Link
                     to="/plans"
                     className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-colors whitespace-nowrap"
@@ -1408,24 +1433,46 @@ export const HomePage: React.FC = () => {
                         <span>Add to Cart</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleBuyNow({
-                            planId: plan.id,
-                            providerName: 'One Broadband',
-                            planName: plan.name,
-                            speed: plan.speed,
-                            price: plan.price,
-                            billingPeriod: plan.billingPeriod || 'monthly',
-                            brandId: 'one-broadband'
-                          })
-                        }
-                        className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-teal-500/20 cursor-pointer"
-                      >
-                        <Zap className="w-3.5 h-3.5 fill-current" />
-                        <span>Buy Now</span>
-                      </button>
+                      {isAuthenticated ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleBuyNow({
+                              planId: plan.id,
+                              providerName: 'One Broadband',
+                              planName: plan.name,
+                              speed: plan.speed,
+                              price: plan.price,
+                              billingPeriod: plan.billingPeriod || 'monthly',
+                              brandId: 'one-broadband'
+                            })
+                          }
+                          className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-teal-500/20 cursor-pointer"
+                        >
+                          <Zap className="w-3.5 h-3.5 fill-current" />
+                          <span>Buy Now</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleBuyNow({
+                              planId: plan.id,
+                              providerName: 'One Broadband',
+                              planName: plan.name,
+                              speed: plan.speed,
+                              price: plan.price,
+                              billingPeriod: plan.billingPeriod || 'monthly',
+                              brandId: 'one-broadband'
+                            })
+                          }
+                          className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-slate-900/20 cursor-pointer"
+                          title="Register and log in first to Buy Now"
+                        >
+                          <Lock className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Login to Buy</span>
+                        </button>
+                      )}
                     </div>
 
                     <button
@@ -1566,24 +1613,46 @@ export const HomePage: React.FC = () => {
                             <span>Add to Cart</span>
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleBuyNow({
-                                planId: plan.id,
-                                providerName: plan.providerId === 'airtel' ? 'Airtel Xstream' : plan.providerId === 'bsnl' ? 'BSNL Bharat Fiber' : 'RailWire',
-                                planName: plan.name,
-                                speed: plan.speed,
-                                price: plan.price,
-                                billingPeriod: plan.billingPeriod || 'monthly',
-                                brandId: 'nexalus-innovations'
-                              })
-                            }
-                            className={`py-2.5 px-3 rounded-xl ${providerTheme.btn} text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer`}
-                          >
-                            <Zap className="w-3.5 h-3.5 fill-current" />
-                            <span>Buy Now</span>
-                          </button>
+                          {isAuthenticated ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleBuyNow({
+                                  planId: plan.id,
+                                  providerName: plan.providerId === 'airtel' ? 'Airtel Xstream' : plan.providerId === 'bsnl' ? 'BSNL Bharat Fiber' : 'RailWire',
+                                  planName: plan.name,
+                                  speed: plan.speed,
+                                  price: plan.price,
+                                  billingPeriod: plan.billingPeriod || 'monthly',
+                                  brandId: 'nexalus-innovations'
+                                })
+                              }
+                              className={`py-2.5 px-3 rounded-xl ${providerTheme.btn} text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer`}
+                            >
+                              <Zap className="w-3.5 h-3.5 fill-current" />
+                              <span>Buy Now</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleBuyNow({
+                                  planId: plan.id,
+                                  providerName: plan.providerId === 'airtel' ? 'Airtel Xstream' : plan.providerId === 'bsnl' ? 'BSNL Bharat Fiber' : 'RailWire',
+                                  planName: plan.name,
+                                  speed: plan.speed,
+                                  price: plan.price,
+                                  billingPeriod: plan.billingPeriod || 'monthly',
+                                  brandId: 'nexalus-innovations'
+                                })
+                              }
+                              className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-slate-900/20 cursor-pointer"
+                              title="Register and log in first to Buy Now"
+                            >
+                              <Lock className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Login to Buy</span>
+                            </button>
+                          )}
                         </div>
 
                         <button

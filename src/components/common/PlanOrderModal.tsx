@@ -99,13 +99,14 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
     e.preventDefault();
 
     if (!isAuthenticated) {
-      error('Login Required', 'Please register or log in first to submit your broadband order.');
+      error('Registration & Login Required', 'Direct plan Buy Now is not permitted. Please register and log in first.');
       onClose();
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
-            prompt: 'Please register your account, or log in if you already have an account, to complete your booking.'
+            context: 'buy_now',
+            prompt: `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to buy ${plan.providerName} - ${plan.planName} (${plan.speed}). Once logged in, Buy Now is activated immediately.`
           }
         })
       );
@@ -276,10 +277,10 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                 <span>Customer Account Required</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Please Register or Login to Buy
+                Registration &amp; Login Required to Buy
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                To proceed with ordering <strong>{plan.providerName} - {plan.planName} ({plan.speed})</strong>, you need to sign in. If you are a new customer, please register your verified customer profile.
+                Direct Buy Now without an account is restricted. To proceed with ordering <strong>{plan.providerName} - {plan.planName} ({plan.speed})</strong>, please register your verified customer profile and sign in.
               </p>
             </div>
 

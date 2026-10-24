@@ -66,6 +66,18 @@ export const PublicLayout: React.FC = () => {
   useEffect(() => {
     const handleDirectOrder = (e: any) => {
       if (e?.detail) {
+        if (!isAuthenticated) {
+          try {
+            sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(e.detail));
+          } catch {}
+          setModalView('choice');
+          setModalPrompt(
+            `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to purchase ${e.detail.providerName || ''} - ${e.detail.planName || ''} (${e.detail.speed || ''}). Once logged in, Buy Now will be ready immediately.`
+          );
+          setModalContext('buy_now');
+          setIsCustomerModalOpen(true);
+          return;
+        }
         setSelectedPlanForOrder(e.detail);
         setIsOrderModalOpen(true);
       }
@@ -74,7 +86,7 @@ export const PublicLayout: React.FC = () => {
     window.addEventListener('open_plan_order_direct', handleDirectOrder);
     return () => window.removeEventListener('open_plan_order_direct', handleDirectOrder);
     
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 relative">

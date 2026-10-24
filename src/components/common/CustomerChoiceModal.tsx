@@ -350,6 +350,32 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
             </div>
           )}
 
+          {promptMessage && (
+            <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-300/80 shadow-xs flex items-start gap-3.5 text-xs animate-in fade-in">
+              <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                <Lock className="w-4 h-4" />
+              </div>
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-[10px] uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
+                    Registration &amp; Login Mandatory
+                  </span>
+                </div>
+                <div className="font-bold text-slate-900 text-xs sm:text-sm leading-snug">
+                  {promptMessage}
+                </div>
+                <div className="text-[11px] text-amber-950 font-semibold bg-white/80 p-2.5 rounded-xl border border-amber-200/60 space-y-1">
+                  <div className="text-amber-800 font-bold">
+                    Direct plan &apos;Buy Now&apos; is restricted:
+                  </div>
+                  <div>
+                    Step 1: Register customer profile ➔ Step 2: Sign in with password ➔ Step 3: Instant Buy Now checkout is unlocked immediately.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* VIEW 1: CHOICE STATE (Are you a new or existing customer?) */}
           {view === 'choice' && (
             <div className="space-y-6">
@@ -401,7 +427,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                         <UserPlus className="w-6 h-6" />
                       </div>
                       <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                        First Time
+                        {authContext === 'buy_now' ? 'Step 1: First Register' : 'First Time'}
                       </span>
                     </div>
 
@@ -451,7 +477,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                         <LogIn className="w-6 h-6" />
                       </div>
                       <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-slate-200 text-slate-800 border border-slate-300">
-                        Returning
+                        {authContext === 'buy_now' ? 'Step 2: Log In to Buy' : 'Returning'}
                       </span>
                     </div>
 
@@ -508,7 +534,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     New Customer Registration
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Create your account with your service address for fast broadband provisioning.
+                    {authContext === 'buy_now' ? 'Step 1 of 2: Register your account profile. After registering, you will log in to complete Buy Now.' : 'Create your account with your service address for fast broadband provisioning.'}
                   </p>
                 </div>
                 <button
@@ -786,7 +812,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                   </h4>
                   <p className="text-xs text-slate-500">
                     {authContext === 'buy_now'
-                      ? 'Please log in with your password to complete your Buy Now plan order.'
+                      ? 'Step 2 of 2: Log in with your password. Upon logging in, your Buy Now checkout modal will open immediately.'
                       : 'Sign in with your registered email and password to access your account.'}
                   </p>
                 </div>
