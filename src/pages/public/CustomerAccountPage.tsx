@@ -90,14 +90,12 @@ export const CustomerAccountPage: React.FC = () => {
     }
   }, [location.pathname]);
 
-  // Redirect Admin / Staff to Admin Console, and Customers to Homepage (Profile is in Navbar)
+  // Redirect authenticated customers on portal directly to Homepage
   useEffect(() => {
-    if (isAuthenticated && !isCustomer) {
-      navigate('/admin', { replace: true });
-    } else if (isAuthenticated && isCustomer) {
+    if (isAuthenticated) {
       navigate('/', { replace: true });
     }
-  }, [isAuthenticated, isCustomer, navigate]);
+  }, [isAuthenticated, navigate]);
 
   // Login Form State
   const [loginEmail, setLoginEmail] = useState('');
@@ -195,11 +193,7 @@ export const CustomerAccountPage: React.FC = () => {
       const res = await loginCustomer(emailClean, loginPassword);
       if (res.success) {
         success('Welcome Back!', 'You are now signed in.');
-        if ((res as any)?.user?.role && (res as any).user.role !== 'customer') {
-          navigate('/admin', { replace: true });
-        } else {
-          navigate('/', { replace: true });
-        }
+        navigate('/', { replace: true });
       } else {
         setLoginError(res.error || 'Invalid email or password.');
       }

@@ -41,8 +41,12 @@ export const AdminLoginPage: React.FC = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && isAdmin && !isCustomer && currentUser?.role !== 'customer') {
-      navigate('/admin', { replace: true });
+    if (isAuthenticated) {
+      if (isAdmin && !isCustomer && currentUser?.role !== 'customer') {
+        navigate('/admin', { replace: true });
+      } else if (isCustomer || currentUser?.role === 'customer') {
+        navigate('/', { replace: true });
+      }
     }
   }, [isAuthenticated, isAdmin, isCustomer, currentUser, navigate]);
 

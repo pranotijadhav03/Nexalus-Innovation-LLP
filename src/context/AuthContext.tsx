@@ -180,11 +180,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         inferredRole = 'super_admin';
         inferredBrand = 'all';
         inferredName = 'Nexalus Corporate Master Admin';
-      } else if (cleanEmail === 'admin@innovations.com' || cleanEmail.includes('innovations')) {
+      } else if (cleanEmail === 'admin@innovations.com' || cleanEmail === 'innovations.admin@nexalusinnovations.com' || cleanEmail === 'innovations@nexalus.com') {
         inferredRole = 'innovations_admin';
         inferredBrand = 'nexalus-innovations';
         inferredName = 'Nexalus Innovations Admin';
-      } else if (cleanEmail === 'admin@amdistributors.com' || cleanEmail === 'admin@am.com' || cleanEmail.includes('amdistributors') || cleanEmail.includes('am.admin')) {
+      } else if (cleanEmail === 'admin@amdistributors.com' || cleanEmail === 'am.admin@nexalusinnovations.com' || cleanEmail === 'am@nexalus.com') {
         inferredRole = 'am_admin';
         inferredBrand = 'am-distributors';
         inferredName = 'A.M. Distributors Admin';
@@ -529,7 +529,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isCustomer = currentUser?.role === 'customer';
-  const isAdmin = currentUser != null && currentUser.role !== 'customer';
+  const isAdmin = currentUser != null && VALID_ADMIN_ROLES.includes(currentUser.role);
   const isSuperAdmin = currentUser?.role === 'super_admin';
   const isInnovationsAdmin =
     currentUser?.role === 'innovations_admin' ||

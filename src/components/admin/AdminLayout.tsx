@@ -93,8 +93,13 @@ export const AdminLayout: React.FC = () => {
     );
   }
 
-  // Strictly restrict Admin Layout to verified administrators only (customers are never allowed)
-  if (!isAuthenticated || !isAdmin || isCustomer || !currentUser || currentUser.role === 'customer') {
+  // Customers are never allowed in Admin Layout; redirect them to homepage
+  if (isAuthenticated && (isCustomer || currentUser?.role === 'customer')) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Strictly restrict Admin Layout to verified administrators only
+  if (!isAuthenticated || !isAdmin || !currentUser || currentUser.role === 'customer') {
     return <Navigate to="/admin/login" replace />;
   }
 

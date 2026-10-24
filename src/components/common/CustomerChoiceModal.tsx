@@ -141,19 +141,15 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
       return;
     }
 
-    if (userData?.role && userData.role !== 'customer') {
-      navigate('/admin');
-    } else {
-      const currentPath = window.location.pathname;
-      if (
-        currentPath.startsWith('/login') ||
-        currentPath.startsWith('/register') ||
-        currentPath.startsWith('/account')
-      ) {
-        navigate('/');
-      }
-      // Otherwise stay on current page so customer can continue browsing seamlessly
+    const currentPath = window.location.pathname;
+    if (
+      currentPath.startsWith('/login') ||
+      currentPath.startsWith('/register') ||
+      currentPath.startsWith('/account')
+    ) {
+      navigate('/');
     }
+    // Otherwise stay on current page so customer can continue browsing seamlessly
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
