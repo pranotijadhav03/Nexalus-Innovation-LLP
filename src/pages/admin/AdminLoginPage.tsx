@@ -14,6 +14,7 @@ import {
   Activity,
   AlertCircle
 } from 'lucide-react';
+import { triggerSystemPushNotification, getEmailProviderUrl, getEmailProviderName } from '../../utils/notificationHelpers';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LOCKOUT_THRESHOLD = 5;
@@ -150,8 +151,25 @@ export const AdminLoginPage: React.FC = () => {
     }
     setIsSubmitting(true);
     try {
-      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
-      success('Reset Email Sent', `Password reset instructions sent to ${email.trim()}. Check your inbox.`);
+      const cleanEmail = email.trim().toLowerCase();
+      await sendPasswordResetEmail(auth, cleanEmail);
+
+      triggerSystemPushNotification('Nexalus Administrator Password Reset', {
+        body: `Password reset instructions sent to ${cleanEmail}. Click to open your inbox.`,
+        icon: '/favicon.ico'
+      });
+
+      success(
+        'Reset Notification Dispatched',
+        `Password reset instructions sent to ${cleanEmail}. Check your inbox and spam folder.`,
+        {
+          duration: 10000,
+          action: {
+            label: getEmailProviderName(cleanEmail),
+            url: getEmailProviderUrl(cleanEmail)
+          }
+        }
+      );
       setFormError(null);
     } catch (err: any) {
       setFormError('Unable to send reset email. Please ensure the email address is correct.');

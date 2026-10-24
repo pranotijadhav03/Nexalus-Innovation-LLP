@@ -34,9 +34,11 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
-  ArrowRight
+  ArrowRight,
+  Bell
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
+import { triggerSystemPushNotification, getEmailProviderUrl, getEmailProviderName } from '../../utils/notificationHelpers';
 
 const MAHARASHTRA_CITIES = [
   'Chiplun',
@@ -310,7 +312,27 @@ export const CustomerAccountPage: React.FC = () => {
       // Dispatch password reset link via Firebase Authentication
       await sendPasswordResetEmail(auth, emailClean);
       setResetSent(true);
-      success('Email Dispatched', `Password reset instructions sent to ${emailClean}. Please also check your Spam/Junk folder.`);
+
+      // Trigger native browser notification
+      triggerSystemPushNotification('Nexalus Innovations - Password Reset', {
+        body: `Password reset instructions sent to ${emailClean}. Click to open your email inbox or check spam.`,
+        icon: '/favicon.ico'
+      });
+
+      const mailUrl = getEmailProviderUrl(emailClean);
+      const mailLabel = getEmailProviderName(emailClean);
+
+      success(
+        'Password Reset Notification Dispatched',
+        `Instructions sent to ${emailClean}. Check your inbox and spam folder to reset immediately.`,
+        {
+          duration: 10000,
+          action: {
+            label: mailLabel,
+            url: mailUrl
+          }
+        }
+      );
     } catch (err: any) {
       console.error('Password reset dispatch error:', err);
       let msg = 'Could not dispatch password reset email. Please try again.';
@@ -487,6 +509,38 @@ export const CustomerAccountPage: React.FC = () => {
           </div>
 
           <div className="p-6 sm:p-8">
+            {resetSent && (
+              <div className="mb-5 p-4 bg-gradient-to-r from-blue-50 via-indigo-50/80 to-emerald-50 border-2 border-blue-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-800 shadow-md shadow-blue-900/5 animate-in slide-in-from-top-2">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                    <Bell className="w-4 h-4 animate-bounce" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                      <h4 className="font-black text-slate-900 text-xs sm:text-sm">
+                        Password Reset Notification Sent
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                      Sent to <strong className="text-slate-900 font-bold">{resetEmail}</strong>. Check your inbox &amp; spam folder to set your new password.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <a
+                    href={getEmailProviderUrl(resetEmail)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all transform hover:-translate-y-0.5 cursor-pointer"
+                  >
+                    <span>{getEmailProviderName(resetEmail)}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* ======================================================== */}
             {/* VIEW 1: SIGN IN FORM */}
             {/* ======================================================== */}
@@ -952,6 +1006,15 @@ export const CustomerAccountPage: React.FC = () => {
                     </div>
 
                     <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                      <a
+                        href={getEmailProviderUrl(resetEmail)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-blue-600/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>{getEmailProviderName(resetEmail)}</span>
+                      </a>
                       <Button
                         type="button"
                         variant="primary"

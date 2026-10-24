@@ -1,21 +1,35 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, AlertTriangle, X, ExternalLink } from 'lucide-react';
+import { playNotificationChime } from '../utils/notificationHelpers';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+export interface ToastAction {
+  label: string;
+  onClick?: () => void;
+  url?: string;
+}
+
+export interface ToastOptions {
+  duration?: number;
+  action?: ToastAction;
+  playSound?: boolean;
+}
 
 export interface Toast {
   id: string;
   type: ToastType;
   title: string;
   message?: string;
+  action?: ToastAction;
 }
 
 interface ToastContextType {
-  showToast: (type: ToastType, title: string, message?: string) => void;
-  success: (title: string, message?: string) => void;
-  error: (title: string, message?: string) => void;
-  info: (title: string, message?: string) => void;
-  warning: (title: string, message?: string) => void;
+  showToast: (type: ToastType, title: string, message?: string, options?: ToastOptions) => void;
+  success: (title: string, message?: string, options?: ToastOptions) => void;
+  error: (title: string, message?: string, options?: ToastOptions) => void;
+  info: (title: string, message?: string, options?: ToastOptions) => void;
+  warning: (title: string, message?: string, options?: ToastOptions) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -27,50 +41,120 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const showToast = useCallback((type: ToastType, title: string, message?: string) => {
+  const showToast = useCallback((type: ToastType, title: string, message?: string, options?: ToastOptions) => {
     const id = 'toast-' + Date.now() + Math.random().toString(36).substring(2, 5);
-    setToasts(prev => [...prev, { id, type, title, message }]);
+    setToasts(prev => [...prev, { id, type, title, message, action: options?.action }]);
+
+    if (options?.playSound !== false) {
+      playNotificationChime();
+    }
+
+    const duration = options?.duration ?? (options?.action ? 8000 : 4500);
     setTimeout(() => {
       removeToast(id);
-    }, 4500);
+    }, duration);
   }, [removeToast]);
 
-  const success = useCallback((title: string, message?: string) => showToast('success', title, message), [showToast]);
-  const error = useCallback((title: string, message?: string) => showToast('error', title, message), [showToast]);
-  const info = useCallback((title: string, message?: string) => showToast('info', title, message), [showToast]);
-  const warning = useCallback((title: string, message?: string) => showToast('warning', title, message), [showToast]);
+  const success = useCallback(
+    (title: string, message?: string, options?: ToastOptions) => showToast('success', title, message, options),
+    [showToast]
+  );
+  const error = useCallback(
+    (title: string, message?: string, options?: ToastOptions) => showToast('error', title, message, options),
+    [showToast]
+  );
+  const info = useCallback(
+    (title: string, message?: string, options?: ToastOptions) => showToast('info', title, message, options),
+    [showToast]
+  );
+  const warning = useCallback(
+    (title: string, message?: string, options?: ToastOptions) => showToast('warning', title, message, options),
+    [showToast]
+  );
 
   return (
     <ToastContext.Provider value={{ showToast, success, error, info, warning }}>
       {children}
-      {/* Toast Notification Container */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md w-full px-4 pointer-events-none">
+      {/* Heads-up Top Notification Container (Highest z-index: z-[10000]) */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] flex flex-col items-center gap-2.5 max-w-lg w-[95%] sm:w-full px-2 pointer-events-none">
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-300 animate-in slide-in-from-bottom-2 ${
+            className={`pointer-events-auto w-full flex items-start gap-3 p-4 rounded-2xl shadow-2xl border backdrop-blur-xl transition-all duration-300 animate-in slide-in-from-top-4 ${
               toast.type === 'success'
-                ? 'bg-emerald-50/95 border-emerald-200 text-emerald-900'
+                ? 'bg-white/98 border-emerald-300 text-emerald-950 shadow-emerald-900/15'
                 : toast.type === 'error'
-                ? 'bg-rose-50/95 border-rose-200 text-rose-900'
+                ? 'bg-white/98 border-rose-300 text-rose-950 shadow-rose-900/15'
                 : toast.type === 'warning'
-                ? 'bg-amber-50/95 border-amber-200 text-amber-900'
-                : 'bg-blue-50/95 border-blue-200 text-blue-900'
+                ? 'bg-white/98 border-amber-300 text-amber-950 shadow-amber-900/15'
+                : 'bg-white/98 border-blue-300 text-blue-950 shadow-blue-900/15'
             }`}
           >
             <div className="shrink-0 mt-0.5">
-              {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-              {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-600" />}
-              {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-600" />}
-              {toast.type === 'info' && <Info className="w-5 h-5 text-blue-600" />}
+              {toast.type === 'success' && (
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              )}
+              {toast.type === 'error' && (
+                <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shadow-xs">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+              )}
+              {toast.type === 'warning' && (
+                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shadow-xs">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+              )}
+              {toast.type === 'info' && (
+                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shadow-xs">
+                  <Info className="w-4 h-4" />
+                </div>
+              )}
             </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-sm leading-snug">{toast.title}</h4>
-              {toast.message && <p className="text-xs mt-1 text-slate-600 opacity-90 leading-relaxed">{toast.message}</p>}
+            <div className="flex-1 min-w-0 pt-0.5">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Notification
+                </span>
+              </div>
+              <h4 className="font-bold text-sm leading-snug text-slate-900">{toast.title}</h4>
+              {toast.message && (
+                <p className="text-xs mt-1 text-slate-600 leading-relaxed font-medium">
+                  {toast.message}
+                </p>
+              )}
+              {toast.action && (
+                <div className="mt-2.5 flex items-center gap-2">
+                  {toast.action.url ? (
+                    <a
+                      href={toast.action.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                    >
+                      <span>{toast.action.label}</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toast.action?.onClick?.();
+                        removeToast(toast.id);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                    >
+                      {toast.action.label}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
+              className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors p-1"
             >
               <X className="w-4 h-4" />
             </button>
