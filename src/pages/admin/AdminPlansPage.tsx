@@ -56,7 +56,7 @@ import {
 type ActiveTab = 'airtel' | 'bsnl' | 'railwire' | 'one-broadband' | 'orders';
 
 export const AdminPlansPage: React.FC = () => {
-  const { isAmAdmin, isSuperAdmin } = useAuth();
+  const { isAmAdmin, isSuperAdmin, isInnovationsAdmin } = useAuth();
   const outletCtx = useOutletContext<AdminOutletContext>();
   const activeConsole = outletCtx?.activeConsole || 'master';
   const { success, error } = useToast();
@@ -176,7 +176,7 @@ export const AdminPlansPage: React.FC = () => {
   }, [activeTab]);
 
   // Access check: Child company admins cannot manage corporate broadband plans
-  if (!isSuperAdmin) {
+  if (!isSuperAdmin && !isInnovationsAdmin) {
     return (
       <div className="p-8 bg-white rounded-3xl border border-rose-200 text-center max-w-lg mx-auto space-y-4 shadow-sm my-12 animate-in fade-in duration-150">
         <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
@@ -184,7 +184,7 @@ export const AdminPlansPage: React.FC = () => {
         </div>
         <h2 className="text-xl font-black text-slate-900 tracking-tight">Access Restricted</h2>
         <p className="text-xs text-slate-600 leading-relaxed">
-          Broadband Plans &amp; Pricing belong exclusively to the Corporate Master management panel. Subsidiary workspaces manage their respective operational catalogs only.
+          Broadband Plans &amp; Pricing belong exclusively to the Corporate Master &amp; Nexalus Innovations management panel. Subsidiary workspaces manage their respective operational catalogs only.
         </p>
       </div>
     );

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   X,
-  ShoppingCart,
   Zap,
   CheckCircle2,
   MapPin,
@@ -13,13 +12,13 @@ import {
   User,
   ShieldCheck,
   Loader2,
-  Clock,
-  Sparkles,
-  PhoneCall,
   Lock,
   UserPlus,
   LogIn,
-  AlertCircle
+  AlertCircle,
+  Wifi,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -170,23 +169,24 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
       <div
-        className="relative bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all my-auto"
+        className="relative bg-white w-full max-w-xl rounded-[28px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200/90 overflow-hidden transform transition-all my-auto"
         onClick={e => e.stopPropagation()}
       >
-        {/* Top Header */}
-        <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950 px-6 py-5 text-white flex items-center justify-between border-b border-blue-900/40 relative">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-500" />
+        {/* Top Luxury Header */}
+        <div className="bg-gradient-to-r from-slate-950 via-[#0a1633] to-slate-950 px-6 py-5 text-white flex items-center justify-between border-b border-blue-900/40 relative">
+          <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500" />
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-400/30 flex items-center justify-center">
-              <Zap className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 flex items-center justify-center shadow-inner">
+              <Zap className="w-5 h-5 text-cyan-300" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-teal-300">
-                Official Broadband Provisioning
+              <div className="text-[10px] font-black uppercase tracking-widest text-cyan-400 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Official Broadband Provisioning</span>
               </div>
-              <h3 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight">
+              <h3 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight mt-0.5">
                 {completedOrder ? 'Order Confirmed' : 'Instant Plan Booking & Checkout'}
               </h3>
             </div>
@@ -194,7 +194,8 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+            title="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -208,7 +209,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
             </div>
 
             <div className="space-y-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
+              <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                 Booking ID: {completedOrder.id}
               </span>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -220,13 +221,13 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
             </div>
 
             {/* Summary Box */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2.5">
               <div className="flex justify-between border-b border-slate-200/80 pb-2 font-bold text-slate-900">
                 <span>Selected Plan:</span>
-                <span className="text-teal-700">{completedOrder.providerName} - {completedOrder.planName} ({completedOrder.speed})</span>
+                <span className="text-blue-700">{completedOrder.providerName} - {completedOrder.planName} ({completedOrder.speed})</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Monthly Tariff:</span>
+                <span>Tariff:</span>
                 <span className="font-extrabold text-slate-900">₹{completedOrder.price} / {completedOrder.billingPeriod}</span>
               </div>
               <div className="flex justify-between text-slate-600">
@@ -248,7 +249,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                 href={`https://wa.me/919158886444?text=Hello%20Nexalus,%20I%20just%20placed%20Broadband%20Plan%20Order%20${completedOrder.id}%20for%20${encodeURIComponent(completedOrder.planName)}.%20Please%20confirm%20my%20installation.`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
               >
                 <span>Track on WhatsApp</span>
               </a>
@@ -280,7 +281,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                 To proceed with ordering <strong>{plan.providerName} - {plan.planName} ({plan.speed})</strong>, you need to sign in. If you are a new customer, please register your verified customer profile.
               </p>
-              </div>
+            </div>
 
             {/* Plan preview */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-1.5 max-w-md mx-auto">
@@ -289,7 +290,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                 <span className="text-blue-700">{plan.providerName} - {plan.planName}</span>
               </div>
               <div className="flex justify-between items-center text-slate-600">
-                <span>Speed &amp; Tariff:</span>
+                <span>Speed & Tariff:</span>
                 <span className="font-extrabold text-slate-900">{plan.speed} • ₹{plan.price}/{plan.billingPeriod || 'mo'}</span>
               </div>
             </div>
@@ -343,65 +344,69 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
             </div>
           </div>
         ) : (
-          /* ORDER CHECKOUT FORM */
-          <form onSubmit={handleSubmitOrder} noValidate className="p-6 sm:p-8 space-y-4">
-            {/* Plan Summary Card */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-200/80 flex items-center justify-between gap-4">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-md">
-                  {plan.providerName}
-                </span>
-                <h4 className="text-sm sm:text-base font-black text-slate-900 mt-1">
+          /* MODERN ORDER CHECKOUT FORM */
+          <form onSubmit={handleSubmitOrder} noValidate className="p-5 sm:p-7 space-y-4">
+            {/* Modern Telecom Hero Plan Summary Card */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-indigo-50/70 border border-blue-200/80 shadow-xs relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1 min-w-0">
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-blue-700 bg-white/90 border border-blue-200/90 px-2.5 py-1 rounded-full shadow-2xs">
+                  <Wifi className="w-3 h-3 text-blue-600" />
+                  <span>{plan.providerName}</span>
+                </div>
+                <h4 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
                   {plan.planName}
                 </h4>
-                <div className="text-xs font-extrabold text-teal-700 mt-0.5">
-                  {plan.speed} Symmetrical Fiber
+                <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-blue-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  <span>{plan.speed} Symmetrical Fiber</span>
                 </div>
               </div>
 
-              <div className="text-right shrink-0">
-                <div className="text-2xl font-black text-slate-900">
+              <div className="text-left sm:text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-blue-100/80 w-full sm:w-auto">
+                <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none">
                   ₹{typeof plan.price === 'number' ? plan.price.toLocaleString('en-IN') : plan.price}
                 </div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">
                   / {plan.billingPeriod || 'month'}
                 </div>
-                <div className="text-[10px] font-black text-emerald-700 mt-0.5">
-                  ✓ Free Standard Setup
+                <div className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 bg-emerald-100/70 border border-emerald-300/60 px-2 py-0.5 rounded-md mt-1.5">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span>Free Standard Setup</span>
                 </div>
               </div>
             </div>
 
-            {/* Customer Contact Details */}
+            {/* Customer Inputs */}
             <div className="space-y-3 pt-1">
+              {/* Row 1: Name and Phone */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Your Full Name <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       placeholder="e.g. Anand Shinde"
                       value={customerName}
                       onChange={e => setCustomerName(e.target.value)}
                       required
-                      className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-900 shadow-2xs"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                       Mobile / WhatsApp <span className="text-rose-500">*</span>
                     </label>
-                    <span className={`text-[10px] font-bold ${
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                       phone.length === 10
-                        ? 'text-emerald-600'
+                        ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
                         : phone.length > 0
-                        ? 'text-amber-600'
+                        ? 'text-amber-700 bg-amber-50 border border-amber-200'
                         : 'text-slate-400'
                     }`}>
                       {phone.length === 10
@@ -410,8 +415,8 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                     </span>
                   </div>
                   <div className="relative">
-                    <Phone className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 ${
-                      phone.length === 10 ? 'text-emerald-500' : 'text-slate-400'
+                    <Phone className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
+                      phone.length === 10 ? 'text-emerald-600' : 'text-slate-400'
                     }`} />
                     <input
                       type="tel"
@@ -427,110 +432,97 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                         }
                         setPhone(digits.slice(0, 10));
                       }}
-                      onKeyDown={e => {
-                        if (
-                          !/[0-9]/.test(e.key) &&
-                          !['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(e.key) &&
-                          !e.ctrlKey &&
-                          !e.metaKey
-                        ) {
-                          e.preventDefault();
-                        }
-                      }}
                       maxLength={10}
                       required
-                      className={`w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border rounded-xl focus:outline-none transition-colors ${
+                      className={`w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all font-medium text-slate-900 shadow-2xs ${
                         phone.length === 10
-                          ? 'border-emerald-500 bg-emerald-50/20 focus:border-emerald-600 focus:bg-white'
+                          ? 'border-emerald-500 bg-emerald-50/20 focus:ring-emerald-500/20 focus:border-emerald-600 focus:bg-white'
                           : phone.length > 0
-                          ? 'border-amber-400 bg-amber-50/20 focus:border-amber-500 focus:bg-white'
-                          : 'border-slate-200 focus:border-blue-600 focus:bg-white'
+                          ? 'border-amber-400 bg-amber-50/20 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white'
+                          : 'border-slate-200 bg-slate-50/90 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white'
                       }`}
                     />
                   </div>
-                  {phone.length > 0 && phone.length < 10 && (
-                    <p className="text-[10px] text-amber-600 font-medium mt-1">
-                      Must be exactly 10 digits ({10 - phone.length} more needed)
-                    </p>
-                  )}
                 </div>
               </div>
 
+              {/* Row 2: Email */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Email Address <span className="text-slate-400 font-normal lowercase">(optional)</span>
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     placeholder="name@example.com (optional)"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-900 shadow-2xs"
                   />
                 </div>
               </div>
 
-              {/* Installation Location */}
+              {/* Row 3: Installation Address */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Installation Address / Flat / Building <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     placeholder="e.g. Flat 402, Royal Palms, Chiplun MIDC Road"
                     value={address}
                     onChange={e => setAddress(e.target.value)}
                     required
-                    className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-900 shadow-2xs"
                   />
                 </div>
               </div>
 
+              {/* Row 4: City and PIN */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     City <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter city (e.g. Chiplun)"
+                    placeholder="Enter city (e.g. Sangli, Chiplun)"
                     value={city}
                     onChange={e => setCity(e.target.value)}
                     required
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-900 shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     PIN Code <span className="text-slate-400 font-normal lowercase">(optional)</span>
                   </label>
                   <input
                     type="text"
                     inputMode="numeric"
-                    placeholder="e.g. 415605"
+                    placeholder="e.g. 416416"
                     value={pincode}
                     onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     maxLength={6}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors font-mono"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-mono font-medium text-slate-900 shadow-2xs"
                   />
                 </div>
               </div>
 
-              {/* Slot & Payment Options */}
+              {/* Row 5: Slot & Payment Options */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Preferred Setup Slot
                   </label>
                   <select
                     value={preferredSlot}
                     onChange={e => setPreferredSlot(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors font-medium text-slate-700"
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-800 shadow-2xs cursor-pointer"
                   >
                     <option value="Immediate / Next Working Day">Immediate / Next Working Day</option>
                     <option value="Weekend Priority Installation">Weekend Priority Installation</option>
@@ -539,13 +531,13 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Payment Preference
                   </label>
                   <select
                     value={paymentMethod}
                     onChange={e => setPaymentMethod(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors font-medium text-slate-700"
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-800 shadow-2xs cursor-pointer"
                   >
                     <option value="pay_on_installation">Pay on Installation (Tested)</option>
                     <option value="online_upi">UPI / Online QR on Setup</option>
@@ -555,22 +547,30 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+            {/* Modern Footer Actions */}
+            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3.5">
               <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>Zero Advance Risk • Pay After Optical Feasibility</span>
               </div>
 
-              <Button
+              <button
                 type="submit"
-                variant="primary"
-                size="md"
-                isLoading={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 font-bold px-6 shadow-md shadow-blue-600/20"
-                icon={<Zap className="w-4 h-4 text-cyan-300" />}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto py-3 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-98 text-white font-black text-xs sm:text-sm shadow-md shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                Confirm &amp; Place Order
-              </Button>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Placing Order...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 text-cyan-300 fill-cyan-300/30" />
+                    <span>Confirm &amp; Place Order</span>
+                  </>
+                )}
+              </button>
             </div>
           </form>
         )}

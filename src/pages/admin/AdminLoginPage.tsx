@@ -35,16 +35,16 @@ export const AdminLoginPage: React.FC = () => {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutRemaining, setLockoutRemaining] = useState(0);
 
-  const { login, isAuthenticated, isCustomer } = useAuth();
+  const { login, isAuthenticated, isCustomer, isAdmin, currentUser } = useAuth();
   const { success } = useToast();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && !isCustomer) {
+    if (isAuthenticated && isAdmin && !isCustomer && currentUser?.role !== 'customer') {
       navigate('/admin', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isAdmin, isCustomer, currentUser, navigate]);
 
   // Set <meta name="robots" content="noindex,nofollow"> on mount and cleanup on unmount
   useEffect(() => {
@@ -344,6 +344,17 @@ export const AdminLoginPage: React.FC = () => {
               Enter your credentials to access the administrative console.
             </p>
           </div>
+
+          {/* Customer Session Notice */}
+          {isCustomer && currentUser && (
+            <div className="mb-5 p-3 rounded-xl bg-amber-50 border border-amber-200/90 flex items-start gap-2.5 text-amber-900 text-xs font-medium">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <span className="font-bold">Customer session active:</span>
+                <span className="ml-1 text-slate-700">You are currently signed in on the public website as {currentUser.displayName || currentUser.email}. Enter your administrator credentials below to access the Admin Console.</span>
+              </div>
+            </div>
+          )}
 
           {/* Accessible Error Alert (aria-live="polite") */}
           {formError && (

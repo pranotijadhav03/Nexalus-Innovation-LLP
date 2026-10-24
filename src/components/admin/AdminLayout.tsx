@@ -18,7 +18,7 @@ export interface AdminOutletContext {
 const CONSOLE_STORAGE_KEY = 'nexalus_admin_console_active';
 
 export const AdminLayout: React.FC = () => {
-  const { currentUser, isAuthenticated, isLoading, brandScope, isSuperAdmin, isInnovationsAdmin, isAmAdmin, isCustomer } = useAuth();
+  const { currentUser, isAuthenticated, isLoading, brandScope, isSuperAdmin, isInnovationsAdmin, isAmAdmin, isCustomer, isAdmin } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -93,7 +93,8 @@ export const AdminLayout: React.FC = () => {
     );
   }
 
-  if (!currentUser && (!isAuthenticated || isCustomer)) {
+  // Strictly restrict Admin Layout to verified administrators only (customers are never allowed)
+  if (!isAuthenticated || !isAdmin || isCustomer || !currentUser || currentUser.role === 'customer') {
     return <Navigate to="/admin/login" replace />;
   }
 
