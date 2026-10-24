@@ -8,9 +8,7 @@ import {
   ShoppingBag,
   ArrowRight,
   Wifi,
-  CheckCircle2,
-  Sparkles,
-  Lock
+  Sparkles
 } from 'lucide-react';
 import {
   getPlanCart,
@@ -35,6 +33,23 @@ export interface PlanCartModalProps {
     brandId?: any;
   }) => void;
 }
+
+const getProviderBadge = (providerName: string) => {
+  const p = (providerName || '').toLowerCase();
+  if (p.includes('airtel')) {
+    return 'bg-rose-50 text-rose-700 border-rose-200';
+  }
+  if (p.includes('bsnl')) {
+    return 'bg-sky-50 text-sky-700 border-sky-200';
+  }
+  if (p.includes('railwire')) {
+    return 'bg-amber-50 text-amber-800 border-amber-200';
+  }
+  if (p.includes('one')) {
+    return 'bg-teal-50 text-teal-700 border-teal-200';
+  }
+  return 'bg-blue-50 text-blue-700 border-blue-200';
+};
 
 export const PlanCartModal: React.FC<PlanCartModalProps> = ({
   isOpen,
@@ -103,8 +118,8 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
       } catch {}
 
       info(
-        'Registration / Login Required',
-        'Please register or log in first to complete your broadband booking.'
+        'Account Required',
+        'Please register or sign in to complete your broadband order.'
       );
 
       window.dispatchEvent(
@@ -138,30 +153,36 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm animate-fadeIn"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150"
+        className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200/90 overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
-        <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-400/30 text-orange-400 flex items-center justify-center shadow-inner">
+        {/* Modern Modal Header */}
+        <div className="relative px-6 py-5 bg-gradient-to-r from-slate-950 via-[#0b1739] to-slate-950 text-white flex items-center justify-between shrink-0 border-b border-slate-800">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-orange-500 via-amber-400 to-blue-500" />
+
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-400/30 text-orange-400 flex items-center justify-center shadow-inner shrink-0">
               <ShoppingCart className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
-                <span>Broadband Cart</span>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black text-white tracking-tight leading-tight">
+                  Broadband Cart
+                </h3>
                 {cartItems.length > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-orange-500 text-white text-[10px] font-black">
-                    {cartItems.length}
+                  <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black uppercase tracking-wider shadow-xs">
+                    {cartItems.length} {cartItems.length === 1 ? 'Plan' : 'Plans'}
                   </span>
                 )}
-              </h3>
-              <p className="text-xs text-slate-300 font-medium">
-                {cartItems.length} plan{cartItems.length !== 1 ? 's' : ''} saved for booking
+              </div>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">
+                {cartItems.length > 0
+                  ? 'Review selected fiber plans and proceed to checkout'
+                  : 'Your cart is currently empty'}
               </p>
             </div>
           </div>
@@ -169,24 +190,24 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer border border-transparent hover:border-slate-700/60"
             title="Close Cart"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 flex-1 overflow-y-auto space-y-3">
+        <div className="p-5 sm:p-6 flex-1 overflow-y-auto space-y-3 bg-slate-50/40">
           {cartItems.length === 0 ? (
-            <div className="p-10 text-center text-slate-500 space-y-3">
-              <div className="w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+            <div className="py-12 px-6 text-center text-slate-500 space-y-4">
+              <div className="w-16 h-16 rounded-3xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto shadow-inner border border-slate-200">
                 <ShoppingBag className="w-8 h-8 stroke-[1.5]" />
               </div>
-              <div className="space-y-1">
-                <p className="text-base font-bold text-slate-800">Your Broadband Cart is Empty</p>
+              <div className="space-y-1.5">
+                <p className="text-base font-bold text-slate-900">Your Broadband Cart is Empty</p>
                 <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-                  Explore high-speed optical fiber plans and click &ldquo;Add to Cart&rdquo; to review or book them here.
+                  Browse high-speed fiber broadband plans and click &ldquo;Add to Cart&rdquo; to save them here.
                 </p>
               </div>
               <div className="pt-2">
@@ -205,27 +226,32 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
               {cartItems.map((item) => (
                 <div
                   key={item.id}
-                  className="p-4 rounded-2xl bg-slate-50 hover:bg-blue-50/40 border border-slate-200 hover:border-blue-300 transition-all flex items-center justify-between gap-3 group"
+                  className="p-4 sm:p-4.5 rounded-2xl bg-white hover:bg-slate-50/70 border border-slate-200/90 hover:border-blue-400/80 shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-between gap-3 group"
                 >
-                  <div className="space-y-1 min-w-0 flex-1">
+                  <div className="space-y-1.5 min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 border border-blue-200">
+                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${getProviderBadge(item.providerName)}`}>
                         {item.providerName || 'Broadband'}
                       </span>
-                      <span className="text-xs font-bold text-slate-900 truncate">
+                      <span className="text-xs sm:text-sm font-black text-slate-900 truncate group-hover:text-blue-900 transition-colors">
                         {item.planName}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2.5 text-xs text-slate-600 pt-0.5">
-                      <span className="font-extrabold text-blue-700 flex items-center gap-1">
-                        <Wifi className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-2.5 text-xs text-slate-600">
+                      <span className="font-extrabold text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded-md border border-blue-200/50 flex items-center gap-1">
+                        <Wifi className="w-3 h-3 text-blue-600" />
                         {item.speed}
                       </span>
                       <span className="text-slate-300">•</span>
-                      <span className="font-black text-slate-900">
-                        ₹{Number(item.price).toLocaleString('en-IN')}/{item.billingPeriod || 'mo'}
-                      </span>
+                      <div className="flex items-baseline gap-0.5">
+                        <span className="font-black text-slate-900 text-sm">
+                          ₹{Number(item.price).toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-500 uppercase">
+                          /{item.billingPeriod || 'mo'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -233,17 +259,17 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
                     <button
                       type="button"
                       onClick={() => handleCheckoutItem(item)}
-                      className="py-2 px-3 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
-                      title="Proceed to Book this Plan"
+                      className="py-2 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-orange-500 via-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-orange-500/20 hover:shadow-orange-500/30 transition-all group/btn"
+                      title="Proceed to Buy this Plan"
                     >
-                      <Zap className="w-3.5 h-3.5 fill-current" />
-                      <span>Book Now</span>
+                      <span>Buy Now</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
                     </button>
 
                     <button
                       type="button"
                       onClick={() => removeFromPlanCart(item.id)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      className="p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200/60 transition-colors cursor-pointer"
                       title="Remove from Cart"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -255,35 +281,27 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
           )}
         </div>
 
-        {/* Modal Footer */}
+        {/* Modern Modal Footer */}
         {cartItems.length > 0 && (
-          <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
+          <div className="p-4 sm:p-5 bg-white border-t border-slate-200/80 flex items-center justify-between gap-3 shrink-0">
             <button
               type="button"
               onClick={clearPlanCart}
-              className="text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors cursor-pointer py-1 px-2"
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer flex items-center gap-1.5 group"
+              title="Clear all plans from cart"
             >
-              Clear Cart
+              <Trash2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-600 transition-colors" />
+              <span>Clear Cart</span>
             </button>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBrowsePlans}
-              >
-                Add More Plans
-              </Button>
-
-              <button
-                type="button"
-                onClick={() => handleCheckoutItem(cartItems[0])}
-                className="py-2 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-orange-500/20 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
-              >
-                <Zap className="w-3.5 h-3.5 fill-current" />
-                <span>Book First Plan</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleBrowsePlans}
+              className="py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Add More Plans</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
+            </button>
           </div>
         )}
       </div>

@@ -875,7 +875,7 @@ export const PlansPricingPage: React.FC = () => {
                         className="py-1.5 px-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <Zap className="w-3 h-3 fill-current" />
-                        <span>Checkout</span>
+                        <span>Buy Now</span>
                       </button>
                       <button
                         type="button"
