@@ -324,27 +324,6 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
             </div>
           )}
 
-          {promptMessage && (
-            <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 text-amber-950 flex items-start gap-3.5 shadow-sm animate-in fade-in">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                <AlertCircle className="w-5 h-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300">
-                    Registration / Login Required
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm font-bold text-slate-900 mt-1.5 leading-snug">
-                  {promptMessage}
-                </p>
-                <p className="text-[11px] font-semibold text-amber-800 mt-1 leading-relaxed">
-                  लॉगिन नसेल तर लॉगिन करा, किंवा नवीन ग्राहक असल्यास आधी रजिस्टर (Register) करा.
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* VIEW 1: CHOICE STATE (Are you a new or existing customer?) */}
           {view === 'choice' && (
             <div className="space-y-6">
