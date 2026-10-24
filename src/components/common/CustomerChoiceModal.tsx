@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../../firebase/config';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -270,15 +271,33 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      // 1. Verify if an account with this email exists in Firestore to prevent silent failures
+      if (db) {
+        try {
+          const userQuery = query(collection(db, 'users'), where('email', '==', emailClean));
+          const snapshot = await getDocs(userQuery);
+          if (snapshot.empty) {
+            setFormError(`No customer account found with email "${emailClean}". Please check your email address or create a new account.`);
+            setIsSubmitting(false);
+            return;
+          }
+        } catch (queryErr) {
+          console.warn('Could not pre-verify customer email:', queryErr);
+        }
+      }
+
+      // 2. Dispatch password reset link
       await sendPasswordResetEmail(auth, emailClean);
       setResetSent(true);
       success('Email Dispatched', `Password reset instructions sent to ${emailClean}`);
     } catch (err: any) {
       let msg = 'Could not dispatch password reset email.';
       if (err.code === 'auth/user-not-found') {
-        msg = 'No account found with this email address.';
+        msg = 'No customer account found with this email address.';
       } else if (err.code === 'auth/invalid-email') {
         msg = 'The email address is invalid.';
+      } else if (err.code === 'auth/too-many-requests') {
+        msg = 'Too many requests. Please wait a few moments before requesting another reset email.';
       }
       setFormError(msg);
     } finally {
@@ -912,6 +931,9 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     </h5>
                     <p className="text-xs text-slate-600 leading-relaxed max-w-md mx-auto">
                       A password reset link has been dispatched to <strong className="text-slate-900">{resetEmail}</strong>.
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      If not found in your Inbox, please check your Gmail Spam or Junk folder.
                     </p>
                   </div>
 

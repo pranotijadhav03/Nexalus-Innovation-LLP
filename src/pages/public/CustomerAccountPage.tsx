@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../../firebase/config';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { updateCustomerProfile, getCustomerEnquiries } from '../../firebase/services';
@@ -294,6 +295,22 @@ export const CustomerAccountPage: React.FC = () => {
 
     setIsSendingReset(true);
     try {
+      // 1. Verify if an account with this email exists in Firestore to prevent silent failures
+      if (db) {
+        try {
+          const userQuery = query(collection(db, 'users'), where('email', '==', emailClean));
+          const snapshot = await getDocs(userQuery);
+          if (snapshot.empty) {
+            setResetError(`No customer account found with email "${emailClean}". Please check your email address or create a new account.`);
+            setIsSendingReset(false);
+            return;
+          }
+        } catch (queryErr) {
+          console.warn('Could not pre-verify customer email:', queryErr);
+        }
+      }
+
+      // 2. Dispatch password reset link
       await sendPasswordResetEmail(auth, emailClean);
       setResetSent(true);
       success('Email Dispatched', `Password reset instructions sent to ${emailClean}`);
@@ -303,6 +320,8 @@ export const CustomerAccountPage: React.FC = () => {
         msg = 'No customer account found with this email address.';
       } else if (err.code === 'auth/invalid-email') {
         msg = 'The email address is invalid.';
+      } else if (err.code === 'auth/too-many-requests') {
+        msg = 'Too many requests. Please wait a few moments before requesting another reset email.';
       }
       setResetError(msg);
     } finally {
