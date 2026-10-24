@@ -1492,7 +1492,8 @@ export const HomePage: React.FC = () => {
             ) : (
               // Multi-Provider (Airtel, BSNL, RailWire) Plans Preview
               (() => {
-                const currentPlans = homeBroadbandPlans
+                const pool = homeBroadbandPlans.length > 0 ? homeBroadbandPlans : getCachedBroadbandPlans();
+                const currentPlans = pool
                   .filter(p => p.providerId === homeProviderTab)
                   .slice(0, 3);
 

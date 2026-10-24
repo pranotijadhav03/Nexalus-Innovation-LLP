@@ -9,7 +9,10 @@ import {
   addToPlanCart,
   getPlanCart,
   removeFromPlanCart,
-  clearPlanCart
+  clearPlanCart,
+  getCachedBroadbandProviders,
+  getCachedBroadbandPlans,
+  getCachedInternetPlans
 } from '../../firebase/services';
 import {
   BroadbandPlan,
@@ -63,10 +66,10 @@ export const PlansPricingPage: React.FC = () => {
   const { success, info } = useToast();
   const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<ProviderTab>('airtel');
-  const [providers, setProviders] = useState<BroadbandProvider[]>([]);
-  const [broadbandPlans, setBroadbandPlans] = useState<BroadbandPlan[]>([]);
-  const [oneBroadbandPlans, setOneBroadbandPlans] = useState<InternetPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [providers, setProviders] = useState<BroadbandProvider[]>(() => getCachedBroadbandProviders());
+  const [broadbandPlans, setBroadbandPlans] = useState<BroadbandPlan[]>(() => getCachedBroadbandPlans());
+  const [oneBroadbandPlans, setOneBroadbandPlans] = useState<InternetPlan[]>(() => getCachedInternetPlans());
+  const [isLoading, setIsLoading] = useState(false);
 
   // Cart State
   const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => getPlanCart());

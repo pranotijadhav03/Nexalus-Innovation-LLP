@@ -153,6 +153,16 @@ export interface BroadbandPlan {
   displayOrder: number; // For ordering within provider or public listings
   popular?: boolean;
   featured?: boolean;
+  companyScope?: string;
+  offerDescription?: string;
+  offerHeadline?: string;
+  installationCharge?: number | string;
+  category?: string;
+  categoryLabel?: string;
+  providerName?: string;
+  isUnlimited?: boolean;
+  notes?: string;
+  ottTokens?: string[] | number;
   createdAt: string;
   updatedAt: string;
 }

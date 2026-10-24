@@ -2607,6 +2607,9 @@ export function subscribeToBroadbandPlans(
           }
           return (a.speedNumeric ?? 0) - (b.speedNumeric ?? 0);
         });
+        if (!options?.city && !options?.providerId) {
+          setLocalItem(STORAGE_KEYS.BROADBAND_PLANS, results);
+        }
         callback(results);
       }, (err) => {
         console.warn('Firestore onSnapshot error, falling back to local updates:', err);

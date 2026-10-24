@@ -113,16 +113,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
 
       {/* Right Controls: User Profile Dropdown with Consoles & Live Websites */}
       <div className="flex items-center gap-2 sm:gap-4">
-        {isSuperAdmin && activeConsole !== 'master' && (
-          <button
-            type="button"
-            onClick={() => handleConsoleSelect('master')}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
-            title="Return to Corporate Master Admin Panel"
-          >
-            <span>← Master Console</span>
-          </button>
-        )}
+
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"

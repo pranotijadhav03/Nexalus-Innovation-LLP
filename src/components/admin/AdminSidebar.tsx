@@ -42,9 +42,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const { isSuperAdmin, isAmAdmin, isInnovationsAdmin, currentUser } = useAuth();
   const location = useLocation();
 
-  // Child admins with strict company credentials (not Super Admin)
-  const isStrictAmOnly = isAmAdmin && !isSuperAdmin;
-  const isStrictInnovationsOnly = isInnovationsAdmin && !isSuperAdmin;
+  const isAmConsole = activeConsole === 'am-distributors' || isAmAdmin;
+  const isInnovationsConsole = activeConsole === 'nexalus-innovations' || isInnovationsAdmin;
+  const isStrictAmOnly = isAmConsole;
 
   return (
     <>
@@ -64,18 +64,34 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         {/* Brand Header */}
         <div className="p-4 sm:p-5 border-b border-slate-100 space-y-3 bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-cyan-500 shadow-blue-500/20 flex items-center justify-center text-white shadow-md shrink-0">
-              <Layers className="w-5 h-5 text-white" />
+            <div className={`w-10 h-10 rounded-xl ${
+              isAmConsole
+                ? 'bg-gradient-to-tr from-teal-600 via-emerald-600 to-cyan-500 shadow-teal-500/20'
+                : isInnovationsConsole
+                ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 shadow-cyan-500/20'
+                : 'bg-gradient-to-tr from-blue-700 via-indigo-600 to-cyan-500 shadow-blue-500/20'
+            } flex items-center justify-center text-white shadow-md shrink-0`}>
+              {isAmConsole ? (
+                <Building className="w-5 h-5 text-white" />
+              ) : isInnovationsConsole ? (
+                <Shield className="w-5 h-5 text-white" />
+              ) : (
+                <Layers className="w-5 h-5 text-white" />
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-black text-slate-900 tracking-tight leading-tight truncate">
-                NEXALUS INNOVATIONS LLP
+                {isAmConsole
+                  ? 'A.M. DISTRIBUTORS'
+                  : isInnovationsConsole
+                  ? 'NEXALUS INNOVATIONS'
+                  : 'NEXALUS INNOVATIONS LLP'}
               </h2>
               <p className="text-[10px] font-bold text-slate-500 tracking-wider uppercase truncate">
-                {isStrictAmOnly
-                  ? 'A.M. Distributors Depot Panel'
-                  : isStrictInnovationsOnly
-                  ? 'Nexalus Innovations Panel'
+                {isAmConsole
+                  ? 'Chiplun Depot Admin Console'
+                  : isInnovationsConsole
+                  ? 'Tech & Security Panel'
                   : 'Corporate Administration'}
               </p>
             </div>
@@ -88,23 +104,23 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </span>
           </div>
 
-          {/* Quick Console Indicator / Switcher for Super Admin */}
+          {/* Console Switcher for Super Admin */}
           {isSuperAdmin && activeConsole !== 'master' && (
-            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-2">
+            <div className="p-2.5 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[9px] font-black text-amber-900 uppercase tracking-wider">
-                  Active Filter Mode
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-wider">
+                  Active Console
                 </p>
-                <p className="text-xs font-bold text-amber-800 truncate">
-                  {activeConsole === 'nexalus-innovations' ? 'Nexalus Tech' : 'A.M. Distributors'}
+                <p className="text-xs font-bold text-slate-800 truncate">
+                  {isAmConsole ? 'A.M. Distributors Depot' : 'Nexalus Tech'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => onConsoleChange?.('master')}
-                className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black shrink-0 transition-colors cursor-pointer shadow-xs"
+                className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-[10px] font-bold shrink-0 transition-colors cursor-pointer shadow-2xs"
               >
-                Reset to All
+                Exit to Master
               </button>
             </div>
           )}
@@ -251,20 +267,22 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 Services Portfolio
               </NavLink>
 
-              <NavLink
-                to="/admin/services?tab=solutions"
-                onClick={onClose}
-                className={() =>
-                  `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                    location.pathname === '/admin/services' && location.search.includes('tab=solutions')
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`
-                }
-              >
-                <Sliders className="w-4 h-4" />
-                Solution Requirements
-              </NavLink>
+              {!isAmConsole && (
+                <NavLink
+                  to="/admin/services?tab=solutions"
+                  onClick={onClose}
+                  className={() =>
+                    `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                      location.pathname === '/admin/services' && location.search.includes('tab=solutions')
+                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  <Sliders className="w-4 h-4" />
+                  Solution Requirements
+                </NavLink>
+              )}
 
               <NavLink
                 to="/admin/service-areas"
@@ -377,7 +395,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
 
           {/* 5. System Administration (Super Admin) */}
-          {isSuperAdmin && (
+          {isSuperAdmin && !isAmConsole && (
             <div>
               <div className="px-3 text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
                 System Governance
