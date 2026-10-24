@@ -366,7 +366,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
 
       let errorMessage = 'Invalid email or password. Please verify your credentials and try again.';
-      if (err.code === 'auth/user-disabled') {
+      if (err.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password. Please verify your password and try again.';
+      } else if (err.code === 'auth/user-not-found') {
+        errorMessage = 'No administrator account found with this email address.';
+      } else if (err.code === 'auth/invalid-credential') {
+        const userExists = getCachedUsers().some(u => u.email.toLowerCase() === trimmedEmail);
+        if (userExists) {
+          errorMessage = 'Incorrect password. Please verify your password and try again.';
+        } else {
+          errorMessage = 'Invalid email or password. Please verify your credentials and try again.';
+        }
+      } else if (err.code === 'auth/user-disabled') {
         errorMessage = 'This administrator account has been deactivated. Please contact a super administrator.';
       } else if (err.code === 'auth/too-many-requests') {
         errorMessage = 'Too many failed login attempts. Access is temporarily locked. Please wait a few minutes before retrying.';
@@ -453,12 +464,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
 
       let errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-      if (err.code === 'auth/user-disabled') {
+      if (err.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password. Please verify your password and try again, or use "Forgot password?" below.';
+      } else if (err.code === 'auth/user-not-found') {
+        errorMessage = 'No customer account found with this email. Please check your email or create a new account.';
+      } else if (err.code === 'auth/invalid-credential') {
+        const userExists = getCachedUsers().some(u => u.email.toLowerCase() === trimmedEmail);
+        if (userExists) {
+          errorMessage = 'Incorrect password. Please verify your password and try again, or use "Forgot password?" below.';
+        } else {
+          errorMessage = 'Incorrect email or password. Please verify your credentials or register a new customer account.';
+        }
+      } else if (err.code === 'auth/user-disabled') {
         errorMessage = 'This account has been deactivated. Please contact customer support.';
-      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password. Please verify and try again.';
       } else if (err.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many attempts. Please wait a moment before trying again.';
+        errorMessage = 'Too many failed attempts. Access is temporarily restricted. Please wait a moment before trying again.';
       } else if (err.code === 'auth/network-request-failed') {
         errorMessage = 'Network error. Please check your internet connection.';
       }

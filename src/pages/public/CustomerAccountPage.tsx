@@ -307,33 +307,25 @@ export const CustomerAccountPage: React.FC = () => {
 
     setIsSendingReset(true);
     try {
-      // 1. Verify if an account with this email exists in Firestore to prevent silent failures
-      if (db) {
-        try {
-          const userQuery = query(collection(db, 'users'), where('email', '==', emailClean));
-          const snapshot = await getDocs(userQuery);
-          if (snapshot.empty) {
-            setResetError(`No customer account found with email "${emailClean}". Please check your email address or create a new account.`);
-            setIsSendingReset(false);
-            return;
-          }
-        } catch (queryErr) {
-          console.warn('Could not pre-verify customer email:', queryErr);
-        }
-      }
-
-      // 2. Dispatch password reset link
+      // Dispatch password reset link via Firebase Authentication
       await sendPasswordResetEmail(auth, emailClean);
       setResetSent(true);
-      success('Email Dispatched', `Password reset instructions sent to ${emailClean}`);
+      success('Email Dispatched', `Password reset instructions sent to ${emailClean}. Please also check your Spam/Junk folder.`);
     } catch (err: any) {
-      let msg = 'Could not dispatch password reset email.';
+      console.error('Password reset dispatch error:', err);
+      let msg = 'Could not dispatch password reset email. Please try again.';
       if (err.code === 'auth/user-not-found') {
-        msg = 'No customer account found with this email address.';
+        msg = 'No customer account found with this email address. Please check your spelling or register a new account.';
       } else if (err.code === 'auth/invalid-email') {
-        msg = 'The email address is invalid.';
+        msg = 'The email address format is invalid. Please check and try again.';
       } else if (err.code === 'auth/too-many-requests') {
-        msg = 'Too many requests. Please wait a few moments before requesting another reset email.';
+        msg = 'Too many requests sent. Please wait a few moments before requesting another reset email.';
+      } else if (err.code === 'auth/quota-exceeded') {
+        msg = 'Daily email limit reached. Please contact Nexalus customer support directly.';
+      } else if (err.code === 'auth/network-request-failed') {
+        msg = 'Network connection failed. Please check your internet connection.';
+      } else if (err.message) {
+        msg = err.message;
       }
       setResetError(msg);
     } finally {
@@ -925,21 +917,67 @@ export const CustomerAccountPage: React.FC = () => {
                 )}
 
                 {resetSent ? (
-                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-xs space-y-2">
-                    <div className="font-bold flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Password Reset Email Sent!</span>
+                  <div className="p-6 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-4 animate-in fade-in">
+                    <div className="text-center space-y-2">
+                      <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <h4 className="text-base font-bold text-slate-900">
+                        Password Reset Email Dispatched
+                      </h4>
+                      <p className="text-xs text-slate-600 max-w-md mx-auto">
+                        A secure password reset link has been dispatched to <strong className="text-slate-900 font-bold">{resetEmail}</strong>.
+                      </p>
                     </div>
-                    <p>
-                      Check your inbox at <strong>{resetEmail}</strong> and follow the link to set a new password.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode('login')}
-                      className="text-xs font-black text-emerald-700 hover:underline pt-2 block"
-                    >
-                      Return to Sign In →
-                    </button>
+
+                    <div className="bg-white p-3.5 rounded-xl border border-emerald-200/80 space-y-2.5 text-xs text-slate-700">
+                      <div className="flex items-start gap-2.5">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-700 font-bold text-[10px] shrink-0 mt-0.5">1</span>
+                        <p>
+                          <strong className="text-slate-900">Check Spam / Junk Folder:</strong> Automated security emails from Firebase often land in Gmail <span className="font-semibold text-amber-700">Spam</span>, <span className="font-semibold text-amber-700">Promotions</span>, or Outlook <span className="font-semibold text-amber-700">Junk</span>.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] shrink-0 mt-0.5">2</span>
+                        <p>
+                          <strong className="text-slate-900">Click the Link to Set New Password:</strong> Open the email and follow the reset link to define and save your new password.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] shrink-0 mt-0.5">3</span>
+                        <p>
+                          <strong className="text-slate-900">Sign In with New Password:</strong> Once saved, return here and enter your newly chosen password. The system will only accept the new password.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="md"
+                        onClick={() => {
+                          setLoginEmail(resetEmail);
+                          setLoginPassword('');
+                          setResetSent(false);
+                          setAuthMode('login');
+                        }}
+                        className="w-full sm:w-auto font-bold shadow-md shadow-blue-600/20"
+                      >
+                        Return to Sign In
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="md"
+                        disabled={isSendingReset}
+                        onClick={handlePasswordResetSubmit}
+                        className="w-full sm:w-auto"
+                      >
+                        {isSendingReset ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+                        Resend Email
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <>
