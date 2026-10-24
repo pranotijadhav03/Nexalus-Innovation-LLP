@@ -41,7 +41,6 @@ const PRESET_TECH_SERVICES = [
   '4K CCTV Surveillance',
   'Optical Fiber Internet',
   'Enterprise Networking & Switching',
-  'Structured Cabling & Rack Setup',
   'Annual Maintenance Contract (AMC)'
 ];
 
@@ -139,7 +138,7 @@ export const AdminServiceAreasPage: React.FC = () => {
     let defaultBrand: ServiceArea['brandId'] = 'all';
     let defaultCity = 'Chiplun';
     let defaultPincode = '415605';
-    let defaultServices = [...PRESET_AM_SERVICES];
+    let defaultServices = [...PRESET_TECH_SERVICES];
 
     if (activeConsole === 'nexalus-innovations' || isInnovationsAdmin) {
       defaultBrand = 'nexalus';
@@ -639,7 +638,13 @@ export const AdminServiceAreasPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setBrandId('all')}
+                onClick={() => {
+                  setBrandId('all');
+                  setSelectedServices(prev => {
+                    const withoutAm = prev.filter(s => !PRESET_AM_SERVICES.includes(s));
+                    return withoutAm.length > 0 ? withoutAm : [...PRESET_TECH_SERVICES];
+                  });
+                }}
                 className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   brandId === 'all'
                     ? 'border-purple-600 bg-purple-50/70 text-purple-900 ring-2 ring-purple-600/20'
@@ -655,7 +660,13 @@ export const AdminServiceAreasPage: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setBrandId('nexalus')}
+                onClick={() => {
+                  setBrandId('nexalus');
+                  setSelectedServices(prev => {
+                    const withoutAm = prev.filter(s => !PRESET_AM_SERVICES.includes(s));
+                    return withoutAm.length > 0 ? withoutAm : [...PRESET_TECH_SERVICES];
+                  });
+                }}
                 className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   brandId === 'nexalus' || brandId === 'one-broadband'
                     ? 'border-blue-600 bg-blue-50/70 text-blue-900 ring-2 ring-blue-600/20'
@@ -671,7 +682,13 @@ export const AdminServiceAreasPage: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setBrandId('am-distributors')}
+                onClick={() => {
+                  setBrandId('am-distributors');
+                  setSelectedServices(prev => {
+                    const withoutTech = prev.filter(s => !PRESET_TECH_SERVICES.includes(s));
+                    return withoutTech.length > 0 ? withoutTech : [...PRESET_AM_SERVICES];
+                  });
+                }}
                 className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   brandId === 'am-distributors'
                     ? 'border-teal-600 bg-teal-50/70 text-teal-900 ring-2 ring-teal-600/20'
@@ -697,179 +714,191 @@ export const AdminServiceAreasPage: React.FC = () => {
               required
             />
             <Input
-              label="Areas Zone / Locality / Depot *"
-              placeholder="e.g. Chiplun MIDC & Industrial Cluster"
+              label="Area / Zone *"
+              placeholder="e.g. Chiplun MIDC & Industrial Area"
               value={locality}
               onChange={e => setLocality(e.target.value)}
               required
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Input
-              label="6-Digit PIN Code *"
-              placeholder="415605"
-              value={pincode}
-              onChange={e => setPincode(e.target.value)}
-              required
-            />
-            <Input
-              label="State *"
-              value={state}
-              onChange={e => setState(e.target.value)}
-              required
-            />
-            <Select
-              label="Operational Status *"
-              value={status}
-              onChange={e => setStatus(e.target.value as any)}
-              options={[
-                { value: 'fully_operational', label: 'Fully Operational (Active Dispatch)' },
-                { value: 'expanding_soon', label: 'Expanding Soon (Rolling Out)' },
-                { value: 'planned', label: 'Planned / Future Node' }
-              ]}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="6-Digit PIN Code *"
+                placeholder="415605"
+                value={pincode}
+                onChange={e => setPincode(e.target.value)}
+                required
+              />
+              <Input
+                label="State *"
+                value={state}
+                onChange={e => setState(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Select
+                label="Operational Status *"
+                value={status}
+                onChange={e => setStatus(e.target.value as any)}
+                options={[
+                  { value: 'fully_operational', label: 'Fully Operational (Active Dispatch)' },
+                  { value: 'expanding_soon', label: 'Expanding Soon (Rolling Out)' },
+                  { value: 'planned', label: 'Planned / Future Node' }
+                ]}
+              />
+            </div>
           </div>
 
           {/* Available Services in this Area / City */}
           <div className="space-y-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
             {/* Quick 1-Click Checkboxes with Sectional Add Inputs */}
             <div className="space-y-3">
-              {/* Nexalus Tech Section with Top Add Button */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-slate-200">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-                    Nexalus Innovations Tech Services
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                    {selectedServices.filter(s => PRESET_TECH_SERVICES.includes(s) || !PRESET_AM_SERVICES.includes(s)).length} Selected
-                  </span>
-                </div>
-                <div className="flex gap-1.5 sm:w-80">
-                  <input
-                    type="text"
-                    placeholder="Add custom tech service..."
-                    value={customTechInput}
-                    onChange={e => setCustomTechInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (customTechInput.trim() && !selectedServices.includes(customTechInput.trim())) {
-                          setSelectedServices(prev => [...prev, customTechInput.trim()]);
-                          setCustomTechInput('');
-                        }
-                      }
-                    }}
-                    className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (customTechInput.trim() && !selectedServices.includes(customTechInput.trim())) {
-                        setSelectedServices(prev => [...prev, customTechInput.trim()]);
-                        setCustomTechInput('');
-                      }
-                    }}
-                    icon={<Plus className="w-3.5 h-3.5" />}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {PRESET_TECH_SERVICES.map(svc => {
-                  const isChecked = selectedServices.includes(svc);
-                  return (
-                    <label
-                      key={svc}
-                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                        isChecked
-                          ? 'bg-blue-50/80 border-blue-400 text-blue-900 font-bold'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
+              {/* Nexalus Tech Section (Shown for All Divisions and Nexalus Innovations, NOT for A.M. Distributors) */}
+              {brandId !== 'am-distributors' && (
+                <div className="space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+                        Nexalus Innovations Tech Services
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        {selectedServices.filter(s => PRESET_TECH_SERVICES.includes(s) || !PRESET_AM_SERVICES.includes(s)).length} Selected
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5 sm:w-80">
                       <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => togglePresetService(svc)}
-                        className="rounded text-blue-600 focus:ring-blue-500"
+                        type="text"
+                        placeholder="Add custom tech service..."
+                        value={customTechInput}
+                        onChange={e => setCustomTechInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (customTechInput.trim() && !selectedServices.includes(customTechInput.trim())) {
+                              setSelectedServices(prev => [...prev, customTechInput.trim()]);
+                              setCustomTechInput('');
+                            }
+                          }
+                        }}
+                        className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       />
-                      <span>{svc}</span>
-                    </label>
-                  );
-                })}
-              </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (customTechInput.trim() && !selectedServices.includes(customTechInput.trim())) {
+                            setSelectedServices(prev => [...prev, customTechInput.trim()]);
+                            setCustomTechInput('');
+                          }
+                        }}
+                        icon={<Plus className="w-3.5 h-3.5" />}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
 
-              {/* A.M. Distributors Section with Top Add Button */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 pb-1.5 border-b border-slate-200">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
-                    A.M. Distributors Wholesale Logistics
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
-                    {selectedServices.filter(s => PRESET_AM_SERVICES.includes(s)).length} Selected
-                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {PRESET_TECH_SERVICES.map(svc => {
+                      const isChecked = selectedServices.includes(svc);
+                      return (
+                        <label
+                          key={svc}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                            isChecked
+                              ? 'bg-blue-50/80 border-blue-400 text-blue-900 font-bold'
+                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => togglePresetService(svc)}
+                            className="rounded text-blue-600 focus:ring-blue-500"
+                          />
+                          <span>{svc}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="flex gap-1.5 sm:w-80">
-                  <input
-                    type="text"
-                    placeholder="Add custom depot/logistics service..."
-                    value={customAmInput}
-                    onChange={e => setCustomAmInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (customAmInput.trim() && !selectedServices.includes(customAmInput.trim())) {
-                          setSelectedServices(prev => [...prev, customAmInput.trim()]);
-                          setCustomAmInput('');
-                        }
-                      }
-                    }}
-                    className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (customAmInput.trim() && !selectedServices.includes(customAmInput.trim())) {
-                        setSelectedServices(prev => [...prev, customAmInput.trim()]);
-                        setCustomAmInput('');
-                      }
-                    }}
-                    icon={<Plus className="w-3.5 h-3.5" />}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {PRESET_AM_SERVICES.map(svc => {
-                  const isChecked = selectedServices.includes(svc);
-                  return (
-                    <label
-                      key={svc}
-                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                        isChecked
-                          ? 'bg-teal-50/80 border-teal-400 text-teal-900 font-bold'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
+              {/* A.M. Distributors Section (STRICTLY ONLY shown when A.M. Distributors is selected) */}
+              {brandId === 'am-distributors' && (
+                <div className="space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+                        A.M. Distributors Wholesale Logistics
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                        {selectedServices.filter(s => PRESET_AM_SERVICES.includes(s)).length} Selected
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5 sm:w-80">
                       <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => togglePresetService(svc)}
-                        className="rounded text-teal-600 focus:ring-teal-500"
+                        type="text"
+                        placeholder="Add custom depot/logistics service..."
+                        value={customAmInput}
+                        onChange={e => setCustomAmInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (customAmInput.trim() && !selectedServices.includes(customAmInput.trim())) {
+                              setSelectedServices(prev => [...prev, customAmInput.trim()]);
+                              setCustomAmInput('');
+                            }
+                          }
+                        }}
+                        className="flex-1 px-2.5 py-1 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
                       />
-                      <span>{svc}</span>
-                    </label>
-                  );
-                })}
-              </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (customAmInput.trim() && !selectedServices.includes(customAmInput.trim())) {
+                            setSelectedServices(prev => [...prev, customAmInput.trim()]);
+                            setCustomAmInput('');
+                          }
+                        }}
+                        icon={<Plus className="w-3.5 h-3.5" />}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {PRESET_AM_SERVICES.map(svc => {
+                      const isChecked = selectedServices.includes(svc);
+                      return (
+                        <label
+                          key={svc}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                            isChecked
+                              ? 'bg-teal-50/80 border-teal-400 text-teal-900 font-bold'
+                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => togglePresetService(svc)}
+                            className="rounded text-teal-600 focus:ring-teal-500"
+                          />
+                          <span>{svc}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Active Selected Services Tag Cloud with Remove Button */}
@@ -895,12 +924,7 @@ export const AdminServiceAreasPage: React.FC = () => {
             )}
           </div>
 
-          <Input
-            label="Internal / Route Schedule Notes"
-            placeholder="e.g. Daily morning 4 AM milk delivery vehicle; 10Gbps OTDR tested fiber backhaul"
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-          />
+
 
           <div className="pt-4 border-t border-slate-200 flex justify-end gap-3">
             <Button
