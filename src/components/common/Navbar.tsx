@@ -267,38 +267,63 @@ export const Navbar: React.FC = () => {
 
               {/* Customer Profile & Portal Action */}
               {isAuthenticated && isCustomer ? (
-                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-950 via-[#0b1739] to-slate-900 text-white border border-slate-800 shadow-md space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm border border-white/20">
-                      {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-black text-white truncate">
-                          {currentUser?.displayName || 'Customer'}
-                        </span>
-                        <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                          Verified
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-300 truncate mt-0.5">
-                        {currentUser?.email}
-                      </p>
-                      {currentUser?.phone && (
-                        <p className="text-[10px] text-slate-300 truncate">
-                          {currentUser?.phone}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                <div className="relative" ref={profileDropdownRef}>
                   <button
                     type="button"
-                    onClick={handleSignOut}
-                    className="w-full py-2 px-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs flex items-center justify-center gap-2 border border-rose-500/40 transition-colors cursor-pointer"
+                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    className="inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200/90 text-slate-800 transition-all cursor-pointer shadow-2xs group focus:outline-none"
+                    title="My Account"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out</span>
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                      {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors max-w-[130px] truncate">
+                      {currentUser?.displayName || 'Customer'}
+                    </span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
+
+                  {/* Dropdown Menu (only visible when user clicks) */}
+                  {isProfileDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+                      {/* Customer Details Header */}
+                      <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                          {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black text-slate-900 truncate">
+                              {currentUser?.displayName || 'Customer'}
+                            </span>
+                            <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              Verified
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                            {currentUser?.email}
+                          </p>
+                          {currentUser?.phone && (
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {currentUser?.phone}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dropdown Action: Sign Out at the bottom */}
+                      <div className="p-2.5 bg-white">
+                        <button
+                          type="button"
+                          onClick={handleSignOut}
+                          className="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-98 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 border border-rose-200 transition-all cursor-pointer shadow-2xs"
+                        >
+                          <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button
@@ -424,14 +449,29 @@ export const Navbar: React.FC = () => {
               </button>
 
               {isAuthenticated && isCustomer ? (
-                <Link
-                  to="/account"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200"
-                >
-                  <UserCheck className="w-4 h-4 text-blue-600" />
-                  <span>My Customer Account</span>
-                </Link>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                        {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 truncate">
+                        {currentUser?.displayName || 'Customer'}
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Verified
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full py-2 px-3 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 border border-rose-200 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"

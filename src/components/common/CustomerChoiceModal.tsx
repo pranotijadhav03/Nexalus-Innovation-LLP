@@ -877,26 +877,53 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
               </div>
 
               {resetSent ? (
-                <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-6 h-6" />
+                <div className="p-6 bg-gradient-to-br from-emerald-50 via-teal-50/50 to-emerald-50 border border-emerald-200 rounded-3xl text-center space-y-4 shadow-sm animate-in fade-in">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                    <CheckCircle2 className="w-7 h-7" />
                   </div>
-                  <div>
-                    <h5 className="text-sm font-black text-emerald-900">Reset Email Dispatched</h5>
-                    <p className="text-xs text-emerald-700 mt-1">
-                      Check your inbox at <strong>{resetEmail}</strong> for instructions to reset your password.
+                  <div className="space-y-1.5">
+                    <h5 className="text-base font-black text-emerald-950">
+                      Reset Email Dispatched to Gmail
+                    </h5>
+                    <p className="text-xs text-slate-700 leading-relaxed max-w-md mx-auto">
+                      An official password reset link has been dispatched to <strong className="text-emerald-900">{resetEmail}</strong>.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setResetSent(false);
-                      setView('login');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-white text-emerald-800 border border-emerald-300 rounded-xl hover:bg-emerald-50 transition-colors cursor-pointer"
-                  >
-                    Proceed to Login
-                  </button>
+
+                  {/* Gmail Help & Spam folder notice */}
+                  <div className="p-3.5 bg-white/90 rounded-2xl border border-emerald-200/90 text-left text-xs text-slate-700 space-y-1.5">
+                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <Mail className="w-4 h-4 text-blue-600" />
+                      <span>Didn't receive the email in your Gmail inbox?</span>
+                    </div>
+                    <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-600 pl-1">
+                      <li>Please check your Gmail <strong>Spam / Junk</strong> folder (Firebase automated emails may land there).</li>
+                      <li>Check the <strong>Promotions</strong> or <strong>Updates</strong> tab in Gmail.</li>
+                      <li>Allow 1-2 minutes for Google / Firebase mail delivery.</li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                    <a
+                      href="https://mail.google.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Open Gmail Inbox</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetSent(false);
+                        setView('login');
+                      }}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-white text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 font-bold text-xs shadow-2xs transition-all cursor-pointer"
+                    >
+                      <span>Proceed to Login</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handlePasswordResetSubmit} className="space-y-4">
