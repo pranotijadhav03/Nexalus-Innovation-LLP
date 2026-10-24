@@ -627,7 +627,7 @@ export const AdminServiceAreasPage: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingArea ? `Edit Service Area — ${editingArea.locality}` : 'Register New Service Area & City Services'}
-        maxWidth="lg"
+        maxWidth="2xl"
       >
         <form onSubmit={handleSave} className="space-y-5">
           {/* Brand Division Selector */}
@@ -723,33 +723,32 @@ export const AdminServiceAreasPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="6-Digit PIN Code *"
-                placeholder="415605"
-                value={pincode}
-                onChange={e => setPincode(e.target.value)}
-                required
-              />
-              <Input
-                label="State *"
-                value={state}
-                onChange={e => setState(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Select
-                label="Operational Status *"
-                value={status}
-                onChange={e => setStatus(e.target.value as any)}
-                options={[
-                  { value: 'fully_operational', label: 'Fully Operational (Active Dispatch)' },
-                  { value: 'expanding_soon', label: 'Expanding Soon (Rolling Out)' },
-                  { value: 'planned', label: 'Planned / Future Node' }
-                ]}
-              />
-            </div>
+            <Input
+              label="PIN Code *"
+              placeholder="e.g. 415605"
+              value={pincode}
+              onChange={e => setPincode(e.target.value)}
+              required
+            />
+            <Input
+              label="State *"
+              value={state}
+              onChange={e => setState(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <Select
+              label="Operational Status *"
+              value={status}
+              onChange={e => setStatus(e.target.value as any)}
+              options={[
+                { value: 'fully_operational', label: 'Fully Operational (Active Dispatch)' },
+                { value: 'expanding_soon', label: 'Expanding Soon (Rolling Out)' },
+                { value: 'planned', label: 'Planned / Future Node' }
+              ]}
+            />
           </div>
 
           {/* Available Services in this Area / City */}
