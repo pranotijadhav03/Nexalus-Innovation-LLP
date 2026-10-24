@@ -258,10 +258,13 @@ export const CustomerAccountPage: React.FC = () => {
 
       if (result.success) {
         success(
-          'Customer Account Created!',
-          `Welcome ${regFullName}! Your profile and delivery address have been securely saved to Firebase.`
+          'Registration Successful!',
+          'Your account has been created. Please log in with your email and password.'
         );
-        navigate('/account');
+        setLoginEmail(emailClean);
+        setLoginPassword('');
+        setRegError(null);
+        setAuthMode('login');
       } else {
         setRegError(result.error || 'Registration failed. Please try again.');
       }

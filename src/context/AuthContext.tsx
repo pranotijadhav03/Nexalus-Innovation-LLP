@@ -473,9 +473,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const result = await registerCustomer(data);
       try {
-        localStorage.setItem(ACTIVE_USER_CACHE_KEY, JSON.stringify(result.user));
+        localStorage.removeItem(ACTIVE_USER_CACHE_KEY);
       } catch {}
-      setCurrentUser(result.user);
+      if (auth) {
+        try {
+          await signOut(auth);
+        } catch {}
+      }
+      setCurrentUser(null);
       setIsLoading(false);
       return { success: true, user: result.user };
     } catch (err: any) {

@@ -200,8 +200,14 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
       });
 
       if (result.success) {
-        success('Account Created', 'Welcome to Nexalus Innovations! Your customer profile has been saved.');
-        handleAuthSuccess((result as any)?.user);
+        success(
+          'Registration Successful!',
+          'Your customer profile has been created. Please log in with your password to continue.'
+        );
+        setLoginEmail(emailClean);
+        setLoginPassword('');
+        setFormError(null);
+        setView('login');
       } else {
         setFormError(result.error || 'Failed to complete registration. Please try again.');
       }
