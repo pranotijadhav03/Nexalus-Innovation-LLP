@@ -202,41 +202,6 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {!isAuthenticated && (
-                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 text-amber-950 flex items-center justify-between gap-3 shadow-xs animate-in fade-in">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <Lock className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-900 leading-snug">
-                        Login or Registration Required to Checkout
-                      </p>
-                      <p className="text-[11px] font-medium text-slate-600 mt-0.5 leading-tight truncate">
-                        बुकिंग पूर्ण करण्यासाठी कृपया Register किंवा Login करा.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      window.dispatchEvent(
-                        new CustomEvent('open_customer_portal', {
-                          detail: {
-                            view: 'choice',
-                            context: 'cart_checkout',
-                            prompt: 'Please register your customer account, or log in if you already have one, to checkout your cart.'
-                          }
-                        })
-                      );
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-transform active:scale-95 whitespace-nowrap"
-                  >
-                    Register / Login
-                  </button>
-                </div>
-              )}
               {cartItems.map((item) => (
                 <div
                   key={item.id}

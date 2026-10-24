@@ -280,10 +280,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                 To proceed with ordering <strong>{plan.providerName} - {plan.planName} ({plan.speed})</strong>, you need to sign in. If you are a new customer, please register your verified customer profile.
               </p>
-              <p className="text-xs font-semibold text-amber-800">
-                लॉगिन नसेल तर लॉगिन करा, किंवा नवीन ग्राहक असल्यास आधी रजिस्टर (Register) करा.
-              </p>
-            </div>
+              </div>
 
             {/* Plan preview */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-1.5 max-w-md mx-auto">

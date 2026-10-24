@@ -810,28 +810,6 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                 </div>
               </div>
 
-              <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/70 flex items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                    <UserPlus className="w-3.5 h-3.5 text-blue-600" />
-                    <span>New Customer?</span>
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Register your service address &amp; profile in 1 minute
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormError(null);
-                    setView('register');
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-colors shrink-0 cursor-pointer"
-                >
-                  Register Now →
-                </button>
-              </div>
-
               <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100">
                 <button
                   type="button"
