@@ -133,7 +133,7 @@ export const HomePage: React.FC = () => {
   } | null>(null);
   const [isPlanQuoteOpen, setIsPlanQuoteOpen] = useState(false);
   const { success, info } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isCustomer } = useAuth();
 
   // Cart State
   const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => getPlanCart());
@@ -160,17 +160,17 @@ export const HomePage: React.FC = () => {
     billingPeriod?: string;
     brandId?: any;
   }) => {
-    if (!isAuthenticated) {
+    if (!isCustomer) {
       try {
         sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
       } catch {}
-      info('Registration & Login Required', 'Direct Buy Now is not permitted. Please register your account and log in first to purchase this plan.');
+      info('Customer Account Required', 'Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase this plan.');
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to buy ${plan.providerName} - ${plan.planName} (${plan.speed}). Once logged in, Buy Now is activated immediately.`
+            prompt: `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to buy ${plan.providerName} - ${plan.planName} (${plan.speed}). Once logged in as a customer, Buy Now will open immediately.`
           }
         })
       );
@@ -1242,7 +1242,7 @@ export const HomePage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2.5 w-full md:w-auto justify-end flex-wrap">
-                  {isAuthenticated ? (
+                  {isCustomer ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -1433,7 +1433,7 @@ export const HomePage: React.FC = () => {
                         <span>Add to Cart</span>
                       </button>
 
-                      {isAuthenticated ? (
+                      {isCustomer ? (
                         <button
                           type="button"
                           onClick={() =>
@@ -1613,7 +1613,7 @@ export const HomePage: React.FC = () => {
                             <span>Add to Cart</span>
                           </button>
 
-                          {isAuthenticated ? (
+                          {isCustomer ? (
                             <button
                               type="button"
                               onClick={() =>

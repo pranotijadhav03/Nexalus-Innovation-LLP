@@ -58,7 +58,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
   onProceedToOrder
 }) => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isCustomer } = useAuth();
   const { info } = useToast();
   const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => {
     try {
@@ -104,7 +104,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
   if (!isOpen) return null;
 
   const handleCheckoutItem = (item: CartPlanItem) => {
-    if (!isAuthenticated) {
+    if (!isCustomer) {
       onClose();
       try {
         sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify({
@@ -119,8 +119,8 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
       } catch {}
 
       info(
-        'Registration & Login Required',
-        'Direct Buy Now is not permitted. Please register and log in first to purchase this plan.'
+        'Customer Account Required',
+        'Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase this plan.'
       );
 
       window.dispatchEvent(
@@ -128,7 +128,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
           detail: {
             view: 'choice',
             context: 'cart_checkout',
-            prompt: `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to purchase ${item.providerName} - ${item.planName}. Once logged in, Buy Now is activated immediately.`
+            prompt: `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase ${item.providerName} - ${item.planName}. Once logged in as a customer, Buy Now will open immediately.`
           }
         })
       );
@@ -257,7 +257,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {isAuthenticated ? (
+                    {isCustomer ? (
                       <button
                         type="button"
                         onClick={() => handleCheckoutItem(item)}

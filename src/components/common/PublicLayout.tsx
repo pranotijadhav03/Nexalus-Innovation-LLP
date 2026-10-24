@@ -23,7 +23,7 @@ export const ScrollToTop: React.FC = () => {
 };
 
 export const PublicLayout: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isCustomer, isLoading } = useAuth();
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [modalView, setModalView] = useState<CustomerModalView>('choice');
   const [modalPrompt, setModalPrompt] = useState<string | null>(null);
@@ -66,13 +66,13 @@ export const PublicLayout: React.FC = () => {
   useEffect(() => {
     const handleDirectOrder = (e: any) => {
       if (e?.detail) {
-        if (!isAuthenticated) {
+        if (!isCustomer) {
           try {
             sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(e.detail));
           } catch {}
           setModalView('choice');
           setModalPrompt(
-            `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to purchase ${e.detail.providerName || ''} - ${e.detail.planName || ''} (${e.detail.speed || ''}). Once logged in, Buy Now will be ready immediately.`
+            `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase ${e.detail.providerName || ''} - ${e.detail.planName || ''} (${e.detail.speed || ''}). Once logged in as a customer, Buy Now will open immediately.`
           );
           setModalContext('buy_now');
           setIsCustomerModalOpen(true);
@@ -86,7 +86,7 @@ export const PublicLayout: React.FC = () => {
     window.addEventListener('open_plan_order_direct', handleDirectOrder);
     return () => window.removeEventListener('open_plan_order_direct', handleDirectOrder);
     
-  }, [isAuthenticated]);
+  }, [isCustomer]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 relative">

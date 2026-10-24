@@ -47,7 +47,8 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   plan,
   onOrderSuccess
 }) => {
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser, isCustomer } = useAuth();
+  const isCustomerLoggedIn = isCustomer && currentUser?.role === 'customer';
   const { success, error } = useToast();
 
   const [customerName, setCustomerName] = useState('');
@@ -63,9 +64,32 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<PlanOrder | null>(null);
 
-  // Pre-fill user profile if logged in
+  // Auto-close and redirect to Customer Login if accessed without Customer session
   useEffect(() => {
-    if (currentUser) {
+    if (isOpen && !isCustomerLoggedIn) {
+      onClose();
+      try {
+        if (plan) {
+          sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
+        }
+      } catch {}
+      window.dispatchEvent(
+        new CustomEvent('open_customer_portal', {
+          detail: {
+            view: 'choice',
+            context: 'buy_now',
+            prompt: plan
+              ? `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase ${plan.providerName} - ${plan.planName} (${plan.speed}).`
+              : 'Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account first.'
+          }
+        })
+      );
+    }
+  }, [isOpen, isCustomerLoggedIn, plan, onClose]);
+
+  // Pre-fill user profile only if logged in as a verified customer
+  useEffect(() => {
+    if (isCustomerLoggedIn && currentUser) {
       if (currentUser.displayName) setCustomerName(currentUser.displayName);
       if (currentUser.phone) setPhone(currentUser.phone.replace(/\D/g, '').slice(0, 10));
       if (currentUser.email) setEmail(currentUser.email);
@@ -74,8 +98,15 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
         if (currentUser.deliveryAddress.city) setCity(currentUser.deliveryAddress.city);
         if (currentUser.deliveryAddress.postcode) setPincode(currentUser.deliveryAddress.postcode.replace(/\D/g, '').slice(0, 6));
       }
+    } else {
+      setCustomerName('');
+      setPhone('');
+      setEmail('');
+      setAddress('');
+      setCity('');
+      setPincode('');
     }
-  }, [currentUser, isOpen]);
+  }, [currentUser, isCustomerLoggedIn, isOpen]);
 
   // Reset state on open if guest
   useEffect(() => {
@@ -98,15 +129,15 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isAuthenticated) {
-      error('Registration & Login Required', 'Direct plan Buy Now is not permitted. Please register and log in first.');
+    if (!isCustomerLoggedIn) {
+      error('Customer Account Required', 'Direct Buy Now is restricted. Please register or log in with your verified Customer account.');
       onClose();
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to buy ${plan.providerName} - ${plan.planName} (${plan.speed}). Once logged in, Buy Now is activated immediately.`
+            prompt: `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase ${plan.providerName} - ${plan.planName} (${plan.speed}). Once logged in as a customer, Buy Now will open immediately.`
           }
         })
       );
@@ -264,7 +295,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
               </Button>
             </div>
           </div>
-        ) : !isAuthenticated ? (
+        ) : !isCustomerLoggedIn ? (
           /* AUTHENTICATION REQUIRED VIEW */
           <div className="p-6 sm:p-8 space-y-6 text-center animate-in fade-in">
             <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-sm">
@@ -274,13 +305,15 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
             <div className="space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
-                <span>Customer Account Required</span>
+                <span>Verified Customer Account Required</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Registration &amp; Login Required to Buy
+                Customer Login Required to Buy
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                Direct Buy Now without an account is restricted. To proceed with ordering <strong>{plan.providerName} - {plan.planName} ({plan.speed})</strong>, please register your verified customer profile and sign in.
+                {currentUser && currentUser.role !== 'customer'
+                  ? `You are currently logged in with an administrative profile (${currentUser.email}). Broadband plan purchases require a verified Customer account. Please log in or register with your Customer profile.`
+                  : `Direct Buy Now without an account is restricted. To proceed with ordering ${plan.providerName} - ${plan.planName} (${plan.speed}), please register your customer account and log in.`}
               </p>
             </div>
 

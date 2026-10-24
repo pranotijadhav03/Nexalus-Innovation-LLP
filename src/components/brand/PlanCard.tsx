@@ -14,7 +14,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isAddedRecently, setIsAddedRecently] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isCustomer } = useAuth();
   const { success, info } = useToast();
 
   const handleAddToCart = () => {
@@ -43,19 +43,19 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
       brandId: 'one-broadband'
     };
 
-    if (!isAuthenticated) {
+    if (!isCustomer) {
       try {
         sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(planDetail));
       } catch {}
 
-      info('Registration & Login Required', 'Direct Buy Now is not permitted. Please register and log in first to purchase this plan.');
+      info('Customer Account Required', 'Direct Buy Now is restricted. Please register or log in with your verified customer account to purchase this plan.');
 
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to buy ${plan.name} (${plan.speed}). Once logged in, Buy Now is activated immediately.`
+            prompt: `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to buy ${plan.name} (${plan.speed}). Once logged in as a customer, Buy Now will open immediately.`
           }
         })
       );
@@ -160,7 +160,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
               {isAddedRecently ? 'Added!' : 'Add to Cart'}
             </button>
 
-            {isAuthenticated ? (
+            {isCustomer ? (
               <button
                 type="button"
                 onClick={handleBuyNow}

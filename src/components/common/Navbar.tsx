@@ -503,7 +503,7 @@ export const Navbar: React.FC = () => {
         isOpen={isCartModalOpen}
         onClose={() => setIsCartModalOpen(false)}
         onProceedToOrder={(plan) => {
-          if (!isAuthenticated) {
+          if (!isCustomer) {
             try {
               sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
             } catch {}
@@ -512,7 +512,7 @@ export const Navbar: React.FC = () => {
                 detail: {
                   view: 'choice',
                   context: 'cart_checkout',
-                  prompt: 'Please register a new account, or log in if you already have an account, to complete your broadband booking.'
+                  prompt: 'Customer Login Required: Please register or log in with your verified Customer account to complete your broadband booking.'
                 }
               })
             );

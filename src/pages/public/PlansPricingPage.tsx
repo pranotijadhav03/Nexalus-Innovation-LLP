@@ -63,7 +63,7 @@ function getEffectiveSpeed(p: { speedNumeric?: number; speed?: string }): number
 
 export const PlansPricingPage: React.FC = () => {
   const { success, info } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isCustomer } = useAuth();
   const [activeTab, setActiveTab] = useState<ProviderTab>('airtel');
   const [providers, setProviders] = useState<BroadbandProvider[]>(() => getCachedBroadbandProviders());
   const [broadbandPlans, setBroadbandPlans] = useState<BroadbandPlan[]>(() => getCachedBroadbandPlans());
@@ -227,17 +227,17 @@ export const PlansPricingPage: React.FC = () => {
     billingPeriod?: string;
     brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
   }) => {
-    if (!isAuthenticated) {
+    if (!isCustomer) {
       try {
         sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
       } catch {}
-      info('Registration & Login Required', 'Direct Buy Now is not permitted. Please register your account and log in first to purchase this plan.');
+      info('Customer Account Required', 'Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase this plan.');
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Direct Buy Now is restricted. Please register your customer account, or log in if you already have an account, to buy ${plan.providerName} - ${plan.planName} (${plan.speed}). Once logged in, Buy Now is activated immediately.`
+            prompt: `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to buy ${plan.providerName} - ${plan.planName} (${plan.speed}). Once logged in as a customer, Buy Now will open immediately.`
           }
         })
       );
@@ -576,7 +576,7 @@ export const PlansPricingPage: React.FC = () => {
                           <span>Add to Cart</span>
                         </button>
 
-                        {isAuthenticated ? (
+                        {isCustomer ? (
                           <button
                             type="button"
                             onClick={() =>
@@ -739,7 +739,7 @@ export const PlansPricingPage: React.FC = () => {
                           <span>Add to Cart</span>
                         </button>
 
-                        {isAuthenticated ? (
+                        {isCustomer ? (
                           <button
                             type="button"
                             onClick={() =>
@@ -891,7 +891,7 @@ export const PlansPricingPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      {isAuthenticated ? (
+                      {isCustomer ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -967,8 +967,8 @@ export const PlansPricingPage: React.FC = () => {
                   </Button>
                   <Button
                     size="sm"
-                    variant={isAuthenticated ? "primary" : "secondary"}
-                    icon={isAuthenticated ? <Zap className="w-3.5 h-3.5 fill-current" /> : <Lock className="w-3.5 h-3.5 text-amber-400" />}
+                    variant={isCustomer ? "primary" : "secondary"}
+                    icon={isCustomer ? <Zap className="w-3.5 h-3.5 fill-current" /> : <Lock className="w-3.5 h-3.5 text-amber-400" />}
                     onClick={() => {
                       if (cartItems.length > 0) {
                         const first = cartItems[0];
@@ -985,7 +985,7 @@ export const PlansPricingPage: React.FC = () => {
                       }
                     }}
                   >
-                    {isAuthenticated ? `Buy First (${cartItems[0]?.planName})` : `Login to Buy (${cartItems[0]?.planName})`}
+                    {isCustomer ? `Buy First (${cartItems[0]?.planName})` : `Login to Buy (${cartItems[0]?.planName})`}
                   </Button>
                 </div>
               </div>
