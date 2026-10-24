@@ -2276,7 +2276,7 @@ export async function getUsers(): Promise<AdminUser[]> {
   // If Firestore is available, fetch the verified administrative user list
   if (isFirebaseConfigured && db) {
     try {
-      const snapshot = await withTimeout(getDocs(collection(db, 'users')), 1200);
+      const snapshot = await withTimeout(getDocs(collection(db, 'users')), 4000);
       if (!snapshot.empty) {
         const firestoreUsers: AdminUser[] = [];
         snapshot.forEach(d => {
@@ -2841,6 +2841,9 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
       ? currentUsers.map(u => (u.uid === uid ? customerUser : u))
       : [...currentUsers, customerUser];
     setLocalItem(STORAGE_KEYS.USERS, updatedUsers);
+    try {
+      window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: 'v10_nexalus_store_users' } }));
+    } catch {}
 
     return { user: customerUser };
   }

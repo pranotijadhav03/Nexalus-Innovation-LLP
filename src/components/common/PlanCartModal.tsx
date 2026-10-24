@@ -119,8 +119,8 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
       } catch {}
 
       info(
-        'Customer Account Required',
-        'Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase this plan.'
+        'Login Required',
+        'Please register or log in first to complete your broadband order.'
       );
 
       window.dispatchEvent(
@@ -128,7 +128,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
           detail: {
             view: 'choice',
             context: 'cart_checkout',
-            prompt: `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase ${item.providerName} - ${item.planName}. Once logged in as a customer, Buy Now will open immediately.`
+            prompt: `Please register or log in to book ${item.providerName} - ${item.planName}.`
           }
         })
       );
@@ -257,27 +257,15 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {isCustomer ? (
-                      <button
-                        type="button"
-                        onClick={() => handleCheckoutItem(item)}
-                        className="py-2 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-orange-500 via-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-orange-500/20 hover:shadow-orange-500/30 transition-all group/btn"
-                        title="Proceed to Buy this Plan"
-                      >
-                        <span>Buy Now</span>
-                        <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleCheckoutItem(item)}
-                        className="py-2 px-3.5 sm:px-4 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-slate-900/20 transition-all group/btn"
-                        title="Register and log in first to Buy Now"
-                      >
-                        <Lock className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Login to Buy</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleCheckoutItem(item)}
+                      className="py-2 px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-orange-500 via-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-orange-500/20 hover:shadow-orange-500/30 transition-all group/btn"
+                      title="Proceed to Buy this Plan"
+                    >
+                      <span>Buy Now</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+                    </button>
 
                     <button
                       type="button"

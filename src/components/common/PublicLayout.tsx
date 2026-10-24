@@ -72,7 +72,7 @@ export const PublicLayout: React.FC = () => {
           } catch {}
           setModalView('choice');
           setModalPrompt(
-            `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase ${e.detail.providerName || ''} - ${e.detail.planName || ''} (${e.detail.speed || ''}). Once logged in as a customer, Buy Now will open immediately.`
+            `Please register or log in to buy ${e.detail.providerName || ''} - ${e.detail.planName || ''} (${e.detail.speed || ''}).`
           );
           setModalContext('buy_now');
           setIsCustomerModalOpen(true);

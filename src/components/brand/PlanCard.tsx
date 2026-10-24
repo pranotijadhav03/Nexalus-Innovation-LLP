@@ -48,14 +48,14 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
         sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(planDetail));
       } catch {}
 
-      info('Customer Account Required', 'Direct Buy Now is restricted. Please register or log in with your verified customer account to purchase this plan.');
+      info('Login Required', 'Please register or log in first to buy this plan.');
 
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to buy ${plan.name} (${plan.speed}). Once logged in as a customer, Buy Now will open immediately.`
+            prompt: `Please register or log in to buy ${plan.name} (${plan.speed}).`
           }
         })
       );
@@ -160,26 +160,14 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
               {isAddedRecently ? 'Added!' : 'Add to Cart'}
             </button>
 
-            {isCustomer ? (
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20 cursor-pointer"
-              >
-                <Zap className="w-3.5 h-3.5 fill-current" />
-                <span>Buy Now</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-slate-900/20 cursor-pointer"
-                title="Register and log in first to Buy Now"
-              >
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-                <span>Login to Buy</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20 cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>Buy Now</span>
+            </button>
           </div>
 
           <button

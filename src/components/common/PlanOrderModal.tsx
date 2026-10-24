@@ -79,8 +79,8 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
             view: 'choice',
             context: 'buy_now',
             prompt: plan
-              ? `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase ${plan.providerName} - ${plan.planName} (${plan.speed}).`
-              : 'Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account first.'
+              ? `Please register or log in to buy ${plan.providerName} - ${plan.planName} (${plan.speed}).`
+              : 'Please register or log in to complete your broadband order.'
           }
         })
       );
@@ -130,14 +130,14 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
     e.preventDefault();
 
     if (!isCustomerLoggedIn) {
-      error('Customer Account Required', 'Direct Buy Now is restricted. Please register or log in with your verified Customer account.');
+      error('Login Required', 'Please register or log in to buy this plan.');
       onClose();
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Customer Login Required: Direct Buy Now is restricted. Please register or log in with your verified Customer account to purchase ${plan.providerName} - ${plan.planName} (${plan.speed}). Once logged in as a customer, Buy Now will open immediately.`
+            prompt: `Please register or log in to buy ${plan.providerName} - ${plan.planName} (${plan.speed}).`
           }
         })
       );
