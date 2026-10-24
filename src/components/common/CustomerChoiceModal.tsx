@@ -27,10 +27,12 @@ import {
 
 export type CustomerModalView = 'choice' | 'register' | 'login' | 'forgot_password';
 
-interface CustomerChoiceModalProps {
+export interface CustomerChoiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialView?: CustomerModalView;
+  promptMessage?: string | null;
+  authContext?: string | null;
 }
 
 const INDIAN_STATES = [
@@ -46,7 +48,9 @@ const INDIAN_STATES = [
 export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
   isOpen,
   onClose,
-  initialView = 'choice'
+  initialView = 'choice',
+  promptMessage,
+  authContext
 }) => {
   const [view, setView] = useState<CustomerModalView>(initialView);
   const { loginCustomer, registerCustomerAccount } = useAuth();
@@ -105,6 +109,47 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
     }
   };
 
+  const handleAuthSuccess = (userData: any) => {
+    handleDismiss();
+
+    // Check if there was a pending plan order
+    let pendingPlan: any = null;
+    try {
+      const raw = sessionStorage.getItem('nexalus_pending_order_plan');
+      if (raw) {
+        pendingPlan = JSON.parse(raw);
+        sessionStorage.removeItem('nexalus_pending_order_plan');
+      }
+    } catch {}
+
+    if (pendingPlan) {
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('open_plan_order_direct', { detail: pendingPlan })
+        );
+      }, 150);
+      return;
+    }
+
+    if (authContext === 'cart_checkout') {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('open_plan_cart'));
+      }, 150);
+      return;
+    }
+
+    if (userData?.role && userData.role !== 'customer') {
+      navigate('/admin');
+    } else {
+      const currentPath = window.location.pathname;
+      if (currentPath === '/' || currentPath === '/plans' || currentPath.startsWith('/brand')) {
+        // Stay on current page so user can continue shopping
+      } else {
+        navigate('/account');
+      }
+    }
+  };
+
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -156,12 +201,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
 
       if (result.success) {
         success('Account Created', 'Welcome to Nexalus Innovations! Your customer profile has been saved.');
-        handleDismiss();
-        if ((result as any)?.user?.role && (result as any).user.role !== 'customer') {
-          navigate('/admin');
-        } else {
-          navigate('/account');
-        }
+        handleAuthSuccess((result as any)?.user);
       } else {
         setFormError(result.error || 'Failed to complete registration. Please try again.');
       }
@@ -191,12 +231,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
       const result = await loginCustomer(emailClean, loginPassword);
       if (result.success) {
         success('Welcome Back', 'You are now signed in to the customer portal.');
-        handleDismiss();
-        if ((result as any)?.user?.role && (result as any).user.role !== 'customer') {
-          navigate('/admin');
-        } else {
-          navigate('/account');
-        }
+        handleAuthSuccess((result as any)?.user);
       } else {
         setFormError(result.error || 'Invalid email or password.');
       }
@@ -286,6 +321,27 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
             <div className="mb-5 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-xs text-rose-800 animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <div className="font-semibold leading-relaxed">{formError}</div>
+            </div>
+          )}
+
+          {promptMessage && (
+            <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 text-amber-950 flex items-start gap-3.5 shadow-sm animate-in fade-in">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300">
+                    Registration / Login Required
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 mt-1.5 leading-snug">
+                  {promptMessage}
+                </p>
+                <p className="text-[11px] font-semibold text-amber-800 mt-1 leading-relaxed">
+                  लॉगिन नसेल तर लॉगिन करा, किंवा नवीन ग्राहक असल्यास आधी रजिस्टर (Register) करा.
+                </p>
+              </div>
             </div>
           )}
 

@@ -43,13 +43,21 @@ export const Navbar: React.FC = () => {
     const handleOpenCart = () => {
       setIsCartModalOpen(true);
     };
+    const handleDirectOrder = (e: any) => {
+      if (e?.detail) {
+        setSelectedPlanForOrder(e.detail);
+        setIsOrderModalOpen(true);
+      }
+    };
 
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
     window.addEventListener('open_plan_cart', handleOpenCart);
+    window.addEventListener('open_plan_order_direct', handleDirectOrder);
 
     return () => {
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
       window.removeEventListener('open_plan_cart', handleOpenCart);
+      window.removeEventListener('open_plan_order_direct', handleDirectOrder);
     };
   }, []);
 
@@ -410,6 +418,21 @@ export const Navbar: React.FC = () => {
         isOpen={isCartModalOpen}
         onClose={() => setIsCartModalOpen(false)}
         onProceedToOrder={(plan) => {
+          if (!isAuthenticated) {
+            try {
+              sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
+            } catch {}
+            window.dispatchEvent(
+              new CustomEvent('open_customer_portal', {
+                detail: {
+                  view: 'choice',
+                  context: 'cart_checkout',
+                  prompt: 'Please register a new account, or log in if you already have an account, to complete your broadband booking.'
+                }
+              })
+            );
+            return;
+          }
           setSelectedPlanForOrder(plan);
           setIsOrderModalOpen(true);
         }}

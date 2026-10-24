@@ -19,6 +19,7 @@ import {
   BrandId
 } from '../../types';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/common/Button';
 import { QuoteModal } from '../../components/common/QuoteModal';
 import { PlanOrderModal } from '../../components/common/PlanOrderModal';
@@ -38,6 +39,7 @@ import {
   HelpCircle,
   ShoppingCart,
   ShoppingBag,
+  Lock,
   Trash2,
   X,
   CreditCard,
@@ -59,6 +61,7 @@ function getEffectiveSpeed(p: { speedNumeric?: number; speed?: string }): number
 
 export const PlansPricingPage: React.FC = () => {
   const { success, info } = useToast();
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<ProviderTab>('airtel');
   const [providers, setProviders] = useState<BroadbandProvider[]>([]);
   const [broadbandPlans, setBroadbandPlans] = useState<BroadbandPlan[]>([]);
@@ -101,9 +104,17 @@ export const PlansPricingPage: React.FC = () => {
     const handleCartUpdate = (e: any) => {
       setCartItems(e.detail || getPlanCart());
     };
+    const handleDirectOrder = (e: any) => {
+      if (e?.detail) {
+        setSelectedPlanForOrder(e.detail);
+        setIsOrderModalOpen(true);
+      }
+    };
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+    window.addEventListener('open_plan_order_direct', handleDirectOrder);
     return () => {
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+      window.removeEventListener('open_plan_order_direct', handleDirectOrder);
     };
   }, []);
 
@@ -230,6 +241,22 @@ export const PlansPricingPage: React.FC = () => {
     billingPeriod?: string;
     brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
   }) => {
+    if (!isAuthenticated) {
+      try {
+        sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
+      } catch {}
+      info('Registration / Login Required', 'Please register or log in first to book this plan.');
+      window.dispatchEvent(
+        new CustomEvent('open_customer_portal', {
+          detail: {
+            view: 'choice',
+            context: 'buy_now',
+            prompt: `Please register a new account, or log in if you already have an account, to book ${plan.providerName} - ${plan.planName}.`
+          }
+        })
+      );
+      return;
+    }
     setSelectedPlanForOrder(plan);
     setIsOrderModalOpen(true);
   };
@@ -804,6 +831,37 @@ export const PlansPricingPage: React.FC = () => {
 
             {/* Cart Body */}
             <div className="p-5 flex-1 overflow-y-auto space-y-3">
+              {!isAuthenticated && cartItems.length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 text-amber-950 flex items-center justify-between gap-2.5 shadow-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Lock className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-900 truncate">Login or Register Required</p>
+                      <p className="text-[10px] font-medium text-slate-600 truncate">बुकिंग पूर्ण करण्यासाठी आधी Register/Login करा</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCartOpen(false);
+                      window.dispatchEvent(
+                        new CustomEvent('open_customer_portal', {
+                          detail: {
+                            view: 'choice',
+                            context: 'cart_checkout',
+                            prompt: 'Please register your customer account, or log in if you already have an account, to checkout your cart.'
+                          }
+                        })
+                      );
+                    }}
+                    className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-[11px] shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
+                  >
+                    Register / Login
+                  </button>
+                </div>
+              )}
               {cartItems.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 space-y-2">
                   <ShoppingBag className="w-10 h-10 mx-auto text-slate-300" />

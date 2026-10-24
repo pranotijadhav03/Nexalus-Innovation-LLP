@@ -51,6 +51,7 @@ import {
 } from '../../firebase/services';
 import { initialBanners, DEFAULT_NEXALUS_SLIDES } from '../../data/initialData';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
 // Simple, clear services for Nexalus Innovations LLP
 const NEXALUS_CORE_SERVICES: Service[] = [
@@ -131,7 +132,8 @@ export const HomePage: React.FC = () => {
     brandId: 'one-broadband' | 'nexalus-innovations';
   } | null>(null);
   const [isPlanQuoteOpen, setIsPlanQuoteOpen] = useState(false);
-  const { success } = useToast();
+  const { success, info } = useToast();
+  const { isAuthenticated } = useAuth();
 
   // Cart State
   const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => getPlanCart());
@@ -170,6 +172,22 @@ export const HomePage: React.FC = () => {
     billingPeriod?: string;
     brandId?: any;
   }) => {
+    if (!isAuthenticated) {
+      try {
+        sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
+      } catch {}
+      info('Registration / Login Required', 'Please register or log in first to book this plan.');
+      window.dispatchEvent(
+        new CustomEvent('open_customer_portal', {
+          detail: {
+            view: 'choice',
+            context: 'buy_now',
+            prompt: `Please register a new account, or log in if you already have an account, to book ${plan.providerName} - ${plan.planName}.`
+          }
+        })
+      );
+      return;
+    }
     setSelectedPlanForOrder(plan);
     setIsOrderModalOpen(true);
   };
@@ -197,7 +215,14 @@ export const HomePage: React.FC = () => {
     const handleCartUpdate = (e: any) => {
       setCartItems(e.detail || getPlanCart());
     };
+    const handleDirectOrder = (e: any) => {
+      if (e?.detail) {
+        setSelectedPlanForOrder(e.detail);
+        setIsOrderModalOpen(true);
+      }
+    };
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+    window.addEventListener('open_plan_order_direct', handleDirectOrder);
 
     const handleDataUpdate = (e: any) => {
       if (!e.detail?.key || e.detail.key.includes('plans')) {
@@ -220,6 +245,7 @@ export const HomePage: React.FC = () => {
       unsubLegacy();
       unsubBanners();
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+      window.removeEventListener('open_plan_order_direct', handleDirectOrder);
       window.removeEventListener('nexalus_data_update', handleDataUpdate);
       window.removeEventListener('storage', handleDataUpdate);
       window.removeEventListener('focus', handleDataUpdate);
@@ -1237,6 +1263,31 @@ export const HomePage: React.FC = () => {
                     type="button"
                     onClick={() => {
                       const first = cartItems[0];
+                      if (!isAuthenticated) {
+                        try {
+                          sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify({
+                            planId: first.planId,
+                            planName: first.planName,
+                            providerName: first.providerName,
+                            speed: first.speed,
+                            price: first.price,
+                            billingPeriod: first.billingPeriod,
+                            brandId: first.brandId
+                          }));
+                        } catch {}
+                        info('Registration / Login Required', 'Please register or log in first to checkout your cart.');
+                        window.dispatchEvent(
+                          new CustomEvent('open_customer_portal', {
+                            detail: {
+                              view: 'choice',
+                              context: 'cart_checkout',
+                              prompt: `Please register a new customer account, or log in if you already have an account, to book ${first.providerName} - ${first.planName}.`
+                            }
+                          })
+                        );
+                        return;
+                      }
+
                       setSelectedPlanForOrder({
                         planId: first.planId,
                         planName: first.planName,

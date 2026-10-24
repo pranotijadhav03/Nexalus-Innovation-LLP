@@ -3,6 +3,7 @@ import { InternetPlan } from '../../types';
 import { PlanOrderModal } from '../common/PlanOrderModal';
 import { addToPlanCart } from '../../firebase/services';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import { ShoppingCart, Zap, Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface PlanCardProps {
@@ -15,7 +16,8 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isAddedRecently, setIsAddedRecently] = useState(false);
-  const { success } = useToast();
+  const { isAuthenticated } = useAuth();
+  const { success, info } = useToast();
 
   const handleAddToCart = () => {
     addToPlanCart({
@@ -33,6 +35,32 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   };
 
   const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      try {
+        sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify({
+          planId: plan.id,
+          planName: plan.name,
+          providerName: 'One Broadband',
+          speed: plan.speed,
+          price: plan.price,
+          billingPeriod: plan.billingPeriod || 'monthly',
+          brandId: 'one-broadband'
+        }));
+      } catch {}
+
+      info('Registration / Login Required', 'Please register or log in first to book this plan.');
+
+      window.dispatchEvent(
+        new CustomEvent('open_customer_portal', {
+          detail: {
+            view: 'choice',
+            context: 'buy_now',
+            prompt: `Please register a new account, or log in if you already have one, to book ${plan.name} (${plan.speed}).`
+          }
+        })
+      );
+      return;
+    }
     setIsOrderModalOpen(true);
   };
 

@@ -25,6 +25,8 @@ export const PublicLayout: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [modalView, setModalView] = useState<CustomerModalView>('choice');
+  const [modalPrompt, setModalPrompt] = useState<string | null>(null);
+  const [modalContext, setModalContext] = useState<string | null>(null);
 
   // Trigger popup once per session for unauthenticated visitors after short delay
   useEffect(() => {
@@ -45,7 +47,11 @@ export const PublicLayout: React.FC = () => {
   useEffect(() => {
     const handleOpen = (e: any) => {
       const targetView = (e.detail?.view as CustomerModalView) || 'choice';
+      const prompt = e.detail?.prompt || null;
+      const ctx = e.detail?.context || null;
       setModalView(targetView);
+      setModalPrompt(prompt);
+      setModalContext(ctx);
       setIsCustomerModalOpen(true);
     };
 
@@ -73,8 +79,14 @@ export const PublicLayout: React.FC = () => {
       {/* Customer Choice / Login / Register Modal */}
       <CustomerChoiceModal
         isOpen={isCustomerModalOpen}
-        onClose={() => setIsCustomerModalOpen(false)}
+        onClose={() => {
+          setIsCustomerModalOpen(false);
+          setModalPrompt(null);
+          setModalContext(null);
+        }}
         initialView={modalView}
+        promptMessage={modalPrompt}
+        authContext={modalContext}
       />
     </div>
   );
