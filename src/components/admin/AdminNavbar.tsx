@@ -31,6 +31,48 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const isAmConsole = activeConsole === 'am-distributors' || isAmAdmin;
+  const isInnovationsConsole = activeConsole === 'nexalus-innovations' || isInnovationsAdmin;
+
+  const currentConsoleInfo = isAmConsole
+    ? {
+        name: 'A.M. Distributors Admin',
+        subName: 'Chiplun Depot Admin Console',
+        email: isAmAdmin ? currentUser?.email : 'am.distributors@nexalus.com',
+        roleBadge: 'A.M. DISTRIBUTORS DEPOT ADMIN',
+        badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+        avatarBg: 'bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-600',
+        activeBtnBg: 'bg-emerald-600 text-white',
+        ringColor: 'ring-emerald-500/10 border-emerald-400 bg-emerald-50/90',
+        headerCardBg: 'bg-emerald-50/80 border-emerald-200/80',
+        Icon: Building
+      }
+    : isInnovationsConsole
+    ? {
+        name: 'Nexalus Innovations Admin',
+        subName: 'CCTV, Fiber & Networking Console',
+        email: isInnovationsAdmin ? currentUser?.email : 'innovations@nexalus.com',
+        roleBadge: 'NEXALUS INNOVATIONS ADMIN',
+        badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+        avatarBg: 'bg-gradient-to-tr from-indigo-600 via-blue-600 to-cyan-500',
+        activeBtnBg: 'bg-indigo-600 text-white',
+        ringColor: 'ring-indigo-500/10 border-indigo-400 bg-indigo-50/90',
+        headerCardBg: 'bg-indigo-50/80 border-indigo-200/80',
+        Icon: Shield
+      }
+    : {
+        name: currentUser?.displayName || 'Nexalus Corporate Master Admin',
+        subName: 'Corporate Administration',
+        email: currentUser?.email || 'admin@nexalus.com',
+        roleBadge: 'CORPORATE SUPER ADMIN',
+        badgeColor: 'bg-blue-100 text-blue-800 border-blue-300',
+        avatarBg: 'bg-gradient-to-tr from-blue-700 via-indigo-600 to-cyan-500',
+        activeBtnBg: 'bg-blue-600 text-white',
+        ringColor: 'ring-blue-500/10 border-blue-400 bg-blue-50/90',
+        headerCardBg: 'bg-slate-50 border-slate-100',
+        Icon: Layers
+      };
+
   // Close dropdown on outside click or Escape key
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -75,31 +117,17 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
         </button>
 
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-700 via-indigo-600 to-cyan-500 text-white flex items-center justify-center shadow-xs shrink-0">
-            {activeConsole === 'nexalus-innovations' ? (
-              <Shield className="w-4 h-4 text-white" />
-            ) : activeConsole === 'am-distributors' ? (
-              <Building className="w-4 h-4 text-white" />
-            ) : (
-              <Layers className="w-4 h-4 text-white" />
-            )}
+          <div className={`w-8 h-8 rounded-lg ${currentConsoleInfo.avatarBg} text-white flex items-center justify-center shadow-xs shrink-0`}>
+            <currentConsoleInfo.Icon className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
             <div className="text-xs sm:text-sm font-black text-slate-900 leading-tight truncate">
-              {activeConsole === 'nexalus-innovations'
-                ? 'Nexalus Innovations'
-                : activeConsole === 'am-distributors'
-                ? 'A.M. Distributors Chiplun'
-                : 'Nexalus Innovations LLP'}
+              {currentConsoleInfo.name}
             </div>
             <div className="text-[10px] text-slate-500 font-semibold flex items-center gap-1.5 truncate">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>
-                {activeConsole === 'nexalus-innovations'
-                  ? 'Tech & Fiber Admin Panel'
-                  : activeConsole === 'am-distributors'
-                  ? 'Chiplun Depot Admin Panel'
-                  : 'Corporate Master Admin'}
+                {currentConsoleInfo.subName}
               </span>
               <span className="text-slate-300 hidden sm:inline">•</span>
               <span className="text-indigo-600 font-bold hidden sm:flex items-center gap-0.5">
@@ -122,25 +150,25 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
             aria-haspopup="true"
             className={`flex items-center gap-2 sm:gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border transition-all text-left cursor-pointer shadow-2xs group ${
               isDropdownOpen
-                ? 'bg-blue-50/90 border-blue-400 ring-2 ring-blue-500/10'
+                ? currentConsoleInfo.ringColor
                 : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300'
             }`}
-            title="Manage Admin Session & Portals"
+            title="Manage Admin Session & Consoles"
           >
             {/* Admin Avatar */}
             <div
-              className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center font-black text-sm shadow-md shadow-blue-500/20 ring-2 ring-blue-500/20 shrink-0"
+              className={`w-9 h-9 rounded-xl ${currentConsoleInfo.avatarBg} text-white flex items-center justify-center font-black text-sm shadow-md ring-2 ring-white/30 shrink-0`}
             >
-              {currentUser?.displayName?.charAt(0) || 'N'}
+              <currentConsoleInfo.Icon className="w-4 h-4 text-white" />
             </div>
 
-            {/* Admin Name & Email */}
+            {/* Admin Name & Console Subtitle */}
             <div className="text-left hidden sm:block min-w-0">
               <div className="text-xs font-black text-slate-900 leading-tight truncate max-w-[180px]">
-                {currentUser?.displayName || 'Nexalus Master Admin'}
+                {currentConsoleInfo.name}
               </div>
               <div className="text-[10px] text-slate-500 font-medium truncate max-w-[180px]">
-                {currentUser?.email}
+                {currentConsoleInfo.subName}
               </div>
             </div>
 
@@ -156,26 +184,20 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
           {isDropdownOpen && (
             <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 p-3 space-y-2.5 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
               {/* Account Identity Header */}
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
-                  {currentUser?.displayName?.charAt(0) || 'N'}
+              <div className={`p-3 rounded-xl border flex items-center gap-3 ${currentConsoleInfo.headerCardBg}`}>
+                <div className={`w-10 h-10 rounded-xl ${currentConsoleInfo.avatarBg} text-white flex items-center justify-center font-black text-base shadow-sm shrink-0`}>
+                  <currentConsoleInfo.Icon className="w-5 h-5 text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-black text-slate-900 truncate">
-                    {currentUser?.displayName || 'Nexalus Master Admin'}
+                    {currentConsoleInfo.name}
                   </div>
                   <div className="text-[11px] text-slate-500 font-medium truncate">
-                    {currentUser?.email}
+                    {currentConsoleInfo.email}
                   </div>
                   <div className="mt-1 flex items-center gap-1">
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                      {isSuperAdmin
-                        ? 'Corporate Super Admin'
-                        : isInnovationsAdmin
-                        ? 'Nexalus Innovations Admin'
-                        : isAmAdmin
-                        ? 'A.M. Distributors Admin'
-                        : 'Staff Admin'}
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${currentConsoleInfo.badgeColor}`}>
+                      {currentConsoleInfo.roleBadge}
                     </span>
                   </div>
                 </div>
@@ -237,7 +259,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
                       <Shield className="w-4 h-4 shrink-0" />
                       <div className="min-w-0">
                         <div className="text-xs font-bold truncate">Nexalus Innovations Admin</div>
-                        <div className={`text-[10px] truncate ${activeConsole === 'nexalus-innovations' ? 'text-blue-100' : 'text-slate-400'}`}>
+                        <div className={`text-[10px] truncate ${activeConsole === 'nexalus-innovations' ? 'text-indigo-100' : 'text-slate-400'}`}>
                           CCTV, Optical Fiber & Networking
                         </div>
                       </div>
@@ -255,9 +277,9 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
                     }}
                     className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${
                       activeConsole === 'am-distributors'
-                        ? 'bg-blue-600 text-white shadow-xs'
+                        ? 'bg-emerald-600 text-white shadow-xs'
                         : isSuperAdmin || isAmAdmin
-                        ? 'hover:bg-white text-slate-700 hover:text-blue-600'
+                        ? 'hover:bg-white text-slate-700 hover:text-emerald-700'
                         : 'opacity-40 cursor-not-allowed text-slate-400'
                     }`}
                   >
@@ -265,7 +287,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
                       <Building className="w-4 h-4 shrink-0" />
                       <div className="min-w-0">
                         <div className="text-xs font-bold truncate">A.M. Distributors Admin</div>
-                        <div className={`text-[10px] truncate ${activeConsole === 'am-distributors' ? 'text-blue-100' : 'text-slate-400'}`}>
+                        <div className={`text-[10px] truncate ${activeConsole === 'am-distributors' ? 'text-emerald-100' : 'text-slate-400'}`}>
                           Mineral Water, Dairy & Cold-Chain
                         </div>
                       </div>

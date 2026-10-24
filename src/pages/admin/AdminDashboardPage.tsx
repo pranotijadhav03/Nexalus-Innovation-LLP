@@ -60,7 +60,7 @@ export const AdminDashboardPage: React.FC = () => {
   const consoleParam = searchParams.get('console');
   const activeConsole: AdminConsoleMode = (consoleParam === 'am-distributors' || consoleParam === 'nexalus-innovations' || consoleParam === 'master')
     ? (consoleParam as AdminConsoleMode)
-    : isSuperAdmin ? 'master' : (outletCtx?.activeConsole || 'master');
+    : (outletCtx?.activeConsole || 'master');
   const setActiveConsole = outletCtx?.setActiveConsole || (() => {});
   const returnToMaster = outletCtx?.returnToMaster || (() => {});
 
@@ -918,7 +918,7 @@ export const AdminDashboardPage: React.FC = () => {
             </div>
             <div>
               <div className="text-[10px] font-black uppercase tracking-wider text-teal-300">
-                Child Admin Panel • Regional Logistics &amp; Wholesale FMCG
+                Depot Admin Console • Regional Logistics &amp; Wholesale FMCG
               </div>
               <h2 className="text-base sm:text-lg font-black text-white">
                 A.M. Distributors Chiplun Depot Console
