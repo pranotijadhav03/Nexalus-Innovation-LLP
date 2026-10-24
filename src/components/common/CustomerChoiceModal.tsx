@@ -61,6 +61,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
     if (isOpen) {
       setView(initialView);
       setFormError(null);
+      setRegPassword('');
+      setRegConfirmPassword('');
     }
   }, [isOpen, initialView]);
 
@@ -71,7 +73,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regAddress, setRegAddress] = useState('');
-  const [regCity, setRegCity] = useState('Chiplun');
+  const [regCity, setRegCity] = useState('');
   const [regState, setRegState] = useState('Maharashtra');
   const [regPostcode, setRegPostcode] = useState('');
   const [regCountry] = useState('India');
@@ -484,7 +486,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
 
           {/* VIEW 2: REGISTRATION FORM */}
           {view === 'register' && (
-            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+            <form onSubmit={handleRegisterSubmit} className="space-y-4" autoComplete="off">
               <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
                 <div>
                   <h4 className="text-lg font-black text-slate-900 tracking-tight">
@@ -516,6 +518,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
+                      name="customer_reg_name"
+                      autoComplete="name"
                       placeholder="e.g. Ramesh Patil"
                       value={regFullName}
                       onChange={e => setRegFullName(e.target.value)}
@@ -533,6 +537,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="email"
+                      name="customer_reg_email"
+                      autoComplete="email"
                       placeholder="name@example.com"
                       value={regEmail}
                       onChange={e => setRegEmail(e.target.value)}
@@ -550,6 +556,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="tel"
+                      name="customer_reg_phone"
+                      autoComplete="tel"
                       inputMode="numeric"
                       placeholder="10-digit mobile number"
                       value={regPhone}
@@ -593,6 +601,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    name="customer_reg_street"
+                    autoComplete="street-address"
                     placeholder="e.g. Flat 302, Sai Residency, Shivaji Nagar"
                     value={regAddress}
                     onChange={e => setRegAddress(e.target.value)}
@@ -608,7 +618,9 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Chiplun"
+                      name="customer_reg_city"
+                      autoComplete="address-level2"
+                      placeholder="e.g. Chiplun, Sangli, Pune"
                       value={regCity}
                       onChange={e => setRegCity(e.target.value)}
                       required
@@ -622,6 +634,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     </label>
                     <input
                       type="text"
+                      name="customer_reg_pincode"
+                      autoComplete="postal-code"
                       placeholder="e.g. 415605"
                       value={regPostcode}
                       onChange={e => setRegPostcode(e.target.value)}
@@ -635,6 +649,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                       State
                     </label>
                     <select
+                      name="customer_reg_state"
                       value={regState}
                       onChange={e => setRegState(e.target.value)}
                       className="w-full px-2.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 font-medium text-slate-700"
@@ -652,6 +667,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    name="customer_reg_landmark"
+                    autoComplete="off"
                     placeholder="e.g. Near Old Bus Stand, Opposite SBI"
                     value={regAdditionalInfo}
                     onChange={e => setRegAdditionalInfo(e.target.value)}
@@ -670,6 +687,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type={showRegPassword ? 'text' : 'password'}
+                      name="customer_reg_password"
+                      autoComplete="new-password"
                       placeholder="Create password"
                       value={regPassword}
                       onChange={e => setRegPassword(e.target.value)}
@@ -696,6 +715,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type={showRegPassword ? 'text' : 'password'}
+                      name="customer_reg_confirm_password"
+                      autoComplete="new-password"
                       placeholder="Repeat password"
                       value={regConfirmPassword}
                       onChange={e => setRegConfirmPassword(e.target.value)}
@@ -772,6 +793,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
+                    name="customer_login_email"
+                    autoComplete="username"
                     placeholder="name@example.com"
                     value={loginEmail}
                     onChange={e => setLoginEmail(e.target.value)}
@@ -802,6 +825,8 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type={showLoginPassword ? 'text' : 'password'}
+                    name="customer_login_password"
+                    autoComplete="current-password"
                     placeholder="Enter your account password"
                     value={loginPassword}
                     onChange={e => setLoginPassword(e.target.value)}
