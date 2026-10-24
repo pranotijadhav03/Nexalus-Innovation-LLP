@@ -25,7 +25,6 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/common/Button';
 import { QuoteModal } from '../../components/common/QuoteModal';
-import { PlanOrderModal } from '../../components/common/PlanOrderModal';
 import {
   Wifi,
   Check,
@@ -75,17 +74,9 @@ export const PlansPricingPage: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => getPlanCart());
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Direct Plan Order Modal State
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
-  const [selectedPlanForOrder, setSelectedPlanForOrder] = useState<{
-    planId?: string;
-    planName: string;
-    providerName: string;
-    speed: string;
-    price: number | string;
-    billingPeriod?: string;
-    brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
-  } | null>(null);
+
+
+
 
   // Filters
   const [selectedSpeedFilter, setSelectedSpeedFilter] = useState<'all' | 'entry' | 'mid' | 'high'>('all');
@@ -107,17 +98,9 @@ export const PlansPricingPage: React.FC = () => {
     const handleCartUpdate = (e: any) => {
       setCartItems(e.detail || getPlanCart());
     };
-    const handleDirectOrder = (e: any) => {
-      if (e?.detail) {
-        setSelectedPlanForOrder(e.detail);
-        setIsOrderModalOpen(true);
-      }
-    };
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
-    window.addEventListener('open_plan_order_direct', handleDirectOrder);
     return () => {
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
-      window.removeEventListener('open_plan_order_direct', handleDirectOrder);
     };
   }, []);
 
@@ -248,20 +231,23 @@ export const PlansPricingPage: React.FC = () => {
       try {
         sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
       } catch {}
-      info('Registration / Login Required', 'Please register or log in first to book this plan.');
+      info('Registration / Login Required', 'Please register or log in first to buy this plan.');
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Please register a new account, or log in if you already have an account, to book ${plan.providerName} - ${plan.planName}.`
+            prompt: `Please register a new customer account, or log in if you already have an account, to buy ${plan.providerName} - ${plan.planName} (${plan.speed}).`
           }
         })
       );
       return;
     }
-    setSelectedPlanForOrder(plan);
-    setIsOrderModalOpen(true);
+
+    // Direct checkout: Trigger global PlanOrderModal
+    window.dispatchEvent(
+      new CustomEvent('open_plan_order_direct', { detail: plan })
+    );
   };
 
   const getProviderMeta = (tab: ProviderTab) => {
@@ -940,16 +926,6 @@ export const PlansPricingPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Instant Direct Order Modal (BUY NOW) */}
-      <PlanOrderModal
-        isOpen={isOrderModalOpen}
-        onClose={() => {
-          setIsOrderModalOpen(false);
-          setSelectedPlanForOrder(null);
-        }}
-        plan={selectedPlanForOrder}
-      />
 
       {/* Quote / Feasibility Modal */}
       {selectedPlanForQuote && (

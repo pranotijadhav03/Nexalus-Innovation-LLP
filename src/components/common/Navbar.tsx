@@ -21,7 +21,6 @@ import { useToast } from '../../context/ToastContext';
 import { User, UserCheck } from 'lucide-react';
 import { QuoteModal } from './QuoteModal';
 import { PlanCartModal } from './PlanCartModal';
-import { PlanOrderModal } from './PlanOrderModal';
 import { getPlanCart } from '../../firebase/services';
 
 export const Navbar: React.FC = () => {
@@ -41,8 +40,6 @@ export const Navbar: React.FC = () => {
     }
   });
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
-  const [selectedPlanForOrder, setSelectedPlanForOrder] = useState<any>(null);
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   React.useEffect(() => {
     const handleCartUpdate = (e: any) => {
@@ -52,21 +49,13 @@ export const Navbar: React.FC = () => {
     const handleOpenCart = () => {
       setIsCartModalOpen(true);
     };
-    const handleDirectOrder = (e: any) => {
-      if (e?.detail) {
-        setSelectedPlanForOrder(e.detail);
-        setIsOrderModalOpen(true);
-      }
-    };
 
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
     window.addEventListener('open_plan_cart', handleOpenCart);
-    window.addEventListener('open_plan_order_direct', handleDirectOrder);
 
     return () => {
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
       window.removeEventListener('open_plan_cart', handleOpenCart);
-      window.removeEventListener('open_plan_order_direct', handleDirectOrder);
     };
   }, []);
 
@@ -529,26 +518,11 @@ export const Navbar: React.FC = () => {
             );
             return;
           }
-          setSelectedPlanForOrder(plan);
-          setIsOrderModalOpen(true);
+          window.dispatchEvent(
+            new CustomEvent('open_plan_order_direct', { detail: plan })
+          );
         }}
       />
-
-      {/* Direct Plan Order Modal when checking out from Cart */}
-      {selectedPlanForOrder && (
-        <PlanOrderModal
-          isOpen={isOrderModalOpen}
-          onClose={() => {
-            setIsOrderModalOpen(false);
-            setSelectedPlanForOrder(null);
-          }}
-          plan={selectedPlanForOrder}
-          onOrderSuccess={() => {
-            setIsOrderModalOpen(false);
-            setSelectedPlanForOrder(null);
-          }}
-        />
-      )}
     </>
   );
 };

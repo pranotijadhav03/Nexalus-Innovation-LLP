@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { CustomerChoiceModal, CustomerModalView } from './CustomerChoiceModal';
+import { PlanOrderModal } from './PlanOrderModal';
 import { FloatingCallButton } from './FloatingCallButton';
 import { FloatingWhatsAppButton } from './FloatingWhatsAppButton';
 import { useAuth } from '../../context/AuthContext';
@@ -27,6 +28,8 @@ export const PublicLayout: React.FC = () => {
   const [modalView, setModalView] = useState<CustomerModalView>('choice');
   const [modalPrompt, setModalPrompt] = useState<string | null>(null);
   const [modalContext, setModalContext] = useState<string | null>(null);
+  const [selectedPlanForOrder, setSelectedPlanForOrder] = useState<any>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   // Trigger popup once per session for unauthenticated visitors after short delay
   useEffect(() => {
@@ -59,6 +62,20 @@ export const PublicLayout: React.FC = () => {
     return () => window.removeEventListener('open_customer_portal', handleOpen);
   }, []);
 
+  // Global listener for direct plan orders (BUY NOW)
+  useEffect(() => {
+    const handleDirectOrder = (e: any) => {
+      if (e?.detail) {
+        setSelectedPlanForOrder(e.detail);
+        setIsOrderModalOpen(true);
+      }
+    };
+
+    window.addEventListener('open_plan_order_direct', handleDirectOrder);
+    return () => window.removeEventListener('open_plan_order_direct', handleDirectOrder);
+    
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 relative">
       <ScrollToTop />
@@ -87,6 +104,20 @@ export const PublicLayout: React.FC = () => {
         initialView={modalView}
         promptMessage={modalPrompt}
         authContext={modalContext}
+      />
+
+      {/* Global Instant Direct Order Modal (BUY NOW) */}
+      <PlanOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => {
+          setIsOrderModalOpen(false);
+          setSelectedPlanForOrder(null);
+        }}
+        plan={selectedPlanForOrder}
+        onOrderSuccess={() => {
+          setIsOrderModalOpen(false);
+          setSelectedPlanForOrder(null);
+        }}
       />
     </div>
   );

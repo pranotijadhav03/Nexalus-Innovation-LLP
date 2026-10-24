@@ -193,7 +193,25 @@ export const CustomerAccountPage: React.FC = () => {
       const res = await loginCustomer(emailClean, loginPassword);
       if (res.success) {
         success('Welcome Back!', 'You are now signed in.');
+
+        let pendingPlan: any = null;
+        try {
+          const raw = sessionStorage.getItem('nexalus_pending_order_plan');
+          if (raw) {
+            pendingPlan = JSON.parse(raw);
+            sessionStorage.removeItem('nexalus_pending_order_plan');
+          }
+        } catch {}
+
         navigate('/', { replace: true });
+
+        if (pendingPlan) {
+          setTimeout(() => {
+            window.dispatchEvent(
+              new CustomEvent('open_plan_order_direct', { detail: pendingPlan })
+            );
+          }, 350);
+        }
       } else {
         setLoginError(res.error || 'Invalid email or password.');
       }

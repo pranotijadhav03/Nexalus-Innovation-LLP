@@ -33,7 +33,6 @@ import { ProjectGallerySection } from '../../components/common/ProjectGallerySec
 import { AreasCoveredSection } from '../../components/common/AreasCoveredSection';
 import { BlurZoomReveal } from '../../components/common/BlurZoomReveal';
 import { QuoteModal } from '../../components/common/QuoteModal';
-import { PlanOrderModal } from '../../components/common/PlanOrderModal';
 import { ServiceCard } from '../../components/brand/ServiceCard';
 import { CustomSectionsRenderer } from '../../components/common/CustomSectionsRenderer';
 import { Service, BroadbandPlan, InternetPlan, SiteBanner, CartPlanItem } from '../../types';
@@ -138,18 +137,6 @@ export const HomePage: React.FC = () => {
   // Cart State
   const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => getPlanCart());
 
-  // Direct Plan Order Modal State
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
-  const [selectedPlanForOrder, setSelectedPlanForOrder] = useState<{
-    planId?: string;
-    planName: string;
-    providerName: string;
-    speed: string;
-    price: number | string;
-    billingPeriod?: string;
-    brandId?: any;
-  } | null>(null);
-
   const handleAddToCart = (plan: {
     planId: string;
     providerName: string;
@@ -176,20 +163,23 @@ export const HomePage: React.FC = () => {
       try {
         sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
       } catch {}
-      info('Registration / Login Required', 'Please register or log in first to book this plan.');
+      info('Registration / Login Required', 'Please register or log in first to buy this plan.');
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Please register a new account, or log in if you already have an account, to book ${plan.providerName} - ${plan.planName}.`
+            prompt: `Please register a new customer account, or log in if you already have an account, to buy ${plan.providerName} - ${plan.planName} (${plan.speed}).`
           }
         })
       );
       return;
     }
-    setSelectedPlanForOrder(plan);
-    setIsOrderModalOpen(true);
+
+    // Direct checkout: Trigger global PlanOrderModal
+    window.dispatchEvent(
+      new CustomEvent('open_plan_order_direct', { detail: plan })
+    );
   };
 
   const [heroBanner, setHeroBanner] = useState<SiteBanner>(() => {
@@ -215,14 +205,7 @@ export const HomePage: React.FC = () => {
     const handleCartUpdate = (e: any) => {
       setCartItems(e.detail || getPlanCart());
     };
-    const handleDirectOrder = (e: any) => {
-      if (e?.detail) {
-        setSelectedPlanForOrder(e.detail);
-        setIsOrderModalOpen(true);
-      }
-    };
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
-    window.addEventListener('open_plan_order_direct', handleDirectOrder);
 
     const handleDataUpdate = (e: any) => {
       if (!e.detail?.key || e.detail.key.includes('plans')) {
@@ -245,7 +228,6 @@ export const HomePage: React.FC = () => {
       unsubLegacy();
       unsubBanners();
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
-      window.removeEventListener('open_plan_order_direct', handleDirectOrder);
       window.removeEventListener('nexalus_data_update', handleDataUpdate);
       window.removeEventListener('storage', handleDataUpdate);
       window.removeEventListener('focus', handleDataUpdate);
@@ -1263,32 +1245,8 @@ export const HomePage: React.FC = () => {
                     type="button"
                     onClick={() => {
                       const first = cartItems[0];
-                      if (!isAuthenticated) {
-                        try {
-                          sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify({
-                            planId: first.planId,
-                            planName: first.planName,
-                            providerName: first.providerName,
-                            speed: first.speed,
-                            price: first.price,
-                            billingPeriod: first.billingPeriod,
-                            brandId: first.brandId
-                          }));
-                        } catch {}
-                        info('Registration / Login Required', 'Please register or log in first to checkout your cart.');
-                        window.dispatchEvent(
-                          new CustomEvent('open_customer_portal', {
-                            detail: {
-                              view: 'choice',
-                              context: 'cart_checkout',
-                              prompt: `Please register a new customer account, or log in if you already have an account, to book ${first.providerName} - ${first.planName}.`
-                            }
-                          })
-                        );
-                        return;
-                      }
-
-                      setSelectedPlanForOrder({
+                      if (!first) return;
+                      handleBuyNow({
                         planId: first.planId,
                         planName: first.planName,
                         providerName: first.providerName,
@@ -1297,7 +1255,6 @@ export const HomePage: React.FC = () => {
                         billingPeriod: first.billingPeriod,
                         brandId: first.brandId
                       });
-                      setIsOrderModalOpen(true);
                     }}
                     className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all transform hover:scale-102 cursor-pointer"
                   >
@@ -2197,16 +2154,6 @@ export const HomePage: React.FC = () => {
           sourcePage="/"
         />
       )}
-
-      {/* Instant Direct Order Modal (BUY NOW) */}
-      <PlanOrderModal
-        isOpen={isOrderModalOpen}
-        onClose={() => {
-          setIsOrderModalOpen(false);
-          setSelectedPlanForOrder(null);
-        }}
-        plan={selectedPlanForOrder}
-      />
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { InternetPlan } from '../../types';
-import { PlanOrderModal } from '../common/PlanOrderModal';
 import { addToPlanCart } from '../../firebase/services';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -12,7 +11,6 @@ interface PlanCardProps {
 }
 
 export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isAddedRecently, setIsAddedRecently] = useState(false);
@@ -35,33 +33,39 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   };
 
   const handleBuyNow = () => {
+    const planDetail = {
+      planId: plan.id,
+      planName: plan.name,
+      providerName: 'One Broadband',
+      speed: plan.speed,
+      price: plan.price,
+      billingPeriod: plan.billingPeriod || 'monthly',
+      brandId: 'one-broadband'
+    };
+
     if (!isAuthenticated) {
       try {
-        sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify({
-          planId: plan.id,
-          planName: plan.name,
-          providerName: 'One Broadband',
-          speed: plan.speed,
-          price: plan.price,
-          billingPeriod: plan.billingPeriod || 'monthly',
-          brandId: 'one-broadband'
-        }));
+        sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(planDetail));
       } catch {}
 
-      info('Registration / Login Required', 'Please register or log in first to book this plan.');
+      info('Registration / Login Required', 'Please register or log in first to buy this plan.');
 
       window.dispatchEvent(
         new CustomEvent('open_customer_portal', {
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: `Please register a new account, or log in if you already have one, to book ${plan.name} (${plan.speed}).`
+            prompt: `Please register a new customer account, or log in if you already have an account, to buy ${plan.name} (${plan.speed}).`
           }
         })
       );
       return;
     }
-    setIsOrderModalOpen(true);
+
+    // Direct checkout: Trigger global PlanOrderModal
+    window.dispatchEvent(
+      new CustomEvent('open_plan_order_direct', { detail: planDetail })
+    );
   };
 
   return (
@@ -184,20 +188,6 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
         </div>
       </div>
 
-      {/* Instant Direct Order Modal */}
-      <PlanOrderModal
-        isOpen={isOrderModalOpen}
-        onClose={() => setIsOrderModalOpen(false)}
-        plan={{
-          planId: plan.id,
-          planName: plan.name,
-          providerName: 'One Broadband',
-          speed: plan.speed,
-          price: plan.price,
-          billingPeriod: plan.billingPeriod || 'monthly',
-          brandId: 'one-broadband'
-        }}
-      />
     </>
   );
 };

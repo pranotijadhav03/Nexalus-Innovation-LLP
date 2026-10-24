@@ -130,14 +130,14 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
         window.dispatchEvent(
           new CustomEvent('open_plan_order_direct', { detail: pendingPlan })
         );
-      }, 150);
+      }, 250);
       return;
     }
 
     if (authContext === 'cart_checkout') {
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('open_plan_cart'));
-      }, 150);
+      }, 250);
       return;
     }
 
@@ -204,7 +204,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
       if (result.success) {
         success(
           'Registration Successful!',
-          'Your customer profile has been created. Please log in with your password to continue.'
+          'Your customer profile has been created. Please log in with your password to complete your plan order.'
         );
         setLoginEmail(emailClean);
         setLoginPassword('');
@@ -785,7 +785,9 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     Customer Portal Login
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Sign in with your registered email and password to access your account.
+                    {authContext === 'buy_now'
+                      ? 'Please log in with your password to complete your Buy Now plan order.'
+                      : 'Sign in with your registered email and password to access your account.'}
                   </p>
                 </div>
                 <button
