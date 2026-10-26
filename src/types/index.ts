@@ -359,6 +359,9 @@ export interface CustomerDeliveryAddress {
 
 export interface CustomerRegistrationData {
   displayName: string;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
   email: string;
   phone: string;
   password: string;
@@ -368,6 +371,10 @@ export interface CustomerRegistrationData {
 export interface AdminUser {
   uid: string;
   displayName: string;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  subscriberId?: string;
   email: string;
   role: UserRole;
   assignedBrandId?: BrandId | 'all';
@@ -377,6 +384,13 @@ export interface AdminUser {
   createdAt: string;
   lastLogin?: string;
   updatedAt?: string;
+  planName?: string;
+  planFee?: string | number;
+  subscriptionStatus?: 'Active' | 'Pending' | 'Expired';
+  associatedLco?: string;
+  expiryDate?: string;
+  lastRenewal?: string;
+  termPlanValidity?: string;
 }
 
 export type UserProfile = AdminUser;

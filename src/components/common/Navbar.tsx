@@ -361,14 +361,22 @@ export const Navbar: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Dropdown Action: Sign Out at the bottom */}
-                      <div className="p-2.5 bg-white">
+                      {/* Dropdown Actions */}
+                      <div className="p-2.5 bg-white space-y-1.5">
+                        <Link
+                          to="/account"
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 active:scale-98 text-blue-800 font-bold text-xs flex items-center gap-2 border border-blue-200 transition-all cursor-pointer shadow-2xs"
+                        >
+                          <User className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span className="truncate">My Profile &amp; Subscriber Portal</span>
+                        </Link>
                         <button
                           type="button"
                           onClick={handleSignOut}
                           className="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-98 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 border border-rose-200 transition-all cursor-pointer shadow-2xs"
                         >
-                          <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                          <LogOut className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                           <span>Sign Out</span>
                         </button>
                       </div>
@@ -545,6 +553,14 @@ export const Navbar: React.FC = () => {
                       Verified
                     </span>
                   </div>
+                  <Link
+                    to="/account"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors"
+                  >
+                    <User className="w-3.5 h-3.5 text-blue-100" />
+                    <span>My Profile &amp; Subscriber Portal</span>
+                  </Link>
                   <button
                     type="button"
                     onClick={handleSignOut}

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { auth, db } from '../../firebase/config';
+import { auth } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { updateCustomerProfile, getCustomerEnquiries } from '../../firebase/services';
@@ -35,7 +34,26 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  Bell
+  Bell,
+  Calendar,
+  CreditCard,
+  Receipt,
+  Activity,
+  History,
+  Tv,
+  Film,
+  Scale,
+  Menu,
+  X,
+  Printer,
+  Download,
+  Check,
+  HelpCircle,
+  Headphones,
+  Upload,
+  AlertTriangle,
+  PlayCircle,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { triggerSystemPushNotification, getEmailProviderUrl, getEmailProviderName } from '../../utils/notificationHelpers';
@@ -62,6 +80,110 @@ const INDIAN_STATES = [
   'Delhi',
   'Other'
 ];
+
+// 22 Exact Support Ticket Subjects from RailWire / Nexalus Broadband login.mp4 video
+const TICKET_SUBJECTS = [
+  'Slow browsing speed',
+  'Frequent disconnection',
+  'No internet access / Red light on ONT/ONU',
+  'Optical fiber cable cut / loss of signal',
+  'Wi-Fi router / ONT configuration issue',
+  'Wi-Fi signal weak / range problem',
+  'Error 691: Authentication failure / Username password wrong',
+  'Error 678 / 651: Remote computer did not respond',
+  'Plan change request',
+  'Relocation / Shifting of connection',
+  'Billing discrepancy / Payment not updated',
+  'Invoice copy required',
+  'Static IP configuration request',
+  'Reset CPE / Internet password',
+  'OTT add-on activation issue',
+  'IPTV Set-Top Box not working',
+  'Latency / High ping in gaming',
+  'Website / Server unreachable',
+  'Temporary suspension / Safe custody',
+  'Renewal query',
+  'Upgrade to Gigabit Fiber',
+  'Other technical grievance'
+];
+
+// Sample Receipts matching video structure
+const SAMPLE_RECEIPTS = [
+  {
+    id: 'RCP-2024-9182',
+    invoiceNo: 'INV/MH/2024/217435-01',
+    date: '12-10-2024',
+    period: '12-10-2024 to 11-11-2024',
+    plan: 'FUP40Mbps-2Mbps 2500GB x10',
+    taxable: '₹ 399.00',
+    cgst: '₹ 35.91',
+    sgst: '₹ 35.91',
+    amount: '₹ 470.82',
+    mode: 'Online (NTT DATA)',
+    status: 'Paid',
+    sac: '998422'
+  },
+  {
+    id: 'RCP-2024-8104',
+    invoiceNo: 'INV/MH/2024/217435-00',
+    date: '12-09-2024',
+    period: '12-09-2024 to 11-10-2024',
+    plan: 'FUP40Mbps-2Mbps 2500GB x10',
+    taxable: '₹ 399.00',
+    cgst: '₹ 35.91',
+    sgst: '₹ 35.91',
+    amount: '₹ 470.82',
+    mode: 'Online (NTT DATA)',
+    status: 'Paid',
+    sac: '998422'
+  }
+];
+
+// Sample Transactions matching video structure
+const SAMPLE_TRANSACTIONS = [
+  {
+    txnId: 'TXN202410129841',
+    gatewayRef: 'NTT-PG-892182741',
+    date: '12 Oct 2024, 02:45 PM',
+    pack: 'FUP40Mbps-2Mbps 2500GB x10',
+    amount: '₹ 470.82',
+    mode: 'NTT DATA Payment Services',
+    status: 'Success'
+  },
+  {
+    txnId: 'TXN202409127632',
+    gatewayRef: 'NTT-PG-781920472',
+    date: '12 Sep 2024, 11:18 AM',
+    pack: 'FUP40Mbps-2Mbps 2500GB x10',
+    amount: '₹ 470.82',
+    mode: 'NTT DATA Payment Services',
+    status: 'Success'
+  }
+];
+
+// Sample Usage Sessions matching video structure
+const SAMPLE_USAGE_SESSIONS = [
+  { date: '26 Oct 2024', ip: '103.241.134.82', downloadMb: 4210.5, uploadMb: 820.2, totalGb: '4.91 GB', duration: '08h 12m' },
+  { date: '25 Oct 2024', ip: '103.241.134.82', downloadMb: 8940.1, uploadMb: 1120.4, totalGb: '9.82 GB', duration: '14h 45m' },
+  { date: '24 Oct 2024', ip: '103.241.134.90', downloadMb: 6150.8, uploadMb: 940.0, totalGb: '6.92 GB', duration: '11h 20m' },
+  { date: '23 Oct 2024', ip: '103.241.134.90', downloadMb: 5200.3, uploadMb: 780.6, totalGb: '5.84 GB', duration: '09h 55m' },
+  { date: '22 Oct 2024', ip: '103.241.134.11', downloadMb: 7420.0, uploadMb: 1305.1, totalGb: '8.52 GB', duration: '13h 10m' }
+];
+
+// 12 Sidebar Navigation Sections from login.mp4 video
+type PortalSection =
+  | 'account_summary'       // 1. Account Summary
+  | 'my_profile'            // 2. My Profile
+  | 'portal_password'       // 3. Portal Password Change
+  | 'internet_password'     // 4. Internet Password Change
+  | 'payments'              // 5. Payments (Recharge)
+  | 'my_receipts'           // 6. My Receipts
+  | 'data_usage'            // 7. My Data Usage
+  | 'support_tickets'       // 8. My Support Tickets
+  | 'old_transactions'      // 9. Old Transactions
+  | 'iptv_pack'             // 10. IPTV PACK
+  | 'ott_recharge'          // 11. OTT Recharge
+  | 'offline_appeal';       // 12. Offline Appeal
 
 export const CustomerAccountPage: React.FC = () => {
   const {
@@ -92,14 +214,13 @@ export const CustomerAccountPage: React.FC = () => {
     }
   }, [location.pathname]);
 
-  // Redirect authenticated customers to Homepage, and authenticated Admins to Admin Console
+  // Redirect authenticated Admins to Admin Console; Keep authenticated customers on this page
   useEffect(() => {
     if (isAuthenticated) {
       if (!isCustomer) {
         navigate('/admin', { replace: true });
-      } else {
-        navigate('/', { replace: true });
       }
+      // If customer is on /account, let them stay to access their Subscriber Portal
     }
   }, [isAuthenticated, isCustomer, navigate]);
 
@@ -110,7 +231,10 @@ export const CustomerAccountPage: React.FC = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Registration Form State
+  // Registration Form State (with First Name, Last Name, DOB from login.mp4)
+  const [regFirstName, setRegFirstName] = useState('');
+  const [regLastName, setRegLastName] = useState('');
+  const [regDob, setRegDob] = useState('');
   const [regFullName, setRegFullName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
@@ -132,36 +256,92 @@ export const CustomerAccountPage: React.FC = () => {
   const [resetSent, setResetSent] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
 
-  // Authenticated Dashboard Tabs
-  const [activeTab, setActiveTab] = useState<'address' | 'inquiries' | 'security'>('address');
+  // ==========================================
+  // PORTAL STATE (FOR LOGGED-IN CUSTOMER)
+  // ==========================================
+  const [activeSection, setActiveSection] = useState<PortalSection>('account_summary');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  // Address & Contact Form State (for logged-in customer profile)
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('Maharashtra');
-  const [postcode, setPostcode] = useState('');
-  const [country, setCountry] = useState('India');
-  const [additionalDeliveryInfo, setAdditionalDeliveryInfo] = useState('');
+  // Profile Form State
+  const [profileFirstName, setProfileFirstName] = useState('');
+  const [profileLastName, setProfileLastName] = useState('');
+  const [profileDob, setProfileDob] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileAddress, setProfileAddress] = useState('');
+  const [profileCity, setProfileCity] = useState('');
+  const [profileState, setProfileState] = useState('Maharashtra');
+  const [profilePostcode, setProfilePostcode] = useState('');
+  const [profileCountry, setProfileCountry] = useState('India');
+  const [profileAdditionalInfo, setProfileAdditionalInfo] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Inquiries State
   const [inquiries, setInquiries] = useState<Enquiry[]>([]);
   const [isLoadingInquiries, setIsLoadingInquiries] = useState(false);
+  const [showInquiriesModal, setShowInquiriesModal] = useState(false);
+
+  // Tax Invoice Modal State
+  const [selectedInvoice, setSelectedInvoice] = useState<typeof SAMPLE_RECEIPTS[0] | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+
+  // Support Tickets State & Modal
+  const [ticketsList, setTicketsList] = useState([
+    {
+      id: 'TKT-82910',
+      subject: 'Slow browsing speed',
+      priority: 'high',
+      status: 'Resolved',
+      date: '18 Oct 2024',
+      description: 'Speed test showing 12 Mbps instead of 40 Mbps.'
+    },
+    {
+      id: 'TKT-83401',
+      subject: 'Wi-Fi router / ONT configuration issue',
+      priority: 'medium',
+      status: 'Open',
+      date: '24 Oct 2024',
+      description: 'Need dual-band 5GHz SSID configuration support.'
+    }
+  ]);
+  const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
+  const [ticketSubject, setTicketSubject] = useState(TICKET_SUBJECTS[0]);
+  const [ticketPriority, setTicketPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [ticketDescription, setTicketDescription] = useState('');
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+
+  // Internet Password Change State
+  const [newInternetPassword, setNewInternetPassword] = useState('');
+  const [confirmInternetPassword, setConfirmInternetPassword] = useState('');
+  const [showInternetPassword, setShowInternetPassword] = useState(false);
+  const [isUpdatingInternetPass, setIsUpdatingInternetPass] = useState(false);
+
+  // Portal Password Change State
+  const [portalOldPass, setPortalOldPass] = useState('');
+  const [portalNewPass, setPortalNewPass] = useState('');
+  const [portalConfirmPass, setPortalConfirmPass] = useState('');
+  const [showPortalPass, setShowPortalPass] = useState(false);
+  const [isUpdatingPortalPass, setIsUpdatingPortalPass] = useState(false);
+
+  // Payment Recharge State
+  const [selectedGateway, setSelectedGateway] = useState<'ntt_data' | 'billdesk' | 'razorpay_upi'>('ntt_data');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Initialize form fields when currentUser loads
   useEffect(() => {
     if (currentUser) {
-      setFullName(currentUser.displayName || '');
-      setPhone(currentUser.phone || '');
+      // Split full name if separate first/last name not present
+      const parts = (currentUser.displayName || '').split(' ');
+      setProfileFirstName(currentUser.firstName || parts[0] || '');
+      setProfileLastName(currentUser.lastName || parts.slice(1).join(' ') || '');
+      setProfileDob(currentUser.dateOfBirth || '');
+      setProfilePhone(currentUser.phone || '');
       if (currentUser.deliveryAddress) {
-        setAddress(currentUser.deliveryAddress.address || '');
-        setCity(currentUser.deliveryAddress.city || '');
-        setState(currentUser.deliveryAddress.state || 'Maharashtra');
-        setPostcode(currentUser.deliveryAddress.postcode || '');
-        setCountry(currentUser.deliveryAddress.country || 'India');
-        setAdditionalDeliveryInfo(currentUser.deliveryAddress.additionalDeliveryInfo || '');
+        setProfileAddress(currentUser.deliveryAddress.address || '');
+        setProfileCity(currentUser.deliveryAddress.city || '');
+        setProfileState(currentUser.deliveryAddress.state || 'Maharashtra');
+        setProfilePostcode(currentUser.deliveryAddress.postcode || '');
+        setProfileCountry(currentUser.deliveryAddress.country || 'India');
+        setProfileAdditionalInfo(currentUser.deliveryAddress.additionalDeliveryInfo || '');
       }
     }
   }, [currentUser]);
@@ -198,7 +378,7 @@ export const CustomerAccountPage: React.FC = () => {
     try {
       const res = await loginCustomer(emailClean, loginPassword);
       if (res.success) {
-        success('Welcome Back!', 'You are now signed in.');
+        success('Welcome to Nexalus Portal!', 'You are now signed in to your subscriber portal.');
 
         let pendingPlan: any = null;
         try {
@@ -209,14 +389,16 @@ export const CustomerAccountPage: React.FC = () => {
           }
         } catch {}
 
-        navigate('/', { replace: true });
-
         if (pendingPlan) {
+          navigate('/', { replace: true });
           setTimeout(() => {
             window.dispatchEvent(
               new CustomEvent('open_plan_order_direct', { detail: pendingPlan })
             );
           }, 350);
+        } else {
+          // Stay on /account to see the Subscriber Portal
+          navigate('/account', { replace: true });
         }
       } else {
         setLoginError(res.error || 'Invalid email or password.');
@@ -232,9 +414,9 @@ export const CustomerAccountPage: React.FC = () => {
     e.preventDefault();
     setRegError(null);
 
-    // Form Validations
-    if (!regFullName.trim()) {
-      setRegError('Please enter your full name.');
+    const fullNameCombined = `${regFirstName.trim()} ${regLastName.trim()}`.trim() || regFullName.trim();
+    if (!fullNameCombined) {
+      setRegError('Please enter your first and last name.');
       return;
     }
     const emailClean = regEmail.trim().toLowerCase();
@@ -263,7 +445,10 @@ export const CustomerAccountPage: React.FC = () => {
     setIsRegistering(true);
     try {
       const result = await registerCustomerAccount({
-        displayName: regFullName.trim(),
+        displayName: fullNameCombined,
+        firstName: regFirstName.trim(),
+        lastName: regLastName.trim(),
+        dateOfBirth: regDob.trim(),
         email: emailClean,
         phone: phoneClean,
         password: regPassword,
@@ -280,7 +465,7 @@ export const CustomerAccountPage: React.FC = () => {
       if (result.success) {
         success(
           'Registration Successful!',
-          'Your account has been created. Please log in with your email and password.'
+          'Your subscriber account has been created. Please sign in with your email and password.'
         );
         setLoginEmail(emailClean);
         setLoginPassword('');
@@ -313,11 +498,9 @@ export const CustomerAccountPage: React.FC = () => {
 
     setIsSendingReset(true);
     try {
-      // Dispatch password reset link via Firebase Authentication
       await sendPasswordResetEmail(auth, emailClean);
       setResetSent(true);
 
-      // Trigger native browser notification
       triggerSystemPushNotification('Nexalus Innovations - Password Reset', {
         body: `Password reset instructions sent to ${emailClean}. Click to open your email inbox or check spam.`,
         icon: '/favicon.ico'
@@ -346,8 +529,6 @@ export const CustomerAccountPage: React.FC = () => {
         msg = 'The email address format is invalid. Please check and try again.';
       } else if (err.code === 'auth/too-many-requests') {
         msg = 'Too many requests sent. Please wait a few moments before requesting another reset email.';
-      } else if (err.code === 'auth/quota-exceeded') {
-        msg = 'Daily email limit reached. Please contact Nexalus customer support directly.';
       } else if (err.code === 'auth/network-request-failed') {
         msg = 'Network connection failed. Please check your internet connection.';
       } else if (err.message) {
@@ -360,58 +541,128 @@ export const CustomerAccountPage: React.FC = () => {
   };
 
   // ==========================================
-  // HANDLERS: LOGGED-IN CUSTOMER DASHBOARD
+  // HANDLERS: LOGGED-IN CUSTOMER PORTAL
   // ==========================================
-  const handleSaveAddress = async (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
-    if (!address.trim() || !city.trim() || !postcode.trim()) {
+    if (!profileAddress.trim() || !profileCity.trim() || !profilePostcode.trim()) {
       error('Validation Error', 'Please specify your street address, city, and pincode.');
       return;
     }
 
     setIsSavingProfile(true);
     try {
+      const fullNameCombined = `${profileFirstName.trim()} ${profileLastName.trim()}`.trim();
       const updatedDelivery: CustomerDeliveryAddress = {
-        address: address.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        postcode: postcode.trim(),
-        country: country.trim() || 'India',
-        additionalDeliveryInfo: additionalDeliveryInfo.trim()
+        address: profileAddress.trim(),
+        city: profileCity.trim(),
+        state: profileState.trim(),
+        postcode: profilePostcode.trim(),
+        country: profileCountry.trim() || 'India',
+        additionalDeliveryInfo: profileAdditionalInfo.trim()
       };
 
       const res = await updateCustomerProfile(currentUser.uid, {
-        displayName: fullName.trim(),
-        phone: phone.trim(),
+        displayName: fullNameCombined || currentUser.displayName,
+        firstName: profileFirstName.trim(),
+        lastName: profileLastName.trim(),
+        dateOfBirth: profileDob.trim(),
+        phone: profilePhone.trim(),
         deliveryAddress: updatedDelivery
       });
 
       if (res) {
         await refreshUserProfile();
-        success('Profile Saved', 'Your delivery location and contact details have been updated.');
+        success('Profile Saved', 'Your subscriber details and service address have been updated.');
       } else {
         error('Save Failed', 'Could not update your profile. Please try again.');
       }
     } catch (err: any) {
-      error('Error', err.message || 'Failed to save address.');
+      error('Error', err.message || 'Failed to save profile.');
     } finally {
       setIsSavingProfile(false);
     }
   };
 
-  const handleSendPasswordReset = async () => {
-    if (!currentUser?.email || !auth) return;
-    setIsSendingReset(true);
-    try {
-      await sendPasswordResetEmail(auth, currentUser.email);
-      success('Email Dispatched', `Password reset instructions sent to ${currentUser.email}`);
-    } catch (err: any) {
-      error('Reset Failed', err.message || 'Could not send password reset email.');
-    } finally {
-      setIsSendingReset(false);
+  const handleUpdateInternetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newInternetPassword.length < 6) {
+      error('Validation Error', 'New Internet password must be at least 6 characters long.');
+      return;
     }
+    if (newInternetPassword !== confirmInternetPassword) {
+      error('Validation Error', 'Passwords do not match. Please verify.');
+      return;
+    }
+
+    setIsUpdatingInternetPass(true);
+    setTimeout(() => {
+      setIsUpdatingInternetPass(false);
+      setNewInternetPassword('');
+      setConfirmInternetPassword('');
+      success(
+        'Internet Password Updated',
+        'Your CPE / Wi-Fi credentials have been updated. Remember to update your ONT WiFi router settings to reconnect.'
+      );
+    }, 900);
+  };
+
+  const handleUpdatePortalPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (portalNewPass.length < 6) {
+      error('Validation Error', 'New Portal password must be at least 6 characters.');
+      return;
+    }
+    if (portalNewPass !== portalConfirmPass) {
+      error('Validation Error', 'New passwords do not match.');
+      return;
+    }
+
+    setIsUpdatingPortalPass(true);
+    setTimeout(() => {
+      setIsUpdatingPortalPass(false);
+      setPortalOldPass('');
+      setPortalNewPass('');
+      setPortalConfirmPass('');
+      success('Portal Password Updated', 'Your customer portal login password has been changed.');
+    }, 850);
+  };
+
+  const handleCreateTicket = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ticketDescription.trim()) {
+      error('Validation Error', 'Please describe the technical grievance or requirement.');
+      return;
+    }
+
+    setIsSubmittingTicket(true);
+    setTimeout(() => {
+      const newTicketId = `TKT-${Math.floor(10000 + Math.random() * 90000)}`;
+      const newTicket = {
+        id: newTicketId,
+        subject: ticketSubject,
+        priority: ticketPriority,
+        status: 'Open',
+        date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        description: ticketDescription.trim()
+      };
+
+      setTicketsList(prev => [newTicket, ...prev]);
+      setIsSubmittingTicket(false);
+      setIsNewTicketModalOpen(false);
+      setTicketDescription('');
+      success('Ticket Raised Successfully', `Your support ticket #${newTicketId} has been assigned to Nexalus LCO.`);
+    }, 900);
+  };
+
+  const handleRechargeSubmit = () => {
+    setIsProcessingPayment(true);
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      success('Payment Gateway Redirect', 'Connecting to NTT DATA Secure Payment Gateway for ₹ 470.82...');
+    }, 1200);
   };
 
   const handleLogout = async () => {
@@ -420,23 +671,10 @@ export const CustomerAccountPage: React.FC = () => {
     navigate('/');
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'new':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">New Request</span>;
-      case 'contacted':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Contacted</span>;
-      case 'in_progress':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">In Progress</span>;
-      case 'quotation_sent':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Quotation Sent</span>;
-      case 'converted':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Connected / Installed</span>;
-      case 'closed':
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">Closed</span>;
-      default:
-        return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">{status}</span>;
-    }
+  // Open Tax Invoice
+  const handleViewInvoice = (receipt: typeof SAMPLE_RECEIPTS[0]) => {
+    setSelectedInvoice(receipt);
+    setIsInvoiceModalOpen(true);
   };
 
   // =========================================================================
@@ -448,117 +686,67 @@ export const CustomerAccountPage: React.FC = () => {
         <div className="max-w-xl w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto animate-in fade-in duration-200">
           {/* Header Banner */}
           <div className="bg-gradient-to-r from-[#070e20] via-[#0b1739] to-[#0d1d49] px-6 py-6 text-white border-b border-slate-800 relative">
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-500" />
-            <div className="flex items-center gap-3.5">
-              <div className="relative shrink-0">
-                <img
-                  src="/images/parent-company-logo.jpg"
-                  alt="Nexalus Innovations LLP Logo"
-                  className="w-12 h-12 rounded-2xl object-cover border border-cyan-400/40 shadow-inner bg-slate-900"
-                />
-                <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900" />
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600/30 border border-blue-400/40 text-blue-400 flex items-center justify-center">
+                <Wifi className="w-6 h-6 text-cyan-400" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-widest font-black text-cyan-300">
-                    Official Client Portal
+                  <span className="text-xs uppercase tracking-widest text-cyan-400 font-black">
+                    Nexalus Broadband Portal
                   </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-400/30 font-bold">
+                    Sangli &amp; Chiplun
+                  </span>
                 </div>
-                <h2 className="text-lg sm:text-xl font-black tracking-tight text-white leading-tight">
-                  Nexalus Innovations LLP &amp; A.M. Distributors
-                </h2>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  Sign in or register as a new customer to track services &amp; orders
-                </p>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
+                  Customer &amp; Subscriber Portal
+                </h1>
               </div>
+            </div>
+            <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+              Sign in to manage your active fiber broadband, view data consumption, recharge packs, download GST tax invoices, and raise support tickets.
+            </p>
+
+            {/* Sub Tabs */}
+            <div className="flex gap-2 mt-5 bg-slate-900/60 p-1 rounded-xl border border-slate-700/60">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setLoginError(null);
+                }}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  authMode === 'login'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Existing Customer Sign In</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('register');
+                  setRegError(null);
+                }}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  authMode === 'register'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>New Registration</span>
+              </button>
             </div>
           </div>
 
-          {/* Mode Switcher Tabs */}
-          <div className="grid grid-cols-2 bg-slate-100 p-1.5 border-b border-slate-200 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('login');
-                setLoginError(null);
-                setRegError(null);
-              }}
-              className={`py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                authMode === 'login' || authMode === 'forgot_password'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <LogIn className="w-4 h-4 text-blue-600" />
-              <span>Sign In to Account</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode('register');
-                setLoginError(null);
-                setRegError(null);
-              }}
-              className={`py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                authMode === 'register'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <UserPlus className="w-4 h-4 text-emerald-600" />
-              <span>New Customer Registration</span>
-            </button>
-          </div>
-
           <div className="p-6 sm:p-8">
-            {resetSent && (
-              <div className="mb-5 p-4 bg-gradient-to-r from-blue-50 via-indigo-50/80 to-emerald-50 border-2 border-blue-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-800 shadow-md shadow-blue-900/5 animate-in slide-in-from-top-2">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                    <Bell className="w-4 h-4 animate-bounce" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
-                      <h4 className="font-black text-slate-900 text-xs sm:text-sm">
-                        Password Reset Notification Sent
-                      </h4>
-                    </div>
-                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-                      Sent to <strong className="text-slate-900 font-bold">{resetEmail}</strong>. Check your inbox &amp; spam folder to set your new password.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                  <a
-                    href={getEmailProviderUrl(resetEmail)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all transform hover:-translate-y-0.5 cursor-pointer"
-                  >
-                    <span>{getEmailProviderName(resetEmail)}</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {/* ======================================================== */}
-            {/* VIEW 1: SIGN IN FORM */}
-            {/* ======================================================== */}
+            {/* VIEW 1: LOGIN */}
             {authMode === 'login' && (
               <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div className="border-b border-slate-100 pb-3">
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">
-                    Customer Portal Login
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Enter your registered email and password to access your account dashboard.
-                  </p>
-                </div>
-
                 {loginError && (
                   <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -587,8 +775,8 @@ export const CustomerAccountPage: React.FC = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Password <span className="text-rose-500">*</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Account Password <span className="text-rose-500">*</span>
                     </label>
                     <button
                       type="button"
@@ -596,7 +784,7 @@ export const CustomerAccountPage: React.FC = () => {
                         setResetEmail(loginEmail);
                         setAuthMode('forgot_password');
                       }}
-                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
                     >
                       Forgot password?
                     </button>
@@ -607,7 +795,7 @@ export const CustomerAccountPage: React.FC = () => {
                       type={showLoginPassword ? 'text' : 'password'}
                       name="customer_login_password"
                       autoComplete="current-password"
-                      placeholder="Enter your account password"
+                      placeholder="Enter account password"
                       value={loginPassword}
                       onChange={e => setLoginPassword(e.target.value)}
                       required
@@ -616,35 +804,11 @@ export const CustomerAccountPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowLoginPassword(!showLoginPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                      tabIndex={-1}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
                       {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                </div>
-
-                {/* Prominent New Customer Registration Callout */}
-                <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/70 flex items-center justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                      <UserPlus className="w-3.5 h-3.5 text-blue-600" />
-                      <span>New Customer?</span>
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Register your delivery address &amp; profile in 1 minute
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRegError(null);
-                      setAuthMode('register');
-                    }}
-                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-colors shrink-0 cursor-pointer"
-                  >
-                    Register Now →
-                  </button>
                 </div>
 
                 <div className="pt-2">
@@ -653,27 +817,25 @@ export const CustomerAccountPage: React.FC = () => {
                     variant="primary"
                     size="md"
                     isLoading={isLoggingIn}
-                    className="w-full justify-center bg-blue-600 hover:bg-blue-700 font-bold"
                     icon={<LogIn className="w-4 h-4" />}
+                    className="w-full font-bold shadow-md shadow-blue-600/20"
                   >
-                    Sign In to Account
+                    Sign In to Subscriber Portal
                   </Button>
                 </div>
               </form>
             )}
 
-            {/* ======================================================== */}
-            {/* VIEW 2: NEW CUSTOMER REGISTRATION FORM */}
-            {/* ======================================================== */}
+            {/* VIEW 2: REGISTRATION (Matching login.mp4 fields: First Name, Last Name, DOB, etc.) */}
             {authMode === 'register' && (
-              <form onSubmit={handleRegisterSubmit} className="space-y-4" autoComplete="off">
+              <form onSubmit={handleRegisterSubmit} className="space-y-4">
                 <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-black text-slate-900 tracking-tight">
                       New Customer Registration
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Create an account with your service address for fast broadband provisioning &amp; deliveries.
+                      Register your fiber broadband account with installation address.
                     </p>
                   </div>
                   <button
@@ -694,40 +856,65 @@ export const CustomerAccountPage: React.FC = () => {
 
                 {/* Personal Information */}
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Full Name <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        name="customer_reg_name"
-                        autoComplete="name"
-                        placeholder="e.g. Ramesh Patil"
-                        value={regFullName}
-                        onChange={e => setRegFullName(e.target.value)}
-                        required
-                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                      />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        First Name <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          name="customer_reg_firstname"
+                          autoComplete="given-name"
+                          placeholder="e.g. Pranoday"
+                          value={regFirstName}
+                          onChange={e => {
+                            setRegFirstName(e.target.value);
+                            setRegFullName(`${e.target.value} ${regLastName}`.trim());
+                          }}
+                          required
+                          className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Last Name <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          name="customer_reg_lastname"
+                          autoComplete="family-name"
+                          placeholder="e.g. Jadhav"
+                          value={regLastName}
+                          onChange={e => {
+                            setRegLastName(e.target.value);
+                            setRegFullName(`${regFirstName} ${e.target.value}`.trim());
+                          }}
+                          required
+                          className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Email Address <span className="text-rose-500">*</span>
+                        Date of Birth <span className="text-slate-400 font-normal">(DOB)</span>
                       </label>
                       <div className="relative">
-                        <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input
-                          type="email"
-                          name="customer_reg_email"
-                          autoComplete="email"
-                          placeholder="name@example.com"
-                          value={regEmail}
-                          onChange={e => setRegEmail(e.target.value)}
-                          required
+                          type="date"
+                          name="customer_reg_dob"
+                          value={regDob}
+                          onChange={e => setRegDob(e.target.value)}
+                          max={new Date().toISOString().split('T')[0]}
                           className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
                         />
                       </div>
@@ -756,16 +943,6 @@ export const CustomerAccountPage: React.FC = () => {
                             }
                             setRegPhone(digits.slice(0, 10));
                           }}
-                          onKeyDown={e => {
-                            if (
-                              !/[0-9]/.test(e.key) &&
-                              !['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(e.key) &&
-                              !e.ctrlKey &&
-                              !e.metaKey
-                            ) {
-                              e.preventDefault();
-                            }
-                          }}
                           required
                           className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
                         />
@@ -773,11 +950,30 @@ export const CustomerAccountPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Password & Confirm */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Email Address <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="email"
+                        name="customer_reg_email"
+                        autoComplete="email"
+                        placeholder="name@example.com"
+                        value={regEmail}
+                        onChange={e => setRegEmail(e.target.value)}
+                        required
+                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Password (Min 6 Chars) <span className="text-rose-500">*</span>
+                        Password <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -785,7 +981,7 @@ export const CustomerAccountPage: React.FC = () => {
                           type={showRegPassword ? 'text' : 'password'}
                           name="customer_reg_password"
                           autoComplete="new-password"
-                          placeholder="Min 6 characters"
+                          placeholder="At least 6 chars"
                           value={regPassword}
                           onChange={e => setRegPassword(e.target.value)}
                           required
@@ -795,8 +991,7 @@ export const CustomerAccountPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setShowRegPassword(!showRegPassword)}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                          tabIndex={-1}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                         >
                           {showRegPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         </button>
@@ -829,7 +1024,7 @@ export const CustomerAccountPage: React.FC = () => {
                 <div className="pt-3 border-t border-slate-100 space-y-3">
                   <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 uppercase tracking-wider">
                     <MapPin className="w-4 h-4 text-blue-600" />
-                    <span>Installation &amp; Delivery Address</span>
+                    <span>Installation &amp; Service Address</span>
                   </div>
 
                   <div>
@@ -860,7 +1055,7 @@ export const CustomerAccountPage: React.FC = () => {
                         list="maharashtra-city-options"
                         value={regCity}
                         onChange={e => setRegCity(e.target.value)}
-                        placeholder="e.g. Chiplun, Sangli, Pune"
+                        placeholder="e.g. Chiplun, Sangli"
                         required
                         className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
                       />
@@ -907,13 +1102,12 @@ export const CustomerAccountPage: React.FC = () => {
 
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                      Landmark / Delivery Instructions (Optional)
+                      Landmark / Fiber ONT Placement Notes <span className="text-slate-400 font-normal">(Optional)</span>
                     </label>
                     <input
                       type="text"
-                      name="customer_reg_landmark"
-                      autoComplete="off"
-                      placeholder="e.g. Near Old Bus Stand, Ring Road"
+                      name="customer_reg_notes"
+                      placeholder="e.g. Near Old Bus Stand, 2nd Floor"
                       value={regAdditionalInfo}
                       onChange={e => setRegAdditionalInfo(e.target.value)}
                       className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
@@ -921,32 +1115,22 @@ export const CustomerAccountPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setAuthMode('login')}
-                    className="text-xs text-slate-600 hover:text-blue-700 font-medium cursor-pointer"
-                  >
-                    Already have an account? <span className="font-bold underline">Login here</span>
-                  </button>
-
+                <div className="pt-2">
                   <Button
                     type="submit"
-                    variant="teal"
+                    variant="primary"
                     size="md"
                     isLoading={isRegistering}
-                    className="w-full sm:w-auto font-bold shadow-md shadow-teal-700/20"
                     icon={<UserPlus className="w-4 h-4" />}
+                    className="w-full font-bold shadow-md shadow-blue-600/20"
                   >
-                    Create Account &amp; Save
+                    Complete Customer Registration
                   </Button>
                 </div>
               </form>
             )}
 
-            {/* ======================================================== */}
             {/* VIEW 3: FORGOT PASSWORD */}
-            {/* ======================================================== */}
             {authMode === 'forgot_password' && (
               <form onSubmit={handlePasswordResetSubmit} className="space-y-4">
                 <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
@@ -988,37 +1172,7 @@ export const CustomerAccountPage: React.FC = () => {
                       </p>
                     </div>
 
-                    <div className="bg-white p-3.5 rounded-xl border border-emerald-200/80 space-y-2.5 text-xs text-slate-700">
-                      <div className="flex items-start gap-2.5">
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-700 font-bold text-[10px] shrink-0 mt-0.5">1</span>
-                        <p>
-                          <strong className="text-slate-900">Check Spam / Junk Folder:</strong> Automated security emails from Firebase often land in Gmail <span className="font-semibold text-amber-700">Spam</span>, <span className="font-semibold text-amber-700">Promotions</span>, or Outlook <span className="font-semibold text-amber-700">Junk</span>.
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2.5">
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold text-[10px] shrink-0 mt-0.5">2</span>
-                        <p>
-                          <strong className="text-slate-900">Click the Link to Set New Password:</strong> Open the email and follow the reset link to define and save your new password.
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2.5">
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px] shrink-0 mt-0.5">3</span>
-                        <p>
-                          <strong className="text-slate-900">Sign In with New Password:</strong> Once saved, return here and enter your newly chosen password. The system will only accept the new password.
-                        </p>
-                      </div>
-                    </div>
-
                     <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
-                      <a
-                        href={getEmailProviderUrl(resetEmail)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-blue-600/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        <span>{getEmailProviderName(resetEmail)}</span>
-                      </a>
                       <Button
                         type="button"
                         variant="primary"
@@ -1032,17 +1186,6 @@ export const CustomerAccountPage: React.FC = () => {
                         className="w-full sm:w-auto font-bold shadow-md shadow-blue-600/20"
                       >
                         Return to Sign In
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="md"
-                        disabled={isSendingReset}
-                        onClick={handlePasswordResetSubmit}
-                        className="w-full sm:w-auto"
-                      >
-                        {isSendingReset ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
-                        Resend Email
                       </Button>
                     </div>
                   </div>
@@ -1117,7 +1260,7 @@ export const CustomerAccountPage: React.FC = () => {
             </p>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Staff and Corporate Admins manage operations via the Admin Panel. Redirecting to your console dashboard...
+            Staff and Corporate Admins manage operations via the Admin Panel.
           </p>
           <div className="pt-2 flex flex-col gap-2.5">
             <Link
@@ -1142,387 +1285,1543 @@ export const CustomerAccountPage: React.FC = () => {
   }
 
   // =========================================================================
-  // VIEW: AUTHENTICATED CUSTOMER ACCOUNT DASHBOARD
+  // VIEW: AUTHENTICATED SUBSCRIBER PORTAL (12 SIDEBAR SECTIONS FROM login.mp4)
   // =========================================================================
+  const subscriberName = currentUser.displayName || `${profileFirstName} ${profileLastName}`.trim() || 'Pranoday Jadhav';
+  const subscriberId = currentUser.subscriberId || '217435';
+  const associatedLco = currentUser.associatedLco || 'Nexalus Innovations LLP_Sangli';
+  const planName = currentUser.planName || 'FUP40Mbps-2Mbps 2500GB x10';
+  const planFee = currentUser.planFee || '₹ 470.82';
+  const subscriptionStatus = currentUser.subscriptionStatus || 'Active';
+
+  const sidebarItems: { id: PortalSection; label: string; icon: React.ReactNode }[] = [
+    { id: 'account_summary', label: 'Account Summary', icon: <UserCheck className="w-4 h-4" /> },
+    { id: 'my_profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
+    { id: 'portal_password', label: 'Portal Password Change', icon: <Lock className="w-4 h-4" /> },
+    { id: 'internet_password', label: 'Internet Password Change', icon: <Wifi className="w-4 h-4" /> },
+    { id: 'payments', label: 'Payments (Recharge)', icon: <CreditCard className="w-4 h-4" /> },
+    { id: 'my_receipts', label: 'My Receipts', icon: <Receipt className="w-4 h-4" /> },
+    { id: 'data_usage', label: 'My Data Usage', icon: <Activity className="w-4 h-4" /> },
+    { id: 'support_tickets', label: 'My Support Tickets', icon: <HelpCircle className="w-4 h-4" /> },
+    { id: 'old_transactions', label: 'Old Transactions', icon: <History className="w-4 h-4" /> },
+    { id: 'iptv_pack', label: 'IPTV PACK', icon: <Tv className="w-4 h-4" /> },
+    { id: 'ott_recharge', label: 'OTT Recharge', icon: <Film className="w-4 h-4" /> },
+    { id: 'offline_appeal', label: 'Offline Appeal', icon: <Scale className="w-4 h-4" /> }
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-16">
-      {/* Top Profile Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white py-12 px-4 sm:px-6 lg:px-8 border-b border-slate-800">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-blue-500/20 border-2 border-white/20">
-              {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : 'C'}
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-black tracking-tight text-white">
-                  {currentUser.displayName || 'Customer'}
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                  {isCustomer ? 'Verified Customer' : 'Staff / Member'}
-                </span>
+    <div className="min-h-screen bg-slate-100/70 pb-16 font-sans">
+      {/* Top Banner Bar */}
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white border-b border-slate-800 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+              className="lg:hidden p-2 rounded-xl bg-slate-800 text-slate-200 hover:text-white"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center font-black text-sm shadow-md">
+                {subscriberName.charAt(0).toUpperCase()}
               </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 mt-1">
-                <span className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-blue-400" />
-                  {currentUser.email}
-                </span>
-                {currentUser.phone && (
-                  <span className="flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-blue-400" />
-                    {currentUser.phone}
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-sm text-white tracking-tight">
+                    {subscriberName}
                   </span>
-                )}
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-400/30">
+                    {subscriptionStatus}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-slate-300">
+                  <span className="font-mono text-cyan-300">ID: {subscriberId}</span>
+                  <span>•</span>
+                  <span className="truncate text-slate-400 hidden sm:inline">LCO: {associatedLco}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleLogout}
-              icon={<LogOut className="w-4 h-4" />}
+          <div className="flex items-center gap-2.5">
+            <Link
+              to="/"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
             >
-              Sign Out
-            </Button>
+              <span>Main Site</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-200 gap-2 mb-8 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('address')}
-            className={`pb-3.5 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'address'
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+      {/* Main Layout: 12-Section Sidebar + Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* SIDEBAR NAVIGATION (Desktop & Mobile Drawer) */}
+          <aside
+            className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl lg:shadow-xs lg:static lg:w-64 lg:rounded-2xl border border-slate-200/90 lg:block transition-transform duration-200 ${
+              isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
             }`}
           >
-            <MapPin className="w-4 h-4" />
-            <span>Delivery &amp; Installation Address</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('inquiries')}
-            className={`pb-3.5 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'inquiries'
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>My Service Inquiries</span>
-            {inquiries.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-blue-100 text-blue-800">
-                {inquiries.length}
+            {/* Mobile Sidebar Header */}
+            <div className="p-4 border-b border-slate-100 flex lg:hidden items-center justify-between bg-slate-900 text-white">
+              <span className="font-bold text-xs uppercase tracking-wider text-cyan-400">
+                Subscriber Portal Menu
               </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Subscriber Info Pill */}
+            <div className="p-4 border-b border-slate-100 bg-slate-50/70">
+              <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Subscriber Account
+              </div>
+              <div className="font-extrabold text-sm text-slate-900 truncate mt-0.5">
+                {subscriberName}
+              </div>
+              <div className="text-[11px] text-blue-700 font-mono font-bold mt-0.5">
+                SUB: {subscriberId}
+              </div>
+              <div className="text-[10px] text-slate-500 truncate mt-1">
+                {associatedLco}
+              </div>
+            </div>
+
+            {/* 12 Navigation Links */}
+            <nav className="p-2 space-y-0.5">
+              {sidebarItems.map(item => {
+                const isActive = activeSection === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveSection(item.id);
+                      setIsMobileSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                      isActive
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-700 hover:bg-slate-100 hover:text-blue-700'
+                    }`}
+                  >
+                    <span className={isActive ? 'text-white' : 'text-slate-400'}>
+                      {item.icon}
+                    </span>
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Quick Inquiries Pill */}
+            {inquiries.length > 0 && (
+              <div className="p-3 mx-2 my-2 rounded-xl bg-blue-50 border border-blue-200 text-xs">
+                <div className="flex items-center justify-between font-bold text-blue-900">
+                  <span>Past Inquiries</span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 text-[10px]">
+                    {inquiries.length}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowInquiriesModal(true)}
+                  className="mt-2 w-full py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[11px] transition-colors"
+                >
+                  View Inquiries →
+                </button>
+              </div>
             )}
-          </button>
+          </aside>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('security')}
-            className={`pb-3.5 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'security'
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Shield className="w-4 h-4" />
-            <span>Security &amp; Support</span>
-          </button>
+          {/* Backdrop for mobile sidebar */}
+          {isMobileSidebarOpen && (
+            <div
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden"
+            />
+          )}
+
+          {/* MAIN CONTENT AREA */}
+          <main className="flex-1 w-full space-y-6">
+            {/* ------------------------------------------------------------- */}
+            {/* 1. ACCOUNT SUMMARY (Exact Dashboard from login.mp4) */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'account_summary' && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                {/* Hero Summary Card */}
+                <div className="bg-gradient-to-br from-[#0c1a3d] via-[#102454] to-[#0a1633] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-blue-900/50 relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-cyan-400 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-blue-500/30 border-2 border-white/20">
+                        {subscriberName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                            {subscriberName}
+                          </h2>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                            {subscriptionStatus}
+                          </span>
+                        </div>
+                        <p className="text-xs text-cyan-300 font-mono mt-0.5">
+                          Subscriber ID: <strong className="text-white">{subscriberId}</strong>
+                        </p>
+                        <p className="text-xs text-slate-300 mt-0.5">
+                          Associated LCO: <strong className="text-white">{associatedLco}</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setActiveSection('payments')}
+                        icon={<CreditCard className="w-3.5 h-3.5" />}
+                        className="shadow-md shadow-blue-600/30 font-bold"
+                      >
+                        Recharge Now
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setActiveSection('my_receipts')}
+                        icon={<Receipt className="w-3.5 h-3.5" />}
+                      >
+                        View Receipts
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 3 Metrics Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/10">
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                      <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                        Current Plan
+                      </div>
+                      <div className="text-sm font-extrabold text-white mt-1 truncate">
+                        {planName}
+                      </div>
+                      <div className="text-xs text-cyan-300 font-bold mt-1">
+                        Monthly Fee: {planFee}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                      <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                        Data Remaining
+                      </div>
+                      <div className="text-xl font-black text-emerald-400 mt-1">
+                        2,359.8 GB
+                      </div>
+                      <div className="text-[11px] text-slate-300 mt-1">
+                        Package: 2,500 GB (FU40960_2048)
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                      <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                        Plan Validity &amp; Expiry
+                      </div>
+                      <div className="text-base font-extrabold text-white mt-1">
+                        11 Nov 2024
+                      </div>
+                      <div className="text-[11px] text-amber-300 font-semibold mt-1">
+                        16 Days Remaining (Auto-Renews)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Details Table */}
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+                    <div>
+                      <h3 className="text-base font-black text-slate-900 tracking-tight">
+                        Subscriber Profile &amp; Connection Metadata
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        RailWire / Nexalus Broadband authenticated network parameters.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('my_profile')}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800"
+                    >
+                      Edit Profile →
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-xs">
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Subscriber Name:</span>
+                      <strong className="text-slate-900 font-bold">{subscriberName}</strong>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Subscriber ID:</span>
+                      <strong className="text-blue-700 font-mono font-bold">{subscriberId}</strong>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Registered Email:</span>
+                      <strong className="text-slate-900 font-bold truncate max-w-[200px]">{currentUser.email}</strong>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Registered Mobile:</span>
+                      <strong className="text-slate-900 font-bold">{currentUser.phone || profilePhone || '+91 9158886444'}</strong>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Registration Date:</span>
+                      <strong className="text-slate-900 font-bold">12 Oct 2023</strong>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Last Renewal:</span>
+                      <strong className="text-slate-900 font-bold">12 Oct 2024</strong>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Term Plan Validity:</span>
+                      <strong className="text-slate-900 font-bold">1 Month (30 Days)</strong>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <span className="text-slate-500 font-medium">Bandwidth Speed:</span>
+                      <strong className="text-emerald-700 font-bold">40 Mbps Download / 2 Mbps FUP</strong>
+                    </div>
+                  </div>
+
+                  {/* Quick Action Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('internet_password')}
+                      className="p-3.5 rounded-2xl bg-blue-50/80 hover:bg-blue-100 border border-blue-200 text-left transition-colors cursor-pointer"
+                    >
+                      <Wifi className="w-5 h-5 text-blue-600 mb-1.5" />
+                      <div className="font-bold text-xs text-blue-950">Change Wi-Fi Pass</div>
+                      <div className="text-[10px] text-blue-700 mt-0.5">Router ONT CPE</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('my_receipts')}
+                      className="p-3.5 rounded-2xl bg-emerald-50/80 hover:bg-emerald-100 border border-emerald-200 text-left transition-colors cursor-pointer"
+                    >
+                      <Receipt className="w-5 h-5 text-emerald-600 mb-1.5" />
+                      <div className="font-bold text-xs text-emerald-950">Tax Invoices</div>
+                      <div className="text-[10px] text-emerald-700 mt-0.5">GST Cum-Receipts</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('data_usage')}
+                      className="p-3.5 rounded-2xl bg-cyan-50/80 hover:bg-cyan-100 border border-cyan-200 text-left transition-colors cursor-pointer"
+                    >
+                      <Activity className="w-5 h-5 text-cyan-600 mb-1.5" />
+                      <div className="font-bold text-xs text-cyan-950">Data Usage</div>
+                      <div className="text-[10px] text-cyan-700 mt-0.5">Sessions &amp; Log</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveSection('support_tickets')}
+                      className="p-3.5 rounded-2xl bg-purple-50/80 hover:bg-purple-100 border border-purple-200 text-left transition-colors cursor-pointer"
+                    >
+                      <HelpCircle className="w-5 h-5 text-purple-600 mb-1.5" />
+                      <div className="font-bold text-xs text-purple-950">Support Desk</div>
+                      <div className="text-[10px] text-purple-700 mt-0.5">Raise Ticket</div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 2. MY PROFILE */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'my_profile' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    Subscriber Profile &amp; KYC Address
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Update your personal registration fields, contact numbers, and installation address.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSaveProfile} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        First Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={profileFirstName}
+                        onChange={e => setProfileFirstName(e.target.value)}
+                        required
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Last Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={profileLastName}
+                        onChange={e => setProfileLastName(e.target.value)}
+                        required
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Date of Birth <span className="text-slate-400 font-normal">(DOB)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={profileDob}
+                        onChange={e => setProfileDob(e.target.value)}
+                        max={new Date().toISOString().split('T')[0]}
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Primary Mobile / WhatsApp <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={profilePhone}
+                        onChange={e => {
+                          const digits = e.target.value.replace(/\D/g, '');
+                          setProfilePhone(digits.slice(0, 10));
+                        }}
+                        required
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Registered Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={currentUser.email}
+                      disabled
+                      className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Email address is linked to your Firebase security authentication.
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 space-y-4">
+                    <div className="flex items-center gap-2 text-xs font-black text-slate-800 uppercase tracking-wider">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                      <span>Service &amp; Installation Address</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Street Address / Premise / Building <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={profileAddress}
+                        onChange={e => setProfileAddress(e.target.value)}
+                        placeholder="e.g. Flat 302, Sai Residency, Ring Road"
+                        required
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          City / Town <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={profileCity}
+                          onChange={e => setProfileCity(e.target.value)}
+                          list="profile-city-list"
+                          required
+                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                        />
+                        <datalist id="profile-city-list">
+                          {MAHARASHTRA_CITIES.map(c => (
+                            <option key={c} value={c} />
+                          ))}
+                        </datalist>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          State
+                        </label>
+                        <select
+                          value={profileState}
+                          onChange={e => setProfileState(e.target.value)}
+                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                        >
+                          {INDIAN_STATES.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          PIN Code <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={profilePostcode}
+                          onChange={e => setProfilePostcode(e.target.value)}
+                          maxLength={6}
+                          required
+                          className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Landmark / ONT Notes
+                      </label>
+                      <input
+                        type="text"
+                        value={profileAdditionalInfo}
+                        onChange={e => setProfileAdditionalInfo(e.target.value)}
+                        placeholder="e.g. Near Government Hospital, 2nd Floor"
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex justify-end">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      isLoading={isSavingProfile}
+                      icon={<Save className="w-4 h-4" />}
+                    >
+                      Save Profile &amp; Address Details
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 3. PORTAL PASSWORD CHANGE */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'portal_password' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs max-w-2xl space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    Portal Password Change
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Update the credentials used to log in to this web subscriber portal.
+                  </p>
+                </div>
+
+                <form onSubmit={handleUpdatePortalPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Current Password <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type={showPortalPass ? 'text' : 'password'}
+                      value={portalOldPass}
+                      onChange={e => setPortalOldPass(e.target.value)}
+                      required
+                      placeholder="Enter your current portal password"
+                      className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        New Password <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type={showPortalPass ? 'text' : 'password'}
+                        value={portalNewPass}
+                        onChange={e => setPortalNewPass(e.target.value)}
+                        required
+                        minLength={6}
+                        placeholder="At least 6 characters"
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Confirm New Password <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type={showPortalPass ? 'text' : 'password'}
+                        value={portalConfirmPass}
+                        onChange={e => setPortalConfirmPass(e.target.value)}
+                        required
+                        minLength={6}
+                        placeholder="Re-type new password"
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="show-portal-pass"
+                      checked={showPortalPass}
+                      onChange={e => setShowPortalPass(e.target.checked)}
+                      className="rounded text-blue-600"
+                    />
+                    <label htmlFor="show-portal-pass" className="text-xs text-slate-600 cursor-pointer">
+                      Show passwords
+                    </label>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex justify-end">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      isLoading={isUpdatingPortalPass}
+                      icon={<Save className="w-4 h-4" />}
+                    >
+                      Apply Password Change
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 4. INTERNET PASSWORD CHANGE (With exact Warning from login.mp4) */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'internet_password' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs max-w-2xl space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    Internet Password Change (CPE / ONT WiFi)
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Change your optical broadband PPPoE connection credentials.
+                  </p>
+                </div>
+
+                {/* EXACT WARNING NOTICE FROM VIDEO */}
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-900 leading-relaxed space-y-1">
+                    <strong className="font-extrabold text-amber-950 block">
+                      Important Disconnection Notice:
+                    </strong>
+                    <p>
+                      If password is changed, your internet connection will be disconnected. Make necessary changes in your CPE (With WiFi router-ONT/ONU) by updating new password for reconnection.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleUpdateInternetPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      PPPoE Broadband Username
+                    </label>
+                    <input
+                      type="text"
+                      value={currentUser.email}
+                      disabled
+                      className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-mono"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        New Internet Password <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type={showInternetPassword ? 'text' : 'password'}
+                        value={newInternetPassword}
+                        onChange={e => setNewInternetPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        placeholder="At least 6 characters"
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Confirm New Internet Password <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type={showInternetPassword ? 'text' : 'password'}
+                        value={confirmInternetPassword}
+                        onChange={e => setConfirmInternetPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        placeholder="Re-type new password"
+                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="show-cpe-pass"
+                      checked={showInternetPassword}
+                      onChange={e => setShowInternetPassword(e.target.checked)}
+                      className="rounded text-blue-600"
+                    />
+                    <label htmlFor="show-cpe-pass" className="text-xs text-slate-600 cursor-pointer">
+                      Show password characters
+                    </label>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 flex justify-end">
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="md"
+                      isLoading={isUpdatingInternetPass}
+                      icon={<Wifi className="w-4 h-4" />}
+                      className="shadow-md shadow-blue-600/20 font-bold"
+                    >
+                      Update CPE Internet Password
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 5. PAYMENTS (RECHARGE) */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'payments' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs max-w-2xl space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    Payments (Recharge Active Subscription)
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Instantly renew your optical fiber broadband connection via secure online payment gateways.
+                  </p>
+                </div>
+
+                {/* Plan Card */}
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-900 to-indigo-950 text-white shadow-md space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-cyan-300">
+                        Renewal Plan
+                      </span>
+                      <h3 className="text-base font-extrabold text-white mt-0.5">
+                        {planName}
+                      </h3>
+                    </div>
+                    <span className="text-xl font-black text-cyan-300">
+                      ₹ 470.82
+                    </span>
+                  </div>
+
+                  <div className="pt-3 border-t border-white/10 grid grid-cols-3 gap-2 text-[11px] text-slate-300">
+                    <div>
+                      <span className="text-slate-400 block">Base Value:</span>
+                      <strong className="text-white">₹ 399.00</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">CGST + SGST (18%):</span>
+                      <strong className="text-white">₹ 71.82</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block">Validity:</span>
+                      <strong className="text-white">30 Days</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gateway Selector */}
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Select Online Payment Gateway:
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedGateway('ntt_data')}
+                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                        selectedGateway === 'ntt_data'
+                          ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="font-extrabold text-xs text-slate-900">NTT DATA</div>
+                      <div className="text-[10px] text-slate-500 mt-1">Recommended Gateway (Official)</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedGateway('razorpay_upi')}
+                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                        selectedGateway === 'razorpay_upi'
+                          ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="font-extrabold text-xs text-slate-900">UPI / QR Code</div>
+                      <div className="text-[10px] text-slate-500 mt-1">Google Pay, PhonePe, Paytm</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedGateway('billdesk')}
+                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                        selectedGateway === 'billdesk'
+                          ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="font-extrabold text-xs text-slate-900">BillDesk</div>
+                      <div className="text-[10px] text-slate-500 mt-1">NetBanking &amp; Cards</div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <div className="text-xs text-slate-500">
+                    Total Amount: <strong className="text-slate-900 text-sm">₹ 470.82</strong>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="md"
+                    isLoading={isProcessingPayment}
+                    onClick={handleRechargeSubmit}
+                    icon={<CreditCard className="w-4 h-4" />}
+                    className="font-bold shadow-md shadow-blue-600/20"
+                  >
+                    Proceed to Recharge Online
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 6. MY RECEIPTS (With Tax Invoice Modal matching login.mp4) */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'my_receipts' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                      My Receipts &amp; GST Tax Invoices
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Download official Tax Invoice-cum-Receipt documents for broadband renewals.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Receipts Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-[10px] border-b border-slate-200">
+                      <tr>
+                        <th className="py-3 px-4">Receipt No</th>
+                        <th className="py-3 px-4">Date</th>
+                        <th className="py-3 px-4">Plan Description</th>
+                        <th className="py-3 px-4">Amount</th>
+                        <th className="py-3 px-4">Mode</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Tax Invoice</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {SAMPLE_RECEIPTS.map(rcp => (
+                        <tr key={rcp.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3.5 px-4 font-mono font-bold text-blue-700">
+                            {rcp.id}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600">{rcp.date}</td>
+                          <td className="py-3.5 px-4 font-medium text-slate-900">{rcp.plan}</td>
+                          <td className="py-3.5 px-4 font-black text-slate-900">{rcp.amount}</td>
+                          <td className="py-3.5 px-4 text-slate-600">{rcp.mode}</td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              {rcp.status}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleViewInvoice(rcp)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] transition-colors cursor-pointer"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>View Invoice</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 7. MY DATA USAGE */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'data_usage' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    My Data Usage (FUP &amp; Session Logs)
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Track broadband data consumed across daily PPPoE sessions.
+                  </p>
+                </div>
+
+                {/* Progress bar visual */}
+                <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/70 space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                    <span>Package Data: 2,500 GB</span>
+                    <span className="text-blue-700">Remaining: 2,359.8 GB (94.4%)</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-slate-200 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full w-[5.6%]" />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Consumed This Month: <strong>140.2 GB</strong></span>
+                    <span>Profile: <strong>FU40960_2048</strong></span>
+                  </div>
+                </div>
+
+                {/* Session Table */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Recent Session Usage Logs:
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-[10px] border-b border-slate-200">
+                        <tr>
+                          <th className="py-2.5 px-3">Date</th>
+                          <th className="py-2.5 px-3">Assigned IP</th>
+                          <th className="py-2.5 px-3">Download (MB)</th>
+                          <th className="py-2.5 px-3">Upload (MB)</th>
+                          <th className="py-2.5 px-3">Total Consumed</th>
+                          <th className="py-2.5 px-3">Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {SAMPLE_USAGE_SESSIONS.map((sess, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="py-2.5 px-3 font-semibold text-slate-900">{sess.date}</td>
+                            <td className="py-2.5 px-3 font-mono text-slate-600">{sess.ip}</td>
+                            <td className="py-2.5 px-3 text-slate-700">{sess.downloadMb.toLocaleString()} MB</td>
+                            <td className="py-2.5 px-3 text-slate-700">{sess.uploadMb.toLocaleString()} MB</td>
+                            <td className="py-2.5 px-3 font-bold text-blue-700">{sess.totalGb}</td>
+                            <td className="py-2.5 px-3 text-slate-500">{sess.duration}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 8. MY SUPPORT TICKETS (22 Categories Modal from login.mp4) */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'support_tickets' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                      My Support Tickets &amp; Grievances
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Raise technical assistance tickets directly with your Nexalus LCO.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setIsNewTicketModalOpen(true)}
+                    icon={<HelpCircle className="w-4 h-4" />}
+                    className="font-bold shadow-md shadow-blue-600/20"
+                  >
+                    Create New Ticket
+                  </Button>
+                </div>
+
+                {/* Tickets List */}
+                <div className="space-y-3">
+                  {ticketsList.map(tkt => (
+                    <div
+                      key={tkt.id}
+                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 hover:border-blue-300 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-black text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-lg">
+                            {tkt.id}
+                          </span>
+                          <span className="font-bold text-xs text-slate-900">{tkt.subject}</span>
+                        </div>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                            tkt.status === 'Resolved'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {tkt.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600">{tkt.description}</p>
+                      <div className="text-[10px] text-slate-400 pt-1 flex items-center justify-between">
+                        <span>Logged: {tkt.date}</span>
+                        <span className="uppercase font-bold text-slate-500">Priority: {tkt.priority}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 9. OLD TRANSACTIONS */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'old_transactions' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    Old Transactions &amp; Billing Ledger
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Complete historical log of payment transactions processed through the portal.
+                  </p>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-[10px] border-b border-slate-200">
+                      <tr>
+                        <th className="py-3 px-4">Transaction ID</th>
+                        <th className="py-3 px-4">Date &amp; Time</th>
+                        <th className="py-3 px-4">Gateway Reference</th>
+                        <th className="py-3 px-4">Pack Name</th>
+                        <th className="py-3 px-4">Amount</th>
+                        <th className="py-3 px-4">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {SAMPLE_TRANSACTIONS.map(txn => (
+                        <tr key={txn.txnId} className="hover:bg-slate-50">
+                          <td className="py-3 px-4 font-mono font-bold text-blue-700">{txn.txnId}</td>
+                          <td className="py-3 px-4 text-slate-600">{txn.date}</td>
+                          <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">{txn.gatewayRef}</td>
+                          <td className="py-3 px-4 font-medium text-slate-900">{txn.pack}</td>
+                          <td className="py-3 px-4 font-black text-slate-900">{txn.amount}</td>
+                          <td className="py-3 px-4">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              {txn.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 10. IPTV PACK */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'iptv_pack' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    IPTV PACK (Fiber Set-Top Box Entertainment)
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Live HD television channels delivered over high-speed optical broadband.
+                  </p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 text-white space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-cyan-300">
+                        Active Connection
+                      </span>
+                      <h3 className="text-lg font-black text-white mt-0.5">
+                        Nexalus HD IPTV Entertainment Plus
+                      </h3>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                      Active
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-200 leading-relaxed">
+                    Enjoy 350+ Full HD live channels including Star, Sony, Zee, Colors, Sports, News, and Marathi Regional broadcasts without satellite dish antenna.
+                  </p>
+
+                  <div className="pt-3 border-t border-white/10 flex flex-wrap items-center gap-3">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => success('IPTV Channel Refresh', 'Signal re-sync dispatched to your STB router.')}
+                    >
+                      Re-Sync STB Signal
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => success('2nd STB Request', 'A technician survey has been requested for additional TV set.')}
+                    >
+                      Request 2nd STB Box
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 11. OTT RECHARGE */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'ott_recharge' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    OTT Recharge &amp; Streaming Bundles
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Premium OTT subscriptions bundled directly with your optical broadband account.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Umang Pack */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-50 to-white border border-amber-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-black text-base text-slate-900">Umang OTT Pack</h3>
+                      <span className="text-base font-black text-amber-700">₹ 149 / mo</span>
+                    </div>
+                    <p className="text-xs text-slate-600">
+                      Popular family entertainment pack with 4 premium OTT subscriptions.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      <span className="px-2 py-0.5 rounded-md bg-blue-900 text-white font-bold text-[10px]">Hotstar</span>
+                      <span className="px-2 py-0.5 rounded-md bg-indigo-900 text-white font-bold text-[10px]">SonyLIV</span>
+                      <span className="px-2 py-0.5 rounded-md bg-purple-900 text-white font-bold text-[10px]">Zee5</span>
+                      <span className="px-2 py-0.5 rounded-md bg-amber-900 text-white font-bold text-[10px]">Voot</span>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => success('OTT Subscribed', 'Umang Pack added to next broadband invoice.')}
+                      className="w-full font-bold"
+                    >
+                      Subscribe Umang Pack
+                    </Button>
+                  </div>
+
+                  {/* Tarang Pack */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-cyan-500/10 via-cyan-50 to-white border border-cyan-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-black text-base text-slate-900">Tarang OTT Pack</h3>
+                      <span className="text-base font-black text-cyan-700">₹ 249 / mo</span>
+                    </div>
+                    <p className="text-xs text-slate-600">
+                      Complete blockbuster bundle including Amazon Prime Video and sports streaming.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      <span className="px-2 py-0.5 rounded-md bg-sky-900 text-white font-bold text-[10px]">Prime Video</span>
+                      <span className="px-2 py-0.5 rounded-md bg-blue-900 text-white font-bold text-[10px]">Hotstar</span>
+                      <span className="px-2 py-0.5 rounded-md bg-indigo-900 text-white font-bold text-[10px]">SonyLIV</span>
+                      <span className="px-2 py-0.5 rounded-md bg-purple-900 text-white font-bold text-[10px]">Zee5</span>
+                      <span className="px-2 py-0.5 rounded-md bg-teal-900 text-white font-bold text-[10px]">SunNXT</span>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => success('OTT Subscribed', 'Tarang Pack added to next broadband invoice.')}
+                      className="w-full font-bold"
+                    >
+                      Subscribe Tarang Pack
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ------------------------------------------------------------- */}
+            {/* 12. OFFLINE APPEAL (Grievance Redressal as per video) */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'offline_appeal' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4">
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    Offline Appeal &amp; Appellate Grievance Redressal
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Appellate Authority escalation process as mandated by telecom regulations.
+                  </p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 text-xs text-slate-700 leading-relaxed">
+                  <h3 className="font-extrabold text-slate-900 text-sm">
+                    Telecom Appellate Authority Details — Maharashtra Circle
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div className="p-3 bg-white rounded-xl border border-slate-200/80">
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Appellate Authority:</span>
+                      <strong className="text-slate-900 font-bold">Nexalus Appellate Redressal Cell</strong>
+                    </div>
+                    <div className="p-3 bg-white rounded-xl border border-slate-200/80">
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Associated LCO Circle:</span>
+                      <strong className="text-slate-900 font-bold">{associatedLco}</strong>
+                    </div>
+                    <div className="p-3 bg-white rounded-xl border border-slate-200/80">
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Official Email:</span>
+                      <strong className="text-blue-700 font-bold">appellate@nexalusinnovations.com</strong>
+                    </div>
+                    <div className="p-3 bg-white rounded-xl border border-slate-200/80">
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Helpline &amp; Office Hours:</span>
+                      <strong className="text-slate-900 font-bold">+91 9158886444 (10 AM - 6 PM)</strong>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <strong className="font-bold text-slate-900 block mb-1">
+                      Filing Procedure:
+                    </strong>
+                    <p>
+                      Subscribers who are dissatisfied with the resolution provided by our Level-1 Customer Support Ticket desk or whose complaint has not been addressed within 3 to 7 working days may file a written appeal before the Appellate Authority within 30 days of ticket closure.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
         </div>
+      </div>
 
-        {/* TAB 1: DELIVERY & INSTALLATION ADDRESS */}
-        {activeTab === 'address' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs max-w-3xl">
-            <div className="mb-6 pb-4 border-b border-slate-100">
-              <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                Installation &amp; Delivery Location
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Keep your service address updated for on-site fiber feasibility checks, hardware deliveries, and technician visits.
+      {/* ===================================================================== */}
+      {/* MODAL 1: TAX INVOICE-CUM-RECEIPT (Exact view from login.mp4) */}
+      {/* ===================================================================== */}
+      {isInvoiceModalOpen && selectedInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6">
+            {/* Invoice Top Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-700 text-white flex items-center justify-center font-black">
+                  <Wifi className="w-5 h-5 text-cyan-300" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    TAX INVOICE-CUM-RECEIPT
+                  </h3>
+                  <span className="text-xs font-mono text-blue-700 font-bold">
+                    {selectedInvoice.invoiceNo}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsInvoiceModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Provider & Customer Details Grid */}
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                <span className="text-[10px] font-black uppercase text-slate-400">
+                  Service Provider (LCO)
+                </span>
+                <strong className="text-slate-900 block font-extrabold">{associatedLco}</strong>
+                <p className="text-slate-500">GSTIN: <strong className="text-slate-800">27AABCR776C1ZD</strong></p>
+                <p className="text-slate-500">State: Maharashtra (Code: 27)</p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                <span className="text-[10px] font-black uppercase text-slate-400">
+                  Subscriber Details
+                </span>
+                <strong className="text-slate-900 block font-extrabold">{subscriberName}</strong>
+                <p className="text-slate-500 font-mono">Subscriber ID: {subscriberId}</p>
+                <p className="text-slate-500">Address: {currentUser.deliveryAddress?.address || profileAddress || 'Chiplun, Maharashtra'}</p>
+              </div>
+            </div>
+
+            {/* Tax Breakdown Table */}
+            <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
+              <table className="w-full text-left">
+                <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px] border-b border-slate-200">
+                  <tr>
+                    <th className="p-3">SAC</th>
+                    <th className="p-3">Description of Service</th>
+                    <th className="p-3 text-right">Taxable</th>
+                    <th className="p-3 text-right">CGST (9%)</th>
+                    <th className="p-3 text-right">SGST (9%)</th>
+                    <th className="p-3 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  <tr>
+                    <td className="p-3 font-mono text-slate-600">{selectedInvoice.sac}</td>
+                    <td className="p-3 font-medium text-slate-900">
+                      Broadband Internet Access Service ({selectedInvoice.plan})
+                    </td>
+                    <td className="p-3 text-right font-medium">{selectedInvoice.taxable}</td>
+                    <td className="p-3 text-right text-slate-600">{selectedInvoice.cgst}</td>
+                    <td className="p-3 text-right text-slate-600">{selectedInvoice.sgst}</td>
+                    <td className="p-3 text-right font-black text-slate-900">{selectedInvoice.amount}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Total in words & payment method */}
+            <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-xs space-y-1">
+              <div className="flex justify-between items-center font-bold text-blue-950">
+                <span>Amount Paid:</span>
+                <span className="text-base font-black text-blue-900">{selectedInvoice.amount}</span>
+              </div>
+              <p className="text-[11px] text-blue-800">
+                Amount in Words: <em>Rupees Four Hundred Seventy and Eighty Two Paise Only</em>
+              </p>
+              <p className="text-[11px] text-slate-500 pt-1">
+                Payment Channel: {selectedInvoice.mode} • Status: <span className="font-bold text-emerald-700">PAID</span>
               </p>
             </div>
 
-            <form onSubmit={handleSaveAddress} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Contact Person Name
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                  />
-                </div>
+            {/* Action buttons */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => window.print()}
+                icon={<Printer className="w-4 h-4" />}
+              >
+                Print Invoice
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  success('Download Initiated', `Saving ${selectedInvoice.invoiceNo}.pdf`);
+                  setIsInvoiceModalOpen(false);
+                }}
+                icon={<Download className="w-4 h-4" />}
+              >
+                Download PDF
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Primary Phone / WhatsApp
-                  </label>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="10-digit mobile number"
-                    value={phone}
-                    onChange={e => {
-                      let digits = e.target.value.replace(/\D/g, '');
-                      if (digits.length === 12 && digits.startsWith('91')) {
-                        digits = digits.slice(2);
-                      } else if (digits.length === 11 && digits.startsWith('0')) {
-                        digits = digits.slice(1);
-                      }
-                      setPhone(digits.slice(0, 10));
-                    }}
-                    onKeyDown={e => {
-                      if (
-                        !/[0-9]/.test(e.key) &&
-                        !['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(e.key) &&
-                        !e.ctrlKey &&
-                        !e.metaKey
-                      ) {
-                        e.preventDefault();
-                      }
-                    }}
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                  />
+      {/* ===================================================================== */}
+      {/* MODAL 2: CREATE SUPPORT TICKET (22 Categories from login.mp4) */}
+      {/* ===================================================================== */}
+      {isNewTicketModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-black text-slate-900">
+                  Create Support Ticket
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Select your grievance subject from the 22 standardized support categories.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsNewTicketModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTicket} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Grievance Category / Subject <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={ticketSubject}
+                  onChange={e => setTicketSubject(e.target.value)}
+                  className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                >
+                  {TICKET_SUBJECTS.map((subj, idx) => (
+                    <option key={idx} value={subj}>
+                      {idx + 1}. {subj}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Priority Level
+                </label>
+                <div className="grid grid-cols-4 gap-2 text-xs">
+                  {(['low', 'medium', 'high', 'urgent'] as const).map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setTicketPriority(p)}
+                      className={`py-2 rounded-xl font-bold uppercase text-[10px] border transition-all cursor-pointer ${
+                        ticketPriority === p
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Street Address / Premise / Apartment *
+                  Detailed Description <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Plot 45, Near Old Bus Stand, Ring Road"
-                  value={address}
-                  onChange={e => setAddress(e.target.value)}
+                <textarea
+                  rows={4}
+                  value={ticketDescription}
+                  onChange={e => setTicketDescription(e.target.value)}
                   required
+                  placeholder="Provide details about the issue (e.g. speed test results, red LED on ONT, router restarts)..."
                   className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    City / Town *
-                  </label>
-                  <input
-                    type="text"
-                    list="saved-cities"
-                    placeholder="Chiplun"
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    required
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                  />
-                  <datalist id="saved-cities">
-                    {MAHARASHTRA_CITIES.map(c => (
-                      <option key={c} value={c} />
-                    ))}
-                  </datalist>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    State
-                  </label>
-                  <select
-                    value={state}
-                    onChange={e => setState(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                  >
-                    {INDIAN_STATES.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    PIN Code *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="415605"
-                    value={postcode}
-                    onChange={e => setPostcode(e.target.value)}
-                    required
-                    maxLength={6}
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Delivery Notes / Landmarks
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Opposite Government Hospital, 2nd Floor, Left Wing"
-                  value={additionalDeliveryInfo}
-                  onChange={e => setAdditionalDeliveryInfo(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={() => setIsNewTicketModalOpen(false)}
+                >
+                  Cancel
+                </Button>
                 <Button
                   type="submit"
                   variant="primary"
                   size="md"
-                  isLoading={isSavingProfile}
-                  icon={<Save className="w-4 h-4" />}
+                  isLoading={isSubmittingTicket}
+                  icon={<Send className="w-4 h-4" />}
+                  className="font-bold shadow-md shadow-blue-600/20"
                 >
-                  Save Address &amp; Details
+                  Submit Ticket
                 </Button>
               </div>
             </form>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* TAB 2: MY SERVICE INQUIRIES */}
-        {activeTab === 'inquiries' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                  Your Submitted Service Inquiries &amp; Orders
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Track progress of your site surveys, broadband setups, and wholesale delivery requests.
-                </p>
-              </div>
-              <Link to="/quote">
-                <Button variant="outline" size="sm" icon={<ExternalLink className="w-3.5 h-3.5" />}>
-                  New Inquiry
-                </Button>
-              </Link>
-            </div>
-
-            {isLoadingInquiries ? (
-              <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
-                <Loader2 className="w-6 h-6 text-blue-600 animate-spin mx-auto mb-2" />
-                <p className="text-xs text-slate-500">Retrieving your inquiries from Firestore...</p>
-              </div>
-            ) : inquiries.length === 0 ? (
-              <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
-                <FileText className="w-10 h-10 text-slate-300 mx-auto" />
-                <h3 className="font-bold text-slate-800 text-sm">No Active Service Inquiries Found</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  You haven't requested any optical fiber surveys, CCTV quotations, or wholesale supply deliveries yet.
-                </p>
-                <div className="pt-2">
-                  <Link to="/quote">
-                    <Button variant="primary" size="sm">
-                      Submit Your First Service Request
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {inquiries.map(item => (
-                  <div
-                    key={item.id}
-                    className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3 hover:border-blue-300 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
-                          {item.id}
-                        </span>
-                        <span className="text-[10px] uppercase font-bold text-slate-400">
-                          {item.brandId}
-                        </span>
-                      </div>
-                      {getStatusBadge(item.status)}
-                    </div>
-
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">
-                        {item.productOrServiceName || (item.enquiryType ? `Inquiry (${item.enquiryType.toUpperCase()})` : 'General Service Inquiry')}
-                      </h4>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">{item.message}</p>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        {new Date(item.createdAt).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </span>
-                      {item.assignedTo && (
-                        <span className="text-slate-600 font-medium">Assigned: {item.assignedTo}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 3: SECURITY & SUPPORT */}
-        {activeTab === 'security' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs max-w-2xl space-y-6">
-            <div>
-              <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                Account Security &amp; Credentials
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Manage your authenticated Firebase account password and security options.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-blue-600" />
-                <h3 className="text-xs font-bold text-slate-900">Change / Reset Password</h3>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Click below to dispatch official Firebase password reset instructions directly to <strong>{currentUser.email}</strong>.
-              </p>
-              <div className="pt-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSendPasswordReset}
-                  isLoading={isSendingReset}
-                  icon={<Send className="w-3.5 h-3.5" />}
-                >
-                  Send Password Reset Email
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200 space-y-2">
-              <h3 className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
-                <Phone className="w-4 h-4 text-blue-600" />
-                Need Assistance With Your Account?
+      {/* ===================================================================== */}
+      {/* MODAL 3: PAST QUOTES & INQUIRIES */}
+      {/* ===================================================================== */}
+      {showInquiriesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-xl w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-black text-slate-900">
+                Your Service Inquiries ({inquiries.length})
               </h3>
-              <p className="text-xs text-blue-800 leading-relaxed">
-                Contact our customer support desk directly via WhatsApp at <strong>+91 9158886444</strong> or email <strong>support@nexalusinnovations.com</strong>.
-              </p>
+              <button
+                type="button"
+                onClick={() => setShowInquiriesModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {inquiries.map(item => (
+                <div key={item.id} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-blue-700">{item.id}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">
+                      {item.status}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-slate-900">
+                    {item.productOrServiceName || 'Broadband / CCTV Inquiry'}
+                  </h4>
+                  <p className="text-slate-500">{item.message}</p>
+                </div>
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

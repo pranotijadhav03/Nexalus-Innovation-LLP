@@ -2805,9 +2805,13 @@ export async function uploadImageFile(file: File, folder = 'products'): Promise<
 // ----------------------------------------------------
 export async function registerCustomer(data: CustomerRegistrationData): Promise<{ user: AdminUser }> {
   const cleanEmail = data.email.trim().toLowerCase();
-  const displayName = data.displayName.trim();
+  const displayName = data.displayName.trim() || `${data.firstName || ''} ${data.lastName || ''}`.trim();
+  const firstName = data.firstName?.trim() || displayName.split(' ')[0] || '';
+  const lastName = data.lastName?.trim() || displayName.split(' ').slice(1).join(' ') || '';
+  const dateOfBirth = data.dateOfBirth?.trim() || '';
   const phone = data.phone.trim();
   const now = new Date().toISOString();
+  const subscriberId = 'SUB-' + Math.floor(100000 + Math.random() * 900000);
 
   let uid = '';
 
@@ -2826,17 +2830,28 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
     const customerUser: AdminUser = {
       uid,
       displayName,
+      firstName,
+      lastName,
+      dateOfBirth,
+      subscriberId,
       email: cleanEmail,
       role: 'customer',
       phone,
       deliveryAddress: {
         address: data.deliveryAddress.address.trim(),
         city: data.deliveryAddress.city.trim(),
-        state: data.deliveryAddress.state.trim(),
+        state: data.deliveryAddress.state.trim() || 'Maharashtra',
         postcode: data.deliveryAddress.postcode.trim(),
         country: data.deliveryAddress.country.trim() || 'India',
         additionalDeliveryInfo: data.deliveryAddress.additionalDeliveryInfo?.trim() || ''
       },
+      planName: 'One Broadband Fiber Ultra 100Mbps',
+      planFee: 470.82,
+      subscriptionStatus: 'Active',
+      associatedLco: 'Nexalus Innovations LLP_Sangli',
+      expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      lastRenewal: now.split('T')[0],
+      termPlanValidity: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       active: true,
       createdAt: now,
       lastLogin: now,
@@ -2870,17 +2885,28 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
   const fallbackCustomer: AdminUser = {
     uid,
     displayName,
+    firstName,
+    lastName,
+    dateOfBirth,
+    subscriberId,
     email: cleanEmail,
     role: 'customer',
     phone,
     deliveryAddress: {
       address: data.deliveryAddress.address.trim(),
       city: data.deliveryAddress.city.trim(),
-      state: data.deliveryAddress.state.trim(),
+      state: data.deliveryAddress.state.trim() || 'Maharashtra',
       postcode: data.deliveryAddress.postcode.trim(),
       country: data.deliveryAddress.country.trim() || 'India',
       additionalDeliveryInfo: data.deliveryAddress.additionalDeliveryInfo?.trim() || ''
     },
+    planName: 'One Broadband Fiber Ultra 100Mbps',
+    planFee: 470.82,
+    subscriptionStatus: 'Active',
+    associatedLco: 'Nexalus Innovations LLP_Sangli',
+    expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    lastRenewal: now.split('T')[0],
+    termPlanValidity: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     active: true,
     createdAt: now,
     lastLogin: now,
@@ -2895,6 +2921,9 @@ export async function updateCustomerProfile(
   uid: string,
   updates: {
     displayName?: string;
+    firstName?: string;
+    lastName?: string;
+    dateOfBirth?: string;
     phone?: string;
     deliveryAddress?: CustomerDeliveryAddress;
   }
@@ -2910,6 +2939,9 @@ export async function updateCustomerProfile(
         const merged: AdminUser = {
           ...currentData,
           displayName: updates.displayName?.trim() || currentData.displayName,
+          firstName: updates.firstName !== undefined ? updates.firstName.trim() : currentData.firstName,
+          lastName: updates.lastName !== undefined ? updates.lastName.trim() : currentData.lastName,
+          dateOfBirth: updates.dateOfBirth !== undefined ? updates.dateOfBirth.trim() : currentData.dateOfBirth,
           phone: updates.phone !== undefined ? updates.phone.trim() : currentData.phone,
           deliveryAddress: updates.deliveryAddress ? {
             address: updates.deliveryAddress.address.trim(),
@@ -2924,6 +2956,9 @@ export async function updateCustomerProfile(
 
         await updateDoc(userDocRef, {
           ...(updates.displayName ? { displayName: updates.displayName.trim() } : {}),
+          ...(updates.firstName !== undefined ? { firstName: updates.firstName.trim() } : {}),
+          ...(updates.lastName !== undefined ? { lastName: updates.lastName.trim() } : {}),
+          ...(updates.dateOfBirth !== undefined ? { dateOfBirth: updates.dateOfBirth.trim() } : {}),
           ...(updates.phone !== undefined ? { phone: updates.phone.trim() } : {}),
           ...(updates.deliveryAddress ? { deliveryAddress: merged.deliveryAddress } : {}),
           updatedAt: now

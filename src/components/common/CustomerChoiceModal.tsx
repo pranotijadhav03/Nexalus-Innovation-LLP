@@ -25,7 +25,8 @@ import {
   Loader2,
   Sparkles,
   Bell,
-  ExternalLink
+  ExternalLink,
+  Calendar
 } from 'lucide-react';
 import { triggerSystemPushNotification, getEmailProviderUrl, getEmailProviderName } from '../../utils/notificationHelpers';
 
@@ -71,7 +72,9 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
   }, [isOpen, initialView]);
 
   // Registration Form State
-  const [regFullName, setRegFullName] = useState('');
+  const [regFirstName, setRegFirstName] = useState('');
+  const [regLastName, setRegLastName] = useState('');
+  const [regDob, setRegDob] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
@@ -160,8 +163,12 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
     setFormError(null);
 
     // Form Validations
-    if (!regFullName.trim()) {
-      setFormError('Please enter your full name.');
+    if (!regFirstName.trim() || !regLastName.trim()) {
+      setFormError('Please enter your First Name and Last Name.');
+      return;
+    }
+    if (!regDob) {
+      setFormError('Please select your Date of Birth.');
       return;
     }
     const emailClean = regEmail.trim().toLowerCase();
@@ -189,8 +196,12 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      const fullName = `${regFirstName.trim()} ${regLastName.trim()}`;
       const result = await registerCustomerAccount({
-        displayName: regFullName.trim(),
+        displayName: fullName,
+        firstName: regFirstName.trim(),
+        lastName: regLastName.trim(),
+        dateOfBirth: regDob,
         email: emailClean,
         phone: phoneClean,
         password: regPassword,
@@ -572,21 +583,58 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
 
               {/* Personal Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Full Name <span className="text-rose-500">*</span>
+                    First Name <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      name="customer_reg_name"
-                      autoComplete="name"
-                      placeholder="e.g. Ramesh Patil"
-                      value={regFullName}
-                      onChange={e => setRegFullName(e.target.value)}
+                      name="customer_reg_first_name"
+                      autoComplete="given-name"
+                      placeholder="e.g. Aditya"
+                      value={regFirstName}
+                      onChange={e => setRegFirstName(e.target.value)}
                       required
                       className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Last Name <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      name="customer_reg_last_name"
+                      autoComplete="family-name"
+                      placeholder="e.g. Patil"
+                      value={regLastName}
+                      onChange={e => setRegLastName(e.target.value)}
+                      required
+                      className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Date of Birth <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="date"
+                      name="customer_reg_dob"
+                      value={regDob}
+                      onChange={e => setRegDob(e.target.value)}
+                      required
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors text-slate-700"
                     />
                   </div>
                 </div>
