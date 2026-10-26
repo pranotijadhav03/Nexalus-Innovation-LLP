@@ -107,13 +107,25 @@ export const AdminUsersPage: React.FC = () => {
     return () => window.removeEventListener('nexalus_data_update', handleUpdate);
   }, []);
 
-  // Separate customers and staff
+  // Separate customers and staff (strictly newest first / descending order)
   const customerUsers = useMemo(() => {
-    return users.filter(u => u.role === 'customer');
+    return users
+      .filter(u => u.role === 'customer')
+      .sort((a, b) => {
+        const timeA = new Date(a.createdAt || a.lastLogin || 0).getTime();
+        const timeB = new Date(b.createdAt || b.lastLogin || 0).getTime();
+        return timeB - timeA;
+      });
   }, [users]);
 
   const staffUsers = useMemo(() => {
-    return users.filter(u => u.role !== 'customer');
+    return users
+      .filter(u => u.role !== 'customer')
+      .sort((a, b) => {
+        const timeA = new Date(a.createdAt || a.lastLogin || 0).getTime();
+        const timeB = new Date(b.createdAt || b.lastLogin || 0).getTime();
+        return timeB - timeA;
+      });
   }, [users]);
 
   // Filtered Customers

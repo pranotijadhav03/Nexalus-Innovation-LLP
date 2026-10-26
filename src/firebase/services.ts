@@ -280,7 +280,12 @@ export function getCachedEnquiries(brandScope?: BrandId | 'all' | 'general' | 'c
 }
 
 export function getCachedUsers(): AdminUser[] {
-  return getLocalItem<AdminUser[]>(STORAGE_KEYS.USERS, initialUsers);
+  const users = getLocalItem<AdminUser[]>(STORAGE_KEYS.USERS, initialUsers);
+  return [...users].sort((a, b) => {
+    const timeA = new Date(a.createdAt || a.lastLogin || 0).getTime();
+    const timeB = new Date(b.createdAt || b.lastLogin || 0).getTime();
+    return timeB - timeA;
+  });
 }
 
 export function getCachedTeamMembers(division?: string): TeamMember[] {
@@ -1380,7 +1385,9 @@ export async function getEnquiries(brandScope?: BrandId | 'all', statusFilter?: 
         : collection(db, 'enquiries');
       const snapshot = await withTimeout(getDocs(q), 1200);
       if (!snapshot.empty) {
-        return snapshot.docs.map(d => d.data() as Enquiry);
+        return snapshot.docs
+          .map(d => d.data() as Enquiry)
+          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       }
     } catch (e) {
       console.warn('Firestore getEnquiries error:', e);
@@ -2315,6 +2322,11 @@ export async function getUsers(): Promise<AdminUser[]> {
         });
 
         const deduplicatedUsers = Array.from(uniqueByEmail.values());
+        deduplicatedUsers.sort((a, b) => {
+          const timeA = new Date(a.createdAt || a.lastLogin || 0).getTime();
+          const timeB = new Date(b.createdAt || b.lastLogin || 0).getTime();
+          return timeB - timeA;
+        });
         if (deduplicatedUsers.length > 0) {
           setLocalItem(STORAGE_KEYS.USERS, deduplicatedUsers);
           return deduplicatedUsers;
@@ -2370,6 +2382,11 @@ export async function getUsers(): Promise<AdminUser[]> {
   });
 
   const finalUsers = Array.from(uniqueFallback.values());
+  finalUsers.sort((a, b) => {
+    const timeA = new Date(a.createdAt || a.lastLogin || 0).getTime();
+    const timeB = new Date(b.createdAt || b.lastLogin || 0).getTime();
+    return timeB - timeA;
+  });
   if (hasUpdates || finalUsers.length !== users.length) {
     setLocalItem(STORAGE_KEYS.USERS, finalUsers);
   }
