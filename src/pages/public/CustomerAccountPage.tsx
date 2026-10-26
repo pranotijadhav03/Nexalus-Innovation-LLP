@@ -92,12 +92,16 @@ export const CustomerAccountPage: React.FC = () => {
     }
   }, [location.pathname]);
 
-  // Redirect authenticated customers on portal directly to Homepage
+  // Redirect authenticated customers to Homepage, and authenticated Admins to Admin Console
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/', { replace: true });
+      if (!isCustomer) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isCustomer, navigate]);
 
   // Login Form State
   const [loginEmail, setLoginEmail] = useState('');

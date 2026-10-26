@@ -94,14 +94,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data && data.active !== false && VALID_ALL_ROLES.includes(data.role)) {
+            const isKnownSuperAdmin =
+              cleanEmail === 'admin@nexalus.com' ||
+              cleanEmail === 'admin@nexalusinnovations.com' ||
+              cleanEmail === 'nexalusinnovationsllp@gmail.com' ||
+              cleanEmail === 'pranotijadhav@gmail.com' ||
+              cleanEmail === 'pranotijadhav03@gmail.com';
+            const effectiveRole = (isKnownSuperAdmin && data.role === 'customer') ? 'super_admin' : data.role;
+            const effectiveBrand = (isKnownSuperAdmin && data.role === 'customer') ? 'all' : data.assignedBrandId;
+
             return {
               uid: firebaseUser.uid,
-              displayName: data.displayName || firebaseUser.displayName || firebaseUser.email || (data.role === 'customer' ? 'Customer' : 'Administrator'),
+              displayName: data.displayName || firebaseUser.displayName || firebaseUser.email || (effectiveRole === 'customer' ? 'Customer' : 'Administrator'),
               email: cleanEmail || data.email,
-              role: data.role,
+              role: effectiveRole,
               phone: data.phone,
               deliveryAddress: data.deliveryAddress,
-              assignedBrandId: data.assignedBrandId,
+              assignedBrandId: effectiveBrand,
               active: true,
               createdAt: data.createdAt || new Date().toISOString(),
               lastLogin: data.lastLogin
@@ -176,7 +185,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let inferredBrand: any = null;
       let inferredName = 'Administrator';
 
-      if (cleanEmail === 'admin@nexalus.com' || cleanEmail === 'admin@nexalusinnovations.com') {
+      if (
+        cleanEmail === 'admin@nexalus.com' ||
+        cleanEmail === 'admin@nexalusinnovations.com' ||
+        cleanEmail === 'nexalusinnovationsllp@gmail.com' ||
+        cleanEmail === 'pranotijadhav@gmail.com' ||
+        cleanEmail === 'pranotijadhav03@gmail.com'
+      ) {
         inferredRole = 'super_admin';
         inferredBrand = 'all';
         inferredName = 'Nexalus Corporate Master Admin';

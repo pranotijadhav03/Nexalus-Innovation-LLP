@@ -28,7 +28,7 @@ export const Navbar: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, logout, isAuthenticated, isCustomer } = useAuth();
+  const { currentUser, logout, isAuthenticated, isCustomer, isAdmin } = useAuth();
   const { success } = useToast();
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -254,8 +254,69 @@ export const Navbar: React.FC = () => {
                 )}
               </button>
 
-              {/* Customer Profile & Portal Action */}
-              {isAuthenticated && isCustomer ? (
+              {/* Administrator Action */}
+              {isAuthenticated && isAdmin ? (
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/admin"
+                    className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold text-white bg-gradient-to-r from-blue-700 to-indigo-600 hover:from-blue-800 hover:to-indigo-700 shadow-xs transition-all cursor-pointer"
+                    title="Open Administration Console"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-200" />
+                    <span>Admin Console</span>
+                  </Link>
+
+                  <div className="relative" ref={profileDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                      className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors cursor-pointer"
+                      title="Admin Account"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold text-[11px] flex items-center justify-center">
+                        {(currentUser?.displayName || 'A').charAt(0).toUpperCase()}
+                      </div>
+                      <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isProfileDropdownOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="p-3.5 bg-slate-50 border-b border-slate-100">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black text-slate-900 truncate">
+                              {currentUser?.displayName || 'Administrator'}
+                            </span>
+                            <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                              Admin
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                            {currentUser?.email}
+                          </p>
+                        </div>
+                        <div className="p-2 space-y-1">
+                          <Link
+                            to="/admin"
+                            onClick={() => setIsProfileDropdownOpen(false)}
+                            className="w-full py-2 px-3 rounded-lg text-xs font-bold text-blue-700 hover:bg-blue-50 flex items-center gap-2"
+                          >
+                            <Layers className="w-3.5 h-3.5" />
+                            <span>Launch Admin Console</span>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={handleSignOut}
+                            className="w-full py-2 px-3 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 border border-rose-200 transition-all cursor-pointer"
+                          >
+                            <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Sign Out</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : isAuthenticated && isCustomer ? (
                 <div className="relative" ref={profileDropdownRef}>
                   <button
                     type="button"
@@ -437,7 +498,39 @@ export const Navbar: React.FC = () => {
                 )}
               </button>
 
-              {isAuthenticated && isCustomer ? (
+              {isAuthenticated && isAdmin ? (
+                <div className="p-3 bg-gradient-to-br from-slate-50 to-blue-50/50 border border-blue-200/80 rounded-xl space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-full bg-blue-700 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                        {(currentUser?.displayName || 'A').charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 truncate">
+                        {currentUser?.displayName || 'Administrator'}
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">
+                      ADMIN
+                    </span>
+                  </div>
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full py-2.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-blue-200" />
+                    <span>Open Admin Console</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full py-2 px-3 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 border border-rose-200 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              ) : isAuthenticated && isCustomer ? (
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
@@ -473,6 +566,19 @@ export const Navbar: React.FC = () => {
                   <User className="w-4 h-4 text-blue-600" />
                   <span>Customer Portal</span>
                 </button>
+              )}
+
+              {!isAdmin && (
+                <div className="pt-1 text-center">
+                  <Link
+                    to="/admin/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-[11px] font-medium text-slate-400 hover:text-slate-600 inline-flex items-center gap-1.5 py-1"
+                  >
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>Admin Portal Login</span>
+                  </Link>
+                </div>
               )}
 
 
