@@ -568,19 +568,6 @@ export const Navbar: React.FC = () => {
                 </button>
               )}
 
-              {!isAdmin && (
-                <div className="pt-1 text-center">
-                  <Link
-                    to="/admin/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-[11px] font-medium text-slate-400 hover:text-slate-600 inline-flex items-center gap-1.5 py-1"
-                  >
-                    <ShieldCheck className="w-3 h-3" />
-                    <span>Admin Portal Login</span>
-                  </Link>
-                </div>
-              )}
-
 
 
               <Button

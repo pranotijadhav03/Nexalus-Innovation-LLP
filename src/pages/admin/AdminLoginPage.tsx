@@ -365,33 +365,6 @@ export const AdminLoginPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Customer Session Notice */}
-          {isCustomer && currentUser && (
-            <div className="mb-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200/90 text-amber-900 text-xs font-medium space-y-2">
-              <div className="flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="min-w-0 flex-1 leading-relaxed">
-                  <span className="font-bold">Customer session active:</span>
-                  <span className="ml-1 text-slate-700">
-                    You are currently signed in on the public website as <strong>{currentUser.displayName || currentUser.email}</strong>. Enter your administrator credentials below to switch to the Admin Console.
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 pt-1 pl-6">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await logout();
-                    success('Signed Out', 'Signed out of customer account. You can now sign in with your administrator credentials.');
-                  }}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-200/90 hover:bg-amber-300 text-amber-950 transition-colors cursor-pointer"
-                >
-                  Sign Out of Customer Account
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Accessible Error Alert (aria-live="polite") */}
           {formError && (
             <div
