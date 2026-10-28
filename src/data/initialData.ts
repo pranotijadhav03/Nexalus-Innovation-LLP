@@ -66,15 +66,54 @@ export const initialBrands: Brand[] = [
 ];
 
 export const initialCategories: ProductCategory[] = [
-  // Nexalus Innovations LLP Corporate Parent Categories
-  { id: 'cat-corp-infra', brandId: 'nexalus', name: 'Turnkey IT & Security Infrastructure', slug: 'turnkey-it-security-infra', description: 'Enterprise turnkey fiber backbone, multi-WAN switching, and centralized facility surveillance architecture.' },
-  { id: 'cat-corp-enterprise', brandId: 'nexalus', name: 'Corporate Networking & Security Solutions', slug: 'corporate-networking-security', description: 'Enterprise-grade structured cabling systems, core server switching, and high-availability solutions.' },
+  // Nexalus Innovations LLP Corporate Categories (Matches Landing Page Products Section)
+  {
+    id: 'cat-cctv-surveillance',
+    brandId: 'nexalus',
+    name: 'CCTV Surveillance',
+    slug: 'cctv-surveillance',
+    description: 'Commercial 4K CCTV video surveillance equipment, Sony Starvis IP cameras, PTZ tracking domes & NVR storage arrays.'
+  },
+  {
+    id: 'cat-optical-fiber',
+    brandId: 'nexalus',
+    name: 'Optical Fiber',
+    slug: 'optical-fiber',
+    description: 'High-speed optical fiber internet, FTTH gateways, Wi-Fi 6 mesh routers, and gigabit bridge ONUs.'
+  },
+  {
+    id: 'cat-enterprise-networking',
+    brandId: 'nexalus',
+    name: 'Enterprise Networking',
+    slug: 'enterprise-networking',
+    description: 'Enterprise L2/L3 managed PoE switches, server rack cabinets, Cat6A structured cabling, and hardware firewalls.'
+  },
 
   // Nexalus Innovations Categories (CCTV, Internet, Networking, Cabling)
   { id: 'cat-nex-cctv', brandId: 'nexalus-innovations', name: 'AI CCTV & Surveillance Systems', slug: 'cctv-surveillance', description: 'Commercial 4K CCTV surveillance cameras, NVR servers, and video monitoring hardware.' },
   { id: 'cat-nex-internet', brandId: 'nexalus-innovations', name: 'High-Speed Fiber Internet & Routers', slug: 'fiber-internet', description: 'Gigabit fiber optical terminal routers, mesh Wi-Fi, and broadband equipment.' },
   { id: 'cat-nex-networking', brandId: 'nexalus-innovations', name: 'Enterprise Networking & Switches', slug: 'networking-switches', description: 'Layer-2/Layer-3 managed PoE+ switches, firewalls, and server racks.' },
   { id: 'cat-nex-electronics', brandId: 'nexalus-innovations', name: 'Structured Cabling & Hardware', slug: 'cabling-hardware', description: 'Pure copper Cat6A drums, patch panels, connectors, and precision tools.' },
+
+  // CP PLUS Surveillance Categories (under Nexalus Innovations division)
+  { id: 'cat-bullet', brandId: 'cp-plus', name: 'Bullet Cameras', slug: 'bullet-cameras', description: 'Outdoor weatherproof 4K/5MP long-range IR bullet security cameras.' },
+  { id: 'cat-dome', brandId: 'cp-plus', name: 'Dome Cameras', slug: 'dome-cameras', description: 'Indoor and vandal-resistant commercial dome CCTV cameras.' },
+  { id: 'cat-nvr', brandId: 'cp-plus', name: 'DVR & NVR Systems', slug: 'nvr-systems', description: 'Network Video Recorders and hybrid DVR video management units.' },
+  { id: 'cat-ip', brandId: 'cp-plus', name: 'IP & Smart AI Cameras', slug: 'ip-cameras', description: 'Intelligent AI-powered IP surveillance cameras with analytics.' },
+  { id: 'cat-ptz', brandId: 'cp-plus', name: 'PTZ Speed Domes', slug: 'ptz-cameras', description: 'Pan-Tilt-Zoom optical tracking speed dome cameras.' },
+  { id: 'cat-access', brandId: 'cp-plus', name: 'Access Control & Intercom', slug: 'access-control', description: 'Biometric terminals, RFID access, and video door phone intercoms.' },
+
+  // One Broadband FTTH & Routing Categories (under Nexalus Innovations division)
+  { id: 'cat-routers', brandId: 'one-broadband', name: 'Fiber ONT & Routers', slug: 'fiber-routers', description: 'Dual-band Gigabit optical network terminals and Wi-Fi 6 routers.' },
+  { id: 'cat-mesh', brandId: 'one-broadband', name: 'Mesh Wi-Fi Systems', slug: 'mesh-wifi', description: 'Whole-premises seamless roaming mesh Wi-Fi nodes.' },
+  { id: 'cat-onu', brandId: 'one-broadband', name: 'Fiber Modems & ONUs', slug: 'fiber-onus', description: 'High-speed GPON/EPON fiber modems and optical network units.' },
+  { id: 'cat-extenders', brandId: 'one-broadband', name: 'Wi-Fi Range Boosters', slug: 'wifi-extenders', description: 'Plug-in dual-band wireless range extenders and signal boosters.' },
+
+  // ITTI Enterprise Networking Categories (under Nexalus Innovations division)
+  { id: 'cat-itti-security', brandId: 'itti-networking', name: 'Firewalls & Cyber Security', slug: 'firewalls-security', description: 'Hardware UTM firewalls, VPN gateways, and threat management appliances.' },
+  { id: 'cat-itti-switching', brandId: 'itti-networking', name: 'L2/L3 Enterprise Switches', slug: 'enterprise-switches', description: 'Managed rackmount Layer-2 and Layer-3 Gigabit PoE switches.' },
+  { id: 'cat-itti-fiber', brandId: 'itti-networking', name: 'Fiber Infrastructure & LIU', slug: 'fiber-infrastructure', description: 'Optical distribution frames, LIU enclosures, and fiber patch systems.' },
+  { id: 'cat-itti-cabling', brandId: 'itti-networking', name: 'Server Racks & Cabling', slug: 'server-racks-cabling', description: 'Floor-standing server racks, wall-mount cabinets, and Cat6A cabling bundles.' },
 
   // A.M. Distributors Chiplun Categories (Cold-Chain, Water, Ice Cream, Dairy)
   { id: 'cat-am-water', brandId: 'am-distributors', name: 'Packaged Mineral Water (Chiplun)', slug: 'am-mineral-water', description: 'Purified mineral water in 20L jars and retail bottle crates.' },
@@ -164,8 +203,8 @@ export const initialProducts: Product[] = [
     name: '4K Ultra-HD AI Network CCTV Surveillance Dome Camera',
     slug: 'nex-4k-ai-cctv-dome',
     modelNumber: 'NEX-CCTV-4K-DOME',
-    categoryId: 'cat-nex-cctv',
-    categoryName: 'Sales & Networking (CCTV)',
+    categoryId: 'cat-cctv-surveillance',
+    categoryName: 'CCTV Surveillance',
     description: 'Commercial 4K Ultra-HD surveillance dome camera with Starlight full-color night vision, AI tripwire perimeter detection, built-in mic, and motorized optical zoom.',
     specifications: {
       'Category': 'Sales & Networking (CCTV)',
@@ -190,8 +229,8 @@ export const initialProducts: Product[] = [
     name: 'Enterprise 24-Port Gigabit Managed PoE+ Switch & Router',
     slug: 'nex-24p-gigabit-poe-switch',
     modelNumber: 'NEX-NET-24POE-L3',
-    categoryId: 'cat-nex-cctv',
-    categoryName: 'Sales & Networking (CCTV)',
+    categoryId: 'cat-enterprise-networking',
+    categoryName: 'Enterprise Networking',
     description: 'High-bandwidth 24-Port Gigabit Managed Layer-3 PoE+ switch with 4x 10G SFP+ uplinks, 370W total PoE budget, and enterprise VLAN routing for CCTV & IT networks.',
     specifications: {
       'Ports': '24x 10/100/1000 Mbps RJ45 PoE+ ports',
@@ -215,7 +254,7 @@ export const initialProducts: Product[] = [
     name: 'Industrial Electronics Material & Cat6A Splicing Hardware Drum',
     slug: 'nex-electronics-material-cat6a',
     modelNumber: 'NEX-ELEC-CAT6A-305M',
-    categoryId: 'cat-nex-electronics',
+    categoryId: 'cat-enterprise-networking',
     categoryName: 'Electronics Material',
     description: 'Pure oxygen-free copper 305m Cat6A shielded twisted pair cable drum with industrial termination accessories, RJ45 modular jacks, and installation splicing kits.',
     specifications: {
@@ -390,12 +429,12 @@ export const initialProducts: Product[] = [
   // CP PLUS Products
   {
     id: 'prod-cp-1',
-    brandId: 'cp-plus',
+    brandId: 'nexalus',
     name: 'CP-UNC-TA41ZL4-MDS 4MP Smart IR Network Bullet Camera',
     slug: 'cp-unc-ta41zl4-mds-4mp-bullet',
     modelNumber: 'CP-UNC-TA41ZL4-MDS',
-    categoryId: 'cat-bullet',
-    categoryName: 'Bullet Cameras',
+    categoryId: 'cat-cctv-surveillance',
+    categoryName: 'CCTV Surveillance',
     description: 'High-performance 4 Megapixel outdoor network bullet camera featuring motorized varifocal lens, Starlight low-light sensitivity, and AI perimeter intrusion detection.',
     specifications: {
       'Resolution': '4 Megapixel (2560 × 1440) @ 30fps',
@@ -419,12 +458,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-cp-2',
-    brandId: 'cp-plus',
+    brandId: 'nexalus',
     name: 'CP-UNC-DA41L3 4MP Full-Color Starlight Fixed Dome Camera',
     slug: 'cp-unc-da41l3-4mp-dome',
     modelNumber: 'CP-UNC-DA41L3',
-    categoryId: 'cat-dome',
-    categoryName: 'Dome Cameras',
+    categoryId: 'cat-cctv-surveillance',
+    categoryName: 'CCTV Surveillance',
     description: '24/7 Full-Color dome surveillance camera with warm white LED supplemental lighting, built-in microphone for synchronized audio, and vandal-proof dome casing.',
     specifications: {
       'Resolution': '4 MP (2688 × 1520)',
@@ -447,12 +486,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-cp-3',
-    brandId: 'cp-plus',
+    brandId: 'nexalus',
     name: 'CP-UNR-416T2-V2 16-Channel 4K Network Video Recorder (NVR)',
     slug: 'cp-unr-416t2-v2-16ch-4k-nvr',
     modelNumber: 'CP-UNR-416T2-V2',
-    categoryId: 'cat-nvr',
-    categoryName: 'DVR & NVR Systems',
+    categoryId: 'cat-cctv-surveillance',
+    categoryName: 'CCTV Surveillance',
     description: 'Ultra HD 16-channel standalone network video recorder with 4K HDMI output, dual SATA interfaces up to 20TB storage, and remote cloud surveillance app.',
     specifications: {
       'Channels': '16 IP Channels up to 8MP/4K decoding',
@@ -475,12 +514,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-cp-4',
-    brandId: 'cp-plus',
+    brandId: 'nexalus',
     name: 'CP-V34G 4G Smart Wireless Pan-Tilt Cloud Camera',
     slug: 'cp-v34g-4g-smart-pt-camera',
     modelNumber: 'CP-V34G',
-    categoryId: 'cat-ip',
-    categoryName: 'IP & Smart AI Cameras',
+    categoryId: 'cat-cctv-surveillance',
+    categoryName: 'CCTV Surveillance',
     description: 'Standalone 4G SIM-card enabled wireless pan-tilt camera with solar support, motion tracking, siren alert, and two-way voice communication for remote sites.',
     specifications: {
       'Connectivity': '4G LTE SIM Card slot (No Wi-Fi needed)',
@@ -503,12 +542,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-cp-5',
-    brandId: 'cp-plus',
+    brandId: 'nexalus',
     name: 'CP-UNP-E3321L20-MS 32x 4K Ultra-HD Network IR PTZ Speed Dome Camera',
     slug: 'cp-unp-e3321l20-ms-32x-ptz',
     modelNumber: 'CP-UNP-E3321L20-MS',
-    categoryId: 'cat-ptz',
-    categoryName: 'PTZ Speed Domes',
+    categoryId: 'cat-cctv-surveillance',
+    categoryName: 'CCTV Surveillance',
     description: 'Industrial grade 32x optical zoom pan-tilt-zoom camera with 200m Smart IR illumination, 360° continuous rotation, optical defog, and intelligent auto-tracking.',
     specifications: {
       'Optical Zoom': '32× Optical Zoom (4.8mm–154mm)',
@@ -531,12 +570,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-cp-6',
-    brandId: 'cp-plus',
+    brandId: 'nexalus',
     name: 'CP-VPA-TC741 7-inch Smart IP Video Door Phone & Access Terminal',
     slug: 'cp-vpa-tc741-7inch-video-door-phone',
     modelNumber: 'CP-VPA-TC741',
-    categoryId: 'cat-access',
-    categoryName: 'Access Control & Intercom',
+    categoryId: 'cat-cctv-surveillance',
+    categoryName: 'CCTV Surveillance',
     description: 'Touchscreen indoor monitor and outdoor video intercom station with RFID card access, mobile app unlock, crystal clear two-way audio, and CCTV camera integration.',
     specifications: {
       'Display': '7-inch Capacitive Color Touchscreen',
@@ -558,12 +597,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-cp-7',
-    brandId: 'cp-plus',
+    brandId: 'nexalus',
     name: 'CP-UNR-432T4-V2 32-Channel 4K Enterprise AI Network Video Recorder',
     slug: 'cp-unr-432t4-v2-32ch-enterprise-nvr',
     modelNumber: 'CP-UNR-432T4-V2',
-    categoryId: 'cat-nvr',
-    categoryName: 'DVR & NVR Systems',
+    categoryId: 'cat-cctv-surveillance',
+    categoryName: 'CCTV Surveillance',
     description: 'High-density 32-channel commercial NVR with 4 SATA bays up to 40TB, face recognition database, license plate recognition, and dual Gigabit LAN ports.',
     specifications: {
       'Channels': '32 IP Channels up to 12MP decoding',
@@ -585,12 +624,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-cp-8',
-    brandId: 'cp-plus',
+    brandId: 'nexalus',
     name: 'CP-E25A 2MP Smart Wi-Fi 360° Pan-Tilt Home Security Camera',
     slug: 'cp-e25a-2mp-smart-pt-camera',
     modelNumber: 'CP-E25A',
-    categoryId: 'cat-ip',
-    categoryName: 'IP & Smart AI Cameras',
+    categoryId: 'cat-cctv-surveillance',
+    categoryName: 'CCTV Surveillance',
     description: 'Affordable wireless smart camera with 360° panoramic view, human body detection, two-way voice call, privacy mode, and Amazon Alexa / Google Assistant integration.',
     specifications: {
       'Resolution': '1080P Full HD (1920 × 1080)',
@@ -614,12 +653,12 @@ export const initialProducts: Product[] = [
   // One Broadband Internet Products (100% Internet & FTTH Equipment)
   {
     id: 'prod-ob-1',
-    brandId: 'one-broadband',
+    brandId: 'nexalus',
     name: 'NexFiber Wi-Fi 6 AX3000 Dual-Band Gigabit ONT Router',
     slug: 'nexfiber-wifi-6-ax3000-ont-router',
     modelNumber: 'OB-AX3000-ONT',
-    categoryId: 'cat-routers',
-    categoryName: 'Fiber ONT & Routers',
+    categoryId: 'cat-optical-fiber',
+    categoryName: 'Optical Fiber',
     description: 'High-speed GPON Optical Network Terminal with built-in Wi-Fi 6, 4 Gigabit Ethernet LAN ports, VoIP FXS port, and OFDMA low-latency technology for high-speed fiber internet.',
     specifications: {
       'Wi-Fi Standard': 'Wi-Fi 6 (802.11ax) dual-band',
@@ -642,12 +681,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-ob-2',
-    brandId: 'one-broadband',
+    brandId: 'nexalus',
     name: 'NexMesh AX3000 Whole-Home Tri-Band Wi-Fi 6 Mesh System (3-Pack)',
     slug: 'nexmesh-ax3000-whole-home-mesh-system',
     modelNumber: 'OB-MESH-AX3000-3PK',
-    categoryId: 'cat-mesh',
-    categoryName: 'Mesh Wi-Fi Systems',
+    categoryId: 'cat-optical-fiber',
+    categoryName: 'Optical Fiber',
     description: 'Whole-home dead-zone killer mesh Wi-Fi system covering up to 6,000 sq.ft. with seamless single-SSID roaming, gigabit Ethernet backhaul, and zero buffering for 100+ connected devices.',
     specifications: {
       'Coverage': 'Up to 6,000 sq.ft. across multiple floors',
@@ -669,12 +708,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-ob-3',
-    brandId: 'one-broadband',
+    brandId: 'nexalus',
     name: 'NexFiber Gigabit XPON / GPON Optical Fiber Bridge Modem (ONU)',
     slug: 'nexfiber-gigabit-xpon-onu-modem',
     modelNumber: 'OB-ONU-1000G',
-    categoryId: 'cat-onu',
-    categoryName: 'Fiber Modems & ONUs',
+    categoryId: 'cat-optical-fiber',
+    categoryName: 'Optical Fiber',
     description: 'Ultra-compact high-speed Gigabit XPON/GPON optical network terminal (ONU) with 1 SC/UPC optical port, 1 Gigabit RJ45 LAN port, bridge mode, and lightning surge protection.',
     specifications: {
       'Optical Standard': 'ITU-T G.984 GPON & IEEE 802.3ah EPON dual-mode',
@@ -696,12 +735,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-ob-4',
-    brandId: 'one-broadband',
+    brandId: 'nexalus',
     name: 'NexFiber AC1200 Dual-Band Smart FTTH Home Wi-Fi Router',
     slug: 'nexfiber-ac1200-home-router',
     modelNumber: 'OB-AC1200-HOME',
-    categoryId: 'cat-routers',
-    categoryName: 'Fiber ONT & Routers',
+    categoryId: 'cat-optical-fiber',
+    categoryName: 'Optical Fiber',
     description: 'High-speed dual-band AC1200 Wi-Fi router with 4 high-gain antennas, MU-MIMO beamforming, and fast Ethernet ports ideal for family streaming, video calls, and home broadband.',
     specifications: {
       'Speed': '867 Mbps (5GHz) + 300 Mbps (2.4GHz)',
@@ -722,12 +761,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-ob-5',
-    brandId: 'one-broadband',
+    brandId: 'nexalus',
     name: 'NexBoost Gigabit Dual-Band Wi-Fi 6 Range Extender & Repeater',
     slug: 'nexboost-wifi6-range-extender',
     modelNumber: 'OB-EXT-AX1800',
-    categoryId: 'cat-extenders',
-    categoryName: 'Wi-Fi Range Boosters',
+    categoryId: 'cat-optical-fiber',
+    categoryName: 'Optical Fiber',
     description: 'Wall-plug dual-band Wi-Fi range booster with external antennas and LED signal strength indicator to eliminate Wi-Fi dead spots in bedrooms, balconies, and home offices.',
     specifications: {
       'Speed': '1201 Mbps (5GHz) + 574 Mbps (2.4GHz)',
@@ -748,12 +787,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-ob-6',
-    brandId: 'one-broadband',
+    brandId: 'nexalus',
     name: 'NexFiber Ultra-Gigabit 2.5G Wi-Fi 6 Multi-Gig Home Gateway',
     slug: 'nexfiber-25g-multigig-wifi6-gateway',
     modelNumber: 'OB-AX6000-25G',
-    categoryId: 'cat-routers',
-    categoryName: 'Fiber ONT & Routers',
+    categoryId: 'cat-optical-fiber',
+    categoryName: 'Optical Fiber',
     description: 'Flagship 2.5Gbps multi-gigabit fiber gateway router featuring Wi-Fi 6 160MHz channels, low ping gaming prioritization, and parental controls for high-bandwidth households.',
     specifications: {
       'Throughput': 'Up to 4804 Mbps (5GHz) + 1148 Mbps (2.4GHz)',
@@ -776,12 +815,12 @@ export const initialProducts: Product[] = [
   // ITTI Enterprise Networking Products
   {
     id: 'prod-itti-1',
-    brandId: 'itti-networking',
+    brandId: 'nexalus',
     name: 'Sophos XGS 2100 Next-Gen Hardware Firewall & UTM Security Gateway',
     slug: 'sophos-xgs-2100-next-gen-firewall',
     modelNumber: 'ITTI-XGS-2100',
-    categoryId: 'cat-itti-security',
-    categoryName: 'Firewalls & Cyber Security',
+    categoryId: 'cat-enterprise-networking',
+    categoryName: 'Enterprise Networking',
     description: 'Enterprise rackmount Next-Gen Firewall powered by Xstream dual-processor architecture with deep packet inspection, TLS 1.3 decryption, advanced SD-WAN, and zero-day threat protection.',
     specifications: {
       'Firewall Throughput': '35,000 Mbps non-blocking',
@@ -804,12 +843,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-itti-2',
-    brandId: 'itti-networking',
+    brandId: 'nexalus',
     name: 'ITTI 48-Port Gigabit Layer-3 Managed Core Switch with 4x 10G SFP+ Uplinks',
     slug: 'itti-48-port-layer3-core-switch',
     modelNumber: 'ITTI-SW-L3-48G',
-    categoryId: 'cat-itti-switching',
-    categoryName: 'L2/L3 Enterprise Switches',
+    categoryId: 'cat-enterprise-networking',
+    categoryName: 'Enterprise Networking',
     description: 'High-density enterprise Layer-3 core switch delivering 176 Gbps switching fabric, OSPF/BGP dynamic routing, static routing, DHCP server, and quad 10-Gigabit optical uplink ports.',
     specifications: {
       'Ports': '48 × 10/100/1000 Mbps RJ45 + 4 × 10G SFP+ Uplinks',
@@ -831,12 +870,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-itti-3',
-    brandId: 'itti-networking',
+    brandId: 'nexalus',
     name: 'ITTI 24-Port 19-inch Rackmount Fiber Optic LIU Patch Panel (SC Duplex)',
     slug: 'itti-24-port-rackmount-fiber-liu-panel',
     modelNumber: 'ITTI-FO-LIU-24P',
-    categoryId: 'cat-itti-fiber',
-    categoryName: 'Fiber Infrastructure & LIU',
+    categoryId: 'cat-enterprise-networking',
+    categoryName: 'Enterprise Networking',
     description: 'Sliding rackmount Light Interface Unit (LIU) loaded with 24 SC Duplex single-mode adapters, splice trays, and cable management rings for clean campus fiber termination.',
     specifications: {
       'Capacity': '24 SC Duplex ports (supports up to 48 fiber cores)',
@@ -857,12 +896,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-itti-4',
-    brandId: 'itti-networking',
+    brandId: 'nexalus',
     name: 'ITTI 24U Floor Standing Enterprise Server Rack Cabinet (600x800mm)',
     slug: 'itti-24u-floor-standing-server-rack',
     modelNumber: 'ITTI-RC-24U-800',
-    categoryId: 'cat-itti-cabling',
-    categoryName: 'Server Racks & Cabling',
+    categoryId: 'cat-enterprise-networking',
+    categoryName: 'Enterprise Networking',
     description: 'Heavy duty 24U network and server cabinet with perforated front and rear mesh doors for optimal thermal airflow, 4-way cooling fan unit, cable organizers, and castor wheels.',
     specifications: {
       'Form Factor': '24U Floor Standing (600mm width × 800mm depth)',
@@ -884,12 +923,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-itti-5',
-    brandId: 'itti-networking',
+    brandId: 'nexalus',
     name: 'ITTI 305-Meter 10Gbps Shielded Cat6A STP Pure Copper Network Cable Drum',
     slug: 'itti-305m-cat6a-stp-cable-drum',
     modelNumber: 'ITTI-CB-CAT6A-305',
-    categoryId: 'cat-itti-cabling',
-    categoryName: 'Server Racks & Cabling',
+    categoryId: 'cat-enterprise-networking',
+    categoryName: 'Enterprise Networking',
     description: '23 AWG solid bare pure copper 10-Gigabit Ethernet twisted pair cable roll with individual foil shielding (STP), LSZH flame retardant jacket, and 500 MHz test certification.',
     specifications: {
       'Conductor': '23 AWG Solid Bare Electrolytic Copper (100% Copper)',
@@ -911,12 +950,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-itti-6',
-    brandId: 'itti-networking',
+    brandId: 'nexalus',
     name: 'ITTI NexGate 24-Port Gigabit Smart Managed PoE+ Switch',
     slug: 'itti-nexgate-24-port-gigabit-poe-switch',
     modelNumber: 'ITTI-GS24P-370W',
-    categoryId: 'cat-itti-switching',
-    categoryName: 'L2/L3 Enterprise Switches',
+    categoryId: 'cat-enterprise-networking',
+    categoryName: 'Enterprise Networking',
     description: 'Enterprise rackmount 24-port Gigabit PoE+ switch with 370W total power budget and 4 dedicated Gigabit SFP fiber uplink slots for scalable business networks.',
     specifications: {
       'Ports': '24 × 10/100/1000 Mbps RJ45 + 4 × 1G SFP slots',
@@ -939,12 +978,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-itti-7',
-    brandId: 'itti-networking',
+    brandId: 'nexalus',
     name: 'ITTI NexRack 9U Wall Mount Enterprise Networking Server Cabinet',
     slug: 'itti-nexrack-9u-wall-mount-server-cabinet',
     modelNumber: 'ITTI-RACK-9U-600',
-    categoryId: 'cat-itti-cabling',
-    categoryName: 'Server Racks & Cabling',
+    categoryId: 'cat-enterprise-networking',
+    categoryName: 'Enterprise Networking',
     description: 'Heavy duty 19-inch 9U wall mount rack enclosure with toughened glass front door, lock & key security, cable entry glands, and cooling fan ventilation.',
     specifications: {
       'Size': '9U Standard 19-inch Rackmount (600mm depth)',
@@ -966,12 +1005,12 @@ export const initialProducts: Product[] = [
   },
   {
     id: 'prod-itti-8',
-    brandId: 'itti-networking',
+    brandId: 'nexalus',
     name: 'ITTI NexOptic 10G SFP+ Optical Transceiver & Media Module',
     slug: 'itti-nexoptic-10g-sfp-transceiver',
     modelNumber: 'ITTI-SFP-10G-LR',
-    categoryId: 'cat-itti-fiber',
-    categoryName: 'Fiber Infrastructure & LIU',
+    categoryId: 'cat-enterprise-networking',
+    categoryName: 'Enterprise Networking',
     description: 'Hot-pluggable single-mode 10 Gigabit fiber optical transceiver module for high-throughput enterprise backbone campus links up to 10 kilometers.',
     specifications: {
       'Data Rate': '10 Gbps (10GBASE-LR)',
@@ -2389,6 +2428,70 @@ export const initialServices: Service[] = [
     ],
     targetAudience: ['Commercial Offices', 'Industrial Parks', 'Warehouses', 'Educational Campuses'],
     featured: true,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+
+  {
+    id: 'srv-nex-2',
+    brandId: 'nexalus',
+    title: 'Enterprise Campus Optical Fiber Backbone Deployments',
+    slug: 'enterprise-campus-optical-fiber-backbone',
+    shortDescription: 'High-speed symmetrical fiber ring backbones, underground conduit civil work, and multi-gigabit core routing for corporate headquarters.',
+    fullDescription: 'Nexalus Innovations LLP delivers end-to-end optical fiber campus networks engineered for high throughput, minimal latency, and zero single-point failure. Our certified fiber engineers handle optical loss budget planning, subterranean conduit installation, precision fusion splicing, and OTDR trace certification.',
+    iconName: 'Wifi',
+    features: [
+      'Multi-Gigabit Symmetrical Leased Line Engineering',
+      'Dual-Ring Fault-Tolerant Optical Backbone',
+      'Underground & Aerial Fiber Splicing & Testing',
+      'SLA-Backed 99.9% Uptime Guarantee',
+      'Core Routing & Switching Infrastructure'
+    ],
+    targetAudience: ['Corporate Headquarters', 'Industrial Corridors', 'IT Parks', 'Manufacturing Facilities'],
+    featured: true,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'srv-nex-3',
+    brandId: 'nexalus',
+    title: 'Turnkey Multi-Facility Command Centers & AMC Support',
+    slug: 'turnkey-command-centers-amc-support',
+    shortDescription: 'Centralized security operations control rooms, video walls, automated health monitoring, and comprehensive enterprise AMC maintenance.',
+    fullDescription: 'Nexalus builds integrated command and control facilities integrating physical video matrix walls, smart incident dashboards, and proactive device health telemetry. Backed by tiered Annual Maintenance Contracts with guaranteed 4-hour MTTR response times across Maharashtra.',
+    iconName: 'ShieldCheck',
+    features: [
+      'Central Control Room & Video Wall Engineering',
+      'Automated Line & Hardware Health Monitoring',
+      '24/7 Rapid Response On-Call Field Engineers',
+      'Periodic Preventative Maintenance & Sensor Tuning',
+      'Guaranteed Spare Part Availability & Hot Spares'
+    ],
+    targetAudience: ['Gated Communities', 'Commercial Towers', 'Logistics Hubs', 'Hospitals'],
+    featured: true,
+    published: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'srv-nex-4',
+    brandId: 'nexalus',
+    title: 'Industrial Automation & Data-Center Structured Cabling',
+    slug: 'industrial-automation-structured-cabling',
+    shortDescription: 'High-density fiber optic and Cat6A structured cabling, server rack management, and climate-controlled communication enclosures.',
+    fullDescription: 'Certified TIA/EIA compliant enterprise structured cabling services for industrial plants, automation hubs, and multi-tenant commercial towers. We supply certified Cat6A LSZH cabling, enterprise patch panels, cable management raceways, and temperature-controlled server cabinets.',
+    iconName: 'Server',
+    features: [
+      'TIA/EIA Compliant Structured Cabling Architecture',
+      'Server Rack & Patch Panel Cable Dressing',
+      'Power Distribution & Smart Environmental Monitoring',
+      'Fluke Certification & OTDR Insertion Loss Reports',
+      'Lifetime Cabling System Warranty Support'
+    ],
+    targetAudience: ['Data Centers', 'Pharmaceutical Units', 'Cold Chains', 'Financial Institutions'],
+    featured: false,
     published: true,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()

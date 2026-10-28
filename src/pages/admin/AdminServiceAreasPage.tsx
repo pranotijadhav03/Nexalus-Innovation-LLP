@@ -60,7 +60,7 @@ export const AdminServiceAreasPage: React.FC = () => {
   const [areas, setAreas] = useState<ServiceArea[]>(() => getCachedServiceAreas());
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [brandFilter, setBrandFilter] = useState<string>('all');
+  const [brandFilter, setBrandFilter] = useState<string>('nexalus');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Modal State
@@ -85,12 +85,12 @@ export const AdminServiceAreasPage: React.FC = () => {
 
   // Sync initial brand selection with active console
   useEffect(() => {
-    if (activeConsole === 'nexalus-innovations') {
-      setBrandFilter('nexalus');
-    } else if (activeConsole === 'am-distributors') {
+    if (activeConsole === 'am-distributors' || isAmAdmin) {
       setBrandFilter('am-distributors');
+    } else {
+      setBrandFilter('nexalus');
     }
-  }, [activeConsole]);
+  }, [activeConsole, isAmAdmin]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -121,36 +121,13 @@ export const AdminServiceAreasPage: React.FC = () => {
     loadData();
   }, []);
 
-  if (!isAdmin) {
-    return (
-      <div className="p-8 bg-white rounded-3xl border border-rose-200 text-center max-w-lg mx-auto space-y-4 shadow-sm my-12 animate-in fade-in duration-150">
-        <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto" />
-        <h2 className="text-lg font-bold text-slate-900">Access Restricted</h2>
-        <p className="text-xs text-slate-600">
-          Service area management is restricted to authorized administrative consoles.
-        </p>
-      </div>
-    );
-  }
-
   const openCreateModal = () => {
     setEditingArea(null);
-    let defaultBrand: ServiceArea['brandId'] = 'all';
-    let defaultCity = 'Chiplun';
-    let defaultPincode = '415605';
-    let defaultServices = [...PRESET_TECH_SERVICES];
-
-    if (activeConsole === 'nexalus-innovations' || isInnovationsAdmin) {
-      defaultBrand = 'nexalus';
-      defaultCity = 'Sangli';
-      defaultPincode = '416416';
-      defaultServices = [...PRESET_TECH_SERVICES];
-    } else if (activeConsole === 'am-distributors' || isAmAdmin) {
-      defaultBrand = 'am-distributors';
-      defaultCity = 'Chiplun';
-      defaultPincode = '415605';
-      defaultServices = [...PRESET_AM_SERVICES];
-    }
+    const isAm = activeConsole === 'am-distributors' || isAmAdmin;
+    const defaultBrand: ServiceArea['brandId'] = isAm ? 'am-distributors' : 'nexalus';
+    const defaultCity = isAm ? 'Chiplun' : 'Ratnagiri';
+    const defaultPincode = isAm ? '415605' : '415612';
+    const defaultServices = isAm ? [...PRESET_AM_SERVICES] : [...PRESET_TECH_SERVICES];
 
     setBrandId(defaultBrand);
     setLocality('');
@@ -167,7 +144,8 @@ export const AdminServiceAreasPage: React.FC = () => {
 
   const openEditModal = (area: ServiceArea) => {
     setEditingArea(area);
-    setBrandId(area.brandId);
+    const isAm = activeConsole === 'am-distributors' || isAmAdmin;
+    setBrandId(isAm ? 'am-distributors' : 'nexalus');
     setLocality(area.locality);
     setCity(area.city);
     setState(area.state);
@@ -199,10 +177,13 @@ export const AdminServiceAreasPage: React.FC = () => {
       return;
     }
 
+    const isAm = activeConsole === 'am-distributors' || isAmAdmin;
+    const effectiveBrandId: ServiceArea['brandId'] = isAm ? 'am-distributors' : 'nexalus';
+
     setIsSaving(true);
     try {
       const payload = {
-        brandId,
+        brandId: effectiveBrandId,
         locality: locality.trim(),
         city: city.trim(),
         state: state.trim(),
@@ -213,10 +194,16 @@ export const AdminServiceAreasPage: React.FC = () => {
       };
 
       if (editingArea) {
-        await updateServiceArea(editingArea.id, payload);
+        const updated = await updateServiceArea(editingArea.id, payload);
+        if (updated) {
+          setAreas(prev => prev.map(a => a.id === updated.id ? updated : a));
+        }
         success('Service Area Updated', `${locality} (${city}) has been updated.`);
       } else {
-        await createServiceArea(payload);
+        const created = await createServiceArea(payload);
+        if (created) {
+          setAreas(prev => [created, ...prev]);
+        }
         success('Service Area Added', `${locality} (${city}) registered with ${selectedServices.length} active services.`);
       }
 
@@ -232,7 +219,9 @@ export const AdminServiceAreasPage: React.FC = () => {
   const handleDelete = async () => {
     if (!deleteCandidate) return;
     try {
-      await deleteServiceArea(deleteCandidate.id);
+      const idToDelete = deleteCandidate.id;
+      setAreas(prev => prev.filter(a => a.id !== idToDelete));
+      await deleteServiceArea(idToDelete);
       success('Area Removed', `${deleteCandidate.locality} was deleted from registry.`);
       setDeleteCandidate(null);
       loadData();
@@ -241,17 +230,15 @@ export const AdminServiceAreasPage: React.FC = () => {
     }
   };
 
-  // Filtered list
+  // Filtered list with strict corporate isolation
   const filteredAreas = useMemo(() => {
     return areas.filter(a => {
-      // Console or user filter
-      if (brandFilter !== 'all') {
-        if (brandFilter === 'nexalus' && !(a.brandId === 'nexalus' || a.brandId === 'one-broadband' || a.brandId === 'all')) {
-          return false;
-        }
-        if (brandFilter === 'am-distributors' && !(a.brandId === 'am-distributors' || a.brandId === 'all')) {
-          return false;
-        }
+      const isAmConsole = activeConsole === 'am-distributors' || isAmAdmin;
+      if (isAmConsole) {
+        if (a.brandId !== 'am-distributors') return false;
+      } else {
+        // Parent Company console: NEVER display A.M. Distributors coverage zones or FMCG services
+        if (a.brandId === 'am-distributors') return false;
       }
 
       if (statusFilter !== 'all' && a.status !== statusFilter) {
@@ -270,7 +257,7 @@ export const AdminServiceAreasPage: React.FC = () => {
 
       return true;
     });
-  }, [areas, brandFilter, statusFilter, searchQuery]);
+  }, [areas, activeConsole, isAmAdmin, statusFilter, searchQuery]);
 
   // Aggregate stats
   const totalCities = useMemo(() => {
@@ -284,6 +271,18 @@ export const AdminServiceAreasPage: React.FC = () => {
     areas.forEach(a => (a.services || []).forEach(serv => s.add(serv)));
     return s.size;
   }, [areas]);
+
+  if (!isAdmin) {
+    return (
+      <div className="p-8 bg-white rounded-3xl border border-rose-200 text-center max-w-lg mx-auto space-y-4 shadow-sm my-12 animate-in fade-in duration-150">
+        <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto" />
+        <h2 className="text-lg font-bold text-slate-900">Access Restricted</h2>
+        <p className="text-xs text-slate-600">
+          Service area management is restricted to authorized administrative consoles.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12">
@@ -412,36 +411,20 @@ export const AdminServiceAreasPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          {/* Division Filter Tabs */}
-          <div className="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setBrandFilter('all')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                brandFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              All Hubs ({areas.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setBrandFilter('nexalus')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                brandFilter === 'nexalus' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Nexalus Tech
-            </button>
-            <button
-              type="button"
-              onClick={() => setBrandFilter('am-distributors')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                brandFilter === 'am-distributors' ? 'bg-white text-teal-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              A.M. Logistics
-            </button>
-          </div>
+          {/* Division Filter Tabs - Strictly scoped to active workspace */}
+          {activeConsole === 'am-distributors' || isAmAdmin ? (
+            <div className="inline-flex rounded-xl bg-teal-50 p-1 text-xs font-bold border border-teal-200">
+              <span className="px-3 py-1.5 rounded-lg bg-teal-600 text-white shadow-xs">
+                A.M. Distributors Chiplun FMCG Zones
+              </span>
+            </div>
+          ) : (
+            <div className="inline-flex rounded-xl bg-slate-100 p-1 text-xs font-bold">
+              <span className="px-3 py-1.5 rounded-lg bg-white text-blue-700 shadow-xs font-bold">
+                Parent Company Coverage (Nexalus Innovations)
+              </span>
+            </div>
+          )}
 
           {/* Status Filter */}
           <select
@@ -630,78 +613,38 @@ export const AdminServiceAreasPage: React.FC = () => {
         maxWidth="2xl"
       >
         <form onSubmit={handleSave} className="space-y-5">
-          {/* Brand Division Selector */}
+          {/* Operating Division / Entity Display (Strictly Scoped) */}
           <div>
             <label className="block text-xs font-bold text-slate-800 mb-1">
-              Operating Division / Entity *
+              Operating Division / Entity
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setBrandId('all');
-                  setSelectedServices(prev => {
-                    const withoutAm = prev.filter(s => !PRESET_AM_SERVICES.includes(s));
-                    return withoutAm.length > 0 ? withoutAm : [...PRESET_TECH_SERVICES];
-                  });
-                }}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  brandId === 'all'
-                    ? 'border-purple-600 bg-purple-50/70 text-purple-900 ring-2 ring-purple-600/20'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <div className="font-extrabold text-xs flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                  <span>All Divisions</span>
+            {activeConsole === 'am-distributors' || isAmAdmin ? (
+              <div className="p-3.5 rounded-xl border border-teal-200 bg-teal-50/70 text-teal-900 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Truck className="w-4 h-4 text-teal-600" />
+                  <div>
+                    <div className="font-extrabold text-xs">A.M. Distributors Chiplun</div>
+                    <div className="text-[10px] text-teal-700">Chiplun Water, Dairy &amp; Cold-Chain Logistics</div>
+                  </div>
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">Parent Website &amp; Both Child Sites</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setBrandId('nexalus');
-                  setSelectedServices(prev => {
-                    const withoutAm = prev.filter(s => !PRESET_AM_SERVICES.includes(s));
-                    return withoutAm.length > 0 ? withoutAm : [...PRESET_TECH_SERVICES];
-                  });
-                }}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  brandId === 'nexalus' || brandId === 'one-broadband'
-                    ? 'border-blue-600 bg-blue-50/70 text-blue-900 ring-2 ring-blue-600/20'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <div className="font-extrabold text-xs flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Nexalus Innovations</span>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-teal-200 text-teal-900">
+                  Child Division
+                </span>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-900 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Shield className="w-4 h-4 text-blue-600" />
+                  <div>
+                    <div className="font-extrabold text-xs">Nexalus Innovations LLP</div>
+                    <div className="text-[10px] text-blue-700">Commercial 4K CCTV, Fiber Leased Lines &amp; Enterprise IT</div>
+                  </div>
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">CCTV, Fiber Leased Lines, IT Switching</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setBrandId('am-distributors');
-                  setSelectedServices(prev => {
-                    const withoutTech = prev.filter(s => !PRESET_TECH_SERVICES.includes(s));
-                    return withoutTech.length > 0 ? withoutTech : [...PRESET_AM_SERVICES];
-                  });
-                }}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  brandId === 'am-distributors'
-                    ? 'border-teal-600 bg-teal-50/70 text-teal-900 ring-2 ring-teal-600/20'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <div className="font-extrabold text-xs flex items-center gap-1.5">
-                  <Truck className="w-3.5 h-3.5 text-teal-600" />
-                  <span>A.M. Distributors</span>
-                </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">Chiplun Water, Dairy &amp; Cold-Chain</div>
-              </button>
-            </div>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-blue-200 text-blue-900">
+                  Parent Company
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Location Coordinates */}

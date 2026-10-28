@@ -11,7 +11,7 @@ import {
   uploadImageFile,
   getCachedTeamMembers
 } from '../../firebase/services';
-import { TeamMember } from '../../types';
+import { TeamMember, CompanyScopeId } from '../../types';
 import { Input, TextArea, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
@@ -311,7 +311,10 @@ export const AdminTeamPage: React.FC = () => {
         await updateTeamMember(editingMember.id, payload);
         success('Member Updated', `${payload.name} details have been updated successfully.`);
       } else {
-        await createTeamMember(payload);
+        const currentCompanyScope: CompanyScopeId = effectiveConsole === 'am-distributors'
+          ? 'am-distributors'
+          : (effectiveConsole === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
+        await createTeamMember({ ...payload, companyId: currentCompanyScope }, currentCompanyScope);
         success('Member Added', `${payload.name} has been added to Our Team.`);
       }
       setIsModalOpen(false);
@@ -352,19 +355,17 @@ export const AdminTeamPage: React.FC = () => {
 
   // Filtering with strict role boundaries
   const filteredMembers = members.filter(m => {
-    if (isAmAdmin && m.division !== 'am-distributors') return false;
-    if (isInnovationsAdmin && m.division === 'am-distributors') return false;
-
-    const matchesDivision =
-      filterDivision === 'all'
-        ? true
-        : filterDivision === 'corporate'
-        ? m.division === 'corporate' || m.division === 'all'
-        : filterDivision === 'nexalus-innovations'
-        ? m.division === 'nexalus-innovations' || m.division === 'all'
-        : filterDivision === 'am-distributors'
-        ? m.division === 'am-distributors'
-        : true;
+    let matchesDivision = false;
+    const isAmWorkspace = (effectiveConsole as string) === 'am-distributors' || isAmAdmin;
+    if (isAmWorkspace) {
+      matchesDivision = m.companyId === 'am-distributors' || m.division === 'am-distributors' || m.id.startsWith('team-am-');
+    } else if (effectiveConsole === 'nexalus-innovations' || isInnovationsAdmin) {
+      matchesDivision = (m.companyId === 'nexalus-innovations' || m.division === 'nexalus-innovations' || m.id.startsWith('team-nex-')) &&
+        m.division !== 'am-distributors' && m.companyId !== 'am-distributors';
+    } else {
+      matchesDivision = (m.companyId === 'nexalus-llp' || m.division === 'corporate' || m.id.startsWith('team-llp-')) &&
+        m.division !== 'am-distributors' && m.companyId !== 'am-distributors';
+    }
 
     const matchesSearch =
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -377,28 +378,21 @@ export const AdminTeamPage: React.FC = () => {
   });
 
   const divisionOptions = useMemo(() => {
-    if (lockedDivision === 'am-distributors') {
+    if (lockedDivision === 'am-distributors' || effectiveConsole === 'am-distributors' || isAmAdmin) {
       return [
-        { value: 'am-distributors', label: 'Child Site 2: A.M. Distributors (Chiplun FMCG Depot Only)' }
-      ];
-    }
-    if (lockedDivision === 'nexalus-innovations') {
-      return [
-        { value: 'nexalus-innovations', label: 'Child Site 1: Nexalus Innovations (Tech & Hardware Only)' }
+        { value: 'am-distributors', label: 'A.M. Distributors (Chiplun FMCG Depot Only)' }
       ];
     }
     return [
-      { value: 'corporate', label: 'Parent Website Only (Nexalus Innovations LLP Corporate)' },
-      { value: 'nexalus-innovations', label: 'Child Site 1: Nexalus Innovations (Tech/Fiber/CCTV)' },
-      { value: 'am-distributors', label: 'Child Site 2: A.M. Distributors (Chiplun FMCG Depot)' },
-      { value: 'all', label: 'All 3 Websites (Parent + Both Child Websites)' },
+      { value: 'corporate', label: 'Parent Corporate Leadership (Nexalus Innovations LLP)' },
+      { value: 'nexalus-innovations', label: 'Technical & Engineering Division (Nexalus Innovations)' }
     ];
-  }, [lockedDivision]);
+  }, [lockedDivision, effectiveConsole, isAmAdmin]);
 
-  const totalMembers = members.length;
   const parentMembers = members.filter(m => m.division === 'corporate' || m.division === 'all').length;
-  const nexalusMembers = members.filter(m => m.division === 'nexalus-innovations' || m.division === 'all').length;
-  const amMembers = members.filter(m => m.division === 'am-distributors' || m.division === 'all').length;
+  const nexalusMembers = members.filter(m => m.division === 'nexalus-innovations').length;
+  const parentTotal = parentMembers + nexalusMembers;
+  const amMembers = members.filter(m => m.division === 'am-distributors').length;
 
   return (
     <div className="space-y-6">
@@ -480,44 +474,35 @@ export const AdminTeamPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-blue-200 bg-blue-50/20 shadow-sm">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700">
+              Parent Corporate Leadership &amp; Team
+            </p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-3xl font-black text-blue-700">{parentMembers}</span>
+              <span className="text-xs font-bold text-slate-400">members active</span>
+            </div>
+          </div>
+
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-              Total Team Members
+              Active Corporate Entity
             </p>
             <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-slate-900">{totalMembers}</span>
-              <span className="text-xs font-bold text-slate-400">across network</span>
+              <span className="text-base font-black text-slate-900">Nexalus Innovations LLP</span>
+              <span className="text-xs font-bold text-blue-600">Corporate HQ</span>
             </div>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600">
-              Parent: Nexalus LLP
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+              Current Directory Scope
             </p>
             <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-blue-600">{parentMembers}</span>
-              <span className="text-xs font-bold text-slate-400">Corporate HQ</span>
-            </div>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">
-              Nexalus Innovations
-            </p>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-indigo-600">{nexalusMembers}</span>
-              <span className="text-xs font-bold text-slate-400">Tech &amp; Fiber</span>
-            </div>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm">
-            <p className="text-[11px] font-extrabold uppercase tracking-wider text-teal-600">
-              A.M. Distributors
-            </p>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-black text-teal-600">{amMembers}</span>
-              <span className="text-xs font-bold text-slate-400">Chiplun Logistics</span>
+              <span className="text-sm font-bold text-slate-800">
+                {filterDivision === 'corporate' ? 'Parent Company Only' : filterDivision === 'all' ? 'Consolidated (All Units)' : filterDivision}
+              </span>
             </div>
           </div>
         </div>
@@ -525,7 +510,7 @@ export const AdminTeamPage: React.FC = () => {
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Division Filter Tabs - Only shown in Master Console */}
+        {/* Division Filter Tabs - Strictly Parent Company Only in Parent Console */}
         {effectiveConsole === 'master' ? (
           <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
             <button
@@ -536,7 +521,7 @@ export const AdminTeamPage: React.FC = () => {
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              All Divisions ({totalMembers})
+              All Parent Personnel ({parentTotal})
             </button>
             <button
               onClick={() => setFilterDivision('corporate')}
@@ -547,7 +532,7 @@ export const AdminTeamPage: React.FC = () => {
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              Parent: Nexalus LLP ({parentMembers})
+              Executive Leadership ({parentMembers})
             </button>
             <button
               onClick={() => setFilterDivision('nexalus-innovations')}
@@ -558,18 +543,7 @@ export const AdminTeamPage: React.FC = () => {
               }`}
             >
               <Shield className="w-3.5 h-3.5" />
-              Nexalus Innovations ({nexalusMembers})
-            </button>
-            <button
-              onClick={() => setFilterDivision('am-distributors')}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                filterDivision === 'am-distributors'
-                  ? 'bg-teal-600 text-white shadow-sm shadow-teal-500/20'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              <Building className="w-3.5 h-3.5" />
-              A.M. Distributors ({amMembers})
+              Engineering & Tech ({nexalusMembers})
             </button>
           </div>
         ) : (

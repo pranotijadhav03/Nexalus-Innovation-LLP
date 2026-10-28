@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -37,7 +35,11 @@ import {
   Calendar,
   Clock,
   Activity,
-  Users
+  Users,
+  Copy,
+  Check,
+  ExternalLink,
+  Lock
 } from 'lucide-react';
 
 export const AdminUsersPage: React.FC = () => {
@@ -59,15 +61,29 @@ export const AdminUsersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
-  // Add User Modal State (Staff)
+  // Add User / Registration Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addMode, setAddMode] = useState<'customer' | 'staff'>('customer');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('innovations_admin');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [sendResetEmailCheck, setSendResetEmailCheck] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('Sangli');
+  const [pincode, setPincode] = useState('416415');
   const [isProvisioning, setIsProvisioning] = useState(false);
+
+  // Success Credentials Dialog
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    isCustomer: boolean;
+  } | null>(null);
+  const [hasCopied, setHasCopied] = useState(false);
 
   // Edit User Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -180,13 +196,31 @@ export const AdminUsersPage: React.FC = () => {
     }
   };
 
-  const openCreateModal = () => {
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let pwd = '';
+    for (let i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setPassword(pwd);
+  };
+
+  const openCreateModal = (mode: 'customer' | 'staff') => {
+    setAddMode(mode);
     setDisplayName('');
     setEmail('');
     setPassword('');
     setShowPassword(false);
-    setSendResetEmailCheck(false);
-    setRole('innovations_admin');
+    setPhone('');
+    setAddress('');
+    setCity('Sangli');
+    setPincode('416415');
+    if (mode === 'customer') {
+      setRole('customer');
+    } else {
+      setRole('innovations_admin');
+    }
+    generateRandomPassword();
     setIsAddModalOpen(true);
   };
 
@@ -211,6 +245,15 @@ export const AdminUsersPage: React.FC = () => {
           ? 'all'
           : 'nexalus-innovations';
 
+      const deliveryAddress = addMode === 'customer' && (address || city || pincode)
+        ? {
+            address: address.trim(),
+            city: city.trim(),
+            state: 'Maharashtra',
+            postcode: pincode.trim()
+          }
+        : undefined;
+
       const result = await provisionAdminAccount({
         displayName: displayName.trim(),
         email: targetEmail,
@@ -218,7 +261,9 @@ export const AdminUsersPage: React.FC = () => {
         role,
         assignedBrandId: assignedBrand,
         active: true,
-        sendResetEmail: sendResetEmailCheck
+        sendResetEmail: false,
+        phone: phone.trim() || undefined,
+        deliveryAddress
       });
 
       setUsers(prev => {
@@ -231,18 +276,44 @@ export const AdminUsersPage: React.FC = () => {
         return [...prev, result.user];
       });
 
-      success(
-        'Administrator Enrolled',
-        `Account for ${targetEmail} created in Firebase Authentication.`
-      );
+      // Save credentials for the copy dialog
+      setCreatedCredentials({
+        name: displayName.trim(),
+        email: targetEmail,
+        password: password.trim(),
+        role: role === 'customer'
+          ? 'Customer'
+          : role === 'super_admin'
+          ? 'Corporate Super Admin'
+          : role === 'innovations_admin'
+          ? 'Nexalus Innovations Admin'
+          : 'A.M. Distributors Admin',
+        isCustomer: role === 'customer'
+      });
 
       setIsAddModalOpen(false);
       loadData();
     } catch (err: any) {
-      error('Provisioning Failed', err.message || 'Failed to enroll administrator.');
+      error('Provisioning Failed', err.message || 'Failed to enroll account.');
     } finally {
       setIsProvisioning(false);
     }
+  };
+
+  const handleCopyCredentials = () => {
+    if (!createdCredentials) return;
+    const loginUrl = `${window.location.origin}/login`;
+    const text = `--- NEXALUS PORTAL CREDENTIALS ---
+Name: ${createdCredentials.name}
+Role: ${createdCredentials.role}
+Email: ${createdCredentials.email}
+Password: ${createdCredentials.password}
+Login URL: ${loginUrl}
+----------------------------------`;
+    navigator.clipboard.writeText(text);
+    setHasCopied(true);
+    success('Credentials Copied', 'Login credentials copied to your clipboard.');
+    setTimeout(() => setHasCopied(false), 2500);
   };
 
   const openEditModal = (user: AdminUser) => {
@@ -325,27 +396,39 @@ export const AdminUsersPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Customer Accounts &amp; User Access
+              Customer Accounts &amp; Administrator Access
             </h1>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
-              Live Firebase Sync
+              Live Sync
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            View new customer registrations from the public website, check who logged in and when, and manage staff administrator access.
+            Register new customers, view website logins, enroll company administrators, and manage portal access credentials.
           </p>
         </div>
 
-        {activeTab === 'staff' && isSuperAdmin && (
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
-            variant="primary"
+            variant="teal"
             size="sm"
             icon={<UserPlus className="w-4 h-4" />}
-            onClick={openCreateModal}
+            onClick={() => openCreateModal('customer')}
           >
-            Enroll Administrator
+            Register Customer
           </Button>
-        )}
+
+          {isSuperAdmin && (
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Shield className="w-4 h-4" />}
+              onClick={() => openCreateModal('staff')}
+            >
+              Enroll Administrator
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Primary Tab Switcher */}
@@ -359,11 +442,8 @@ export const AdminUsersPage: React.FC = () => {
               : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
           }`}
         >
-          <UserCheck className="w-4 h-4 text-emerald-600" />
-          <span>Registered Customers &amp; Login Logs</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-black">
-            {customerUsers.length}
-          </span>
+          <UserCheck className="w-4 h-4" />
+          <span>Registered Customers &amp; Login History ({customerUsers.length})</span>
         </button>
 
         {isSuperAdmin && (
@@ -376,47 +456,25 @@ export const AdminUsersPage: React.FC = () => {
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
             }`}
           >
-            <Shield className="w-4 h-4 text-blue-600" />
-            <span>Staff Administrators &amp; Roles</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] bg-blue-100 text-blue-800 font-black">
-              {staffUsers.length}
-            </span>
+            <Shield className="w-4 h-4" />
+            <span>Company Administrators ({staffUsers.length})</span>
           </button>
         )}
       </div>
 
-      {/* TAB 1: REGISTERED CUSTOMERS & LOGIN LOGS */}
+      {/* TAB 1: REGISTERED CUSTOMERS */}
       {activeTab === 'customers' && (
         <div className="space-y-4">
-          {/* Quick Stats Banner */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Registered Customers</span>
-              <div className="text-2xl font-black text-slate-900 mt-1">{customerUsers.length}</div>
-              <p className="text-[11px] text-slate-500 mt-0.5">Created via Customer Portal on website</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Accounts</span>
-              <div className="text-2xl font-black text-emerald-600 mt-1">{customerUsers.filter(c => c.active).length}</div>
-              <p className="text-[11px] text-slate-500 mt-0.5">Can login and place orders</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Logged In Customers</span>
-              <div className="text-2xl font-black text-indigo-600 mt-1">{customerUsers.filter(c => !!c.lastLogin).length}</div>
-              <p className="text-[11px] text-slate-500 mt-0.5">With active login history timestamp</p>
-            </div>
-          </div>
-
           {/* Search & Filter Bar */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search customers by name, email, phone, city, or pincode..."
+                placeholder="Search registered customers by name, phone, email, or city..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-emerald-500 focus:bg-white transition-colors"
+                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-blue-500 focus:bg-white transition-colors"
               />
             </div>
 
@@ -424,10 +482,10 @@ export const AdminUsersPage: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value as any)}
-                className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-emerald-500 font-medium text-slate-700"
+                className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-blue-500 font-medium text-slate-700"
               >
-                <option value="all">All Statuses ({customerUsers.length})</option>
-                <option value="active">Active Accounts Only</option>
+                <option value="all">All Customer Statuses</option>
+                <option value="active">Active Only</option>
                 <option value="inactive">Deactivated Only</option>
               </select>
             </div>
@@ -435,30 +493,27 @@ export const AdminUsersPage: React.FC = () => {
 
           {/* Customers Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            {isLoading && users.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 space-y-3">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" />
-                <p className="text-xs font-semibold">Loading registered customers from Firebase Firestore...</p>
-              </div>
-            ) : filteredCustomers.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 space-y-2">
-                <UserCheck className="w-10 h-10 mx-auto text-slate-300" />
-                <p className="text-sm font-bold text-slate-700">No customer records found</p>
-                <p className="text-xs text-slate-400">
-                  {searchTerm
-                    ? 'No registered customer matches your search criteria.'
-                    : 'When visitors register on the website Customer Portal, their profile and login history appear here automatically.'}
+            {filteredCustomers.length === 0 ? (
+              <div className="p-12 text-center space-y-3">
+                <Users className="w-10 h-10 text-slate-300 mx-auto" />
+                <h3 className="text-sm font-bold text-slate-800">No Customers Found</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  {searchTerm ? 'No registered customers match your search.' : 'No customer accounts registered yet.'}
                 </p>
+                <Button size="sm" variant="teal" onClick={() => openCreateModal('customer')} icon={<UserPlus className="w-4 h-4" />}>
+                  Register First Customer
+                </Button>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
                     <tr>
-                      <th className="py-3.5 px-4 sm:px-6">Customer Name &amp; Contact</th>
-                      <th className="py-3.5 px-4">Delivery Address &amp; City</th>
-                      <th className="py-3.5 px-4">Registration Date</th>
-                      <th className="py-3.5 px-4">Last Login Activity</th>
+                      <th className="py-3.5 px-4 sm:px-6">Customer Details</th>
+                      <th className="py-3.5 px-4">Phone / Contact</th>
+                      <th className="py-3.5 px-4">City / Address</th>
+                      <th className="py-3.5 px-4">Registered On</th>
+                      <th className="py-3.5 px-4">Last Login</th>
                       <th className="py-3.5 px-4">Status</th>
                       <th className="py-3.5 px-4 text-right">Actions</th>
                     </tr>
@@ -467,52 +522,35 @@ export const AdminUsersPage: React.FC = () => {
                     {filteredCustomers.map(cust => (
                       <tr key={cust.uid} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-4 px-4 sm:px-6">
-                          <div className="font-bold text-slate-900 text-sm">{cust.displayName}</div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1 font-mono mt-0.5">
-                            <Mail className="w-3 h-3 text-slate-400" />
-                            <span>{cust.email}</span>
+                          <div className="font-bold text-slate-900">{cust.displayName}</div>
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 font-mono">
+                            <Mail className="w-3 h-3 text-slate-400" /> {cust.email}
                           </div>
-                          {cust.phone && (
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[11px] font-mono font-semibold text-slate-700">{cust.phone}</span>
-                              <a
-                                href={`https://wa.me/${cust.phone.replace(/[^0-9]/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px] hover:bg-emerald-200"
-                                title="Chat on WhatsApp"
-                              >
-                                WA
-                              </a>
-                              <a
-                                href={`tel:${cust.phone}`}
-                                className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px] hover:bg-blue-200"
-                                title="Call Customer"
-                              >
-                                Call
-                              </a>
-                            </div>
+                        </td>
+
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          {cust.phone ? (
+                            <span className="font-semibold text-slate-800">{cust.phone}</span>
+                          ) : (
+                            <span className="text-slate-400 italic">Not set</span>
                           )}
                         </td>
 
-                        <td className="py-4 px-4 max-w-xs">
-                          {cust.deliveryAddress?.address ? (
+                        <td className="py-4 px-4">
+                          {cust.deliveryAddress?.city ? (
                             <div className="space-y-0.5">
-                              <div className="font-semibold text-slate-800 truncate">{cust.deliveryAddress.address}</div>
+                              <div className="font-semibold text-slate-800 truncate max-w-xs">{cust.deliveryAddress.address || cust.deliveryAddress.city}</div>
                               <div className="text-[11px] text-slate-500">
                                 {cust.deliveryAddress.city}{cust.deliveryAddress.postcode ? ` - ${cust.deliveryAddress.postcode}` : ''}
                               </div>
                             </div>
                           ) : (
-                            <span className="text-slate-400 italic">No address provided</span>
+                            <span className="text-slate-400 italic">No address</span>
                           )}
                         </td>
 
                         <td className="py-4 px-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1.5 font-semibold text-slate-800">
-                            <Calendar className="w-3.5 h-3.5 text-blue-600" />
-                            <span>{formatTimestamp(cust.createdAt)}</span>
-                          </div>
+                          <span className="font-medium text-slate-700">{formatTimestamp(cust.createdAt)}</span>
                         </td>
 
                         <td className="py-4 px-4 whitespace-nowrap">
@@ -584,7 +622,7 @@ export const AdminUsersPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: STAFF & ADMINISTRATORS (SUPER ADMIN ONLY) */}
+      {/* TAB 2: STAFF & ADMINISTRATORS */}
       {activeTab === 'staff' && isSuperAdmin && (
         <div className="space-y-4">
           {/* Search & Filter Bar */}
@@ -647,8 +685,18 @@ export const AdminUsersPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                          {u.role}
+                        <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold border ${
+                          u.role === 'super_admin'
+                            ? 'bg-purple-50 text-purple-700 border-purple-200'
+                            : u.role === 'innovations_admin'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-teal-50 text-teal-700 border-teal-200'
+                        }`}>
+                          {u.role === 'super_admin'
+                            ? 'Corporate Super Admin'
+                            : u.role === 'innovations_admin'
+                            ? 'Nexalus Innovations Admin'
+                            : 'A.M. Distributors Admin'}
                         </span>
                       </td>
                       <td className="py-4 px-4">
@@ -686,6 +734,243 @@ export const AdminUsersPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* CREATE USER / ENROLL ADMIN MODAL */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title={addMode === 'customer' ? 'Register New Customer Account' : 'Enroll System Administrator'}
+        subtitle={
+          addMode === 'customer'
+            ? 'Create a customer profile with login credentials for public portal access.'
+            : 'Create an administrator account with access to manage specific company operations.'
+        }
+        maxWidth="md"
+      >
+        <form onSubmit={handleCreateUser} className="space-y-4">
+          <Input
+            label="Full Name *"
+            placeholder="e.g. Sanket Lohar"
+            value={displayName}
+            onChange={e => setDisplayName(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Email Address (Login Username) *"
+            type="email"
+            placeholder="e.g. customer@example.com"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
+
+          {/* Password with generator */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-700">
+                Password * (minimum 6 characters)
+              </label>
+              <button
+                type="button"
+                onClick={generateRandomPassword}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+              >
+                <Sparkles className="w-3 h-3 text-amber-500" /> Generate Password
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter or generate a strong password"
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white font-mono"
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+
+          {/* Administrator Role Selection */}
+          {addMode === 'staff' && (
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">
+                Administrative Scope &amp; Role *
+              </label>
+              <div className="space-y-2">
+                <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
+                  role === 'super_admin' ? 'border-purple-600 bg-purple-50/50 ring-1 ring-purple-600' : 'border-slate-200'
+                }`}>
+                  <input
+                    type="radio"
+                    name="admin_role"
+                    checked={role === 'super_admin'}
+                    onChange={() => setRole('super_admin')}
+                    className="mt-1"
+                  />
+                  <div>
+                    <div className="font-extrabold text-xs text-purple-900">Corporate Super Admin</div>
+                    <div className="text-[11px] text-slate-500">Unrestricted governance over Nexalus Innovations LLP, all child brands &amp; admin accounts.</div>
+                  </div>
+                </label>
+
+                <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
+                  role === 'innovations_admin' ? 'border-blue-600 bg-blue-50/50 ring-1 ring-blue-600' : 'border-slate-200'
+                }`}>
+                  <input
+                    type="radio"
+                    name="admin_role"
+                    checked={role === 'innovations_admin'}
+                    onChange={() => setRole('innovations_admin')}
+                    className="mt-1"
+                  />
+                  <div>
+                    <div className="font-extrabold text-xs text-blue-900">Nexalus Innovations Admin</div>
+                    <div className="text-[11px] text-slate-500">Manages tech hardware, CCTV, fiber internet, networking, orders, and inquiries.</div>
+                  </div>
+                </label>
+
+                <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
+                  role === 'am_admin' ? 'border-teal-600 bg-teal-50/50 ring-1 ring-teal-600' : 'border-slate-200'
+                }`}>
+                  <input
+                    type="radio"
+                    name="admin_role"
+                    checked={role === 'am_admin'}
+                    onChange={() => setRole('am_admin')}
+                    className="mt-1"
+                  />
+                  <div>
+                    <div className="font-extrabold text-xs text-teal-900">A.M. Distributors Admin</div>
+                    <div className="text-[11px] text-slate-500">Dedicated management for Chiplun FMCG depot, water, dairy, ice cream &amp; fleet operations.</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Customer Specific Fields */}
+          {addMode === 'customer' && (
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <Input
+                label="Mobile / Phone Number"
+                placeholder="e.g. +91 9158886444"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+              />
+
+              <Input
+                label="Installation / Delivery Address"
+                placeholder="e.g. Flat 402, Kokitkar Garden, 100 Feet Rd"
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="City"
+                  value={city}
+                  onChange={e => setCity(e.target.value)}
+                />
+                <Input
+                  label="PIN Code"
+                  value={pincode}
+                  onChange={e => setPincode(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <Button variant="outline" size="sm" type="button" onClick={() => setIsAddModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant={addMode === 'customer' ? 'teal' : 'primary'}
+              size="sm"
+              type="submit"
+              isLoading={isProvisioning}
+            >
+              {addMode === 'customer' ? 'Create Customer Account' : 'Enroll Administrator'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* CREDENTIALS SUCCESS & COPY MODAL */}
+      <Modal
+        isOpen={!!createdCredentials}
+        onClose={() => setCreatedCredentials(null)}
+        title="Account Created &amp; Credentials Ready"
+        subtitle="The account has been created in Firebase Authentication. Copy these credentials to send to the user."
+        maxWidth="md"
+      >
+        {createdCredentials && (
+          <div className="space-y-4 text-xs">
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-3">
+              <div className="flex items-center gap-2 font-bold text-sm text-emerald-800">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <span>Account Successfully Registered!</span>
+              </div>
+              <p className="text-[11px] text-emerald-700">
+                This account can now log into the portal directly using the credentials below.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono space-y-2 text-xs">
+              <div className="flex justify-between py-1 border-b border-slate-200">
+                <span className="text-slate-500 font-sans font-bold">Account Name:</span>
+                <strong className="text-slate-900">{createdCredentials.name}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-200">
+                <span className="text-slate-500 font-sans font-bold">Assigned Role:</span>
+                <strong className="text-indigo-700">{createdCredentials.role}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-200">
+                <span className="text-slate-500 font-sans font-bold">Login Email:</span>
+                <strong className="text-slate-900">{createdCredentials.email}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-200">
+                <span className="text-slate-500 font-sans font-bold">Password:</span>
+                <strong className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                  {createdCredentials.password}
+                </strong>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-sans font-bold">Portal URL:</span>
+                <span className="text-blue-700 underline">{window.location.origin}/login</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCreatedCredentials(null)}
+              >
+                Close
+              </Button>
+
+              <Button
+                variant={hasCopied ? 'teal' : 'primary'}
+                size="sm"
+                onClick={handleCopyCredentials}
+                icon={hasCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              >
+                {hasCopied ? 'Copied to Clipboard!' : 'Copy Login Credentials'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* INSPECT CUSTOMER MODAL */}
       <Modal
@@ -780,6 +1065,68 @@ export const AdminUsersPage: React.FC = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* EDIT USER MODAL */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Administrator Details"
+        maxWidth="md"
+      >
+        <form onSubmit={handleSaveEdit} className="space-y-4">
+          <Input
+            label="Display Name *"
+            value={editDisplayName}
+            onChange={e => setEditDisplayName(e.target.value)}
+            required
+          />
+
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-slate-700">Role</label>
+            <select
+              value={editRole}
+              onChange={e => setEditRole(e.target.value as UserRole)}
+              className="w-full text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl"
+            >
+              <option value="super_admin">Corporate Super Admin</option>
+              <option value="innovations_admin">Nexalus Innovations Admin</option>
+              <option value="am_admin">A.M. Distributors Admin</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-slate-700">Assigned Entity</label>
+            <select
+              value={editBrandId}
+              onChange={e => setEditBrandId(e.target.value as any)}
+              className="w-full text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl"
+            >
+              <option value="all">Consolidated / All Operations</option>
+              <option value="nexalus-innovations">Nexalus Innovations</option>
+              <option value="am-distributors">A.M. Distributors Chiplun</option>
+            </select>
+          </div>
+
+          <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={editActive}
+              onChange={e => setEditActive(e.target.checked)}
+              className="w-4 h-4 rounded text-blue-600"
+            />
+            <span>Active Account (Able to login)</span>
+          </label>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button variant="outline" size="sm" type="button" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" type="submit" isLoading={isSavingEdit}>
+              Save Changes
+            </Button>
+          </div>
+        </form>
       </Modal>
 
       {/* Delete User Modal */}

@@ -136,8 +136,18 @@ service cloud.firestore {
 
     // 5. Broadband Plan Orders (Buy Now & Cart Bookings)
     match /plan_orders/{orderId} {
-      allow create: if true;
-      allow read: if true;
+      // Authorized admins can read all orders; authenticated customers can read only their own orders
+      allow read: if isAdmin() || (isAuthenticated() && (
+        resource.data.authUid == request.auth.uid ||
+        resource.data.email == request.auth.token.email
+      ));
+      // Customers and visitors can create an order, but paymentStatus must be 'pending' (cannot forge 'paid')
+      // and if authenticated, authUid must match caller UID
+      allow create: if (
+        request.resource.data.paymentStatus == 'pending' &&
+        (!isAuthenticated() || request.resource.data.authUid == request.auth.uid || !('authUid' in request.resource.data))
+      ) || isAdmin();
+      // Only authorized administrators can update order status, collect payments, or delete records
       allow update, delete: if isAdmin();
     }
 
@@ -153,6 +163,14 @@ service cloud.firestore {
         isAdmin()
       );
       allow delete: if isSuperAdmin();
+    }
+
+    // 7. Admin Real-Time Notifications
+    match /admin_notifications/{notificationId} {
+      // Authorized administrators can read and dismiss alerts
+      allow read, update, delete: if isAdmin();
+      // Any authenticated or guest customer activity (order booking, enquiry) can log an alert
+      allow create: if true;
     }
   }
 }

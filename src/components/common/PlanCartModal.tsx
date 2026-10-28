@@ -58,22 +58,28 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
   onProceedToOrder
 }) => {
   const navigate = useNavigate();
-  const { isCustomer } = useAuth();
+  const { isCustomer, isAuthenticated, currentUser } = useAuth();
   const { info } = useToast();
   const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => {
     try {
-      return getPlanCart();
+      return isAuthenticated ? getPlanCart() : [];
     } catch {
       return [];
     }
   });
 
-  // Sync cart items with localStorage and events
+  // Sync cart items with user account and events
   useEffect(() => {
     const refreshCart = (e?: any) => {
+      if (!isAuthenticated) {
+        setCartItems([]);
+        return;
+      }
       const items = e?.detail || getPlanCart();
       setCartItems(Array.isArray(items) ? items : []);
     };
+
+    refreshCart();
 
     if (isOpen) {
       refreshCart();
@@ -86,7 +92,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
       window.removeEventListener('nexalus_plan_cart_updated', refreshCart);
       window.removeEventListener('storage', refreshCart);
     };
-  }, [isOpen]);
+  }, [isOpen, isAuthenticated]);
 
   // Close on Escape key
   useEffect(() => {
@@ -287,7 +293,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
           <div className="p-4 sm:p-5 bg-white border-t border-slate-200/80 flex items-center justify-between gap-3 shrink-0">
             <button
               type="button"
-              onClick={clearPlanCart}
+              onClick={() => clearPlanCart()}
               className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer flex items-center gap-1.5 group"
               title="Clear all plans from cart"
             >

@@ -12,7 +12,7 @@ import {
   getCachedProducts,
   getCachedCategories
 } from '../../firebase/services';
-import { Product, ProductCategory, BrandId } from '../../types';
+import { Product, ProductCategory, BrandId, CompanyScopeId } from '../../types';
 import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { Input, TextArea, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -64,11 +64,18 @@ export const AdminProductsPage: React.FC = () => {
   const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
   const { success, error } = useToast();
 
+  const effectiveBrand: BrandId | 'nexalus' =
+    activeConsole === 'am-distributors' || isAmAdmin
+      ? 'am-distributors'
+      : activeConsole === 'nexalus-innovations' || isInnovationsAdmin
+      ? 'nexalus-innovations'
+      : 'nexalus';
+
   const [products, setProducts] = useState<Product[]>(() =>
-    getCachedProducts(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter)
+    getCachedProducts(effectiveBrand)
   );
   const [categories, setCategories] = useState<ProductCategory[]>(() =>
-    getCachedCategories(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter)
+    getCachedCategories(effectiveBrand)
   );
   const [search, setSearch] = useState('');
   const [selectedCatFilter, setSelectedCatFilter] = useState('all');
@@ -106,8 +113,8 @@ export const AdminProductsPage: React.FC = () => {
     setIsLoading(true);
     try {
       const [prods, cats] = await Promise.all([
-        getProducts(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter),
-        getCategories(activeBrandFilter === 'all' || activeBrandFilter === 'corporate' ? undefined : activeBrandFilter)
+        getProducts(effectiveBrand),
+        getCategories(effectiveBrand)
       ]);
       setProducts(prods);
       setCategories(cats);
@@ -118,7 +125,7 @@ export const AdminProductsPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [activeBrandFilter]);
+  }, [activeConsole, activeBrandFilter]);
 
   const openCreateModal = () => {
     setEditingProduct(null);
@@ -236,7 +243,7 @@ export const AdminProductsPage: React.FC = () => {
         modelNumber,
         brandId,
         categoryId: categoryId || 'cat-general',
-        categoryName: selectedCat ? selectedCat.name : 'General Equipment',
+        categoryName: selectedCat ? selectedCat.name : editingProduct?.categoryName || 'General Equipment',
         description,
         price: price ? parseFloat(price) : undefined,
         currency: 'INR',
@@ -251,7 +258,10 @@ export const AdminProductsPage: React.FC = () => {
         await updateProduct(editingProduct.id, productPayload);
         success('Product Updated', `${name} has been updated in Firestore.`);
       } else {
-        await createProduct(productPayload);
+        const currentCompanyScope: CompanyScopeId = activeConsole === 'am-distributors' || isAmAdmin
+          ? 'am-distributors'
+          : (activeConsole === 'nexalus-innovations' || isInnovationsAdmin ? 'nexalus-innovations' : 'nexalus-llp');
+        await createProduct({ ...productPayload, companyId: currentCompanyScope }, currentCompanyScope);
         success('Product Created', `${name} has been published.`);
       }
 
@@ -281,17 +291,23 @@ export const AdminProductsPage: React.FC = () => {
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.modelNumber.toLowerCase().includes(search.toLowerCase());
     const matchesCat = selectedCatFilter === 'all' || p.categoryId === selectedCatFilter;
-    const matchesCompany =
-      activeConsole === 'am-distributors' || isAmAdmin
-        ? p.brandId === 'am-distributors'
-        : p.brandId !== 'am-distributors';
+    
+    let matchesCompany = false;
+    if (activeConsole === 'am-distributors' || isAmAdmin) {
+      matchesCompany = p.companyId === 'am-distributors' || p.brandId === 'am-distributors' || p.id.startsWith('prod-am-');
+    } else if (activeConsole === 'nexalus-innovations' || isInnovationsAdmin) {
+      matchesCompany = p.companyId === 'nexalus-innovations' ||
+        ['nexalus-innovations', 'cp-plus', 'one-broadband', 'itti-networking'].includes(p.brandId) ||
+        p.id.startsWith('prod-nex-') || p.id.startsWith('prod-cp-') || p.id.startsWith('prod-ob-') || p.id.startsWith('prod-itti-');
+    } else {
+      // Parent Corporate Master (Nexalus Innovations LLP):
+      matchesCompany = p.companyId === 'nexalus-llp' || p.brandId === 'nexalus' || p.id.startsWith('prod-llp-') || p.id.startsWith('prod-corp-');
+    }
 
     return matchesSearch && matchesCat && matchesCompany;
   });
 
-  const nexalusCount = products.filter(
-    p => p.brandId === 'nexalus-innovations' || p.brandId === 'cp-plus' || p.brandId === 'one-broadband' || p.brandId === 'itti-networking'
-  ).length;
+  const nexalusCount = products.filter(p => p.brandId !== 'am-distributors').length;
   const amCount = products.filter(p => p.brandId === 'am-distributors').length;
 
   return (
@@ -524,32 +540,29 @@ export const AdminProductsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {isSuperAdmin ? (
-              <Select
-                label="Operating Company *"
-                value={brandId}
-                onChange={e => {
-                  const b = e.target.value as BrandId;
-                  setBrandId(b);
-                  const availableCats = categories.filter(c => c.brandId === b);
-                  setCategoryId(availableCats[0]?.id || '');
-                }}
-                options={[
-                  ...(activeConsole === 'master' ? [{ value: 'nexalus', label: 'Nexalus Corporate Parent (Turnkey & Enterprise)' }] : []),
-                  ...(activeConsole === 'nexalus-innovations' || activeConsole === 'master' ? [{ value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' }] : []),
-                  ...(activeConsole === 'am-distributors' || activeConsole === 'master' ? [{ value: 'am-distributors', label: 'A.M. Distributors Chiplun (Cold-Chain & Logistics)' }] : [])
-                ]}
-              />
-            ) : (
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Operating Company
-                </label>
-                <div className="p-2.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-800">
-                  {brandId === 'am-distributors' ? 'A.M. Distributors Chiplun' : 'Nexalus Innovations'} (Locked to Role)
-                </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Operating Company
+              </label>
+              <div className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between ${
+                activeConsole === 'am-distributors' || isAmAdmin
+                  ? 'bg-teal-50 border-teal-200 text-teal-900'
+                  : 'bg-blue-50 border-blue-200 text-blue-900'
+              }`}>
+                <span className="truncate">
+                  {activeConsole === 'am-distributors' || isAmAdmin
+                    ? 'A.M. Distributors Chiplun'
+                    : 'Nexalus Innovations LLP'}
+                </span>
+                <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded shrink-0 ${
+                  activeConsole === 'am-distributors' || isAmAdmin
+                    ? 'bg-teal-200 text-teal-800'
+                    : 'bg-blue-200 text-blue-800'
+                }`}>
+                  {activeConsole === 'am-distributors' || isAmAdmin ? 'Child Unit' : 'Parent Company'}
+                </span>
               </div>
-            )}
+            </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -560,11 +573,24 @@ export const AdminProductsPage: React.FC = () => {
                 value={categoryId}
                 onChange={e => setCategoryId(e.target.value)}
               >
-                {categories.filter(c => c.brandId === brandId).map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+                {(() => {
+                  const matchingCats = (brandId === 'am-distributors')
+                    ? categories.filter(c => c.brandId === 'am-distributors')
+                    : categories.filter(c => c.brandId !== 'am-distributors');
+                  const hasCurrentCat = matchingCats.some(c => c.id === categoryId);
+                  return (
+                    <>
+                      {!hasCurrentCat && categoryId && editingProduct?.categoryName && (
+                        <option value={categoryId}>{editingProduct.categoryName}</option>
+                      )}
+                      {matchingCats.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </>
+                  );
+                })()}
               </select>
             </div>
 

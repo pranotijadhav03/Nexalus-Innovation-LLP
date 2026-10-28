@@ -19,7 +19,9 @@ import {
   BroadbandProvider,
   InternetPlan,
   CartPlanItem,
-  BrandId
+  BrandId,
+  normalizeBillingPeriod,
+  formatBillingPeriodLabel
 } from '../../types';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -80,6 +82,8 @@ export const PlansPricingPage: React.FC = () => {
 
   // Filters
   const [selectedSpeedFilter, setSelectedSpeedFilter] = useState<'all' | 'entry' | 'mid' | 'high'>('all');
+  const [selectedDurationFilter, setSelectedDurationFilter] = useState<string>('all');
+  const [selectedBsnlCategory, setSelectedBsnlCategory] = useState<string>('all');
   const [selectedCityFilter, setSelectedCityFilter] = useState<string>('all');
 
   // Lead Quote Modal
@@ -150,9 +154,9 @@ export const PlansPricingPage: React.FC = () => {
     if (activeTab === 'one-broadband') {
       return oneBroadbandPlans.filter(p => {
         const speed = getEffectiveSpeed(p);
-        if (selectedSpeedFilter === 'entry') return speed <= 60;
-        if (selectedSpeedFilter === 'mid') return speed > 60 && speed <= 150;
-        if (selectedSpeedFilter === 'high') return speed > 150;
+        if (selectedSpeedFilter === 'entry' && speed > 60) return false;
+        if (selectedSpeedFilter === 'mid' && (speed <= 60 || speed > 150)) return false;
+        if (selectedSpeedFilter === 'high' && speed <= 150) return false;
         return true;
       });
     }
@@ -160,11 +164,26 @@ export const PlansPricingPage: React.FC = () => {
     return broadbandPlans.filter(p => {
       if (p.providerId !== activeTab) return false;
 
-      // Robust speed filter based on effective numeric speed
+      // Robust speed filter
       const speed = getEffectiveSpeed(p);
       if (selectedSpeedFilter === 'entry' && speed > 60) return false;
       if (selectedSpeedFilter === 'mid' && (speed <= 60 || speed > 150)) return false;
       if (selectedSpeedFilter === 'high' && speed <= 150) return false;
+
+      // Duration / Billing Period filter
+      if (selectedDurationFilter !== 'all') {
+        const norm = normalizeBillingPeriod(p.billingPeriod);
+        if (norm !== selectedDurationFilter) return false;
+      }
+
+      // BSNL Category filter
+      if (activeTab === 'bsnl' && selectedBsnlCategory !== 'all') {
+        const cat = (p.category || '').toLowerCase();
+        if (selectedBsnlCategory === 'standard' && cat !== 'standard') return false;
+        if (selectedBsnlCategory === 'rural' && cat !== 'rural' && cat !== 'home_wifi') return false;
+        if (selectedBsnlCategory === 'ott' && cat !== 'ott') return false;
+        if (selectedBsnlCategory === 'conversion_only' && !cat.includes('conversion')) return false;
+      }
 
       // City filter
       if (selectedCityFilter !== 'all') {
@@ -179,7 +198,19 @@ export const PlansPricingPage: React.FC = () => {
 
       return true;
     });
-  }, [activeTab, broadbandPlans, oneBroadbandPlans, selectedSpeedFilter, selectedCityFilter]);
+  }, [activeTab, broadbandPlans, oneBroadbandPlans, selectedSpeedFilter, selectedDurationFilter, selectedBsnlCategory, selectedCityFilter]);
+
+  // Derived available durations for current provider
+  const availableDurations = useMemo(() => {
+    if (activeTab === 'one-broadband') return [];
+    const periods = new Set<string>();
+    broadbandPlans.forEach(p => {
+      if (p.providerId === activeTab && p.billingPeriod) {
+        periods.add(normalizeBillingPeriod(p.billingPeriod));
+      }
+    });
+    return Array.from(periods);
+  }, [activeTab, broadbandPlans]);
 
   // Unique cities list for filter dropdown
   const availableCities = useMemo(() => {
@@ -341,7 +372,7 @@ export const PlansPricingPage: React.FC = () => {
           <div className="flex flex-wrap gap-2 items-center">
             <button
               type="button"
-              onClick={() => setActiveTab('airtel')}
+              onClick={() => { setActiveTab('airtel'); setSelectedDurationFilter('all'); setSelectedBsnlCategory('all'); }}
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 activeTab === 'airtel'
                   ? 'bg-red-600 text-white shadow-md shadow-red-500/20'
@@ -354,7 +385,7 @@ export const PlansPricingPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setActiveTab('bsnl')}
+              onClick={() => { setActiveTab('bsnl'); setSelectedDurationFilter('all'); setSelectedBsnlCategory('all'); }}
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 activeTab === 'bsnl'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
@@ -367,7 +398,7 @@ export const PlansPricingPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setActiveTab('railwire')}
+              onClick={() => { setActiveTab('railwire'); setSelectedDurationFilter('all'); setSelectedBsnlCategory('all'); }}
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 activeTab === 'railwire'
                   ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
@@ -380,7 +411,7 @@ export const PlansPricingPage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setActiveTab('one-broadband')}
+              onClick={() => { setActiveTab('one-broadband'); setSelectedDurationFilter('all'); setSelectedBsnlCategory('all'); }}
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                 activeTab === 'one-broadband'
                   ? 'bg-teal-600 text-white shadow-md shadow-teal-500/20'
@@ -885,7 +916,7 @@ export const PlansPricingPage: React.FC = () => {
               <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={clearPlanCart}
+                  onClick={() => clearPlanCart()}
                   className="text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
                 >
                   Clear all

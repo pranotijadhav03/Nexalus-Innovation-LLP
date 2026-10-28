@@ -24,7 +24,12 @@ export const AdminFaqsPage: React.FC = () => {
     ? 'nexalus-innovations'
     : 'master';
 
-  const [faqs, setFaqs] = useState<FAQ[]>(() => getCachedFaqs());
+  const initialBrand = effectiveConsole === 'am-distributors'
+    ? 'am-distributors'
+    : effectiveConsole === 'nexalus-innovations'
+    ? 'nexalus-innovations'
+    : 'nexalus';
+  const [faqs, setFaqs] = useState<FAQ[]>(() => getCachedFaqs(initialBrand));
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
 
@@ -44,13 +49,18 @@ export const AdminFaqsPage: React.FC = () => {
   const [deleteCandidate, setDeleteCandidate] = useState<FAQ | null>(null);
 
   const loadData = async () => {
-    const data = await getFaqs();
+    const effectiveBrand = effectiveConsole === 'am-distributors'
+      ? 'am-distributors'
+      : effectiveConsole === 'nexalus-innovations'
+      ? 'nexalus-innovations'
+      : 'nexalus';
+    const data = await getFaqs(effectiveBrand);
     setFaqs(data);
   };
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [effectiveConsole]);
 
   const openCreateModal = () => {
     setEditingFaq(null);
@@ -166,7 +176,8 @@ export const AdminFaqsPage: React.FC = () => {
             if (effectiveConsole === 'nexalus-innovations') {
               return ['nexalus-innovations', 'cp-plus', 'one-broadband', 'itti-networking'].includes(faq.brandId);
             }
-            return true;
+            // Master Console (Parent Company) - strictly parent corporate FAQs!
+            return faq.brandId === 'nexalus' || (faq.brandId as any) === 'corporate';
           })
           .map(faq => (
           <div
@@ -225,8 +236,9 @@ export const AdminFaqsPage: React.FC = () => {
                 value={brandId}
                 onChange={e => setBrandId(e.target.value as any)}
                 options={[
-                  { value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' },
-                  { value: 'am-distributors', label: 'A.M. Distributors Chiplun' }
+                  ...(effectiveConsole === 'master' ? [{ value: 'nexalus', label: 'Nexalus Corporate Parent (Turnkey & Enterprise)' }] : []),
+                  ...(effectiveConsole === 'nexalus-innovations' ? [{ value: 'nexalus-innovations', label: 'Nexalus Innovations (CCTV, Internet, Network)' }] : []),
+                  ...(effectiveConsole === 'am-distributors' ? [{ value: 'am-distributors', label: 'A.M. Distributors Chiplun' }] : [])
                 ]}
               />
             ) : (

@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { subscribeToAdminNotifications, markAdminNotificationRead, clearAllAdminNotifications } from '../../firebase/services';
+import { AdminNotification } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { AdminConsoleMode } from './AdminLayout';
 import {
@@ -13,7 +16,11 @@ import {
   Building,
   Check,
   Sparkles,
-  LayoutDashboard
+  LayoutDashboard,
+  Bell,
+  ShoppingCart,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 
 interface AdminNavbarProps {
@@ -29,6 +36,33 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
 }) => {
   const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, currentUser, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsub = subscribeToAdminNotifications((list) => {
+      setNotifications(list);
+    });
+    return () => unsub();
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Close notifications on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+    if (isNotifOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isNotifOpen]);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isAmConsole = activeConsole === 'am-distributors' || isAmAdmin;
@@ -141,6 +175,100 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
 
       {/* Right Controls: User Profile Dropdown with Consoles & Live Websites */}
       <div className="flex items-center gap-2 sm:gap-4">
+
+        {/* IN-APP REAL-TIME ADMIN NOTIFICATIONS */}
+        <div className="relative" ref={notifRef}>
+          <button
+            type="button"
+            onClick={() => setIsNotifOpen(!isNotifOpen)}
+            className="relative p-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 transition-all cursor-pointer shadow-2xs"
+            title="Real-Time Admin Alerts"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white font-black text-[9px] flex items-center justify-center ring-2 ring-white animate-pulse">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {isNotifOpen && (
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs font-black uppercase tracking-wider">In-App Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-500 text-white">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
+                {notifications.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => clearAllAdminNotifications()}
+                    className="text-[10px] font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400">
+                    No notifications yet. New broadband orders and payment confirmations will appear here in real-time.
+                  </div>
+                ) : (
+                  notifications.slice(0, 15).map(n => (
+                    <div
+                      key={n.id}
+                      onClick={() => {
+                        markAdminNotificationRead(n.id);
+                        setIsNotifOpen(false);
+                        navigate('/admin/orders');
+                      }}
+                      className={`p-3 hover:bg-slate-50 transition-colors cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''}`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                          n.type === 'payment_collected'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {n.type === 'payment_collected' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <ShoppingCart className="w-3.5 h-3.5" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-slate-900 truncate">{n.title}</h4>
+                            <span className="text-[9px] text-slate-400 font-mono">
+                              {new Date(n.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-0.5 leading-snug line-clamp-2">{n.message}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsNotifOpen(false);
+                    navigate('/admin/orders');
+                  }}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  View All Orders in Admin &rarr;
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="relative" ref={dropdownRef}>
           <button

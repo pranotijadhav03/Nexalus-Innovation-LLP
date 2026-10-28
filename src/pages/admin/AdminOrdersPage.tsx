@@ -7,8 +7,11 @@ import {
   createPlanOrder,
   updatePlanOrder,
   deletePlanOrder,
-  getCachedPlanOrders
+  getCachedPlanOrders,
+  recordPlanOrderPayment
 } from '../../firebase/services';
+import { DocumentViewerModal } from '../../components/common/DocumentViewerModal';
+import { formatIndianCurrency, formatDateIndian } from '../../utils/documentGenerator';
 import { PlanOrder, BrandId } from '../../types';
 import { Input, TextArea, Select } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
@@ -34,6 +37,8 @@ import {
   ShieldCheck,
   User,
   CreditCard,
+  Receipt,
+  FileText,
   Wifi,
   ChevronRight,
   RefreshCw,
@@ -53,7 +58,7 @@ const MAHARASHTRA_CITIES = [
 ];
 
 export const AdminOrdersPage: React.FC = () => {
-  const { isSuperAdmin, isInnovationsAdmin, canManageBrand } = useAuth();
+  const { currentUser, isSuperAdmin, isInnovationsAdmin, canManageBrand } = useAuth();
   const outletCtx = useOutletContext<{ activeBrandFilter?: BrandId | 'all' }>();
   const { success, error } = useToast();
 
@@ -62,6 +67,20 @@ export const AdminOrdersPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [providerFilter, setProviderFilter] = useState<string>('all');
+
+  // Document Viewer & Payment Collection State
+  const [docModalOpen, setDocModalOpen] = useState(false);
+  const [docModalOrder, setDocModalOrder] = useState<PlanOrder | null>(null);
+  const [docModalType, setDocModalType] = useState<'booking_slip' | 'paid_receipt'>('booking_slip');
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentCandidate, setPaymentCandidate] = useState<PlanOrder | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number | string>(0);
+  const [paymentMethodSelect, setPaymentMethodSelect] = useState<'cash' | 'upi_technician' | 'card_pos' | 'bank_transfer'>('cash');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentCollectionDate, setPaymentCollectionDate] = useState('');
+  const [isRecordingPayment, setIsRecordingPayment] = useState(false);
 
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -84,6 +103,7 @@ export const AdminOrdersPage: React.FC = () => {
   const [preferredSlot, setPreferredSlot] = useState('Immediate / Next Working Day');
   const [paymentMethod, setPaymentMethod] = useState<PlanOrder['paymentMethod']>('pay_on_installation');
   const [orderStatus, setOrderStatus] = useState<PlanOrder['status']>('new');
+  const [orderPaymentStatus, setOrderPaymentStatus] = useState<PlanOrder['paymentStatus']>('pending');
   const [notes, setNotes] = useState('');
   const [assignedEngineer, setAssignedEngineer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,6 +121,105 @@ export const AdminOrdersPage: React.FC = () => {
     };
   }, []);
 
+  const openPaymentModal = (order: PlanOrder) => {
+    setPaymentCandidate(order);
+    setPaymentAmount(order.price);
+    setPaymentMethodSelect('cash');
+    setPaymentReference('');
+    setPaymentNotes('');
+    setPaymentCollectionDate(new Date().toISOString().split('T')[0]);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleConfirmPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentCandidate || !currentUser) return;
+
+    const enteredAmount = Number(paymentAmount) || 0;
+    const orderExpectedAmount = typeof paymentCandidate.price === 'number'
+      ? paymentCandidate.price
+      : Number(paymentCandidate.price) || 0;
+
+    if (enteredAmount <= 0) {
+      error('Validation Error', 'Please enter a valid positive collection amount.');
+      return;
+    }
+
+    if (enteredAmount < orderExpectedAmount) {
+      const confirmPartial = window.confirm(
+        `Warning: Collected amount (₹${enteredAmount}) is LESS than the order tariff (₹${orderExpectedAmount}). Do you still want to proceed with recording this payment?`
+      );
+      if (!confirmPartial) return;
+    }
+
+    setIsRecordingPayment(true);
+    try {
+      const res = await recordPlanOrderPayment(
+        paymentCandidate.id,
+        {
+          amount: enteredAmount,
+          method: paymentMethodSelect,
+          reference: paymentReference.trim() || undefined,
+          notes: paymentNotes.trim() || undefined,
+          collectionDate: paymentCollectionDate || undefined
+        },
+        {
+          uid: currentUser.uid,
+          email: currentUser.email || 'admin@nexalus.com',
+          name: currentUser.displayName || currentUser.email || 'Admin'
+        }
+      );
+
+      if (res.success) {
+        success('Payment Recorded', `Payment of ₹${enteredAmount} confirmed for Order #${paymentCandidate.id}. Receipt: ${res.receiptNumber}`);
+        setIsPaymentModalOpen(false);
+        setPaymentCandidate(null);
+      } else {
+        error('Error', 'Could not record payment. Please try again.');
+      }
+    } catch (err: any) {
+      error('Payment Failed', err.message || 'Could not record payment.');
+    } finally {
+      setIsRecordingPayment(false);
+    }
+  };
+
+  const openDocViewer = (order: PlanOrder, type: 'booking_slip' | 'paid_receipt') => {
+    setDocModalOrder(order);
+    setDocModalType(type);
+    setDocModalOpen(true);
+  };
+
+  const handlePaymentStatusChange = async (order: PlanOrder, newStatus: 'pending' | 'paid') => {
+    try {
+      if (newStatus === 'paid') {
+        const res = await recordPlanOrderPayment(
+          order.id,
+          {
+            amount: typeof order.price === 'number' ? order.price : parseFloat(String(order.price)) || 0,
+            method: (order.paymentMethod === 'pay_on_installation' ? 'cash' : 'online_gateway') as any,
+            notes: 'Status changed to Paid via Admin Orders Table'
+          },
+          {
+            uid: currentUser?.uid || 'admin',
+            email: currentUser?.email || 'admin@nexalus.com',
+            name: currentUser?.displayName || 'Administrator'
+          }
+        );
+        if (res.success) {
+          success('Payment Confirmed', `Order #${order.id} marked as PAID. Official receipt issued.`);
+        }
+      } else {
+        await updatePlanOrder(order.id, {
+          paymentStatus: 'pending'
+        });
+        success('Payment Updated', `Order #${order.id} marked as PAYMENT PENDING.`);
+      }
+    } catch (err: any) {
+      error('Update Failed', err?.message || 'Could not update payment status.');
+    }
+  };
+
   const openCreateModal = () => {
     setSelectedOrder(null);
     setCustomerName('');
@@ -117,6 +236,7 @@ export const AdminOrdersPage: React.FC = () => {
     setPreferredSlot('Immediate / Next Working Day');
     setPaymentMethod('pay_on_installation');
     setOrderStatus('new');
+    setOrderPaymentStatus('pending');
     setNotes('');
     setAssignedEngineer('');
     setIsCreateModalOpen(true);
@@ -138,6 +258,7 @@ export const AdminOrdersPage: React.FC = () => {
     setPreferredSlot(order.preferredSlot || 'Immediate / Next Working Day');
     setPaymentMethod(order.paymentMethod);
     setOrderStatus(order.status);
+    setOrderPaymentStatus(order.paymentStatus || 'pending');
     setNotes(order.notes || '');
     setAssignedEngineer(order.assignedEngineer || '');
     setIsEditModalOpen(true);
@@ -174,6 +295,7 @@ export const AdminOrdersPage: React.FC = () => {
           billingPeriod,
           preferredSlot,
           paymentMethod,
+          paymentStatus: orderPaymentStatus,
           status: orderStatus,
           notes: notes.trim(),
           assignedEngineer: assignedEngineer.trim()
@@ -232,8 +354,15 @@ export const AdminOrdersPage: React.FC = () => {
     success('Copied', `${label} copied to clipboard.`);
   };
 
-  // Filter Orders
+  // Filter Orders scoped to company workspace
+  const activeBrand = outletCtx?.activeBrandFilter;
+  const isAmConsole = activeBrand === 'am-distributors';
+
   const filteredOrders = orders.filter((order) => {
+    // If viewing A.M. Distributors depot console, broadband orders are out of scope
+    if (isAmConsole) {
+      return false;
+    }
     const s = search.toLowerCase();
     const matchesSearch =
       !s ||
@@ -426,7 +555,7 @@ export const AdminOrdersPage: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-extrabold text-[10px]">
                 <tr>
-                  <th className="px-4 py-3.5">Booking ID & Date</th>
+                  <th className="px-4 py-3.5">Booking Time & Date</th>
                   <th className="px-4 py-3.5">Customer</th>
                   <th className="px-4 py-3.5">Plan & Tariff</th>
                   <th className="px-4 py-3.5">Installation Location</th>
@@ -439,6 +568,8 @@ export const AdminOrdersPage: React.FC = () => {
                 {filteredOrders.map((order) => {
                   const statusColors: Record<PlanOrder['status'], { bg: string; text: string; border: string }> = {
                     new: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+    site_survey: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200' },
+    activated: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
                     confirmed: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
                     installation_scheduled: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
                     converted: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
@@ -448,26 +579,27 @@ export const AdminOrdersPage: React.FC = () => {
 
                   return (
                     <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
-                      {/* Booking ID & Date */}
+                      {/* Booking Time & Date (Prominent time, no booking ID) */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 font-mono font-bold text-slate-900">
-                          <span>{order.id}</span>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(order.id, 'Booking ID')}
-                            className="p-1 text-slate-400 hover:text-slate-700 rounded transition-colors"
-                            title="Copy ID"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
+                        <div className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-blue-600" />
+                          <span>
+                            {order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            }) : 'N/A'}
+                          </span>
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          }) : 'Recent'}
+                        <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1 font-medium">
+                          <Calendar className="w-3 h-3 text-slate-400" />
+                          <span>
+                            {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            }) : 'Recent'}
+                          </span>
                         </div>
                       </td>
 
@@ -528,21 +660,37 @@ export const AdminOrdersPage: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Payment & Slot */}
+                      {/* Payment Status & Method (Interactive selector, Record Payment button removed) */}
                       <td className="px-4 py-3.5">
-                        <div className="text-[11px] font-bold text-slate-800 uppercase tracking-tight">
-                          {order.paymentMethod ? order.paymentMethod.replace(/_/g, ' ') : 'Pay On Install'}
-                        </div>
-                        <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-400" />
-                          <span>{order.preferredSlot || 'Immediate'}</span>
-                        </div>
-                        {order.assignedEngineer && (
-                          <div className="text-[10px] font-semibold text-blue-700 mt-1 flex items-center gap-1">
-                            <span>Tech:</span>
-                            <span>{order.assignedEngineer}</span>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <select
+                              value={order.paymentStatus || 'pending'}
+                              onChange={(e) => handlePaymentStatusChange(order, e.target.value as 'pending' | 'paid')}
+                              className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border cursor-pointer outline-none transition-all ${
+                                order.paymentStatus === 'paid'
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                                  : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                              }`}
+                              title="Click to toggle Payment Status"
+                            >
+                              <option value="pending">⏳ Payment Pending</option>
+                              <option value="paid">✓ Paid &amp; Confirmed</option>
+                            </select>
                           </div>
-                        )}
+                          <div className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">
+                            {order.paymentMethod ? order.paymentMethod.replace(/_/g, ' ') : 'Pay On Install'}
+                          </div>
+                          {order.paymentDetails?.receiptNumber && (
+                            <div className="text-[10px] font-mono font-bold text-blue-700">
+                              RCP: {order.paymentDetails.receiptNumber}
+                            </div>
+                          )}
+                          <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            <span>{order.preferredSlot || 'Immediate'}</span>
+                          </div>
+                        </div>
                       </td>
 
                       {/* Status */}
@@ -556,7 +704,29 @@ export const AdminOrdersPage: React.FC = () => {
 
                       {/* Actions */}
                       <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1">
+                        <div className="inline-flex items-center gap-1.5">
+
+
+                          <button
+                            type="button"
+                            onClick={() => openDocViewer(order, 'booking_slip')}
+                            className="p-1.5 rounded-lg text-slate-700 hover:text-indigo-700 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 transition-colors cursor-pointer"
+                            title="Download / Print Booking Slip"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                          </button>
+
+                          {order.paymentStatus === 'paid' && (
+                            <button
+                              type="button"
+                              onClick={() => openDocViewer(order, 'paid_receipt')}
+                              className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 hover:border-emerald-300 transition-colors cursor-pointer"
+                              title="Download / Print Paid Receipt"
+                            >
+                              <Receipt className="w-3.5 h-3.5 text-emerald-600" />
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => openEditModal(order)}
@@ -679,7 +849,7 @@ export const AdminOrdersPage: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <Input
                 label="Speed"
                 value={speed}
@@ -748,6 +918,16 @@ export const AdminOrdersPage: React.FC = () => {
                 { value: 'cancelled', label: 'Cancelled' }
               ]}
             />
+
+            <Select
+              label="Payment Status"
+              value={orderPaymentStatus}
+              onChange={(e) => setOrderPaymentStatus(e.target.value as any)}
+              options={[
+                { value: 'pending', label: 'Payment Pending' },
+                { value: 'paid', label: 'Paid & Confirmed' }
+              ]}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -812,6 +992,137 @@ export const AdminOrdersPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* RECORD PAYMENT MODAL */}
+      <Modal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        title="Record Payment Collection"
+        subtitle={paymentCandidate ? `Order #${paymentCandidate.id} — ${paymentCandidate.customerName}` : ''}
+      >
+        <form onSubmit={handleConfirmPayment} className="space-y-4">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+            <div className="flex justify-between font-bold text-slate-800">
+              <span>Broadband Plan:</span>
+              <span className="text-blue-700">{paymentCandidate?.providerName} - {paymentCandidate?.planName}</span>
+            </div>
+            <div className="flex justify-between text-slate-600">
+              <span>Customer:</span>
+              <span className="font-semibold text-slate-900">{paymentCandidate?.customerName} ({paymentCandidate?.phone})</span>
+            </div>
+            <div className="flex justify-between text-slate-600">
+              <span>Premises / Address:</span>
+              <span>{paymentCandidate?.address}, {paymentCandidate?.city} - {paymentCandidate?.pincode}</span>
+            </div>
+            <div className="flex justify-between text-slate-700 pt-2 border-t border-slate-200 font-extrabold text-sm">
+              <span>Agreed Tariff Rate:</span>
+              <span className="text-slate-900">₹{paymentCandidate?.price}</span>
+            </div>
+            <div className="flex justify-between text-amber-700 font-extrabold text-xs">
+              <span>Outstanding Balance:</span>
+              <span>₹{paymentCandidate?.price}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Amount Received (INR) *
+              </label>
+              <Input
+                type="number"
+                value={paymentAmount}
+                onChange={e => setPaymentAmount(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Collection Date *
+              </label>
+              <Input
+                type="date"
+                value={paymentCollectionDate}
+                onChange={e => setPaymentCollectionDate(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Payment Method *
+            </label>
+            <Select
+              value={paymentMethodSelect}
+              onChange={e => setPaymentMethodSelect(e.target.value as any)}
+              options={[
+                { value: 'cash', label: 'Cash on Delivery (Collected by Field Technician)' },
+                { value: 'upi_technician', label: 'UPI QR Code / PhonePe / GPay to Technician' },
+                { value: 'card_pos', label: 'Card Swipe / POS Terminal on Site' },
+                { value: 'bank_transfer', label: 'Bank Direct Transfer (NEFT/IMPS/RTGS)' }
+              ]}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Transaction Reference / Cheque No / UPI UTR (Optional)
+            </label>
+            <Input
+              placeholder="e.g. UPI-1294819284 or CASH-REC-01"
+              value={paymentReference}
+              onChange={e => setPaymentReference(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Internal Collection Remarks (Optional)
+            </label>
+            <TextArea
+              placeholder="e.g. Received full amount during site installation. Line tested & operational."
+              value={paymentNotes}
+              onChange={e => setPaymentNotes(e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs">
+            <strong>Authorized Officer:</strong> Recording as {currentUser?.displayName || currentUser?.email}. 
+            An official <strong>Paid Payment Receipt</strong> with verified number will be generated immediately.
+          </div>
+
+          <div className="pt-2 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsPaymentModalOpen(false)}
+              disabled={isRecordingPayment}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isRecordingPayment}
+              className="bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20"
+            >
+              Confirm &amp; Record Payment
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* DOCUMENT VIEWER MODAL */}
+      <DocumentViewerModal
+        isOpen={docModalOpen}
+        onClose={() => setDocModalOpen(false)}
+        order={docModalOrder}
+        documentType={docModalType}
+      />
     </div>
   );
 };
+

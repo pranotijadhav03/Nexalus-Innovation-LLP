@@ -4,7 +4,19 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { updateCustomerProfile, getCustomerEnquiries } from '../../firebase/services';
+import {
+  updateCustomerProfile,
+  getCustomerEnquiries,
+  subscribeToCustomerPlanOrders,
+  getPlanCart,
+  removeFromPlanCart,
+  clearPlanCart
+} from '../../firebase/services';
+import { CartPlanItem } from '../../types';
+import { PlanOrderModal } from '../../components/common/PlanOrderModal';
+import { PlanOrder } from '../../types';
+import { DocumentViewerModal } from '../../components/common/DocumentViewerModal';
+import { formatIndianCurrency, formatDateIndian } from '../../utils/documentGenerator';
 import { Enquiry, CustomerDeliveryAddress } from '../../types';
 import {
   User,
@@ -38,6 +50,8 @@ import {
   Calendar,
   CreditCard,
   Receipt,
+  Plus,
+  ShoppingCart,
   Activity,
   History,
   Tv,
@@ -53,7 +67,11 @@ import {
   Upload,
   AlertTriangle,
   PlayCircle,
-  ChevronDown
+  ChevronDown,
+  ShoppingBag,
+  Package,
+  Trash2,
+  Zap
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { triggerSystemPushNotification, getEmailProviderUrl, getEmailProviderName } from '../../utils/notificationHelpers';
@@ -173,11 +191,12 @@ const SAMPLE_USAGE_SESSIONS = [
 // 12 Sidebar Navigation Sections from login.mp4 video
 type PortalSection =
   | 'account_summary'       // 1. Account Summary
+  | 'broadband_orders'      // 2. Broadband Orders & Booking Slips
   | 'my_profile'            // 2. My Profile
   | 'portal_password'       // 3. Portal Password Change
   | 'internet_password'     // 4. Internet Password Change
   | 'payments'              // 5. Payments (Recharge)
-  | 'my_receipts'           // 6. My Receipts
+  | 'my_cart'               // 6. My Cart
   | 'data_usage'            // 7. My Data Usage
   | 'support_tickets'       // 8. My Support Tickets
   | 'old_transactions'      // 9. Old Transactions
@@ -260,6 +279,27 @@ export const CustomerAccountPage: React.FC = () => {
   // PORTAL STATE (FOR LOGGED-IN CUSTOMER)
   // ==========================================
   const [activeSection, setActiveSection] = useState<PortalSection>('account_summary');
+  const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => {
+    try {
+      return getPlanCart();
+    } catch {
+      return [];
+    }
+  });
+  const [orderPlanModalItem, setOrderPlanModalItem] = useState<any>(null);
+
+  useEffect(() => {
+    const handleCartUpdate = (e: any) => {
+      const items = e?.detail || getPlanCart();
+      setCartItems(Array.isArray(items) ? items : []);
+    };
+    window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+    window.addEventListener('storage', handleCartUpdate);
+    return () => {
+      window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
+      window.removeEventListener('storage', handleCartUpdate);
+    };
+  }, []);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Profile Form State
@@ -279,6 +319,41 @@ export const CustomerAccountPage: React.FC = () => {
   const [inquiries, setInquiries] = useState<Enquiry[]>([]);
   const [isLoadingInquiries, setIsLoadingInquiries] = useState(false);
   const [showInquiriesModal, setShowInquiriesModal] = useState(false);
+
+  // OTT Subscription Confirmation Modal State
+  const [ottModalPack, setOttModalPack] = useState<{ name: string; price: number; services: string[] } | null>(null);
+  const [isSubscribingOtt, setIsSubscribingOtt] = useState(false);
+
+  // Real Broadband Orders State
+  const [customerOrders, setCustomerOrders] = useState<PlanOrder[]>([]);
+  const [docModalOpen, setDocModalOpen] = useState(false);
+  const [docModalOrder, setDocModalOrder] = useState<PlanOrder | null>(null);
+  const [docModalType, setDocModalType] = useState<'booking_slip' | 'paid_receipt'>('booking_slip');
+
+  // Real-time listener for customer's broadband orders
+  useEffect(() => {
+    if (currentUser?.uid) {
+      const unsub = subscribeToCustomerPlanOrders(currentUser.uid, currentUser.email, (orders) => {
+        setCustomerOrders(orders);
+      });
+      return () => unsub();
+    }
+  }, [currentUser?.uid, currentUser?.email]);
+
+  const openDocModal = (order: PlanOrder, type: 'booking_slip' | 'paid_receipt') => {
+    setDocModalOrder(order);
+    setDocModalType(type);
+    setDocModalOpen(true);
+  };
+
+  const activeOrder = customerOrders.find(o => o.status === 'activated' || o.paymentStatus === 'paid') || customerOrders[0];
+  const activePlanName = activeOrder ? `${activeOrder.providerName} - ${activeOrder.planName}` : 'No Active Subscription';
+  const activePlanSpeed = activeOrder ? activeOrder.speed : 'Unprovisioned';
+  const activePlanFee = activeOrder ? formatIndianCurrency(activeOrder.price) : '₹0.00';
+  const activePlanStatus = activeOrder
+    ? (activeOrder.status === 'activated' ? 'Active Connection' : activeOrder.paymentStatus === 'paid' ? 'Paid / Scheduled' : 'Pending Installation')
+    : 'No Active Connection';
+
 
   // Tax Invoice Modal State
   const [selectedInvoice, setSelectedInvoice] = useState<typeof SAMPLE_RECEIPTS[0] | null>(null);
@@ -628,6 +703,23 @@ export const CustomerAccountPage: React.FC = () => {
       setPortalConfirmPass('');
       success('Portal Password Updated', 'Your customer portal login password has been changed.');
     }, 850);
+  };
+
+  const handleSendPortalPasswordReset = async () => {
+    if (!currentUser?.email) return;
+    if (!auth) {
+      error('Error', 'Authentication service is offline. Please try again later.');
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      await sendPasswordResetEmail(auth, currentUser.email.trim().toLowerCase());
+      success('Password Reset Dispatched', 'Instructions sent to ' + currentUser.email + '. Please check your inbox or spam folder.');
+    } catch (err: any) {
+      error('Reset Failed', err.message || 'Could not send password reset email.');
+    } finally {
+      setIsSendingReset(false);
+    }
   };
 
   const handleCreateTicket = (e: React.FormEvent) => {
@@ -1288,20 +1380,21 @@ export const CustomerAccountPage: React.FC = () => {
   // VIEW: AUTHENTICATED SUBSCRIBER PORTAL (12 SIDEBAR SECTIONS FROM login.mp4)
   // =========================================================================
   const subscriberName = currentUser.displayName || `${profileFirstName} ${profileLastName}`.trim() || 'Pranoday Jadhav';
-  const subscriberId = currentUser.subscriberId || '217435';
+  const subscriberId = currentUser.subscriberId || (currentUser.uid ? 'CUST-' + currentUser.uid.slice(0, 8).toUpperCase() : 'CUST-PORTAL');
   const associatedLco = currentUser.associatedLco || 'Nexalus Innovations LLP_Sangli';
   const planName = currentUser.planName || 'FUP40Mbps-2Mbps 2500GB x10';
   const planFee = currentUser.planFee || '₹ 470.82';
   const subscriptionStatus = currentUser.subscriptionStatus || 'Active';
 
-  const sidebarItems: { id: PortalSection; label: string; icon: React.ReactNode }[] = [
+  const sidebarItems: { id: PortalSection; label: string; badge?: number; icon: React.ReactNode }[] = [
     { id: 'account_summary', label: 'Account Summary', icon: <UserCheck className="w-4 h-4" /> },
+    { id: 'broadband_orders', label: 'Broadband Orders & Slips', icon: <ShoppingCart className="w-4 h-4" /> },
     { id: 'my_profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
     { id: 'portal_password', label: 'Portal Password Change', icon: <Lock className="w-4 h-4" /> },
-    { id: 'internet_password', label: 'Internet Password Change', icon: <Wifi className="w-4 h-4" /> },
+//     { id: 'internet_password', label: 'Internet Password Change', icon: <Wifi className="w-4 h-4" /> },
     { id: 'payments', label: 'Payments (Recharge)', icon: <CreditCard className="w-4 h-4" /> },
-    { id: 'my_receipts', label: 'My Receipts', icon: <Receipt className="w-4 h-4" /> },
-    { id: 'data_usage', label: 'My Data Usage', icon: <Activity className="w-4 h-4" /> },
+    { id: 'my_cart', label: 'My Cart', badge: cartItems.length, icon: <ShoppingCart className="w-4 h-4" /> },
+//     { id: 'data_usage', label: 'My Data Usage', icon: <Activity className="w-4 h-4" /> },
     { id: 'support_tickets', label: 'My Support Tickets', icon: <HelpCircle className="w-4 h-4" /> },
     { id: 'old_transactions', label: 'Old Transactions', icon: <History className="w-4 h-4" /> },
     { id: 'iptv_pack', label: 'IPTV PACK', icon: <Tv className="w-4 h-4" /> },
@@ -1332,7 +1425,7 @@ export const CustomerAccountPage: React.FC = () => {
                     {subscriberName}
                   </span>
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-400/30">
-                    {subscriptionStatus}
+                    {activePlanStatus}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-[11px] text-slate-300">
@@ -1482,7 +1575,7 @@ export const CustomerAccountPage: React.FC = () => {
                           </span>
                         </div>
                         <p className="text-xs text-cyan-300 font-mono mt-0.5">
-                          Subscriber ID: <strong className="text-white">{subscriberId}</strong>
+                          Customer ID: <strong className="text-white">{subscriberId}</strong>
                         </p>
                         <p className="text-xs text-slate-300 mt-0.5">
                           Associated LCO: <strong className="text-white">{associatedLco}</strong>
@@ -1503,7 +1596,7 @@ export const CustomerAccountPage: React.FC = () => {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => setActiveSection('my_receipts')}
+                        onClick={() => setActiveSection('broadband_orders')}
                         icon={<Receipt className="w-3.5 h-3.5" />}
                       >
                         View Receipts
@@ -1518,34 +1611,34 @@ export const CustomerAccountPage: React.FC = () => {
                         Current Plan
                       </div>
                       <div className="text-sm font-extrabold text-white mt-1 truncate">
-                        {planName}
+                        {activePlanName}
                       </div>
                       <div className="text-xs text-cyan-300 font-bold mt-1">
-                        Monthly Fee: {planFee}
+                        Tariff: {activePlanFee}
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
                       <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                        Data Remaining
+                        Data Allowance
                       </div>
                       <div className="text-xl font-black text-emerald-400 mt-1">
-                        2,359.8 GB
+                        {activeOrder ? 'Truly Unlimited' : 'Unprovisioned'}
                       </div>
                       <div className="text-[11px] text-slate-300 mt-1">
-                        Package: 2,500 GB (FU40960_2048)
+                        {activeOrder ? `${activeOrder.speed} Commercial Fiber` : 'Book a plan to activate'}
                       </div>
                     </div>
 
                     <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
                       <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                        Plan Validity &amp; Expiry
+                        Billing &amp; Installation
                       </div>
                       <div className="text-base font-extrabold text-white mt-1">
-                        11 Nov 2024
+                        {activeOrder ? activeOrder.billingPeriod : 'Not Subscribed'}
                       </div>
-                      <div className="text-[11px] text-amber-300 font-semibold mt-1">
-                        16 Days Remaining (Auto-Renews)
+                      <div className="text-[11px] text-cyan-300 font-semibold mt-1">
+                        {activeOrder ? (activeOrder.paymentStatus === 'paid' ? 'Payment Verified' : 'Pay on Installation (COD)') : 'Self-Serve Portal'}
                       </div>
                     </div>
                   </div>
@@ -1578,7 +1671,7 @@ export const CustomerAccountPage: React.FC = () => {
                     </div>
 
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Subscriber ID:</span>
+                      <span className="text-slate-500 font-medium">Customer ID:</span>
                       <strong className="text-blue-700 font-mono font-bold">{subscriberId}</strong>
                     </div>
 
@@ -1617,17 +1710,16 @@ export const CustomerAccountPage: React.FC = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
                     <button
                       type="button"
-                      onClick={() => setActiveSection('internet_password')}
-                      className="p-3.5 rounded-2xl bg-blue-50/80 hover:bg-blue-100 border border-blue-200 text-left transition-colors cursor-pointer"
-                    >
-                      <Wifi className="w-5 h-5 text-blue-600 mb-1.5" />
-                      <div className="font-bold text-xs text-blue-950">Change Wi-Fi Pass</div>
-                      <div className="text-[10px] text-blue-700 mt-0.5">Router ONT CPE</div>
+                      onClick={() => setActiveSection('broadband_orders')}
+                      className="p-3.5 rounded-2xl bg-blue-50/80 hover:bg-blue-100 border border-blue-200 text-left transition-colors cursor-pointer">
+                      <ShoppingCart className="w-5 h-5 text-blue-600 mb-1.5" />
+                      <div className="font-bold text-xs text-blue-950">Broadband Orders</div>
+                      <div className="text-[10px] text-blue-700 mt-0.5">Booking Slips</div>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setActiveSection('my_receipts')}
+                      onClick={() => setActiveSection('my_cart')}
                       className="p-3.5 rounded-2xl bg-emerald-50/80 hover:bg-emerald-100 border border-emerald-200 text-left transition-colors cursor-pointer"
                     >
                       <Receipt className="w-5 h-5 text-emerald-600 mb-1.5" />
@@ -1637,12 +1729,11 @@ export const CustomerAccountPage: React.FC = () => {
 
                     <button
                       type="button"
-                      onClick={() => setActiveSection('data_usage')}
-                      className="p-3.5 rounded-2xl bg-cyan-50/80 hover:bg-cyan-100 border border-cyan-200 text-left transition-colors cursor-pointer"
-                    >
-                      <Activity className="w-5 h-5 text-cyan-600 mb-1.5" />
-                      <div className="font-bold text-xs text-cyan-950">Data Usage</div>
-                      <div className="text-[10px] text-cyan-700 mt-0.5">Sessions &amp; Log</div>
+                      onClick={() => setActiveSection('portal_password')}
+                      className="p-3.5 rounded-2xl bg-cyan-50/80 hover:bg-cyan-100 border border-cyan-200 text-left transition-colors cursor-pointer">
+                      <Lock className="w-5 h-5 text-indigo-600 mb-1.5" />
+                      <div className="font-bold text-xs text-indigo-950">Security &amp; Pass</div>
+                      <div className="text-[10px] text-indigo-700 mt-0.5">Reset Password</div>
                     </button>
 
                     <button
@@ -1656,6 +1747,137 @@ export const CustomerAccountPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+
+            
+            {/* ------------------------------------------------------------- */}
+            {/* 2. BROADBAND ORDERS & BOOKING SLIPS */}
+            {/* ------------------------------------------------------------- */}
+            {activeSection === 'broadband_orders' && (
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
+                <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                      My Broadband Plan Orders
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Track broadband reservations, technician scheduling, and download official Booking Slips.
+                    </p>
+                  </div>
+                  <Link
+                    to="/plans-pricing"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-colors self-start sm:self-auto"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Browse Plans</span>
+                  </Link>
+                </div>
+
+                {customerOrders.length === 0 ? (
+                  <div className="p-12 text-center rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto">
+                      <ShoppingCart className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-slate-900 text-sm">No Broadband Orders Yet</h3>
+                      <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                        You have not placed any broadband plan bookings yet. Choose high-speed optical fiber from Airtel, BSNL, or RailWire.
+                      </p>
+                    </div>
+                    <Link
+                      to="/plans-pricing"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-colors"
+                    >
+                      <span>Explore Broadband Plans &rarr;</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="w-full text-xs text-left">
+                      <thead className="bg-slate-900 text-white uppercase text-[10px] font-bold">
+                        <tr>
+                          <th className="py-3 px-4">Order ID &amp; Date</th>
+                          <th className="py-3 px-4">Package &amp; Speed</th>
+                          <th className="py-3 px-4">Tariff</th>
+                          <th className="py-3 px-4">Payment</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Official Documents</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {customerOrders.map(order => (
+                          <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <span className="font-mono font-bold text-blue-700 block">#{order.id}</span>
+                              <span className="text-[10px] text-slate-400">
+                                {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="font-bold text-slate-900">{order.providerName} - {order.planName}</div>
+                              <div className="text-[10px] text-blue-600 font-semibold">{order.speed} Symmetrical &bull; {order.billingPeriod.replace(/_/g, ' ')}</div>
+                            </td>
+                            <td className="py-3.5 px-4 font-black text-slate-900 whitespace-nowrap">
+                              {formatIndianCurrency(order.price)}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                order.paymentStatus === 'paid'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  : 'bg-amber-100 text-amber-800 border border-amber-300'
+                              }`}>
+                                {order.paymentStatus === 'paid' ? 'Paid & Verified' : 'Payment Pending'}
+                              </span>
+                              <div className="text-[10px] text-slate-500 mt-0.5 uppercase font-medium">
+                                {order.paymentMethod.replace(/_/g, ' ')}
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 capitalize">
+                                {order.status.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
+                              {order.paymentStatus === 'paid' ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => openDocModal(order, 'paid_receipt')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-sm transition-all cursor-pointer"
+                                    title="View & Download Official Paid Receipt"
+                                  >
+                                    <Receipt className="w-3.5 h-3.5 text-white" />
+                                    <span>Paid Receipt</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openDocModal(order, 'booking_slip')}
+                                    className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] border border-slate-300 transition-colors cursor-pointer"
+                                    title="View Booking Slip"
+                                  >
+                                    <FileText className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>Slip</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => openDocModal(order, 'booking_slip')}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shadow-sm transition-all cursor-pointer"
+                                  title="Download Official Booking Confirmation Slip"
+                                >
+                                  <FileText className="w-3.5 h-3.5 text-white" />
+                                  <span>Booking Slip</span>
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1856,85 +2078,42 @@ export const CustomerAccountPage: React.FC = () => {
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs max-w-2xl space-y-6 animate-in fade-in duration-200">
                 <div className="border-b border-slate-100 pb-4">
                   <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                    Portal Password Change
+                    Portal Account Security
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Update the credentials used to log in to this web subscriber portal.
+                    Manage your credentials for signing in to the Nexalus Subscriber Portal.
                   </p>
                 </div>
 
-                <form onSubmit={handleUpdatePortalPassword} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Current Password <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type={showPortalPass ? 'text' : 'password'}
-                      value={portalOldPass}
-                      onChange={e => setPortalOldPass(e.target.value)}
-                      required
-                      placeholder="Enter your current portal password"
-                      className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                    />
+                <div className="p-5 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-3">
+                  <div className="flex items-center gap-2.5 text-blue-950 font-bold text-xs">
+                    <Lock className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>Firebase Authentication Security Flow</span>
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        New Password <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type={showPortalPass ? 'text' : 'password'}
-                        value={portalNewPass}
-                        onChange={e => setPortalNewPass(e.target.value)}
-                        required
-                        minLength={6}
-                        placeholder="At least 6 characters"
-                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Confirm New Password <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type={showPortalPass ? 'text' : 'password'}
-                        value={portalConfirmPass}
-                        onChange={e => setPortalConfirmPass(e.target.value)}
-                        required
-                        minLength={6}
-                        placeholder="Re-type new password"
-                        className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
-                      />
-                    </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Your portal account is securely managed by Firebase Authentication. To change or reset your password, an encrypted password reset link will be sent to your verified registered email address:
+                  </p>
+                  <div className="p-3 bg-white rounded-xl border border-blue-200 font-mono text-xs font-bold text-blue-800">
+                    {currentUser.email}
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="show-portal-pass"
-                      checked={showPortalPass}
-                      onChange={e => setShowPortalPass(e.target.checked)}
-                      className="rounded text-blue-600"
-                    />
-                    <label htmlFor="show-portal-pass" className="text-xs text-slate-600 cursor-pointer">
-                      Show passwords
-                    </label>
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-100 flex justify-end">
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="md"
-                      isLoading={isUpdatingPortalPass}
-                      icon={<Save className="w-4 h-4" />}
-                    >
-                      Apply Password Change
-                    </Button>
-                  </div>
-                </form>
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="text-[11px] text-slate-400">
+                    Click below to dispatch an official password-reset instructions email.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="md"
+                    isLoading={isSendingReset}
+                    onClick={handleSendPortalPasswordReset}
+                    icon={<Send className="w-4 h-4" />}
+                    className="font-bold shadow-md shadow-blue-600/20 shrink-0 w-full sm:w-auto"
+                  >
+                    Send Password Reset Email
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -2085,137 +2264,176 @@ export const CustomerAccountPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Gateway Selector */}
-                <div className="space-y-3">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Select Online Payment Gateway:
-                  </label>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedGateway('ntt_data')}
-                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                        selectedGateway === 'ntt_data'
-                          ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
-                      }`}
-                    >
-                      <div className="font-extrabold text-xs text-slate-900">NTT DATA</div>
-                      <div className="text-[10px] text-slate-500 mt-1">Recommended Gateway (Official)</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedGateway('razorpay_upi')}
-                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                        selectedGateway === 'razorpay_upi'
-                          ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
-                      }`}
-                    >
-                      <div className="font-extrabold text-xs text-slate-900">UPI / QR Code</div>
-                      <div className="text-[10px] text-slate-500 mt-1">Google Pay, PhonePe, Paytm</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedGateway('billdesk')}
-                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                        selectedGateway === 'billdesk'
-                          ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600/20'
-                          : 'border-slate-200 hover:border-slate-300 bg-white'
-                      }`}
-                    >
-                      <div className="font-extrabold text-xs text-slate-900">BillDesk</div>
-                      <div className="text-[10px] text-slate-500 mt-1">NetBanking &amp; Cards</div>
-                    </button>
+                {/* Secure Payment Gateway Checkout */}
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3.5 text-xs">
+                  <div className="flex items-center gap-2 font-bold text-slate-800">
+                    <CreditCard className="w-4 h-4 text-blue-600" />
+                    <span>Direct Online Payment Gateway (Razorpay Verified Flow)</span>
+                  </div>
+                  <p className="text-slate-500 leading-relaxed text-[11px]">
+                    Online digital payment gateway processing is undergoing authorized serverless verification. For instant activation and renewals, Cash on Delivery / Pay to Field Technician is fully active.
+                  </p>
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Online card/UPI gateway checkout is in scheduled maintenance mode. No charges will be processed online.</span>
                   </div>
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                   <div className="text-xs text-slate-500">
-                    Total Amount: <strong className="text-slate-900 text-sm">₹ 470.82</strong>
+                    Total Payable: <strong className="text-slate-900 text-sm">₹ 470.82</strong>
                   </div>
                   <Button
                     type="button"
-                    variant="primary"
+                    variant="outline"
                     size="md"
-                    isLoading={isProcessingPayment}
-                    onClick={handleRechargeSubmit}
+                    disabled
                     icon={<CreditCard className="w-4 h-4" />}
-                    className="font-bold shadow-md shadow-blue-600/20"
+                    className="font-bold opacity-60 cursor-not-allowed"
                   >
-                    Proceed to Recharge Online
+                    Online Gateway (Maintenance Mode)
                   </Button>
                 </div>
               </div>
             )}
 
             {/* ------------------------------------------------------------- */}
-            {/* 6. MY RECEIPTS (With Tax Invoice Modal matching login.mp4) */}
-            {/* ------------------------------------------------------------- */}
-            {activeSection === 'my_receipts' && (
+            {/* 6. MY CART (Broadband Plans & Hardware Cart) */}
+            {activeSection === 'my_cart' && (
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
-                <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+                <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                      My Receipts &amp; GST Tax Invoices
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                      <ShoppingCart className="w-5 h-5 text-blue-600" />
+                      <span>My Broadband &amp; Products Cart</span>
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Download official Tax Invoice-cum-Receipt documents for broadband renewals.
+                      Broadband subscriptions or equipment saved in your cart ready for reservation and physical installation.
                     </p>
                   </div>
+
+                  {cartItems.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => clearPlanCart()}
+                      className="text-xs font-bold text-slate-500 hover:text-rose-600 transition-colors cursor-pointer self-start sm:self-auto"
+                    >
+                      Clear All Items
+                    </button>
+                  )}
                 </div>
 
-                {/* Receipts Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-[10px] border-b border-slate-200">
-                      <tr>
-                        <th className="py-3 px-4">Receipt No</th>
-                        <th className="py-3 px-4">Date</th>
-                        <th className="py-3 px-4">Plan Description</th>
-                        <th className="py-3 px-4">Amount</th>
-                        <th className="py-3 px-4">Mode</th>
-                        <th className="py-3 px-4">Status</th>
-                        <th className="py-3 px-4 text-right">Tax Invoice</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {SAMPLE_RECEIPTS.map(rcp => (
-                        <tr key={rcp.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3.5 px-4 font-mono font-bold text-blue-700">
-                            {rcp.id}
-                          </td>
-                          <td className="py-3.5 px-4 text-slate-600">{rcp.date}</td>
-                          <td className="py-3.5 px-4 font-medium text-slate-900">{rcp.plan}</td>
-                          <td className="py-3.5 px-4 font-black text-slate-900">{rcp.amount}</td>
-                          <td className="py-3.5 px-4 text-slate-600">{rcp.mode}</td>
-                          <td className="py-3.5 px-4">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                              {rcp.status}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleViewInvoice(rcp)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] transition-colors cursor-pointer"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                              <span>View Invoice</span>
-                            </button>
-                          </td>
-                        </tr>
+                {cartItems.length === 0 ? (
+                  <div className="p-12 text-center space-y-4 max-w-md mx-auto">
+                    <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
+                      <ShoppingBag className="w-8 h-8 text-blue-500" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-slate-800">Your Cart is Currently Empty</h3>
+                      <p className="text-xs text-slate-500">
+                        Explore our high-speed optical fiber broadband packages or commercial hardware catalog and add plans to your cart.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <Link to="/plans">
+                        <Button variant="primary" size="sm" icon={<Wifi className="w-4 h-4" />}>
+                          Browse Plans &amp; Pricing
+                        </Button>
+                      </Link>
+                      <Link to="/products">
+                        <Button variant="outline" size="sm" icon={<Package className="w-4 h-4" />}>
+                          Hardware Catalog
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Cart Items List */}
+                    <div className="space-y-3">
+                      {cartItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-blue-300 transition-all shadow-xs"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-200">
+                                {item.providerName || 'High-Speed Broadband'}
+                              </span>
+                              <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
+                                {item.speed}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-extrabold text-slate-900">{item.planName}</h4>
+                            <p className="text-xs text-slate-500 capitalize">
+                              Billing Cycle: <strong>{(item.billingPeriod || 'monthly').replace(/_/g, ' ')}</strong> &bull; Fiber Line Feasibility: <strong>Verified</strong>
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-3 sm:self-center w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-200">
+                            <div className="text-left sm:text-right">
+                              <span className="text-[10px] text-slate-400 block font-bold uppercase">Plan Rate</span>
+                              <span className="text-lg font-black text-slate-900 font-mono">
+                                {formatIndianCurrency(item.price)}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={() => setOrderPlanModalItem(item)}
+                                className="font-bold text-xs shadow-md shadow-blue-600/20"
+                              >
+                                Subscribe Now
+                              </Button>
+
+                              <button
+                                type="button"
+                                onClick={() => removeFromPlanCart(item.id)}
+                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                                title="Remove from Cart"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+
+                    {/* Summary Card */}
+                    <div className="p-5 rounded-2xl bg-indigo-50/60 border border-indigo-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="text-xs text-slate-600 space-y-0.5 text-center sm:text-left">
+                        <div>Standard Optical Drop Line &amp; ONU Setup: <strong className="text-emerald-700">Free / Included</strong></div>
+                        <div className="text-[11px] text-slate-400">Total {cartItems.length} plan(s) in cart. COD payment collected on physical installation.</div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Link to="/plans">
+                          <Button variant="outline" size="sm">
+                            Add Another Plan
+                          </Button>
+                        </Link>
+                        {cartItems.length > 0 && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => setOrderPlanModalItem(cartItems[0])}
+                            icon={<Zap className="w-4 h-4" />}
+                            className="font-bold shadow-md shadow-blue-600/30"
+                          >
+                            Order First Plan
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* ------------------------------------------------------------- */}
             {/* 7. MY DATA USAGE */}
             {/* ------------------------------------------------------------- */}
             {activeSection === 'data_usage' && (
@@ -2228,6 +2446,18 @@ export const CustomerAccountPage: React.FC = () => {
                     Track broadband data consumed across daily PPPoE sessions.
                   </p>
                 </div>
+
+                {/* Broadband Telemetry Notice */}
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 space-y-1">
+                  <div className="flex items-center gap-2 font-bold text-xs text-amber-900">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Optical Fiber Telemetry &amp; Session Synchronisation</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed pl-6">
+                    Nexalus Innovations broadband connections deliver <strong>Truly Unlimited</strong> optical fiber bandwidth. Live session metering and RADIUS authentication logs synchronize automatically with our physical OLT and LCO junction upon active line installation.
+                  </p>
+                </div>
+
 
                 {/* Progress bar visual */}
                 <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/70 space-y-3">
@@ -2473,7 +2703,7 @@ export const CustomerAccountPage: React.FC = () => {
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={() => success('OTT Subscribed', 'Umang Pack added to next broadband invoice.')}
+                      onClick={() => setOttModalPack({ name: 'Umang OTT Pack', price: 149, services: ['Hotstar', 'SonyLIV', 'Zee5', 'Voot'] })}
                       className="w-full font-bold"
                     >
                       Subscribe Umang Pack
@@ -2499,7 +2729,7 @@ export const CustomerAccountPage: React.FC = () => {
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={() => success('OTT Subscribed', 'Tarang Pack added to next broadband invoice.')}
+                      onClick={() => setOttModalPack({ name: 'Tarang OTT Pack', price: 249, services: ['Prime Video', 'Hotstar', 'SonyLIV', 'Zee5', 'SunNXT'] })}
                       className="w-full font-bold"
                     >
                       Subscribe Tarang Pack
@@ -2563,7 +2793,7 @@ export const CustomerAccountPage: React.FC = () => {
       </div>
 
       {/* ===================================================================== */}
-      {/* MODAL 1: TAX INVOICE-CUM-RECEIPT (Exact view from login.mp4) */}
+      {/* MODAL 1: PAYMENT RECEIPT (Exact view from login.mp4) */}
       {/* ===================================================================== */}
       {isInvoiceModalOpen && selectedInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
@@ -2599,7 +2829,7 @@ export const CustomerAccountPage: React.FC = () => {
                   Service Provider (LCO)
                 </span>
                 <strong className="text-slate-900 block font-extrabold">{associatedLco}</strong>
-                <p className="text-slate-500">GSTIN: <strong className="text-slate-800">27AABCR776C1ZD</strong></p>
+                <p className="text-slate-500">CIN/LLPIN: <strong className="text-slate-800">Registered Enterprise</strong></p>
                 <p className="text-slate-500">State: Maharashtra (Code: 27)</p>
               </div>
 
@@ -2663,7 +2893,7 @@ export const CustomerAccountPage: React.FC = () => {
                 onClick={() => window.print()}
                 icon={<Printer className="w-4 h-4" />}
               >
-                Print Invoice
+                Print Receipt
               </Button>
               <Button
                 variant="primary"
@@ -2822,6 +3052,85 @@ export const CustomerAccountPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* MODAL: OTT PACK CHECKOUT & CONFIRMATION */}
+      {ottModalPack && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 sm:p-7 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                  <Film className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">{ottModalPack.name}</h3>
+                  <p className="text-xs text-slate-500">Broadband Add-On Bundle</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOttModalPack(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-2 text-xs">
+              <div className="flex justify-between font-extrabold text-slate-900">
+                <span>Monthly Pack Subscription:</span>
+                <span className="text-purple-700 text-sm font-black">₹{ottModalPack.price} / month</span>
+              </div>
+              <div className="text-slate-600 text-[11px] pt-1 border-t border-purple-200/60">
+                <span>Included OTT Streaming Apps: </span>
+                <strong className="text-slate-900">{ottModalPack.services.join(', ')}</strong>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>Payment &amp; Activation Policy:</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-amber-800">
+                Your OTT pack request will be recorded with status <strong>Pending Billing</strong> and added to your next verified broadband billing invoice. OTT login credentials will be delivered via SMS/WhatsApp once payment is confirmed.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => setOttModalPack(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                isLoading={isSubscribingOtt}
+                onClick={() => {
+                  setIsSubscribingOtt(true);
+                  setTimeout(() => {
+                    setIsSubscribingOtt(false);
+                    success('OTT Order Recorded', (ottModalPack ? ottModalPack.name : 'Pack') + ' booked with Pending status. Activation will occur upon payment confirmation.');
+                    setOttModalPack(null);
+                  }, 700);
+                }}
+              >
+                Confirm &amp; Subscribe
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DOCUMENT VIEWER MODAL FOR BOOKING SLIP & OFFICIAL PAID RECEIPT */}
+      <DocumentViewerModal
+        isOpen={docModalOpen}
+        onClose={() => setDocModalOpen(false)}
+        order={docModalOrder}
+        documentType={docModalType}
+      />
     </div>
   );
 };

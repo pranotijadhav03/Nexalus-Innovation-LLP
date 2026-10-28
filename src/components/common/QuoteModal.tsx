@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
-import { Input, TextArea, Select } from './Input';
+import { Input, TextArea } from './Input';
 import { Button } from './Button';
-import { submitEnquiry, getSolutionRequirements, getCachedSolutionRequirements } from '../../firebase/services';
+import { submitEnquiry } from '../../firebase/services';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Send, CheckCircle2 } from 'lucide-react';
-import { BrandId, SolutionRequirement } from '../../types';
+import { BrandId } from '../../types';
 
 interface QuoteModalProps {
   isOpen: boolean;
@@ -28,46 +29,35 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   itemName,
   itemType = 'quote'
 }) => {
+  const { currentUser } = useAuth();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [selectedSolution, setSelectedSolution] = useState<string>('');
   const [location, setLocation] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [solutions, setSolutions] = useState<SolutionRequirement[]>(() =>
-    getCachedSolutionRequirements()
-  );
   const { success, error } = useToast();
 
+  // Auto-fill user details when logged in
   useEffect(() => {
-    getSolutionRequirements(undefined, true).then(setSolutions);
-    const handleUpdate = () => {
-      getSolutionRequirements(undefined, true).then(setSolutions);
-    };
-    window.addEventListener('nexalus_data_update', handleUpdate);
-    return () => window.removeEventListener('nexalus_data_update', handleUpdate);
-  }, []);
-
-  // Filter solutions according to brand/website scope
-  const relevantSolutions = solutions.filter(s => {
-    if (!s.published) return false;
-    if (brandId === 'am-distributors') {
-      return s.brandId === 'am-distributors' || s.brandId === 'general' || s.brandId === 'all';
+    if (currentUser && isOpen) {
+      const userFullName = currentUser.displayName || [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ');
+      if (userFullName && !name) {
+        setName(userFullName);
+      }
+      if (currentUser.email && !email) {
+        setEmail(currentUser.email);
+      }
+      if (currentUser.phone && !phone) {
+        setPhone(currentUser.phone);
+      }
+      if (currentUser.deliveryAddress?.city && !location) {
+        const addressText = [currentUser.deliveryAddress.city, currentUser.deliveryAddress.state].filter(Boolean).join(', ');
+        setLocation(addressText);
+      }
     }
-    if (brandId === 'nexalus-innovations' || brandId === 'cp-plus' || brandId === 'one-broadband' || brandId === 'itti-networking') {
-      return s.brandId === 'nexalus-innovations' || s.brandId === 'general' || s.brandId === 'all';
-    }
-    return true;
-  });
-
-  // Set default selection when solutions change
-  useEffect(() => {
-    if (relevantSolutions.length > 0 && !selectedSolution) {
-      setSelectedSolution(relevantSolutions[0].value || relevantSolutions[0].id);
-    }
-  }, [relevantSolutions, selectedSolution]);
+  }, [currentUser, isOpen, name, email, phone, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,13 +68,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      const selectedSolObj = solutions.find(
-        s => s.value === selectedSolution || s.id === selectedSolution || s.label === selectedSolution
-      );
-      const solutionLabel = selectedSolObj ? selectedSolObj.label : selectedSolution;
-      const effectiveBrandId = selectedSolObj?.brandId && selectedSolObj.brandId !== 'general' && selectedSolObj.brandId !== 'all'
-        ? selectedSolObj.brandId
-        : (brandId && brandId !== 'general' ? brandId : 'general');
+      const effectiveBrandId = brandId && brandId !== 'general' ? brandId : 'general';
 
       // Determine website info
       const effectiveWebsiteId = websiteId || (
@@ -114,18 +98,21 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
         websiteName: effectiveWebsiteName,
         sourcePage: effectiveSource,
         enquiryType: itemType,
-        productOrServiceName: itemName || solutionLabel,
+        productOrServiceName: itemName || 'General Solution Quotation',
         location: location || 'Not specified',
-        message: message ? `[Solution: ${solutionLabel}] ${message}` : (itemName ? `Requesting official pricing and quotation for ${itemName} (${solutionLabel}).` : `Solution Requirement: ${solutionLabel}`)
+        message: message ? message : (itemName ? `Requesting official pricing and quotation for ${itemName}.` : 'Requesting official pricing and proposal.')
       });
 
       setIsSuccess(true);
       success('Quotation Request Sent', 'Our technical sales team will contact you with an official proposal.');
       setTimeout(() => {
         setIsSuccess(false);
-        setName('');
-        setPhone('');
-        setEmail('');
+        if (!currentUser) {
+          setName('');
+          setPhone('');
+          setEmail('');
+          setLocation('');
+        }
         setMessage('');
         onClose();
       }, 2500);
@@ -209,29 +196,13 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
               onChange={e => setEmail(e.target.value)}
               required
             />
-            <Select
-              label="Solution Requirement"
-              value={selectedSolution}
-              onChange={e => setSelectedSolution(e.target.value)}
-              options={
-                relevantSolutions.length > 0
-                  ? relevantSolutions.map(s => ({
-                      value: s.value || s.id,
-                      label: s.label
-                    }))
-                  : [
-                      { value: 'general', label: 'Nexalus Innovations LLP (Turnkey Technology Solutions)' }
-                    ]
-              }
+            <Input
+              label="Premises / City Location"
+              placeholder="e.g. Koramangala 5th Block, Bengaluru"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
             />
           </div>
-
-          <Input
-            label="Premises / City Location"
-            placeholder="e.g. Koramangala 5th Block, Bengaluru"
-            value={location}
-            onChange={e => setLocation(e.target.value)}
-          />
 
           <TextArea
             label="Specific Requirements / Camera Counts / Speeds"

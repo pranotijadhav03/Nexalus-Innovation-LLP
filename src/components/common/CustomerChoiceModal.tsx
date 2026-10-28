@@ -62,14 +62,6 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
   const { success, error } = useToast();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    if (isOpen) {
-      setView(initialView);
-      setFormError(null);
-      setRegPassword('');
-      setRegConfirmPassword('');
-    }
-  }, [isOpen, initialView]);
 
   // Registration Form State
   const [regFirstName, setRegFirstName] = useState('');
@@ -99,6 +91,15 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setView(initialView);
+      setFormError(null);
+      setRegPassword('');
+      setRegConfirmPassword('');
+    }
+  }, [isOpen, initialView]);
 
   if (!isOpen) return null;
 
@@ -328,7 +329,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
       <div
         className="relative bg-white w-full max-w-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all my-auto"
         onClick={e => e.stopPropagation()}

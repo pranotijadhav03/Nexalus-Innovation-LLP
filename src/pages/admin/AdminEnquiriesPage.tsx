@@ -55,7 +55,7 @@ export const AdminEnquiriesPage: React.FC = () => {
   const [brandFilter, setBrandFilter] = useState<string>(() => {
     if (effectiveConsole === 'am-distributors') return 'am-distributors';
     if (effectiveConsole === 'nexalus-innovations') return 'nexalus-innovations';
-    return isSuperAdmin ? (outletCtx?.activeBrandFilter || 'all') : (brandScope as string);
+    return 'corporate';
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -64,8 +64,8 @@ export const AdminEnquiriesPage: React.FC = () => {
       setBrandFilter('am-distributors');
     } else if (effectiveConsole === 'nexalus-innovations') {
       setBrandFilter('nexalus-innovations');
-    } else if (isSuperAdmin && outletCtx?.activeBrandFilter) {
-      setBrandFilter(outletCtx.activeBrandFilter);
+    } else {
+      setBrandFilter('corporate');
     }
   }, [outletCtx?.activeBrandFilter, isSuperAdmin, effectiveConsole]);
 
@@ -144,24 +144,35 @@ export const AdminEnquiriesPage: React.FC = () => {
       setAllEnquiriesRaw(allEnqs);
       setUsers(allUsers);
 
-      // Now filter based on scope & status
+      // Now filter strictly based on active console & status
       let filteredEnqs = allEnqs;
-      const scope = isSuperAdmin ? brandFilter : (brandScope as string);
+      const scope = effectiveConsole === 'am-distributors'
+        ? 'am-distributors'
+        : effectiveConsole === 'nexalus-innovations'
+        ? 'nexalus-innovations'
+        : 'corporate';
 
-      if (scope && scope !== 'all') {
-        if (scope === 'corporate' || scope === 'general') {
-          filteredEnqs = filteredEnqs.filter(e => e.websiteId === 'corporate' || (e.brandId as any) === 'general' || (e.brandId as any) === 'nexalus' || !e.brandId || (e.brandId as any) === 'all');
-        } else if (scope === 'nexalus-innovations') {
-          filteredEnqs = filteredEnqs.filter(e =>
-            e.websiteId === 'nexalus-innovations' ||
-            e.brandId === 'nexalus-innovations' ||
-            e.brandId === 'cp-plus' ||
-            e.brandId === 'one-broadband' ||
-            e.brandId === 'itti-networking'
-          );
-        } else if (scope === 'am-distributors') {
-          filteredEnqs = filteredEnqs.filter(e => e.websiteId === 'am-distributors' || e.brandId === 'am-distributors');
-        }
+      if (scope === 'corporate') {
+        filteredEnqs = filteredEnqs.filter(e =>
+          (e.websiteId === 'corporate' || (e.brandId as any) === 'general' || (e.brandId as any) === 'nexalus' || !e.brandId) &&
+          e.websiteId !== 'am-distributors' &&
+          e.brandId !== 'am-distributors' &&
+          e.websiteId !== 'nexalus-innovations' &&
+          e.brandId !== 'nexalus-innovations' &&
+          e.brandId !== 'cp-plus' &&
+          e.brandId !== 'one-broadband' &&
+          e.brandId !== 'itti-networking'
+        );
+      } else if (scope === 'nexalus-innovations') {
+        filteredEnqs = filteredEnqs.filter(e =>
+          e.websiteId === 'nexalus-innovations' ||
+          e.brandId === 'nexalus-innovations' ||
+          e.brandId === 'cp-plus' ||
+          e.brandId === 'one-broadband' ||
+          e.brandId === 'itti-networking'
+        );
+      } else if (scope === 'am-distributors') {
+        filteredEnqs = filteredEnqs.filter(e => e.websiteId === 'am-distributors' || e.brandId === 'am-distributors');
       }
 
       if (statusFilter && statusFilter !== 'all') {
@@ -386,97 +397,7 @@ export const AdminEnquiriesPage: React.FC = () => {
             </div>
           </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button
-            onClick={() => setBrandFilter('all')}
-            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-              brandFilter === 'all'
-                ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-900/30'
-                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-xs'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-75">All Websites</span>
-              <span className={`text-xs font-black px-2 py-0.5 rounded-full ${brandFilter === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                {allEnquiriesRaw.length}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="font-black text-sm">Combined Inquiries</div>
-              <div className={`text-[11px] mt-0.5 ${brandFilter === 'all' ? 'text-slate-300' : 'text-slate-500'}`}>
-                Master consolidated stream
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setBrandFilter('corporate')}
-            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-              brandFilter === 'corporate'
-                ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-600/30'
-                : 'bg-white hover:bg-blue-50/50 text-slate-700 border-slate-200 shadow-xs'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-85">Corporate Portal</span>
-              <span className={`text-xs font-black px-2 py-0.5 rounded-full ${brandFilter === 'corporate' ? 'bg-blue-700 text-white' : 'bg-blue-50 text-blue-700'}`}>
-                {corporateCount}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="font-black text-sm">Nexalus Innovations LLP</div>
-              <div className={`text-[11px] mt-0.5 ${brandFilter === 'corporate' ? 'text-blue-100' : 'text-slate-500'}`}>
-                Holding company &amp; group contracts
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setBrandFilter('nexalus-innovations')}
-            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-              brandFilter === 'nexalus-innovations'
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-600/30'
-                : 'bg-white hover:bg-indigo-50/50 text-slate-700 border-slate-200 shadow-xs'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-85">Tech &amp; Security</span>
-              <span className={`text-xs font-black px-2 py-0.5 rounded-full ${brandFilter === 'nexalus-innovations' ? 'bg-indigo-700 text-white' : 'bg-indigo-50 text-indigo-700'}`}>
-                {innovationsCount}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="font-black text-sm">Nexalus Innovations</div>
-              <div className={`text-[11px] mt-0.5 ${brandFilter === 'nexalus-innovations' ? 'text-indigo-100' : 'text-slate-500'}`}>
-                CCTV, Optical Fiber &amp; Switches
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => setBrandFilter('am-distributors')}
-            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-              brandFilter === 'am-distributors'
-                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-600/30'
-                : 'bg-white hover:bg-emerald-50/50 text-slate-700 border-slate-200 shadow-xs'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-85">Chiplun Depot</span>
-              <span className={`text-xs font-black px-2 py-0.5 rounded-full ${brandFilter === 'am-distributors' ? 'bg-emerald-700 text-white' : 'bg-emerald-50 text-emerald-700'}`}>
-                {amCount}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="font-black text-sm">A.M. Distributors Chiplun</div>
-              <div className={`text-[11px] mt-0.5 ${brandFilter === 'am-distributors' ? 'text-emerald-100' : 'text-slate-500'}`}>
-                Mineral Water, Ice Cream &amp; Dairy
-              </div>
-            </div>
-          </button>
-        </div>
-      )}
+      ) : null}
 
       {/* Filter and Search Bar */}
       <div className="p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">

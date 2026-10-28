@@ -3,6 +3,7 @@ import {
   X,
   Zap,
   CheckCircle2,
+  FileText,
   MapPin,
   Calendar,
   CreditCard,
@@ -25,6 +26,7 @@ import { useToast } from '../../context/ToastContext';
 import { submitPlanOrder } from '../../firebase/services';
 import { PlanOrder, BrandId } from '../../types';
 import { Button } from './Button';
+import { DocumentViewerModal } from './DocumentViewerModal';
 
 export interface PlanOrderModalProps {
   isOpen: boolean;
@@ -63,6 +65,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<PlanOrder | null>(null);
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
 
   // Auto-close and redirect to Customer Login if accessed without Customer session
   useEffect(() => {
@@ -168,13 +171,15 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
     setIsSubmitting(true);
     try {
       const res = await submitPlanOrder({
+        authUid: currentUser?.uid,
         planId: plan.planId,
         planName: plan.planName,
         providerName: plan.providerName,
         speed: plan.speed,
         price: plan.price,
         billingPeriod: plan.billingPeriod || 'monthly',
-        brandId: plan.brandId || 'one-broadband',
+        brandId: 'nexalus-innovations',
+        companyId: 'nexalus',
         customerName: customerName.trim(),
         phone: cleanPhone,
         email: emailToSave,
@@ -183,7 +188,18 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
         pincode: pinToSave,
         preferredSlot,
         paymentMethod,
-        notes: notes.trim()
+        paymentStatus: 'pending',
+        notes: notes.trim(),
+        planSnapshot: {
+          id: plan.planId || '',
+          name: plan.planName,
+          providerId: (plan as any).providerId || 'nexalus',
+          providerName: plan.providerName,
+          speed: plan.speed,
+          price: typeof plan.price === 'number' ? plan.price : parseFloat(String(plan.price)) || 0,
+          currency: 'INR',
+          billingPeriod: plan.billingPeriod || 'monthly'
+        }
       });
 
       if (res.success) {
@@ -277,6 +293,14 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsDocModalOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-blue-600/25 transition-all cursor-pointer"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Download / Print Booking Slip</span>
+              </button>
               <a
                 href={`https://wa.me/919158886444?text=Hello%20Nexalus,%20I%20just%20placed%20Broadband%20Plan%20Order%20${completedOrder.id}%20for%20${encodeURIComponent(completedOrder.planName)}.%20Please%20confirm%20my%20installation.`}
                 target="_blank"
@@ -609,6 +633,12 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
           </form>
         )}
       </div>
+      <DocumentViewerModal
+        isOpen={isDocModalOpen}
+        onClose={() => setIsDocModalOpen(false)}
+        order={completedOrder}
+        documentType="booking_slip"
+      />
     </div>
   );
 };

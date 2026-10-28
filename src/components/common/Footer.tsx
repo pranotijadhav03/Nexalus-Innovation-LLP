@@ -4,6 +4,7 @@ import { Layers, Shield, Wifi, Server, Mail, Phone, MapPin, Lock, User } from 'l
 import { getSeoSettings } from '../../firebase/services';
 import { initialSeoSettings } from '../../data/initialData';
 import { SeoSettings } from '../../types';
+import { NEXALUS_LOGO_BASE64 } from '../../utils/companyLogoBase64';
 
 export const Footer: React.FC = () => {
   const [seo, setSeo] = useState<SeoSettings>(initialSeoSettings);
@@ -56,15 +57,27 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Company Identity & Official Socials */}
           <div className="lg:col-span-2 space-y-4">
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-md">
-                <Layers className="w-5 h-5" />
+            <Link to="/" className="flex items-center gap-3.5 group">
+              <div className="relative shrink-0">
+                <img
+                  src="/images/parent-company-logo.jpg"
+                  alt="Nexalus Innovations LLP"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = NEXALUS_LOGO_BASE64;
+                  }}
+                  className="w-11 h-11 rounded-xl object-contain bg-white shadow-md p-0.5 border border-slate-700 group-hover:scale-105 transition-all duration-200"
+                />
               </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-lg text-white tracking-tight leading-none">
-                  NEXALUS INNOVATIONS LLP
-                </span>
-                <span className="text-[10px] font-semibold text-sky-400 tracking-wider uppercase mt-1">
+              <div className="flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 leading-snug">
+                  <span className="font-black text-lg text-white tracking-tight group-hover:text-sky-300 transition-colors">
+                    NEXALUS INNOVATIONS
+                  </span>
+                  <span className="text-[10px] font-bold text-sky-300 bg-sky-950/80 border border-sky-800 px-1.5 py-0.5 rounded tracking-wider">
+                    LLP
+                  </span>
+                </div>
+                <span className="text-[10.5px] font-medium text-slate-400 tracking-wider uppercase mt-0.5">
                   Internet, Network &amp; CCTV Services
                 </span>
               </div>

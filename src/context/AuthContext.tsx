@@ -17,7 +17,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from '../firebase/config';
 import { AdminUser, BrandId, CustomerRegistrationData } from '../types';
-import { addAuditLog, registerCustomer, withTimeout, getCachedUsers } from '../firebase/services';
+import { addAuditLog, registerCustomer, withTimeout, getCachedUsers, getPlanCart } from '../firebase/services';
 
 interface AuthContextType {
   currentUser: AdminUser | null;
@@ -362,6 +362,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {}
 
       setCurrentUser(updatedProfile);
+      window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: getPlanCart(updatedProfile.uid) }));
 
       // Record successful login in audit logs
       try {
@@ -473,6 +474,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {}
 
       setCurrentUser(updatedProfile);
+      window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: getPlanCart(updatedProfile.uid) }));
       setIsLoading(false);
       return { success: true, user: updatedProfile };
     } catch (err: any) {
@@ -546,12 +548,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setCurrentUser(null);
+    window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: [] }));
 
     // Clean up any remaining legacy storage
     try {
       sessionStorage.removeItem(LEGACY_AUTH_KEY);
       localStorage.removeItem('nexalus_auth_user');
       localStorage.removeItem('nexalus_auth_session');
+      localStorage.removeItem('nexalus_plan_cart');
     } catch {}
 
     if (auth) {

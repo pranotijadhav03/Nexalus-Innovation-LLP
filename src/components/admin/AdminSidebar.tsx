@@ -23,7 +23,8 @@ import {
   Shield,
   Building,
   ExternalLink,
-  Sliders
+  Sliders,
+  FileText
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -64,21 +65,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         {/* Brand Header */}
         <div className="p-4 sm:p-5 border-b border-slate-100 space-y-3 bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl ${
-              isAmConsole
-                ? 'bg-gradient-to-tr from-teal-600 via-emerald-600 to-cyan-500 shadow-teal-500/20'
-                : isInnovationsConsole
-                ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 shadow-cyan-500/20'
-                : 'bg-gradient-to-tr from-blue-700 via-indigo-600 to-cyan-500 shadow-blue-500/20'
-            } flex items-center justify-center text-white shadow-md shrink-0`}>
-              {isAmConsole ? (
+            {isAmConsole ? (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 via-emerald-600 to-cyan-500 shadow-teal-500/20 flex items-center justify-center text-white shadow-md shrink-0">
                 <Building className="w-5 h-5 text-white" />
-              ) : isInnovationsConsole ? (
-                <Shield className="w-5 h-5 text-white" />
-              ) : (
-                <Layers className="w-5 h-5 text-white" />
-              )}
-            </div>
+              </div>
+            ) : (
+              <img
+                src="/images/parent-company-logo.jpg"
+                alt="Nexalus Innovations LLP"
+                className="w-10 h-10 rounded-xl object-contain bg-white shadow-sm border border-slate-200/90 p-0.5 shrink-0"
+              />
+            )}
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-black text-slate-900 tracking-tight leading-tight truncate">
                 {isAmConsole
@@ -150,20 +147,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 Dashboard Overview
               </NavLink>
 
-              <NavLink
-                to="/admin/reports"
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`
-                }
-              >
-                <BarChart3 className="w-4 h-4" />
-                Enterprise Reports
-              </NavLink>
+
             </div>
           </div>
 
@@ -220,6 +204,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 </NavLink>
               )}
 
+              {!isStrictAmOnly && (
               <NavLink
                 to="/admin/orders"
                 onClick={onClose}
@@ -234,10 +219,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <ShoppingCart className="w-4 h-4 text-orange-500" />
                 <span>Orders &amp; Bookings</span>
               </NavLink>
+              )}
 
-              {!isStrictAmOnly && (
+              {!isStrictAmOnly && isSuperAdmin && (
                 <NavLink
-                  to="/admin/projects"
+                  to="/admin/receipt-settings"
                   onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -247,10 +233,25 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     }`
                   }
                 >
-                  <FolderGit2 className="w-4 h-4" />
-                  <span>Case Studies &amp; Projects</span>
+                  <FileText className="w-4 h-4 text-indigo-500" />
+                  <span>Receipt &amp; Document Settings</span>
                 </NavLink>
               )}
+
+              <NavLink
+                to="/admin/projects"
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`
+                }
+              >
+                <FolderGit2 className="w-4 h-4" />
+                <span>Project Gallery</span>
+              </NavLink>
 
               <NavLink
                 to="/admin/services"
@@ -267,22 +268,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 Services Portfolio
               </NavLink>
 
-              {!isAmConsole && (
-                <NavLink
-                  to="/admin/services?tab=solutions"
-                  onClick={onClose}
-                  className={() =>
-                    `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                      location.pathname === '/admin/services' && location.search.includes('tab=solutions')
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  <Sliders className="w-4 h-4" />
-                  Solution Requirements
-                </NavLink>
-              )}
+
 
               <NavLink
                 to="/admin/service-areas"
@@ -401,20 +387,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 System Governance
               </div>
               <div className="space-y-1">
-                <NavLink
-                  to="/admin/users"
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  <Users className="w-4 h-4" />
-                  Staff Roles &amp; Permissions
-                </NavLink>
+
 
                 <NavLink
                   to="/admin/seo"
@@ -431,20 +404,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   SEO &amp; Meta Settings
                 </NavLink>
 
-                <NavLink
-                  to="/admin/audit-logs"
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  <ScrollText className="w-4 h-4" />
-                  Audit Trails &amp; Logs
-                </NavLink>
+
               </div>
             </div>
           )}

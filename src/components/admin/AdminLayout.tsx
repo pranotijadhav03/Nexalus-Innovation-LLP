@@ -98,14 +98,17 @@ export const AdminLayout: React.FC = () => {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // Active brand filter for products/services/enquiries: 'all' by default for corporate master view
-  let activeBrandFilter: BrandId | 'corporate' | 'all' = 'all';
+  // Active brand filter strictly scopes each console to its own business entity:
+  // - Master Console: Nexalus Innovations LLP Corporate Parent ('nexalus')
+  // - Nexalus Innovations Console: Tech, CCTV & Fiber Child Division ('nexalus-innovations')
+  // - A.M. Distributors Console: Chiplun FMCG & Logistics Child Division ('am-distributors')
+  let activeBrandFilter: BrandId | 'corporate' | 'all' = 'nexalus';
   if (effectiveConsole === 'nexalus-innovations') {
     activeBrandFilter = 'nexalus-innovations';
   } else if (effectiveConsole === 'am-distributors') {
     activeBrandFilter = 'am-distributors';
   } else {
-    activeBrandFilter = isSuperAdmin ? 'all' : ((brandScope as BrandId) || 'corporate');
+    activeBrandFilter = 'nexalus';
   }
 
   const outletContext: AdminOutletContext = {

@@ -168,6 +168,29 @@ export const AmDistributorsPage: React.FC = () => {
 
   const activeSlide = heroSlides[currentSlide] || heroSlides[0];
 
+  // Typewriter effect for Slide Title (sync with slide changes)
+  const [typedTitle, setTypedTitle] = useState('');
+  const [isTitleDone, setIsTitleDone] = useState(false);
+
+  useEffect(() => {
+    setTypedTitle('');
+    setIsTitleDone(false);
+    let index = 0;
+    const target = activeSlide?.title || '';
+    if (!target) return;
+
+    const interval = setInterval(() => {
+      index++;
+      setTypedTitle(target.slice(0, index));
+      if (index >= target.length) {
+        setIsTitleDone(true);
+        clearInterval(interval);
+      }
+    }, 28);
+
+    return () => clearInterval(interval);
+  }, [activeSlide?.title, currentSlide]);
+
   const handlePrevSlide = () => {
     setCurrentSlide(prev => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
@@ -230,9 +253,14 @@ export const AmDistributorsPage: React.FC = () => {
         {/* Dynamic Foreground Content with Staggered Slide Animations */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-4xl py-6">
           <div key={currentSlide} className="space-y-6">
-            {/* Main Slide Title */}
-            <h1 className="animate-hero-up text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_14px_rgba(0,0,0,0.9)]">
-              {activeSlide.title}
+            {/* Main Slide Title with Dynamic Typewriter Effect */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_14px_rgba(0,0,0,0.9)] min-h-[1.25em]">
+              <span>{typedTitle || '\u00A0'}</span>
+              <span
+                className={`inline-block w-2 sm:w-2.5 h-7 sm:h-11 bg-teal-400 rounded-xs ml-1.5 align-middle transition-opacity duration-300 ${
+                  isTitleDone ? 'opacity-0' : 'animate-pulse opacity-100'
+                }`}
+              />
             </h1>
 
             {/* Tailored Subtitle with Gradient Text Shimmer */}

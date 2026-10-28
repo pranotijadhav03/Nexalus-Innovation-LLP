@@ -238,52 +238,35 @@ export const HomePage: React.FC = () => {
   // =========================================================================
   // HERO FULL-WIDTH EDGE-TO-EDGE BANNER (OFFICIAL PARENT COMPANY HEADLINE)
   // =========================================================================
-  // Typewriter effect for Website Name ('Nexalus Innovations LLP') and the badge next to it
-  const brandTarget = 'Nexalus Innovations LLP';
-  const badgeTarget = React.useMemo(() => {
-    const raw = heroBanner?.badge;
-    if (!raw) return 'Enterprise Networking & Multi-Company Solutions';
-    const cleaned = raw.replace(/\.?a{3,}\b/gi, '').trim();
-    return cleaned.length > 5 ? cleaned : 'Enterprise Networking & Multi-Company Solutions';
-  }, [heroBanner?.badge]);
+  // Dynamic Carousel Slides from Firestore / Admin Content Manager
+  const heroSlides = React.useMemo(() => {
+    return heroBanner?.slides && heroBanner.slides.length > 0 ? heroBanner.slides : [];
+  }, [heroBanner?.slides]);
 
-  const [typedBrand, setTypedBrand] = useState('');
-  const [typedBadge, setTypedBadge] = useState('');
-  const [isBrandDone, setIsBrandDone] = useState(false);
-  const [isBadgeDone, setIsBadgeDone] = useState(false);
+  const [heroSlideIdx, setHeroSlideIdx] = useState(0);
 
+  // Auto-play slideshow with smooth 3-second interval
   useEffect(() => {
-    let timer: any;
-    if (typedBrand.length < brandTarget.length) {
-      timer = setTimeout(() => {
-        setTypedBrand(brandTarget.slice(0, typedBrand.length + 1));
-      }, 70);
-    } else {
-      setIsBrandDone(true);
-      if (typedBadge.length < badgeTarget.length) {
-        timer = setTimeout(() => {
-          setTypedBadge(badgeTarget.slice(0, typedBadge.length + 1));
-        }, 40);
-      } else {
-        setIsBadgeDone(true);
-      }
-    }
-    return () => clearTimeout(timer);
-  }, [typedBrand, typedBadge, badgeTarget]);
+    if (heroSlides.length <= 1) return;
+    const timer = setInterval(() => {
+      setHeroSlideIdx(prev => (prev + 1) % heroSlides.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [heroSlides.length]);
 
-  // Clean title, subtitle, buttons removing any test 'aaa'
+  // Clean fallback values
   const cleanHeroTitle = React.useMemo(() => {
     const raw = heroBanner?.title;
     if (!raw) return 'Connecting Businesses. Protecting What Matters.';
     const cleaned = raw.replace(/\.?a{3,}\b/gi, '').trim();
-    return cleaned.length > 5 ? cleaned : 'Connecting Businesses. Protecting What Matters.';
+    return cleaned.length > 3 ? cleaned : 'Connecting Businesses. Protecting What Matters.';
   }, [heroBanner?.title]);
 
   const cleanHeroSubtitle = React.useMemo(() => {
     const raw = heroBanner?.subtitle;
     if (!raw) return 'Nexalus Innovations LLP delivers connectivity, security and networking solutions designed for homes, businesses and modern enterprises.';
     const cleaned = raw.replace(/\.?a{3,}\b/gi, '').trim();
-    return cleaned.length > 10 ? cleaned : 'Nexalus Innovations LLP delivers connectivity, security and networking solutions designed for homes, businesses and modern enterprises.';
+    return cleaned.length > 5 ? cleaned : 'Nexalus Innovations LLP delivers connectivity, security and networking solutions designed for homes, businesses and modern enterprises.';
   }, [heroBanner?.subtitle]);
 
   const cleanCtaText = React.useMemo(() => {
@@ -300,29 +283,166 @@ export const HomePage: React.FC = () => {
     return cleaned || 'Request Quotation';
   }, [heroBanner?.secondaryCtaText]);
 
+  // Active slide properties
+  const activeSlide = heroSlides.length > 0 ? (heroSlides[heroSlideIdx] || heroSlides[0]) : null;
+  const currentHeroTitle = activeSlide?.title || cleanHeroTitle;
+  const currentHeroSubtitle = activeSlide ? (activeSlide.subtitle || activeSlide.description) : cleanHeroSubtitle;
+  const activeBadgeRaw = activeSlide?.badge || heroBanner?.badge || 'Enterprise Networking & Multi-Company Solutions';
+  const activeBadgeTarget = React.useMemo(() => {
+    const cleaned = activeBadgeRaw.replace(/\.?a{3,}\b/gi, '').trim();
+    return cleaned.length > 2 ? cleaned : 'Enterprise Networking & Multi-Company Solutions';
+  }, [activeBadgeRaw]);
+
+  const currentPrimaryCta = activeSlide?.primaryCtaText || cleanCtaText;
+  const currentPrimaryLink = activeSlide?.primaryCtaLink || null;
+  const currentSecondaryCta = activeSlide?.secondaryCtaText || cleanSecondaryCtaText;
+  const currentSecondaryLink = activeSlide?.secondaryCtaLink || (heroBanner?.secondaryCtaLink || '/products');
+
+  // Typewriter effect state
+  const brandTarget = 'Nexalus Innovations LLP';
+  const [typedBrand, setTypedBrand] = useState('');
+  const [isBrandDone, setIsBrandDone] = useState(false);
+  const [typedBadge, setTypedBadge] = useState('');
+  const [isBadgeDone, setIsBadgeDone] = useState(false);
+  const [typedTitle, setTypedTitle] = useState('');
+  const [isTitleDone, setIsTitleDone] = useState(false);
+
+  // Typewriter for Brand Name (on initial mount)
+  useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      index++;
+      setTypedBrand(brandTarget.slice(0, index));
+      if (index >= brandTarget.length) {
+        setIsBrandDone(true);
+        clearInterval(interval);
+      }
+    }, 40);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Typewriter for Badge (sync with slide changes)
+  useEffect(() => {
+    setTypedBadge('');
+    setIsBadgeDone(false);
+    let index = 0;
+    const target = activeBadgeTarget || '';
+    if (!target) return;
+
+    const interval = setInterval(() => {
+      index++;
+      setTypedBadge(target.slice(0, index));
+      if (index >= target.length) {
+        setIsBadgeDone(true);
+        clearInterval(interval);
+      }
+    }, 25);
+
+    return () => clearInterval(interval);
+  }, [activeBadgeTarget, heroSlideIdx]);
+
+  // Typewriter for Slide Title (sync with slide changes & dynamic updates)
+  useEffect(() => {
+    setTypedTitle('');
+    setIsTitleDone(false);
+    let index = 0;
+    const target = currentHeroTitle || '';
+    if (!target) return;
+
+    const interval = setInterval(() => {
+      index++;
+      setTypedTitle(target.slice(0, index));
+      if (index >= target.length) {
+        setIsTitleDone(true);
+        clearInterval(interval);
+      }
+    }, 28);
+
+    return () => clearInterval(interval);
+  }, [currentHeroTitle, heroSlideIdx]);
+
   return (
     <div className="flex flex-col w-full">
       {/* =========================================================================
-          SLIDE 1: HERO FULL-WIDTH EDGE-TO-EDGE BANNER
+          SLIDE 1: DYNAMIC HERO FULL-WIDTH EDGE-TO-EDGE CAROUSEL BANNER (3S INTERVAL, SMOOTH CROSSFADE)
           ========================================================================= */}
-      <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 select-none">
-        {/* Photographic background image showcasing authentic enterprise server rack on the right */}
+      <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 select-none group/hero min-h-[540px] lg:min-h-[640px]">
+        {/* Cinematic Multi-Layered Background Cross-Fade (Ultra-smooth 1000ms transition) */}
         <div className="absolute inset-0">
-          <img
-            src="/images/fermilab-blue-racks-real.jpg"
-            alt="Nexalus Innovations LLP Enterprise Server Rack, Optical Fiber & CCTV Surveillance Infrastructure"
-            className="w-full h-full object-cover object-[75%_center] lg:object-[82%_center]"
-          />
+          {heroSlides.length > 0 ? (
+            heroSlides.map((slide, idx) => {
+              const isCur = idx === heroSlideIdx;
+              const isVid = slide.mediaType === 'video' || (slide.videoUrl && slide.videoUrl.trim() !== '') || (slide.imageUrl && (slide.imageUrl.endsWith('.mp4') || slide.imageUrl.endsWith('.webm') || slide.imageUrl.startsWith('data:video')));
+              const media = slide.videoUrl || slide.imageUrl || '/images/fermilab-blue-racks-real.jpg';
+
+              return (
+                <div
+                  key={slide.id || idx}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    isCur ? 'opacity-100 z-0' : 'opacity-0 -z-10 pointer-events-none'
+                  }`}
+                >
+                  {isVid ? (
+                    <video
+                      src={media}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={media}
+                      alt={slide.title || 'Nexalus Hero Infrastructure'}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/fermilab-blue-racks-real.jpg';
+                      }}
+                      className="w-full h-full object-cover object-[75%_center] lg:object-[82%_center]"
+                    />
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <img
+              src={heroBanner?.imageUrl || '/images/fermilab-blue-racks-real.jpg'}
+              alt={cleanHeroTitle}
+              className="w-full h-full object-cover object-[75%_center] lg:object-[82%_center]"
+            />
+          )}
         </div>
 
-        {/* Clean directional contrast scrim from left to right matching the rest of the website */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/98 via-[#0f2444]/90 via-48% md:via-42% to-transparent pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/80 via-transparent to-[#0a1628]/50 pointer-events-none" />
+        {/* Cinematic directional contrast scrim for pristine text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/98 via-[#0f2444]/90 via-48% md:via-42% to-transparent pointer-events-none z-1" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/85 via-transparent to-[#0a1628]/50 pointer-events-none z-1" />
 
-        {/* Content strictly positioned on the left side, leaving right side clear for high-res authentic hardware */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36 flex items-center min-h-[520px] lg:min-h-[620px]">
-          <div className="max-w-4xl lg:max-w-5xl space-y-5 text-white mr-auto">
-            {/* Top Badges: Brand Name + Announcement Badge (with Typewriter Animation) */}
+        {/* Carousel Arrow Controls (Visible if multiple slides exist) */}
+        {heroSlides.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setHeroSlideIdx(prev => (prev - 1 + heroSlides.length) % heroSlides.length)}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-slate-950/60 hover:bg-blue-600 text-white flex items-center justify-center border border-white/20 transition-all cursor-pointer backdrop-blur-xs opacity-70 group-hover/hero:opacity-100 shadow-lg"
+              aria-label="Previous Hero Slide"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setHeroSlideIdx(prev => (prev + 1) % heroSlides.length)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-slate-950/60 hover:bg-blue-600 text-white flex items-center justify-center border border-white/20 transition-all cursor-pointer backdrop-blur-xs opacity-70 group-hover/hero:opacity-100 shadow-lg"
+              aria-label="Next Hero Slide"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </>
+        )}
+
+        {/* Content strictly positioned on the left side with active slide cross-fade */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36 flex items-center min-h-[540px] lg:min-h-[640px]">
+          <div className="max-w-4xl lg:max-w-5xl space-y-5 text-white mr-auto transition-all duration-700 ease-out" key={heroSlideIdx}>
+            {/* Top Badges: Brand Name + Announcement Badge (with Active Typewriter Effect) */}
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-600/35 border border-blue-400/50 text-blue-100 text-xs sm:text-sm font-bold tracking-wide backdrop-blur-xs shadow-md">
                 <span>{typedBrand || brandTarget}</span>
@@ -331,48 +451,86 @@ export const HomePage: React.FC = () => {
                 )}
               </span>
 
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 text-xs sm:text-sm font-semibold tracking-wide shadow-md backdrop-blur-xs">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 text-xs sm:text-sm font-semibold tracking-wide shadow-md backdrop-blur-xs min-h-[32px]">
                 <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span>{typedBadge || badgeTarget}</span>
-                {isBrandDone && !isBadgeDone && (
+                <span>{typedBadge || '\u00A0'}</span>
+                {!isBadgeDone && (
                   <span className="inline-block w-1.5 h-3 bg-cyan-300 animate-pulse rounded-full" />
                 )}
               </div>
             </div>
 
-            {/* Main Headline Title: Connecting Businesses. Protecting What Matters. */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)]">
-              {cleanHeroTitle}
+            {/* Main Headline Title with Dynamic Typewriter Effect */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] min-h-[1.25em]">
+              <span>{typedTitle || '\u00A0'}</span>
+              <span
+                className={`inline-block w-2 sm:w-2.5 h-7 sm:h-11 bg-cyan-400 rounded-xs ml-1.5 align-middle transition-opacity duration-300 ${
+                  isTitleDone ? 'opacity-0' : 'animate-pulse opacity-100'
+                }`}
+              />
             </h1>
 
             {/* Subtitle / Description */}
-            <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl pt-1 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-              {cleanHeroSubtitle}
+            <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl pt-1 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] animate-in fade-in duration-700">
+              {currentHeroSubtitle}
             </p>
 
-            {/* CTA Action Buttons: Clean without any 'aaa' */}
+            {/* CTA Action Buttons */}
             <div className="pt-3 flex flex-wrap items-center gap-4">
-              <Button
-                variant="primary"
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/50 px-6 py-3.5 rounded-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-95"
-                icon={<ArrowRight className="w-4 h-4" />}
-                onClick={() => setIsQuoteModalOpen(true)}
-              >
-                {cleanCtaText}
-              </Button>
-              <Link to={heroBanner?.secondaryCtaLink || '/products'}>
+              {currentPrimaryLink ? (
+                <Link to={currentPrimaryLink}>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/50 px-6 py-3.5 rounded-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                    icon={<ArrowRight className="w-4 h-4" />}
+                  >
+                    {currentPrimaryCta}
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/50 px-6 py-3.5 rounded-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-95"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                  onClick={() => setIsQuoteModalOpen(true)}
+                >
+                  {currentPrimaryCta}
+                </Button>
+              )}
+
+              <Link to={currentSecondaryLink}>
                 <Button
                   variant="outline-white"
                   size="lg"
                   className="border-slate-700 hover:bg-white/10 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg backdrop-blur-xs"
                 >
-                  {cleanSecondaryCtaText}
+                  {currentSecondaryCta}
                 </Button>
               </Link>
             </div>
           </div>
         </div>
+
+        {/* Carousel Pagination Indicator Dots */}
+        {heroSlides.length > 1 && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+            {heroSlides.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setHeroSlideIdx(i)}
+                className={`h-2 rounded-full transition-all cursor-pointer ${
+                  i === heroSlideIdx
+                    ? 'w-8 bg-blue-500 shadow-md shadow-blue-500/50'
+                    : 'w-2 bg-white/40 hover:bg-white/70'
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* =========================================================================

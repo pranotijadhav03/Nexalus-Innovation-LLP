@@ -22,6 +22,7 @@ import { User, UserCheck } from 'lucide-react';
 import { QuoteModal } from './QuoteModal';
 import { PlanCartModal } from './PlanCartModal';
 import { getPlanCart } from '../../firebase/services';
+import { NEXALUS_LOGO_BASE64 } from '../../utils/companyLogoBase64';
 
 export const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -41,8 +42,10 @@ export const Navbar: React.FC = () => {
   });
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
 
+  const effectiveCartCount = isAuthenticated ? cartCount : 0;
+
   React.useEffect(() => {
-    const handleCartUpdate = (e: any) => {
+    const handleCartUpdate = (e?: any) => {
       const items = e?.detail || getPlanCart();
       setCartCount(Array.isArray(items) ? items.length : 0);
     };
@@ -53,11 +56,14 @@ export const Navbar: React.FC = () => {
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
     window.addEventListener('open_plan_cart', handleOpenCart);
 
+    // Initial check on mount or user switch
+    handleCartUpdate();
+
     return () => {
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
       window.removeEventListener('open_plan_cart', handleOpenCart);
     };
-  }, []);
+  }, [currentUser?.uid, isAuthenticated]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -95,22 +101,31 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Nexalus Logo / Identity */}
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-102 transition-transform">
-                <Layers className="w-6 h-6" />
+            <Link to="/" className="flex items-center gap-3 sm:gap-3.5 group shrink-0">
+              <div className="relative shrink-0">
+                <img
+                  src="/images/parent-company-logo.jpg"
+                  alt="Nexalus Innovations LLP"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = NEXALUS_LOGO_BASE64;
+                  }}
+                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-contain bg-white shadow-sm border border-slate-200/90 p-0.5 group-hover:scale-105 group-hover:shadow-md transition-all duration-200"
+                />
               </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors leading-none">
-                  NEXALUS
-                </span>
-                <span className="text-[10px] sm:text-xs font-semibold text-slate-500 tracking-wider uppercase mt-1">
-                  INNOVATIONS LLP
+              <div className="flex flex-col justify-center">
+                <div className="flex items-center leading-snug">
+                  <span className="font-black text-base sm:text-lg xl:text-xl tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors whitespace-nowrap">
+                    NEXALUS INNOVATIONS LLP
+                  </span>
+                </div>
+                <span className="hidden sm:block text-[10.5px] font-semibold text-slate-500 tracking-wider uppercase mt-0.5">
+                  Enterprise Technology &bull; Infrastructure
                 </span>
               </div>
             </Link>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+            {/* Desktop Navigation Links (Centrally Positioned) */}
+            <nav className="hidden lg:flex items-center justify-center gap-1 xl:gap-2 flex-1 mx-3 xl:mx-6">
               <Link
                 to="/"
                 className={`px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
@@ -238,8 +253,8 @@ export const Navbar: React.FC = () => {
             </nav>
 
             {/* Desktop Actions */}
-            <div className="hidden lg:flex items-center gap-3">
-              {/* Broadband Cart Badge Icon */}
+            <div className="hidden lg:flex items-center gap-3 shrink-0">
+              {/* Broadband Cart Badge Icon (Visible only if authenticated customer with items) */}
               <button
                 type="button"
                 onClick={() => setIsCartModalOpen(true)}
@@ -247,9 +262,9 @@ export const Navbar: React.FC = () => {
                 title="Open Broadband Cart"
               >
                 <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
+                {effectiveCartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-orange-500 text-white font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-xs animate-bounce">
-                    {cartCount}
+                    {effectiveCartCount}
                   </span>
                 )}
               </button>

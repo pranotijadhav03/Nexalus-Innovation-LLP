@@ -145,12 +145,10 @@ export const AdminContentPage: React.FC = () => {
         setShowContact(current.showContact !== false);
         setCustomSections(current.customSections || []);
 
-        if (targetId === 'ban-am') {
-          const amSlides = (current.slides && current.slides.length > 0)
-            ? current.slides
-            : DEFAULT_AM_SLIDES;
-          setSlides(amSlides);
-        }
+        const loadedSlides = (current.slides && current.slides.length > 0)
+          ? current.slides
+          : (targetId === 'ban-am' ? DEFAULT_AM_SLIDES : (DEFAULT_NEXALUS_SLIDES || []));
+        setSlides(loadedSlides);
       }
     } catch (err: any) {
       error('Failed to load content', err.message);
@@ -204,16 +202,19 @@ export const AdminContentPage: React.FC = () => {
 
   // Open modal to add new slide
   const handleOpenAddSlide = () => {
+    const isAm = activeScope === 'am-distributors';
     setEditingSlide({
-      id: `slide-am-${Date.now()}`,
+      id: `slide-${Date.now()}`,
       title: '',
       subtitle: '',
       description: '',
-      imageUrl: '/images/products/am-water-jar-20l.jpg',
-      badge: 'A.M. Distributors Chiplun Supply',
-      primaryCtaText: 'Order Wholesale Supply',
-      primaryCtaLink: '/brands/am-distributors/products',
-      secondaryCtaText: 'Contact Chiplun Depot',
+      imageUrl: isAm ? '/images/products/am-water-jar-20l.jpg' : '/images/fermilab-blue-racks-real.jpg',
+      videoUrl: '',
+      mediaType: 'image',
+      badge: isAm ? 'A.M. Distributors Chiplun Supply' : 'Enterprise Technology & Infrastructure',
+      primaryCtaText: isAm ? 'Order Wholesale Supply' : 'Explore Our Solutions',
+      primaryCtaLink: isAm ? '/brands/am-distributors/products' : '/products',
+      secondaryCtaText: isAm ? 'Contact Chiplun Depot' : 'Request Quotation',
       secondaryCtaLink: '/contact',
       order: slides.length + 1
     });
@@ -375,11 +376,41 @@ export const AdminContentPage: React.FC = () => {
     try {
       const compressedUrl = await uploadImageFile(file, 'banners');
       if (compressedUrl && editingSlide) {
-        setEditingSlide({ ...editingSlide, imageUrl: compressedUrl });
+        setEditingSlide({ ...editingSlide, imageUrl: compressedUrl, mediaType: 'image' });
         success('Image Selected', 'Slide image set and compressed cleanly.');
       }
     } catch (err: any) {
       error('Upload Failed', err?.message || 'Could not process image.');
+    }
+  };
+
+  const [isUploadingSlideVideo, setIsUploadingSlideVideo] = useState(false);
+  const handleSlideVideoUpload = async (file: File) => {
+    if (!file) return;
+    setIsUploadingSlideVideo(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const videoDataUrl = reader.result as string;
+        if (editingSlide) {
+          setEditingSlide({
+            ...editingSlide,
+            videoUrl: videoDataUrl,
+            imageUrl: editingSlide.imageUrl || '/images/fermilab-blue-racks-real.jpg',
+            mediaType: 'video'
+          });
+        }
+        success('Video Attached', 'Hero slide background video attached.');
+        setIsUploadingSlideVideo(false);
+      };
+      reader.onerror = () => {
+        error('Upload Failed', 'Could not read video file.');
+        setIsUploadingSlideVideo(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      error('Upload Failed', err?.message || 'Could not process video.');
+      setIsUploadingSlideVideo(false);
     }
   };
 
@@ -438,7 +469,7 @@ export const AdminContentPage: React.FC = () => {
         showFaqs,
         showContact,
         customSections,
-        ...(activeScope === 'am-distributors' || activeScope === 'corporate' ? { slides } : {})
+        slides
       };
 
       await updateBanner(targetId, payload);
@@ -1450,16 +1481,23 @@ export const AdminContentPage: React.FC = () => {
 
             <form onSubmit={handleSaveModalSlide} className="space-y-4">
               <Input
-                label="Slide Title"
-                placeholder="e.g. Commercial Bulk Ice Cream Tubs"
+                label="Announcement Badge / Category"
+                placeholder="e.g. PARENT COMPANY, ENTERPRISE TECH"
+                value={editingSlide.badge || ''}
+                onChange={e => setEditingSlide({ ...editingSlide, badge: e.target.value })}
+              />
+
+              <Input
+                label="Slide Title *"
+                placeholder="e.g. Connecting Businesses. Protecting What Matters."
                 value={editingSlide.title}
                 onChange={e => setEditingSlide({ ...editingSlide, title: e.target.value })}
                 required
               />
 
               <Input
-                label="Slide Subtitle"
-                placeholder="e.g. Amul, Vadilal & Regional Gourmet Assortments for Parlors & Banquets"
+                label="Slide Subtitle *"
+                placeholder="e.g. Nexalus Innovations LLP delivers connectivity, security and networking solutions."
                 value={editingSlide.subtitle}
                 onChange={e => setEditingSlide({ ...editingSlide, subtitle: e.target.value })}
                 required
@@ -1467,45 +1505,118 @@ export const AdminContentPage: React.FC = () => {
 
               <TextArea
                 label="Slide Copy / Description"
-                placeholder="e.g. Certified -18°C refrigerated fleet guaranteeing crystal-free, un-melted texture."
-                rows={3}
+                placeholder="Additional details shown on the hero card."
+                rows={2}
                 value={editingSlide.description}
                 onChange={e => setEditingSlide({ ...editingSlide, description: e.target.value })}
-                required
               />
 
-              {/* Slide Background Image */}
-              <div className="space-y-2">
-                <Input
-                  label="Slide Image URL / Path"
-                  placeholder="e.g. /images/products/am-icecream-tub.jpg"
-                  value={editingSlide.imageUrl}
-                  onChange={e => setEditingSlide({ ...editingSlide, imageUrl: e.target.value })}
-                  required
-                />
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-bold text-slate-700 cursor-pointer transition-all">
-                    <Upload className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Upload Image from Device</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={e => {
-                        if (e.target.files?.[0]) handleSlideImageUpload(e.target.files[0]);
-                      }}
-                    />
+              {/* Media Type Switcher: Image vs Video */}
+              <div className="space-y-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    Hero Slide Background Media
                   </label>
-                  {editingSlide.imageUrl && (
-                    <div className="w-14 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0">
-                      <img
-                        src={editingSlide.imageUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
+                  <div className="flex bg-white p-0.5 rounded-lg border border-slate-300">
+                    <button
+                      type="button"
+                      onClick={() => setEditingSlide({ ...editingSlide, mediaType: 'image' })}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                        editingSlide.mediaType !== 'video'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      📷 Image
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSlide({ ...editingSlide, mediaType: 'video' })}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                        editingSlide.mediaType === 'video'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      🎥 HD Video
+                    </button>
+                  </div>
                 </div>
+
+                {editingSlide.mediaType === 'video' ? (
+                  <div className="space-y-2">
+                    <Input
+                      label="Video URL / Path"
+                      placeholder="e.g. /videos/hero-background.mp4 or CDN link"
+                      value={editingSlide.videoUrl || ''}
+                      onChange={e => setEditingSlide({ ...editingSlide, videoUrl: e.target.value, mediaType: 'video' })}
+                    />
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-xs font-bold text-slate-700 cursor-pointer transition-all shadow-2xs">
+                        <Upload className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Upload Video (.mp4, .webm)</span>
+                        <input
+                          type="file"
+                          accept="video/mp4,video/webm"
+                          className="hidden"
+                          onChange={e => {
+                            if (e.target.files?.[0]) handleSlideVideoUpload(e.target.files[0]);
+                          }}
+                        />
+                      </label>
+                      {isUploadingSlideVideo && (
+                        <span className="text-xs text-blue-600 font-semibold animate-pulse">
+                          Attaching video...
+                        </span>
+                      )}
+                    </div>
+                    {editingSlide.videoUrl && (
+                      <div className="mt-2 rounded-xl overflow-hidden border border-slate-300 bg-slate-950 max-h-36">
+                        <video
+                          src={editingSlide.videoUrl}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-36 object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Input
+                      label="Slide Image URL / Path"
+                      placeholder="e.g. /images/products/am-icecream-tub.jpg or /images/fermilab-blue-racks-real.jpg"
+                      value={editingSlide.imageUrl}
+                      onChange={e => setEditingSlide({ ...editingSlide, imageUrl: e.target.value, mediaType: 'image' })}
+                      required
+                    />
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-xs font-bold text-slate-700 cursor-pointer transition-all shadow-2xs">
+                        <Upload className="w-3.5 h-3.5 text-teal-600" />
+                        <span>Upload Image from Device</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            if (e.target.files?.[0]) handleSlideImageUpload(e.target.files[0]);
+                          }}
+                        />
+                      </label>
+                      {editingSlide.imageUrl && (
+                        <div className="w-14 h-10 rounded-lg overflow-hidden border border-slate-300 shrink-0">
+                          <img
+                            src={editingSlide.imageUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

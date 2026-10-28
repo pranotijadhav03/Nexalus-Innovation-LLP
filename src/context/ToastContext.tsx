@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { CheckCircle2, AlertCircle, Info, AlertTriangle, X, ExternalLink } from 'lucide-react';
 import { playNotificationChime } from '../utils/notificationHelpers';
 
@@ -36,6 +36,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const lastToastRef = useRef<{ key: string; time: number }>({ key: '', time: 0 });
 
   const removeToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
@@ -76,7 +77,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ showToast, success, error, info, warning }}>
       {children}
       {/* Heads-up Top Notification Container (Highest z-index: z-[10000]) */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] flex flex-col items-center gap-2.5 max-w-lg w-[95%] sm:w-full px-2 pointer-events-none">
+      <div className="fixed top-4 right-4 sm:right-6 z-[10000] flex flex-col items-end gap-2.5 max-w-sm sm:max-w-md w-[95%] sm:w-full px-2 pointer-events-none">
         {toasts.map(toast => (
           <div
             key={toast.id}

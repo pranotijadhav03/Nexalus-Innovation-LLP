@@ -7,7 +7,7 @@ import {
   X
 } from 'lucide-react';
 import { Project } from '../../types';
-import { getProjects } from '../../firebase/services';
+import { getProjects, getProjectCategories } from '../../firebase/services';
 import { BlurZoomReveal } from './BlurZoomReveal';
 import { Button } from './Button';
 
@@ -30,6 +30,7 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [categories, setCategories] = useState<string[]>(() => getProjectCategories());
 
   const isLight = theme === 'light';
 
@@ -43,11 +44,12 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
           let filtered = data;
           if (division === 'am-distributors') {
             filtered = data.filter(p => p.brandId === 'am-distributors');
+          } else if (division === 'nexalus-innovations') {
+            const techBrands = ['nexalus-innovations', 'cp-plus', 'one-broadband', 'itti-networking'];
+            filtered = data.filter(p => techBrands.includes(p.brandId));
           } else {
-            // Corporate (Nexalus parent site) and nexalus-innovations:
-            // Strictly display only Nexalus Innovations tech projects (CP PLUS, One Broadband, Nexalus)
-            // Completely filter out all A.M. Distributors projects!
-            filtered = data.filter(p => p.brandId !== 'am-distributors');
+            // Corporate (Nexalus parent site): strictly display only parent company records
+            filtered = data.filter(p => p.brandId === 'nexalus');
           }
           setProjects(filtered);
         }
@@ -64,52 +66,59 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
     };
 
     window.addEventListener('nexalus_data_update', handleUpdate);
+    const handleCatUpdate = (e: any) => {
+      if (Array.isArray(e.detail)) setCategories(e.detail);
+      else setCategories(getProjectCategories());
+    };
+    window.addEventListener('nexalus_project_categories_updated', handleCatUpdate);
     window.addEventListener('storage', handleUpdate);
 
     return () => {
       isMounted = false;
       window.removeEventListener('nexalus_data_update', handleUpdate);
+      window.removeEventListener('nexalus_project_categories_updated', handleCatUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
   }, [division]);
 
   // Dynamic filter tabs
   const getFilterTabs = () => {
-    if (division === 'am-distributors') {
-      return [
-        { id: 'all', label: 'All Fleet & Depot Hubs' },
-        { id: 'water', label: 'Mineral Water Jars' },
-        { id: 'icecream', label: 'Refrigerated Ice Cream' },
-        { id: 'dairy', label: 'Morning Milk & Dairy' }
-      ];
-    }
-    if (division === 'nexalus-innovations') {
-      return [
-        { id: 'all', label: 'All Tech Deployments' },
-        { id: 'cctv', label: 'CCTV Surveillance' },
-        { id: 'fiber', label: 'Optical Fiber FTTH' },
-        { id: 'network', label: 'Enterprise Switching' }
-      ];
-    }
+    const isAm = division === 'am-distributors';
+    const allLabel = isAm ? 'All Fleet & Depot Hubs' : 'All Completed Projects';
+    const relevantCategories = isAm
+      ? categories.filter(c => ['Mineral Water Jars', 'Refrigerated Ice Cream', 'Morning Milk & Dairy', 'Cold-Chain Logistics', 'Fleet & Depot Hubs'].some(k => c.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(c.toLowerCase())))
+      : categories.filter(c => !['Mineral Water Jars', 'Refrigerated Ice Cream', 'Morning Milk & Dairy', 'Cold-Chain Logistics'].includes(c));
+
     return [
-      { id: 'all', label: 'All Completed Projects' },
-      { id: 'cctv', label: '4K CCTV Surveillance' },
-      { id: 'fiber', label: 'Optical Fiber FTTH' },
-      { id: 'network', label: 'Enterprise Switching & IT' }
+      { id: 'all', label: allLabel },
+      ...relevantCategories.map(cat => ({ id: cat, label: cat }))
     ];
   };
 
   const filteredProjects = projects.filter(p => {
     if (activeFilter === 'all') return true;
+    if (p.category && p.category.toLowerCase() === activeFilter.toLowerCase()) return true;
     const text = `${p.title} ${p.description} ${p.solutionProvided || ''} ${(p.scope || []).join(' ')}`.toLowerCase();
-    if (activeFilter === 'cctv') return text.includes('cctv') || text.includes('camera') || p.brandId === 'cp-plus';
-    if (activeFilter === 'fiber') return text.includes('fiber') || text.includes('broadband') || p.brandId === 'one-broadband';
-    if (activeFilter === 'network') return text.includes('switch') || text.includes('network') || text.includes('cabling') || text.includes('server') || text.includes('gpon');
-    if (activeFilter === 'logistics') return text.includes('cold') || text.includes('water') || text.includes('dairy') || text.includes('ice cream') || p.brandId === 'am-distributors';
-    if (activeFilter === 'water') return text.includes('water') || text.includes('bottle') || text.includes('jar');
-    if (activeFilter === 'icecream') return text.includes('ice cream') || text.includes('refrigerat');
-    if (activeFilter === 'dairy') return text.includes('dairy') || text.includes('milk') || text.includes('ghee') || text.includes('butter') || text.includes('cheese');
-    return true;
+    const filterLower = activeFilter.toLowerCase();
+    if (filterLower.includes('cctv') || filterLower.includes('surveillance')) {
+      return text.includes('cctv') || text.includes('camera') || p.brandId === 'cp-plus';
+    }
+    if (filterLower.includes('fiber') || filterLower.includes('ftth')) {
+      return text.includes('fiber') || text.includes('broadband') || p.brandId === 'one-broadband';
+    }
+    if (filterLower.includes('switching') || filterLower.includes('network')) {
+      return text.includes('switch') || text.includes('network') || text.includes('cabling') || text.includes('server') || text.includes('gpon');
+    }
+    if (filterLower.includes('water')) {
+      return text.includes('water') || text.includes('jar') || text.includes('bottle');
+    }
+    if (filterLower.includes('ice cream')) {
+      return text.includes('ice cream') || text.includes('refrigerat');
+    }
+    if (filterLower.includes('dairy')) {
+      return text.includes('dairy') || text.includes('milk') || text.includes('butter');
+    }
+    return text.includes(filterLower);
   });
 
   const displayedProjects = filteredProjects.slice(0, maxProjects);

@@ -1,3 +1,4 @@
+export type { ReceiptSettings, CompanyScopeId } from '../types';
 import {
   collection,
   doc,
@@ -20,6 +21,11 @@ import {
   CustomerDeliveryAddress,
   CustomerRegistrationData,
   PlanOrder,
+  PaymentStatus,
+  OrderInstallationStatus,
+  PlanOrderPaymentDetails,
+  PlanSnapshot,
+  AdminNotification,
   CartPlanItem,
   BrandId,
   ProductCategory,
@@ -41,7 +47,9 @@ import {
   SiteBanner,
   SeoSettings,
   TeamMember,
-  SolutionRequirement
+  SolutionRequirement,
+  CompanyScopeId,
+  ReceiptSettings
 } from '../types';
 import {
   initialBrands,
@@ -76,13 +84,15 @@ const STORAGE_KEYS = {
   PROJECTS: DATA_VERSION + 'nexalus_store_projects',
   ENQUIRIES: DATA_VERSION + 'nexalus_store_enquiries',
   PLAN_ORDERS: DATA_VERSION + 'nexalus_store_plan_orders',
+  ADMIN_NOTIFICATIONS: DATA_VERSION + 'nexalus_store_admin_notifications',
   SERVICE_AREAS: DATA_VERSION + 'nexalus_store_service_areas',
   FAQS: DATA_VERSION + 'nexalus_store_faqs',
   BANNERS: DATA_VERSION + 'nexalus_store_banners',
   USERS: DATA_VERSION + 'nexalus_store_users',
   AUDIT_LOGS: DATA_VERSION + 'nexalus_store_audit_logs',
   SEO: DATA_VERSION + 'nexalus_store_seo',
-  TEAM: DATA_VERSION + 'nexalus_store_team'
+  TEAM: DATA_VERSION + 'nexalus_store_team',
+  RECEIPT_SETTINGS: DATA_VERSION + 'nexalus_store_receipt_settings'
 };
 
 
@@ -202,18 +212,27 @@ function setLocalItem<T>(key: string, value: T, notify = true): void {
 // ----------------------------------------------------
 export function getCachedProducts(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): Product[] {
   let products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+  let changed = false;
+  products = products.map(p => {
+    if (p.id === 'prod-nex-2' && p.categoryId !== 'cat-enterprise-networking') {
+      changed = true;
+      return { ...p, categoryId: 'cat-enterprise-networking', categoryName: 'Enterprise Networking' };
+    }
+    if (p.id === 'prod-nex-1' && p.categoryId !== 'cat-cctv-surveillance') {
+      changed = true;
+      return { ...p, categoryId: 'cat-cctv-surveillance', categoryName: 'CCTV Surveillance' };
+    }
+    return p;
+  });
+  if (changed || !products.some(p => p.categoryId === 'cat-cctv-surveillance')) {
+    setLocalItem(STORAGE_KEYS.PRODUCTS, products, false);
+  }
   if (brandId && brandId !== 'all') {
-    if (brandId === 'nexalus-innovations') {
-      products = products.filter(p =>
-        p.brandId === 'nexalus-innovations' ||
-        p.brandId === 'cp-plus' ||
-        p.brandId === 'one-broadband' ||
-        p.brandId === 'itti-networking'
-      );
-    } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
-      products = products.filter(p => p.brandId === 'nexalus');
+    if (brandId === 'am-distributors') {
+      products = products.filter(p => p.brandId === 'am-distributors');
     } else {
-      products = products.filter(p => p.brandId === brandId);
+      // Both corporate parent and Nexalus Innovations manage the commercial technology & hardware catalog (matching Landing Page)
+      products = products.filter(p => p.brandId !== 'am-distributors');
     }
   }
   return products;
@@ -221,18 +240,20 @@ export function getCachedProducts(brandId?: BrandId | 'nexalus' | 'corporate' | 
 
 export function getCachedCategories(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): ProductCategory[] {
   let categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
+  if (!categories.some(c => c.id === 'cat-cctv-surveillance') || categories.length < initialCategories.length) {
+    const existingIds = new Set(categories.map(c => c.id));
+    const missing = initialCategories.filter(c => !existingIds.has(c.id));
+    if (missing.length > 0) {
+      categories = [...categories, ...missing];
+      setLocalItem(STORAGE_KEYS.CATEGORIES, categories, false);
+    }
+  }
   if (brandId && brandId !== 'all') {
-    if (brandId === 'nexalus-innovations') {
-      categories = categories.filter(c =>
-        c.brandId === 'nexalus-innovations' ||
-        c.brandId === 'cp-plus' ||
-        c.brandId === 'one-broadband' ||
-        c.brandId === 'itti-networking'
-      );
-    } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
-      categories = categories.filter(c => c.brandId === 'nexalus');
+    if (brandId === 'am-distributors') {
+      categories = categories.filter(c => c.brandId === 'am-distributors');
     } else {
-      categories = categories.filter(c => c.brandId === brandId);
+      // Both corporate parent and Nexalus Innovations manage all commercial tech categories (matching Landing Page)
+      categories = categories.filter(c => c.brandId !== 'am-distributors');
     }
   }
   return categories;
@@ -240,6 +261,10 @@ export function getCachedCategories(brandId?: BrandId | 'nexalus' | 'corporate' 
 
 export function getCachedServices(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): Service[] {
   let services = getLocalItem<Service[]>(STORAGE_KEYS.SERVICES, initialServices);
+  if (!services.some(s => s.id === 'srv-nex-2') || services.length < initialServices.length) {
+    services = initialServices;
+    setLocalItem(STORAGE_KEYS.SERVICES, initialServices, false);
+  }
   if (brandId && brandId !== 'all') {
     if (brandId === 'nexalus-innovations') {
       services = services.filter(s =>
@@ -331,9 +356,21 @@ export function getCachedBanners(brandId?: BrandId | 'nexalus'): SiteBanner[] {
   return banners;
 }
 
-export function getCachedFaqs(brandId?: BrandId | 'nexalus'): FAQ[] {
+export function getCachedFaqs(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): FAQ[] {
   const faqs = getLocalItem<FAQ[]>(STORAGE_KEYS.FAQS, initialFaqs);
-  if (brandId) return faqs.filter(f => f.brandId === brandId);
+  if (brandId && brandId !== 'all') {
+    if (brandId === 'nexalus-innovations') {
+      return faqs.filter(f =>
+        f.brandId === 'nexalus-innovations' ||
+        f.brandId === 'cp-plus' ||
+        f.brandId === 'one-broadband' ||
+        f.brandId === 'itti-networking'
+      );
+    } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
+      return faqs.filter(f => f.brandId === 'nexalus');
+    }
+    return faqs.filter(f => f.brandId === brandId);
+  }
   return faqs;
 }
 
@@ -439,30 +476,94 @@ export async function getBrandById(id: BrandId): Promise<Brand | undefined> {
 // ----------------------------------------------------
 // PRODUCT CATEGORIES
 // ----------------------------------------------------
-export async function getCategories(brandId?: BrandId | 'nexalus' | 'corporate'): Promise<ProductCategory[]> {
+export async function getCategories(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): Promise<ProductCategory[]> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = collection(db, 'categories');
+      const snapshot = await withTimeout(getDocs(q), 1200);
+      if (!snapshot.empty) {
+        const fsCats = snapshot.docs.map(d => d.data() as ProductCategory);
+        const existingIds = new Set(fsCats.map(c => c.id));
+        const localCats = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
+        const merged = [...fsCats, ...localCats.filter(c => !existingIds.has(c.id))];
+        setLocalItem(STORAGE_KEYS.CATEGORIES, merged, false);
+
+        // Auto-seed baseline categories to Firestore if missing
+        const missingFromFs = initialCategories.filter(c => !existingIds.has(c.id));
+        if (missingFromFs.length > 0) {
+          for (const missingCat of missingFromFs) {
+            setDoc(doc(db, 'categories', missingCat.id), missingCat).catch(() => {});
+          }
+        }
+      } else {
+        // If Firestore is empty, seed all initialCategories
+        for (const cat of initialCategories) {
+          setDoc(doc(db, 'categories', cat.id), cat).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('Firestore getCategories error:', e);
+    }
+  }
+
   let categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
-  if (brandId) {
-    if (brandId === 'nexalus-innovations') {
-      categories = categories.filter(c =>
-        c.brandId === 'nexalus-innovations' ||
-        c.brandId === 'cp-plus' ||
-        c.brandId === 'one-broadband' ||
-        c.brandId === 'itti-networking'
-      );
-    } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
-      categories = categories.filter(c => c.brandId === 'nexalus');
+  if (categories.length < initialCategories.length) {
+    const existingIds = new Set(categories.map(c => c.id));
+    const missing = initialCategories.filter(c => !existingIds.has(c.id));
+    if (missing.length > 0) {
+      categories = [...categories, ...missing];
+      setLocalItem(STORAGE_KEYS.CATEGORIES, categories, false);
+    }
+  }
+  if (brandId && brandId !== 'all') {
+    if (brandId === 'am-distributors') {
+      categories = categories.filter(c => c.brandId === 'am-distributors');
     } else {
-      categories = categories.filter(c => c.brandId === brandId);
+      // Both corporate parent and Nexalus Innovations manage all commercial tech categories (matching Landing Page)
+      categories = categories.filter(c => c.brandId !== 'am-distributors');
     }
   }
   return categories;
 }
 
-export async function createCategory(cat: Omit<ProductCategory, 'id'>): Promise<ProductCategory> {
+export async function createCategory(cat: Omit<ProductCategory, 'id'>, companyScope?: CompanyScopeId): Promise<ProductCategory> {
+  const compId: CompanyScopeId = companyScope || cat.companyId || (
+    cat.brandId === 'am-distributors'
+      ? 'am-distributors'
+      : (cat.brandId === 'nexalus' ? 'nexalus-llp' : 'nexalus-innovations')
+  );
+
+  const prefix = compId === 'am-distributors'
+    ? 'cat-am-'
+    : compId === 'nexalus-llp'
+    ? 'cat-llp-'
+    : 'cat-nex-';
+
+  const slugified = (cat.slug || cat.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const cleanSlug = slugified.replace(/^cat-(nex|am|llp)-/, '');
+  const id = `${prefix}${cleanSlug || Date.now()}`;
+
+  const companyName = compId === 'am-distributors'
+    ? 'A.M. Distributors Chiplun'
+    : compId === 'nexalus-innovations'
+    ? 'Nexalus Innovations'
+    : 'Nexalus Innovations LLP';
+
   const newCat: ProductCategory = {
     ...cat,
-    id: 'cat-' + Date.now()
+    id,
+    companyId: compId,
+    companyName
   };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await setDoc(doc(db, 'categories', newCat.id), newCat);
+    } catch (e) {
+      console.warn('Firestore createCategory error:', e);
+    }
+  }
+
   const categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
   const updated = [...categories, newCat];
   setLocalItem(STORAGE_KEYS.CATEGORIES, updated);
@@ -470,10 +571,61 @@ export async function createCategory(cat: Omit<ProductCategory, 'id'>): Promise<
   return newCat;
 }
 
+export async function updateCategory(id: string, updates: Partial<ProductCategory>): Promise<ProductCategory | null> {
+  const categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
+  const index = categories.findIndex(c => c.id === id);
+  if (index === -1) return null;
+
+  const prevName = categories[index].name;
+  const updatedCat: ProductCategory = {
+    ...categories[index],
+    ...updates,
+    id
+  };
+  if (isFirebaseConfigured && db) {
+    try {
+      await updateDoc(doc(db, 'categories', id), updates);
+    } catch (e) {
+      console.warn('Firestore updateCategory error:', e);
+    }
+  }
+
+  categories[index] = updatedCat;
+  setLocalItem(STORAGE_KEYS.CATEGORIES, categories);
+
+  // If category name was updated, synchronize all products carrying this categoryId
+  if (updates.name && updates.name !== prevName) {
+    const products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+    let changed = false;
+    const updatedProducts = products.map(p => {
+      if (p.categoryId === id) {
+        changed = true;
+        return { ...p, categoryName: updates.name! };
+      }
+      return p;
+    });
+    if (changed) {
+      setLocalItem(STORAGE_KEYS.PRODUCTS, updatedProducts);
+    }
+  }
+
+  await addAuditLog('UPDATE_CATEGORY', `Updated category: ${updatedCat.name}`, updatedCat.brandId);
+  return updatedCat;
+}
+
 export async function deleteCategory(id: string): Promise<void> {
   const categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
   const target = categories.find(c => c.id === id);
   const updated = categories.filter(c => c.id !== id);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await deleteDoc(doc(db, 'categories', id));
+    } catch (e) {
+      console.warn('Firestore deleteCategory error:', e);
+    }
+  }
+
   setLocalItem(STORAGE_KEYS.CATEGORIES, updated);
   if (target) {
     await addAuditLog('DELETE_CATEGORY', `Deleted category: ${target.name}`, target.brandId);
@@ -531,30 +683,45 @@ export async function getProducts(brandId?: BrandId | 'nexalus' | 'corporate', p
     return p;
   });
 
-  if (products.length < initialProducts.length) {
+  // Ensure product categories are correctly mapped
+  products = products.map(p => {
+    if (p.id === 'prod-nex-2' && p.categoryId !== 'cat-enterprise-networking') {
+      hasStoreUpdates = true;
+      return { ...p, categoryId: 'cat-enterprise-networking', categoryName: 'Enterprise Networking' };
+    }
+    if (p.id === 'prod-nex-1' && p.categoryId !== 'cat-cctv-surveillance') {
+      hasStoreUpdates = true;
+      return { ...p, categoryId: 'cat-cctv-surveillance', categoryName: 'CCTV Surveillance' };
+    }
+    return p;
+  });
+
+  if (products.length < initialProducts.length || !products.some(p => p.categoryId === 'cat-cctv-surveillance')) {
     const existingIds = new Set(products.map(p => p.id));
     const missing = initialProducts.filter(p => !existingIds.has(p.id));
     if (missing.length > 0) {
       products = [...products, ...missing];
       hasStoreUpdates = true;
     }
+    products = products.map(p => {
+      const initP = initialMap.get(p.id);
+      if (initP && initP.categoryId && p.categoryId !== initP.categoryId) {
+        hasStoreUpdates = true;
+        return { ...p, categoryId: initP.categoryId, categoryName: initP.categoryName, brandId: initP.brandId };
+      }
+      return p;
+    });
   }
 
   if (hasStoreUpdates) {
     setLocalItem(STORAGE_KEYS.PRODUCTS, products, false);
   }
   if (brandId) {
-    if (brandId === 'nexalus-innovations') {
-      products = products.filter(p =>
-        p.brandId === 'nexalus-innovations' ||
-        p.brandId === 'cp-plus' ||
-        p.brandId === 'one-broadband' ||
-        p.brandId === 'itti-networking'
-      );
-    } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
-      products = products.filter(p => p.brandId === 'nexalus');
+    if (brandId === 'am-distributors') {
+      products = products.filter(p => p.brandId === 'am-distributors');
     } else {
-      products = products.filter(p => p.brandId === brandId);
+      // Both corporate parent and Nexalus Innovations manage the commercial technology & hardware catalog (matching Landing Page)
+      products = products.filter(p => p.brandId !== 'am-distributors');
     }
   }
   if (publishedOnly) {
@@ -568,12 +735,74 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
   return products.find(p => p.slug === slug);
 }
 
-export async function createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
-  const id = 'prod-' + Date.now();
+export async function createProduct(
+  productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>,
+  companyScope?: CompanyScopeId
+): Promise<Product> {
+  const compId: CompanyScopeId = companyScope || productData.companyId || (
+    productData.brandId === 'am-distributors'
+      ? 'am-distributors'
+      : (productData.brandId === 'nexalus' ? 'nexalus-llp' : 'nexalus-innovations')
+  );
+
+  let prefix = 'prod-nex-';
+  if (compId === 'am-distributors') {
+    prefix = 'prod-am-';
+  } else if (compId === 'nexalus-llp') {
+    prefix = 'prod-llp-';
+  } else if (productData.brandId === 'cp-plus') {
+    prefix = 'prod-cp-';
+  } else if (productData.brandId === 'one-broadband') {
+    prefix = 'prod-ob-';
+  } else if (productData.brandId === 'itti-networking') {
+    prefix = 'prod-itti-';
+  } else {
+    prefix = 'prod-nex-';
+  }
+
+  // Determine next sequential product ID across local cache & initial products
+  const products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+  let maxSeq = 0;
+  for (const p of products) {
+    if (p.id && p.id.startsWith(prefix)) {
+      const num = parseInt(p.id.slice(prefix.length), 10);
+      if (!isNaN(num) && num > maxSeq) {
+        maxSeq = num;
+      }
+    }
+  }
+
+  // Also verify against Firestore to prevent duplicate sequence numbers
+  if (isFirebaseConfigured && db) {
+    try {
+      const snap = await withTimeout(getDocs(collection(db, 'products')), 1200);
+      if (!snap.empty) {
+        snap.forEach(docSnap => {
+          const docId = docSnap.id;
+          if (docId.startsWith(prefix)) {
+            const num = parseInt(docId.slice(prefix.length), 10);
+            if (!isNaN(num) && num > maxSeq) {
+              maxSeq = num;
+            }
+          }
+        });
+      }
+    } catch {}
+  }
+
+  const id = `${prefix}${maxSeq + 1}`;
   const now = new Date().toISOString();
+  const companyName = compId === 'am-distributors'
+    ? 'A.M. Distributors Chiplun'
+    : compId === 'nexalus-innovations'
+    ? 'Nexalus Innovations'
+    : 'Nexalus Innovations LLP';
+
   const newProduct: Product = {
     ...productData,
     id,
+    companyId: compId,
+    companyName,
     createdAt: now,
     updatedAt: now
   };
@@ -586,7 +815,6 @@ export async function createProduct(productData: Omit<Product, 'id' | 'createdAt
     }
   }
 
-  const products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
   setLocalItem(STORAGE_KEYS.PRODUCTS, [newProduct, ...products]);
   await addAuditLog('CREATE_PRODUCT', `Added product: ${newProduct.name} (${newProduct.modelNumber})`, newProduct.brandId);
   return newProduct;
@@ -1160,6 +1388,10 @@ export async function deleteBroadbandPlan(id: string): Promise<boolean> {
 // ----------------------------------------------------
 export async function getServices(brandId?: BrandId | 'nexalus' | 'corporate', publishedOnly = false): Promise<Service[]> {
   let services = getLocalItem<Service[]>(STORAGE_KEYS.SERVICES, initialServices);
+  if (!services.some(s => s.id === 'srv-nex-2') || services.length < initialServices.length) {
+    services = initialServices;
+    setLocalItem(STORAGE_KEYS.SERVICES, initialServices, false);
+  }
   if (brandId) {
     if (brandId === 'nexalus-innovations') {
       services = services.filter(s =>
@@ -1306,17 +1538,76 @@ export async function deleteSolutionRequirement(id: string): Promise<boolean> {
 // ----------------------------------------------------
 // PROJECTS
 // ----------------------------------------------------
+// PROJECT GALLERY & DYNAMIC CATEGORIES
+// ----------------------------------------------------
+export const DEFAULT_PROJECT_CATEGORIES = [
+  '4K CCTV Surveillance',
+  'Optical Fiber FTTH',
+  'Enterprise Switching & IT',
+  'Infrastructure & Server Racks',
+  'Mineral Water Jars',
+  'Refrigerated Ice Cream',
+  'Morning Milk & Dairy',
+  'Cold-Chain Logistics'
+];
+
+export function getProjectCategories(): string[] {
+  const custom = getLocalItem<string[]>('nexalus_project_categories_list', DEFAULT_PROJECT_CATEGORIES);
+  const combined = Array.from(new Set([...DEFAULT_PROJECT_CATEGORIES, ...custom]));
+  return combined;
+}
+
+export async function addProjectCategory(categoryName: string): Promise<string[]> {
+  const clean = categoryName.trim();
+  if (!clean) return getProjectCategories();
+  const current = getProjectCategories();
+  if (!current.includes(clean)) {
+    const updated = [...current, clean];
+    setLocalItem('nexalus_project_categories_list', updated);
+    if (isFirebaseConfigured && db) {
+      try {
+        await withTimeout(setDoc(doc(db, 'project_categories', 'all'), { categories: updated }), 4000);
+      } catch {}
+    }
+    window.dispatchEvent(new CustomEvent('nexalus_project_categories_updated', { detail: updated }));
+    return updated;
+  }
+  return current;
+}
+
+export async function deleteProjectCategory(categoryName: string): Promise<string[]> {
+  const current = getProjectCategories();
+  const updated = current.filter(c => c !== categoryName);
+  setLocalItem('nexalus_project_categories_list', updated);
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'project_categories', 'all'), { categories: updated }), 4000);
+    } catch {}
+  }
+  window.dispatchEvent(new CustomEvent('nexalus_project_categories_updated', { detail: updated }));
+  return updated;
+}
+
 export async function getProjects(brandId?: BrandId | 'nexalus', publishedOnly = false): Promise<Project[]> {
-  let projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
-  const needsSync = projects.some(p => p.images?.[0]?.includes('unsplash.com')) || 
-    projects.length < initialProjects.length ||
-    !projects.some(p => p.id === 'proj-am-water-1');
-  if (needsSync) {
+  let projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, []);
+  if (!projects || projects.length === 0) {
     projects = initialProjects;
     setLocalItem(STORAGE_KEYS.PROJECTS, initialProjects, false);
   }
+  // Clean up any legacy random timestamp IDs in local cache
+  if (projects.some(p => p.id === 'proj-1793190569157')) {
+    projects = projects.map(p => p.id === 'proj-1793190569157' ? { ...p, id: 'proj-4' } : p);
+    setLocalItem(STORAGE_KEYS.PROJECTS, projects);
+  }
   if (brandId) {
-    projects = projects.filter(p => p.brandId === brandId);
+    if (brandId === 'nexalus') {
+      projects = projects.filter(p => p.brandId === 'nexalus');
+    } else if (brandId === 'nexalus-innovations') {
+      const techBrands = ['nexalus-innovations', 'cp-plus', 'one-broadband', 'itti-networking'];
+      projects = projects.filter(p => techBrands.includes(p.brandId));
+    } else {
+      projects = projects.filter(p => p.brandId === brandId);
+    }
   }
   if (publishedOnly) {
     projects = projects.filter(p => p.published);
@@ -1325,7 +1616,52 @@ export async function getProjects(brandId?: BrandId | 'nexalus', publishedOnly =
 }
 
 export async function createProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> {
-  const id = 'proj-' + Date.now();
+  const brand = projectData.brandId;
+  let prefix = 'proj-';
+  if (brand === 'am-distributors') {
+    prefix = 'proj-am-';
+  } else if (brand === 'nexalus-innovations') {
+    prefix = 'proj-nex-';
+  } else if (brand === 'cp-plus') {
+    prefix = 'proj-cp-';
+  } else if (brand === 'one-broadband') {
+    prefix = 'proj-ob-';
+  } else if (brand === 'itti-networking') {
+    prefix = 'proj-itti-';
+  } else {
+    prefix = 'proj-';
+  }
+
+  // Determine next sequential project ID across local cache & Firestore
+  const projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
+  let maxSeq = 0;
+  for (const p of projects) {
+    if (p.id && p.id.startsWith(prefix)) {
+      const rest = p.id.slice(prefix.length);
+      const num = parseInt(rest, 10);
+      if (!isNaN(num) && num > maxSeq && num < 1000000) {
+        maxSeq = num;
+      }
+    }
+  }
+
+  // Check Firestore directly to prevent sequence collisions
+  if (isFirebaseConfigured && db) {
+    try {
+      const snap = await withTimeout(getDocs(collection(db, 'projects')), 3000);
+      snap.forEach(d => {
+        if (d.id.startsWith(prefix)) {
+          const rest = d.id.slice(prefix.length);
+          const num = parseInt(rest, 10);
+          if (!isNaN(num) && num > maxSeq && num < 1000000) {
+            maxSeq = num;
+          }
+        }
+      });
+    } catch {}
+  }
+
+  const id = `${prefix}${maxSeq + 1}`;
   const now = new Date().toISOString();
   const newProject: Project = {
     ...projectData,
@@ -1334,9 +1670,19 @@ export async function createProject(projectData: Omit<Project, 'id' | 'createdAt
     updatedAt: now
   };
 
-  const projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
-  setLocalItem(STORAGE_KEYS.PROJECTS, [newProject, ...projects]);
-  await addAuditLog('CREATE_PROJECT', `Created project: ${newProject.title}`, newProject.brandId === 'nexalus' ? 'general' : newProject.brandId);
+  const updated = [newProject, ...projects.filter(p => p.id !== id)];
+  setLocalItem(STORAGE_KEYS.PROJECTS, updated);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'projects', id), newProject), 4000);
+    } catch (e) {
+      console.warn('Firestore createProject error:', e);
+    }
+  }
+
+  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.PROJECTS } }));
+  await addAuditLog('CREATE_PROJECT', 'Created project: ' + newProject.title, newProject.brandId === 'nexalus' ? 'general' : newProject.brandId);
   return newProject;
 }
 
@@ -1352,7 +1698,15 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
   };
   projects[index] = updated;
   setLocalItem(STORAGE_KEYS.PROJECTS, projects);
-  await addAuditLog('UPDATE_PROJECT', `Updated project: ${updated.title}`, updated.brandId === 'nexalus' ? 'general' : updated.brandId);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'projects', id), updated, { merge: true }), 4000);
+    } catch {}
+  }
+
+  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.PROJECTS } }));
+  await addAuditLog('UPDATE_PROJECT', 'Updated project: ' + updated.title, updated.brandId === 'nexalus' ? 'general' : updated.brandId);
   return updated;
 }
 
@@ -1363,7 +1717,15 @@ export async function deleteProject(id: string): Promise<boolean> {
 
   const updated = projects.filter(p => p.id !== id);
   setLocalItem(STORAGE_KEYS.PROJECTS, updated);
-  await addAuditLog('DELETE_PROJECT', `Deleted project: ${target.title}`, target.brandId === 'nexalus' ? 'general' : target.brandId);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(deleteDoc(doc(db, 'projects', id)), 4000);
+    } catch {}
+  }
+
+  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.PROJECTS } }));
+  await addAuditLog('DELETE_PROJECT', 'Deleted project: ' + target.title, target.brandId === 'nexalus' ? 'general' : target.brandId);
   return true;
 }
 
@@ -1492,7 +1854,10 @@ export async function createManualEnquiry(
 // BROADBAND PLAN ORDER SERVICES (BUY NOW & CART CHECKOUT)
 // ----------------------------------------------------
 export async function submitPlanOrder(
-  orderData: Omit<PlanOrder, 'id' | 'status' | 'createdAt' | 'updatedAt'>
+  orderData: Omit<PlanOrder, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'paymentStatus'> & {
+    paymentStatus?: PaymentStatus;
+    status?: OrderInstallationStatus;
+  }
 ): Promise<{ success: boolean; id: string; order: PlanOrder }> {
   const id = 'ORD-PLN-' + Math.floor(100000 + Math.random() * 900000);
   const now = new Date().toISOString();
@@ -1500,7 +1865,8 @@ export async function submitPlanOrder(
   const newOrder: PlanOrder = {
     ...orderData,
     id,
-    status: 'new',
+    paymentStatus: orderData.paymentStatus || 'pending',
+    status: orderData.status || 'new',
     createdAt: now,
     updatedAt: now
   };
@@ -1512,6 +1878,30 @@ export async function submitPlanOrder(
       console.warn('Firestore submitPlanOrder error:', e);
     }
   }
+
+  // Admin In-App Notification
+  const notifId = 'notif-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+  const adminNotif: AdminNotification = {
+    id: notifId,
+    type: 'order_created',
+    title: 'New Broadband Order',
+    message: `Order #${id} placed by ${newOrder.customerName} for ${newOrder.planName} (${newOrder.speed}). Status: ${newOrder.paymentStatus.toUpperCase()}`,
+    orderId: id,
+    read: false,
+    createdAt: now
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'admin_notifications', notifId), adminNotif), 4000);
+    } catch (e) {
+      console.warn('Firestore admin notification error:', e);
+    }
+  }
+
+  const existingNotifs = getLocalItem<AdminNotification[]>(STORAGE_KEYS.ADMIN_NOTIFICATIONS, []);
+  setLocalItem(STORAGE_KEYS.ADMIN_NOTIFICATIONS, [adminNotif, ...existingNotifs]);
+  window.dispatchEvent(new CustomEvent('nexalus_admin_notifications_updated', { detail: [adminNotif, ...existingNotifs] }));
 
   try {
     await submitEnquiry({
@@ -1574,7 +1964,6 @@ export async function getPlanOrders(): Promise<PlanOrder[]> {
 }
 
 export function subscribeToPlanOrders(callback: (orders: PlanOrder[]) => void): () => void {
-  // 1. Initial fire with cached data
   callback(getCachedPlanOrders());
 
   let unsubFirestore: (() => void) | null = null;
@@ -1614,8 +2003,112 @@ export function subscribeToPlanOrders(callback: (orders: PlanOrder[]) => void): 
   };
 }
 
+export function subscribeToCustomerPlanOrders(
+  authUid: string,
+  email?: string,
+  callback?: (orders: PlanOrder[]) => void
+): () => void {
+  if (!callback) return () => {};
+
+  const cleanEmail = email ? email.toLowerCase().trim() : '';
+  const filterCustomerOrders = (all: PlanOrder[]) => {
+    return all.filter(o => {
+      if (o.authUid && o.authUid === authUid) return true;
+      if (cleanEmail && o.email && o.email.toLowerCase().trim() === cleanEmail) return true;
+      return false;
+    });
+  };
+
+  callback(filterCustomerOrders(getCachedPlanOrders()));
+
+  let unsubFirestoreUid: (() => void) | null = null;
+  let unsubFirestoreEmail: (() => void) | null = null;
+
+  const updateFromSnapshots = (newOrders: PlanOrder[]) => {
+    const currentAll = getCachedPlanOrders();
+    const map = new Map<string, PlanOrder>();
+    currentAll.forEach(o => map.set(o.id, o));
+    newOrders.forEach(o => map.set(o.id, o));
+    const merged = Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    setLocalItem(STORAGE_KEYS.PLAN_ORDERS, merged);
+    callback(filterCustomerOrders(merged));
+  };
+
+  if (isFirebaseConfigured && db && authUid) {
+    try {
+      const q = query(
+        collection(db, 'plan_orders'),
+        where('authUid', '==', authUid)
+      );
+      unsubFirestoreUid = onSnapshot(
+        q,
+        (snap) => {
+          const list: PlanOrder[] = [];
+          snap.forEach(d => list.push(d.data() as PlanOrder));
+          updateFromSnapshots(list);
+        },
+        (err) => {
+          console.warn('Firestore customer plan_orders authUid subscription error:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('Failed to attach customer plan_orders onSnapshot:', err);
+    }
+  }
+
+  if (isFirebaseConfigured && db && cleanEmail) {
+    try {
+      const emailQ = query(
+        collection(db, 'plan_orders'),
+        where('email', '==', cleanEmail)
+      );
+      unsubFirestoreEmail = onSnapshot(
+        emailQ,
+        (snap) => {
+          const list: PlanOrder[] = [];
+          snap.forEach(d => list.push(d.data() as PlanOrder));
+          updateFromSnapshots(list);
+        },
+        (err) => {
+          console.warn('Firestore customer plan_orders email subscription error:', err);
+        }
+      );
+    } catch {}
+  }
+
+  const handleCustomEvent = (e: any) => {
+    const all = Array.isArray(e.detail) ? e.detail : getCachedPlanOrders();
+    callback(filterCustomerOrders(all));
+  };
+  window.addEventListener('nexalus_plan_orders_updated', handleCustomEvent);
+
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEYS.PLAN_ORDERS && e.newValue) {
+      try {
+        const parsed = JSON.parse(e.newValue);
+        if (Array.isArray(parsed)) {
+          callback(filterCustomerOrders(parsed));
+        }
+      } catch {}
+    }
+  };
+  window.addEventListener('storage', handleStorage);
+
+  return () => {
+    if (unsubFirestoreUid) unsubFirestoreUid();
+    if (unsubFirestoreEmail) unsubFirestoreEmail();
+    window.removeEventListener('nexalus_plan_orders_updated', handleCustomEvent);
+    window.removeEventListener('storage', handleStorage);
+  };
+}
+
 export async function createPlanOrder(
-  orderData: Omit<PlanOrder, 'id' | 'createdAt' | 'updatedAt'>
+  orderData: Omit<PlanOrder, 'id' | 'createdAt' | 'updatedAt' | 'paymentStatus'> & {
+    paymentStatus?: PaymentStatus;
+    status?: OrderInstallationStatus;
+  }
 ): Promise<PlanOrder> {
   const id = 'ORD-PLN-' + Math.floor(100000 + Math.random() * 900000);
   const now = new Date().toISOString();
@@ -1623,6 +2116,8 @@ export async function createPlanOrder(
   const newOrder: PlanOrder = {
     ...orderData,
     id,
+    paymentStatus: orderData.paymentStatus || 'pending',
+    status: orderData.status || 'new',
     createdAt: now,
     updatedAt: now
   };
@@ -1635,7 +2130,6 @@ export async function createPlanOrder(
     }
   }
 
-  // Also mirror to enquiries CRM for omni-channel tracking
   try {
     await submitEnquiry({
       customerName: newOrder.customerName,
@@ -1697,16 +2191,104 @@ export async function updatePlanOrder(
 
   await addAuditLog(
     'PLAN_ORDER_UPDATED',
-    `Updated broadband order #${orderId} (Status: ${updated.status})`,
+    `Updated broadband order #${orderId} (Status: ${updated.status}, Payment: ${updated.paymentStatus})`,
     updated.brandId === 'one-broadband' ? 'one-broadband' : undefined
   );
 
   return updated;
 }
 
+export async function recordPlanOrderPayment(
+  orderId: string,
+  paymentData: {
+    amount: number;
+    method: 'cash' | 'upi_technician' | 'card_pos' | 'bank_transfer' | 'online_gateway';
+    reference?: string;
+    notes?: string;
+    collectionDate?: string;
+  },
+  adminUser: {
+    uid: string;
+    email: string;
+    name?: string;
+  }
+): Promise<{ success: boolean; order: PlanOrder | null; receiptNumber: string }> {
+  const orders = getCachedPlanOrders();
+  const existing = orders.find(o => o.id === orderId);
+  if (!existing) {
+    return { success: false, order: null, receiptNumber: '' };
+  }
+
+  // Idempotency: Prevent duplicate payment recording and duplicate receipt creation
+  if (existing.paymentStatus === 'paid' && existing.receiptNumber) {
+    return { success: true, order: existing, receiptNumber: existing.receiptNumber };
+  }
+
+  // Sequential-style unique receipt number
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const cleanId = orderId.replace(/^ORD-(?:PLN-)?/, '').replace(/[^a-zA-Z0-9]/g, '').slice(-4).toUpperCase() || '0001';
+  const receiptNumber = existing.receiptNumber || `REC-${dateStr}-${cleanId}`;
+  const now = new Date().toISOString();
+  const collectedAtDate = paymentData.collectionDate
+    ? (paymentData.collectionDate.includes('T') ? paymentData.collectionDate : `${paymentData.collectionDate}T${now.slice(11)}`)
+    : now;
+
+  const paymentDetails: PlanOrderPaymentDetails = {
+    collectedAt: collectedAtDate,
+    collectedBy: {
+      uid: adminUser.uid,
+      email: adminUser.email,
+      name: adminUser.name || adminUser.email.split('@')[0]
+    },
+    method: paymentData.method,
+    amount: paymentData.amount,
+    reference: paymentData.reference?.trim() || undefined,
+    receiptNumber,
+    notes: paymentData.notes?.trim() || undefined
+  };
+
+  const updated = await updatePlanOrder(orderId, {
+    paymentStatus: 'paid',
+    status: existing.status === 'new' ? 'confirmed' : existing.status,
+    paymentDetails,
+    receiptNumber
+  });
+
+  // Admin In-App Notification (Scoped with companyId)
+  const notifId = 'notif-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+  const adminNotif: AdminNotification = {
+    id: notifId,
+    type: 'payment_collected',
+    title: 'Payment Confirmed',
+    message: `₹${paymentData.amount} received for Order #${orderId} by ${adminUser.name || adminUser.email} (${paymentData.method.toUpperCase()}). Receipt: ${receiptNumber}`,
+    orderId,
+    read: false,
+    createdAt: now
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(setDoc(doc(db, 'admin_notifications', notifId), adminNotif), 4000);
+    } catch {}
+  }
+
+  const existingNotifs = getLocalItem<AdminNotification[]>(STORAGE_KEYS.ADMIN_NOTIFICATIONS, []);
+  setLocalItem(STORAGE_KEYS.ADMIN_NOTIFICATIONS, [adminNotif, ...existingNotifs]);
+  window.dispatchEvent(new CustomEvent('nexalus_admin_notifications_updated', { detail: [adminNotif, ...existingNotifs] }));
+
+  await addAuditLog(
+    'PLAN_ORDER_PAYMENT_COLLECTED',
+    `Payment of ₹${paymentData.amount} collected for order #${orderId}. Receipt: ${receiptNumber}. Collector: ${adminUser.email}`,
+    existing.brandId === 'one-broadband' ? 'one-broadband' : undefined,
+    adminUser.email
+  );
+
+  return { success: true, order: updated, receiptNumber };
+}
+
 export async function updatePlanOrderStatus(
   orderId: string,
-  status: PlanOrder['status'],
+  status: OrderInstallationStatus,
   notes?: string,
   assignedEngineer?: string
 ): Promise<PlanOrder | null> {
@@ -1736,39 +2318,135 @@ export async function deletePlanOrder(orderId: string): Promise<boolean> {
 }
 
 // ----------------------------------------------------
-// BROADBAND PLAN CART HELPERS
+// ADMIN NOTIFICATION SERVICES
 // ----------------------------------------------------
-export function getPlanCart(): CartPlanItem[] {
-  return getLocalItem<CartPlanItem[]>('nexalus_plan_cart', []);
+export function getCachedAdminNotifications(): AdminNotification[] {
+  return getLocalItem<AdminNotification[]>(STORAGE_KEYS.ADMIN_NOTIFICATIONS, []);
 }
 
-export function addToPlanCart(item: Omit<CartPlanItem, 'id' | 'addedAt'>): CartPlanItem {
-  const current = getPlanCart();
+export function subscribeToAdminNotifications(callback: (notifications: AdminNotification[]) => void): () => void {
+  callback(getCachedAdminNotifications());
+
+  let unsubFirestore: (() => void) | null = null;
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const q = query(collection(db, 'admin_notifications'), orderBy('createdAt', 'desc'));
+      unsubFirestore = onSnapshot(
+        q,
+        (snap) => {
+          const list: AdminNotification[] = [];
+          snap.forEach(d => list.push(d.data() as AdminNotification));
+          setLocalItem(STORAGE_KEYS.ADMIN_NOTIFICATIONS, list);
+          callback(list);
+        },
+        (err) => {
+          console.warn('Firestore admin_notifications subscription error:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('Failed to attach admin_notifications onSnapshot:', err);
+    }
+  }
+
+  const handleCustomEvent = (e: any) => {
+    callback(Array.isArray(e.detail) ? e.detail : getCachedAdminNotifications());
+  };
+  window.addEventListener('nexalus_admin_notifications_updated', handleCustomEvent);
+
+  return () => {
+    if (unsubFirestore) unsubFirestore();
+    window.removeEventListener('nexalus_admin_notifications_updated', handleCustomEvent);
+  };
+}
+
+export async function markAdminNotificationRead(notificationId: string): Promise<void> {
+  const notifs = getCachedAdminNotifications();
+  const updated = notifs.map(n => n.id === notificationId ? { ...n, read: true, readAt: new Date().toISOString() } : n);
+  setLocalItem(STORAGE_KEYS.ADMIN_NOTIFICATIONS, updated);
+  window.dispatchEvent(new CustomEvent('nexalus_admin_notifications_updated', { detail: updated }));
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await withTimeout(updateDoc(doc(db, 'admin_notifications', notificationId), { read: true, readAt: new Date().toISOString() }), 3000);
+    } catch (e) {
+      console.warn('Firestore markAdminNotificationRead error:', e);
+    }
+  }
+}
+
+export async function clearAllAdminNotifications(): Promise<void> {
+  const notifs = getCachedAdminNotifications().map(n => ({ ...n, read: true }));
+  setLocalItem(STORAGE_KEYS.ADMIN_NOTIFICATIONS, notifs);
+  window.dispatchEvent(new CustomEvent('nexalus_admin_notifications_updated', { detail: notifs }));
+}
+
+// Helper to get active user ID for user-scoped shopping cart
+export function getActiveCartUserId(): string | null {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem('nexalus_active_user_session_v3');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.uid) return parsed.uid;
+      if (parsed?.email) return parsed.email.toLowerCase().trim();
+    }
+  } catch {}
+  return null;
+}
+
+export function getPlanCart(explicitUserId?: string): CartPlanItem[] {
+  // Purge obsolete un-scoped shared cart to prevent cross-account pollution
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('nexalus_plan_cart');
+    }
+  } catch {}
+
+  const uid = explicitUserId || getActiveCartUserId();
+  if (!uid) return [];
+  return getLocalItem<CartPlanItem[]>(`nexalus_plan_cart_${uid}`, []);
+}
+
+export function addToPlanCart(item: Omit<CartPlanItem, 'id' | 'addedAt'>, explicitUserId?: string): CartPlanItem {
+  const uid = explicitUserId || getActiveCartUserId();
+  const cartKey = uid ? `nexalus_plan_cart_${uid}` : 'nexalus_plan_cart_guest';
+  const current = uid ? getLocalItem<CartPlanItem[]>(cartKey, []) : [];
   const newItem: CartPlanItem = {
     ...item,
     id: 'cart-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
     addedAt: new Date().toISOString()
   };
   const updated = [newItem, ...current];
-  setLocalItem('nexalus_plan_cart', updated);
+  setLocalItem(cartKey, updated);
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: updated }));
   }
   return newItem;
 }
 
-export function removeFromPlanCart(cartItemId: string): CartPlanItem[] {
-  const current = getPlanCart();
+export function removeFromPlanCart(cartItemId: string, explicitUserId?: string): CartPlanItem[] {
+  const uid = explicitUserId || getActiveCartUserId();
+  const cartKey = uid ? `nexalus_plan_cart_${uid}` : 'nexalus_plan_cart_guest';
+  const current = uid ? getLocalItem<CartPlanItem[]>(cartKey, []) : [];
   const updated = current.filter(i => i.id !== cartItemId);
-  setLocalItem('nexalus_plan_cart', updated);
+  setLocalItem(cartKey, updated);
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: updated }));
   }
   return updated;
 }
 
-export function clearPlanCart(): void {
-  setLocalItem('nexalus_plan_cart', []);
+export function clearPlanCart(explicitUserId?: string | any): void {
+  const uid = typeof explicitUserId === 'string' ? explicitUserId : getActiveCartUserId();
+  if (uid) {
+    setLocalItem(`nexalus_plan_cart_${uid}`, []);
+  }
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('nexalus_plan_cart');
+    }
+  } catch {}
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: [] }));
   }
@@ -2025,10 +2703,21 @@ export async function deleteServiceArea(id: string): Promise<boolean> {
 // ----------------------------------------------------
 // FAQS
 // ----------------------------------------------------
-export async function getFaqs(brandId?: BrandId | 'nexalus', publishedOnly = false): Promise<FAQ[]> {
+export async function getFaqs(brandId?: BrandId | 'nexalus' | 'corporate' | 'all', publishedOnly = false): Promise<FAQ[]> {
   let faqs = getLocalItem<FAQ[]>(STORAGE_KEYS.FAQS, initialFaqs);
-  if (brandId) {
-    faqs = faqs.filter(f => f.brandId === brandId);
+  if (brandId && brandId !== 'all') {
+    if (brandId === 'nexalus-innovations') {
+      faqs = faqs.filter(f =>
+        f.brandId === 'nexalus-innovations' ||
+        f.brandId === 'cp-plus' ||
+        f.brandId === 'one-broadband' ||
+        f.brandId === 'itti-networking'
+      );
+    } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
+      faqs = faqs.filter(f => f.brandId === 'nexalus');
+    } else {
+      faqs = faqs.filter(f => f.brandId === brandId);
+    }
   }
   if (publishedOnly) {
     faqs = faqs.filter(f => f.published);
@@ -2472,6 +3161,8 @@ export async function provisionAdminAccount(data: {
   assignedBrandId?: BrandId | 'all';
   active?: boolean;
   sendResetEmail?: boolean;
+  phone?: string;
+  deliveryAddress?: { address: string; city: string; state: string; postcode: string; country?: string };
 }): Promise<{ user: AdminUser; resetEmailSent: boolean }> {
   const cleanEmail = data.email.trim().toLowerCase();
   const displayName = data.displayName.trim();
@@ -2520,7 +3211,9 @@ export async function provisionAdminAccount(data: {
         role,
         assignedBrandId,
         active,
-        createdAt: now
+        createdAt: now,
+        ...(data.phone ? { phone: data.phone } : {}),
+        ...(data.deliveryAddress ? { deliveryAddress: { ...data.deliveryAddress, country: data.deliveryAddress.country || 'India' } } : {})
       };
 
       await setDoc(doc(db, 'users', authUid), {
@@ -3035,17 +3728,67 @@ export async function getTeamMembers(division?: string): Promise<TeamMember[]> {
   return members;
 }
 
-export async function createTeamMember(memberData: Omit<TeamMember, 'id' | 'createdAt' | 'updatedAt'>): Promise<TeamMember> {
-  const newId = `team-${Date.now()}`;
+export async function createTeamMember(
+  memberData: Omit<TeamMember, 'id' | 'createdAt' | 'updatedAt'>,
+  companyScope?: CompanyScopeId
+): Promise<TeamMember> {
+  const compId: CompanyScopeId = companyScope || memberData.companyId || (
+    memberData.division === 'am-distributors'
+      ? 'am-distributors'
+      : (memberData.division === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp')
+  );
+
+  const prefix = compId === 'am-distributors'
+    ? 'team-am-'
+    : compId === 'nexalus-llp'
+    ? 'team-llp-'
+    : 'team-nex-';
+
+  const current = getLocalItem<TeamMember[]>(STORAGE_KEYS.TEAM, initialTeamMembers);
+  let maxSeq = 0;
+  for (const m of current) {
+    if (m.id && m.id.startsWith(prefix)) {
+      const num = parseInt(m.id.slice(prefix.length), 10);
+      if (!isNaN(num) && num > maxSeq) {
+        maxSeq = num;
+      }
+    }
+  }
+
+  // Also query Firestore to avoid sequence collisions
+  if (isFirebaseConfigured && db) {
+    try {
+      const snap = await withTimeout(getDocs(collection(db, 'team_members')), 1200);
+      if (!snap.empty) {
+        snap.forEach(d => {
+          if (d.id.startsWith(prefix)) {
+            const num = parseInt(d.id.slice(prefix.length), 10);
+            if (!isNaN(num) && num > maxSeq) {
+              maxSeq = num;
+            }
+          }
+        });
+      }
+    } catch {}
+  }
+
+  const newId = `${prefix}${maxSeq + 1}`;
   const now = new Date().toISOString();
+  const companyName = compId === 'am-distributors'
+    ? 'A.M. Distributors Chiplun'
+    : compId === 'nexalus-innovations'
+    ? 'Nexalus Innovations'
+    : 'Nexalus Innovations LLP';
+
   const newMember: TeamMember = {
     ...memberData,
     id: newId,
+    companyId: compId,
+    companyName,
     createdAt: now,
     updatedAt: now,
   };
 
-  const current = getLocalItem<TeamMember[]>(STORAGE_KEYS.TEAM, initialTeamMembers);
   const updated = [newMember, ...current];
   setLocalItem(STORAGE_KEYS.TEAM, updated);
 
@@ -3106,4 +3849,139 @@ export async function deleteTeamMember(id: string): Promise<boolean> {
   await addAuditLog('DELETE_TEAM_MEMBER', `Deleted team member: ${member?.name || id}`);
   window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: 'team' } }));
   return true;
+}
+
+// ----------------------------------------------------
+// RECEIPT & INVOICE TEMPLATE SETTINGS
+// ----------------------------------------------------
+export const DEFAULT_RECEIPT_SETTINGS: ReceiptSettings = {
+  companyName: 'Nexalus Innovations LLP',
+  tagline: '',
+  showTagline: false, // Default hidden per design instruction
+  address: 'Shop No.5, Sankalp Enclave Chowk, 100 Feet Rd, near Dhamani Road, opposite Kokitkar Garden, Vishrambag',
+  city: 'Sangli-Miraj-Kupwad',
+  state: 'Maharashtra',
+  pincode: '416415',
+  phone: '+91 9158886444',
+  email: 'innovations@nexalusinnovations.com',
+  website: 'https://nexalusinnovations.com',
+  signatoryName: 'Authorized Signatory',
+  signatoryTitle: 'Authorized Signatory',
+  signatorySubtitle: 'Nexalus Innovations LLP Operations Desk',
+  signatureImageUrl: '',
+  showSignatory: false, // Default hidden per design instruction
+  bookingSlipNotice: 'This document confirms broadband reservation and technician scheduling. Payment is due upon physical drop line testing and activation. An official PAID PAYMENT RECEIPT will be issued immediately upon payment confirmation.',
+  paidReceiptNotice: 'Nexalus Innovations LLP confirms that payment has been received in full. Physical installation and account activation are proceeding on schedule. This receipt confirms active provisioning.',
+  footerNote: 'Thank you for choosing Nexalus Innovations LLP.',
+  showInstallationPremises: true,
+  showPaymentInfo: true,
+  showOfficialNotice: true,
+  showGstRow: true,
+  gstRate: 18,
+  gstNumber: '',
+  gstInclusive: true,
+  customTerms: [
+    'Line activation is subject to standard physical fiber path feasibility.',
+    'Broadband speed is delivered on symmetrical FTTH optical ports.',
+    'Customer care support available 24/7 at +91 9158886444.'
+  ]
+};
+
+export function getCachedReceiptSettings(): ReceiptSettings {
+  const cached = getLocalItem<ReceiptSettings>(STORAGE_KEYS.RECEIPT_SETTINGS, DEFAULT_RECEIPT_SETTINGS);
+  if (cached.showSignatory === undefined) {
+    cached.showSignatory = false;
+  }
+  if (cached.showTagline === undefined) {
+    cached.showTagline = false;
+  }
+  if (!cached.signatoryName) {
+    cached.signatoryName = 'Authorized Signatory';
+  }
+  if (!cached.signatoryTitle) {
+    cached.signatoryTitle = 'Authorized Signatory';
+  }
+  if (!cached.signatorySubtitle) {
+    cached.signatorySubtitle = 'Nexalus Innovations LLP Operations Desk';
+  }
+  return cached;
+}
+
+export async function getReceiptSettings(): Promise<ReceiptSettings> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const docRef = doc(db, 'systemSettings', 'receiptSettings');
+      const snap = await withTimeout(getDoc(docRef), 1200);
+      if (snap.exists()) {
+        const data = snap.data() as ReceiptSettings;
+        setLocalItem(STORAGE_KEYS.RECEIPT_SETTINGS, data, false);
+        return data;
+      }
+    } catch (e) {
+      console.warn('Firestore getReceiptSettings error:', e);
+    }
+  }
+  return getCachedReceiptSettings();
+}
+
+/**
+ * Real-time subscription to receipt settings across all tabs and Firestore
+ */
+export function subscribeReceiptSettings(callback: (settings: ReceiptSettings) => void): () => void {
+  // Fire callback immediately with current cached settings
+  callback(getCachedReceiptSettings());
+
+  const handleLocalUpdate = () => {
+    callback(getCachedReceiptSettings());
+  };
+  window.addEventListener('nexalus_data_update', handleLocalUpdate);
+  window.addEventListener('storage', handleLocalUpdate);
+
+  let unsubFirestore: (() => void) | null = null;
+  if (isFirebaseConfigured && db) {
+    try {
+      const docRef = doc(db, 'systemSettings', 'receiptSettings');
+      unsubFirestore = onSnapshot(docRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data() as ReceiptSettings;
+          setLocalItem(STORAGE_KEYS.RECEIPT_SETTINGS, data, false);
+          callback(data);
+        }
+      }, (err) => {
+        console.warn('subscribeReceiptSettings onSnapshot error:', err);
+      });
+    } catch (e) {
+      console.warn('subscribeReceiptSettings error:', e);
+    }
+  }
+
+  return () => {
+    window.removeEventListener('nexalus_data_update', handleLocalUpdate);
+    window.removeEventListener('storage', handleLocalUpdate);
+    if (unsubFirestore) {
+      unsubFirestore();
+    }
+  };
+}
+
+export async function updateReceiptSettings(updates: Partial<ReceiptSettings>): Promise<ReceiptSettings> {
+  const current = getCachedReceiptSettings();
+  const updated: ReceiptSettings = {
+    ...current,
+    ...updates
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const docRef = doc(db, 'systemSettings', 'receiptSettings');
+      await setDoc(docRef, { ...updated, updatedAt: new Date().toISOString() }, { merge: true });
+    } catch (e: any) {
+      console.warn('Firestore updateReceiptSettings warning:', e);
+    }
+  }
+
+  setLocalItem(STORAGE_KEYS.RECEIPT_SETTINGS, updated);
+  await addAuditLog('UPDATE_SETTINGS', 'Updated official receipt and booking slip template contents', 'nexalus-innovations');
+  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: 'receipt_settings' } }));
+  return updated;
 }

@@ -58,6 +58,7 @@ import { AdminReportsPage } from './pages/admin/AdminReportsPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminSeoPage } from './pages/admin/AdminSeoPage';
 import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
+import { AdminReceiptSettingsPage } from './pages/admin/AdminReceiptSettingsPage';
 
 // Sub-Website Layouts
 import { NexalusInnovationsLayout } from './components/brand/NexalusInnovationsLayout';
@@ -152,6 +153,7 @@ function App() {
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="seo" element={<AdminSeoPage />} />
               <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+              <Route path="receipt-settings" element={<AdminReceiptSettingsPage />} />
             </Route>
 
             {/* Global 404 Catch-All (Wrapped in Public Layout - Must be last route) */}

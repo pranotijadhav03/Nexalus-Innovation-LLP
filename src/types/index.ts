@@ -18,9 +18,13 @@ export interface Brand {
   updatedAt: string;
 }
 
+export type CompanyScopeId = 'nexalus-llp' | 'nexalus-innovations' | 'am-distributors';
+
 export interface ProductCategory {
   id: string;
   brandId: BrandId;
+  companyId?: CompanyScopeId;
+  companyName?: string;
   name: string;
   slug: string;
   description?: string;
@@ -30,6 +34,8 @@ export interface ProductCategory {
 export interface Product {
   id: string;
   brandId: BrandId;
+  companyId?: CompanyScopeId;
+  companyName?: string;
   name: string;
   slug: string;
   modelNumber: string;
@@ -47,15 +53,52 @@ export interface Product {
   updatedAt: string;
 }
 
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type OrderInstallationStatus = 'new' | 'confirmed' | 'site_survey' | 'installation_scheduled' | 'activated' | 'converted' | 'cancelled';
+
+export interface PlanOrderPaymentDetails {
+  collectedAt: string;
+  collectedBy: {
+    uid: string;
+    email: string;
+    name?: string;
+  };
+  method: 'cash' | 'upi_technician' | 'card_pos' | 'bank_transfer' | 'online_gateway';
+  amount: number;
+  reference?: string;
+  receiptNumber: string;
+  notes?: string;
+}
+
+export interface PlanSnapshot {
+  id: string;
+  name: string;
+  providerId: string;
+  providerName: string;
+  speed: string;
+  speedNumeric?: number;
+  price: number;
+  currency: string;
+  billingPeriod: string;
+  dataAllowance?: string;
+  features?: string[];
+  category?: string;
+  gstIncluded?: boolean;
+}
+
 export interface PlanOrder {
   id: string;
+  authUid?: string;
   planId?: string;
   planName: string;
+  providerId?: string;
   providerName: string;
   speed: string;
   price: number | string;
+  currency?: string;
   billingPeriod: string;
   brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
+  companyId?: 'nexalus' | 'corporate_master';
   customerName: string;
   phone: string;
   email: string;
@@ -64,11 +107,27 @@ export interface PlanOrder {
   pincode: string;
   preferredSlot?: string;
   paymentMethod: 'pay_on_installation' | 'online_upi' | 'corporate_invoice';
-  status: 'new' | 'confirmed' | 'installation_scheduled' | 'converted' | 'cancelled';
+  paymentStatus: PaymentStatus;
+  status: OrderInstallationStatus;
+  planSnapshot?: PlanSnapshot;
+  paymentDetails?: PlanOrderPaymentDetails;
+  receiptNumber?: string;
   notes?: string;
   assignedEngineer?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AdminNotification {
+  id: string;
+  type: 'order_created' | 'payment_collected' | 'order_status_changed';
+  title: string;
+  message: string;
+  orderId: string;
+  read: boolean;
+  createdAt: string;
+  readAt?: string;
+  readBy?: string;
 }
 
 export interface CartPlanItem {
@@ -128,6 +187,29 @@ export type BroadbandBillingPeriod =
   | 'semi-annually'
   | 'annually'
   | 'custom';
+
+export type CanonicalBillingPeriod = 'monthly' | 'quarterly' | 'semi-annually' | 'annually' | 'custom';
+
+export function normalizeBillingPeriod(val?: string): CanonicalBillingPeriod {
+  if (!val) return 'monthly';
+  const v = val.toLowerCase().trim().replace(/_/g, '-');
+  if (v === 'monthly' || v === 'month' || v === '1-month' || v === '1m') return 'monthly';
+  if (v === 'quarterly' || v === 'quarter' || v === '3-months' || v === '3m') return 'quarterly';
+  if (v === 'semi-annually' || v === 'semi-annual' || v === 'half-yearly' || v === '6-months' || v === '6m') return 'semi-annually';
+  if (v === 'annually' || v === 'annual' || v === 'yearly' || v === '12-months' || v === '12m' || v === '1y') return 'annually';
+  return 'custom';
+}
+
+export function formatBillingPeriodLabel(period?: string): string {
+  const normalized = normalizeBillingPeriod(period);
+  switch (normalized) {
+    case 'monthly': return 'Monthly (1 Month)';
+    case 'quarterly': return 'Quarterly (3 Months)';
+    case 'semi-annually': return 'Semi-Annually (6 Months)';
+    case 'annually': return 'Annually (12 Months)';
+    default: return 'Custom Cycle';
+  }
+}
 
 export type BroadbandPlanAvailability = 'active' | 'inactive' | 'coming_soon';
 
@@ -279,6 +361,7 @@ export interface Project {
   brandId: BrandId | 'nexalus';
   title: string;
   slug: string;
+  category?: string;
   clientType: 'Enterprise' | 'Commercial' | 'Residential' | 'Government' | 'Retail' | 'Logistics' | 'Industrial' | 'Wholesale';
   location: string;
   description: string;
@@ -411,6 +494,8 @@ export interface HeroSlide {
   subtitle: string;
   description: string;
   imageUrl: string;
+  videoUrl?: string;
+  mediaType?: 'image' | 'video';
   badge?: string;
   primaryCtaText?: string;
   primaryCtaLink?: string;
@@ -481,6 +566,8 @@ export interface TeamMember {
   department: string;
   deptType: 'tech' | 'logistics' | 'leadership' | 'operations';
   division?: 'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors';
+  companyId?: CompanyScopeId;
+  companyName?: string;
   image: string;
   specialty: string;
   tag: string;
@@ -490,4 +577,34 @@ export interface TeamMember {
   badgeBg: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ReceiptSettings {
+  companyName: string;
+  tagline: string;
+  showTagline?: boolean;
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  phone: string;
+  email: string;
+  website: string;
+  signatoryName: string;
+  signatoryTitle: string;
+  signatorySubtitle: string;
+  signatureImageUrl?: string;
+  showSignatory?: boolean;
+  bookingSlipNotice: string;
+  paidReceiptNotice: string;
+  footerNote: string;
+  customTerms: string[];
+  // Section controls & GST
+  showInstallationPremises?: boolean;
+  showPaymentInfo?: boolean;
+  showOfficialNotice?: boolean;
+  showGstRow?: boolean;
+  gstRate?: number;
+  gstNumber?: string;
+  gstInclusive?: boolean;
 }
