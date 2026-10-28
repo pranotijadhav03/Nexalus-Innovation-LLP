@@ -98,175 +98,173 @@ export const Navbar: React.FC = () => {
     <>
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
         {/* Main Navigation Bar */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Left Section: Nexalus Brand Identity + Desktop Navigation Links */}
-            <div className="flex items-center gap-5 xl:gap-8 min-w-0">
-              {/* Nexalus Logo / Identity */}
-              <Link to="/" className="flex items-center gap-3 sm:gap-3.5 group shrink-0">
-                <div className="relative shrink-0">
-                  <img
-                    src="/images/parent-company-logo.jpg"
-                    alt="Nexalus Innovations LLP"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = NEXALUS_LOGO_BASE64;
-                    }}
-                    className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-contain bg-white shadow-sm border border-slate-200/90 p-0.5 group-hover:scale-105 group-hover:shadow-md transition-all duration-200"
-                  />
-                </div>
-                <div className="flex flex-col justify-center">
-                  <div className="flex items-center leading-snug">
-                    <span className="font-black text-base sm:text-lg xl:text-xl tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors whitespace-nowrap">
-                      NEXALUS INNOVATIONS LLP
-                    </span>
-                  </div>
-                  <span className="hidden sm:block text-[10.5px] font-semibold text-slate-500 tracking-wider uppercase mt-0.5">
-                    Enterprise Technology &bull; Infrastructure
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20 gap-2 xl:gap-4">
+            {/* Nexalus Logo / Identity */}
+            <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+              <div className="relative shrink-0">
+                <img
+                  src="/images/parent-company-logo.jpg"
+                  alt="Nexalus Innovations LLP"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = NEXALUS_LOGO_BASE64;
+                  }}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-contain bg-white shadow-xs border border-slate-200/90 p-0.5 group-hover:scale-105 transition-all duration-200"
+                />
+              </div>
+              <div className="flex flex-col justify-center">
+                <div className="flex items-center leading-snug">
+                  <span className="font-black text-sm sm:text-base xl:text-lg tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors whitespace-nowrap">
+                    NEXALUS INNOVATIONS LLP
                   </span>
                 </div>
+                <span className="hidden xl:block text-[10px] font-semibold text-slate-500 tracking-wider uppercase mt-0.5">
+                  Enterprise Technology &bull; Infrastructure
+                </span>
+              </div>
+            </Link>
+
+            {/* Desktop Navigation Links (Centrally Positioned, Balanced, Responsive) */}
+            <nav className="hidden lg:flex items-center justify-center gap-0.5 xl:gap-1.5 flex-1 min-w-0 mx-1.5 xl:mx-4">
+              <Link
+                to="/"
+                className={`px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
+                  isActive('/') && location.pathname === '/'
+                    ? 'text-blue-600 bg-blue-50/80'
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
+                }`}
+              >
+                Home
+              </Link>
+              <Link
+                to="/about"
+                className={`px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
+                  isActive('/about')
+                    ? 'text-blue-600 bg-blue-50/80'
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
+                }`}
+              >
+                About Us
               </Link>
 
-              {/* Desktop Navigation Links */}
-              <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 shrink-0">
+              {/* Brands Dropdown */}
+              <div className="relative group">
                 <Link
-                  to="/"
-                  className={`px-2.5 xl:px-3 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
-                    isActive('/') && location.pathname === '/'
+                  to="/brands"
+                  className={`inline-flex items-center gap-1 px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
+                    isActive('/brands')
                       ? 'text-blue-600 bg-blue-50/80'
                       : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
                   }`}
                 >
-                  Home
-                </Link>
-                <Link
-                  to="/about"
-                  className={`px-2.5 xl:px-3 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
-                    isActive('/about')
-                      ? 'text-blue-600 bg-blue-50/80'
-                      : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
-                  }`}
-                >
-                  About Us
+                  <span>Our Brands</span>
+                  <ChevronDown className="w-3.5 h-3.5 transition-transform group-hover:rotate-180" />
                 </Link>
 
-                {/* Brands Dropdown */}
-                <div className="relative group">
-                  <Link
-                    to="/brands"
-                    className={`inline-flex items-center gap-1.5 px-2.5 xl:px-3 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
-                      isActive('/brands')
-                        ? 'text-blue-600 bg-blue-50/80'
-                        : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span>Our Brands</span>
-                    <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
-                  </Link>
-
-                  <div className="absolute top-full left-0 w-80 pt-2 before:absolute before:-top-3 before:left-0 before:w-full before:h-4 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
-                    <div className="p-2.5 bg-white rounded-2xl shadow-xl border border-slate-200/90 space-y-1">
-                      <Link
-                        to="/brands/nexalus-innovations"
-                        className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-blue-50 transition-colors group/item"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover/item:bg-blue-600 group-hover/item:text-white transition-colors">
-                          <Cpu className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-slate-900 group-hover/item:text-blue-700">
-                            Nexalus Innovations
-                          </div>
-                          <div className="text-xs text-slate-500 mt-0.5 leading-snug">
-                            CCTV, Fiber Internet &amp; Office Networking
-                          </div>
-                        </div>
-                      </Link>
-
-                      <Link
-                        to="/brands/am-distributors"
-                        className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-teal-50 transition-colors group/item"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center shrink-0 group-hover/item:bg-teal-600 group-hover/item:text-white transition-colors">
-                          <Truck className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-slate-900 group-hover/item:text-teal-700">
-                            A.M. Distributors Chiplun
-                          </div>
-                          <div className="text-xs text-slate-500 mt-0.5 leading-snug">
-                            Mineral Water, Dairy &amp; Cold-Chain Logistics Hub
-                          </div>
-                        </div>
-                      </Link>
-
-                      <div className="pt-2 mt-2 border-t border-slate-100 px-3">
-                        <Link
-                          to="/brands"
-                          className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center justify-between"
-                        >
-                          <span>View All Brands</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
+                <div className="absolute top-full left-0 w-80 pt-2 before:absolute before:-top-3 before:left-0 before:w-full before:h-4 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                  <div className="p-2.5 bg-white rounded-2xl shadow-xl border border-slate-200/90 space-y-1">
+                    <Link
+                      to="/brands/nexalus-innovations"
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-blue-50 transition-colors group/item"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover/item:bg-blue-600 group-hover/item:text-white transition-colors">
+                        <Cpu className="w-5 h-5" />
                       </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover/item:text-blue-700">
+                          Nexalus Innovations
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5 leading-snug">
+                          CCTV, Fiber Internet &amp; Office Networking
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      to="/brands/am-distributors"
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-teal-50 transition-colors group/item"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center shrink-0 group-hover/item:bg-teal-600 group-hover/item:text-white transition-colors">
+                        <Truck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover/item:text-teal-700">
+                          A.M. Distributors Chiplun
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5 leading-snug">
+                          Mineral Water, Dairy &amp; Cold-Chain Logistics Hub
+                        </div>
+                      </div>
+                    </Link>
+
+                    <div className="pt-2 mt-2 border-t border-slate-100 px-3">
+                      <Link
+                        to="/brands"
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center justify-between"
+                      >
+                        <span>View All Brands</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <Link
-                  to="/services"
-                  className={`px-2.5 xl:px-3 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
-                    isActive('/services')
-                      ? 'text-blue-600 bg-blue-50/80'
-                      : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Services
-                </Link>
-                <Link
-                  to="/plans"
-                  className={`px-2.5 xl:px-3 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
-                    isActive('/plans')
-                      ? 'text-blue-600 bg-blue-50/80'
-                      : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Plans & Pricing
-                </Link>
-                <Link
-                  to="/products"
-                  className={`px-2.5 xl:px-3 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
-                    isActive('/products')
-                      ? 'text-blue-600 bg-blue-50/80'
-                      : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Products
-                </Link>
-                <Link
-                  to="/contact"
-                  className={`px-2.5 xl:px-3 py-2 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
-                    isActive('/contact')
-                      ? 'text-blue-600 bg-blue-50/80'
-                      : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
-                  }`}
-                >
-                  Contact
-                </Link>
-              </nav>
-            </div>
+              <Link
+                to="/services"
+                className={`px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
+                  isActive('/services')
+                    ? 'text-blue-600 bg-blue-50/80'
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
+                }`}
+              >
+                Services
+              </Link>
+              <Link
+                to="/plans"
+                className={`px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
+                  isActive('/plans')
+                    ? 'text-blue-600 bg-blue-50/80'
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
+                }`}
+              >
+                <span>Plans</span>
+                <span className="hidden xl:inline">&nbsp;& Pricing</span>
+              </Link>
+              <Link
+                to="/products"
+                className={`px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
+                  isActive('/products')
+                    ? 'text-blue-600 bg-blue-50/80'
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
+                }`}
+              >
+                Products
+              </Link>
+              <Link
+                to="/contact"
+                className={`px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
+                  isActive('/contact')
+                    ? 'text-blue-600 bg-blue-50/80'
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
+                }`}
+              >
+                Contact
+              </Link>
+            </nav>
 
             {/* Desktop Actions */}
-            <div className="hidden lg:flex items-center gap-2.5 xl:gap-3 shrink-0 ml-4">
+            <div className="hidden lg:flex items-center gap-2 xl:gap-2.5 shrink-0 ml-auto">
               {/* Broadband Cart Badge Icon (Visible only if authenticated customer with items) */}
               <button
                 type="button"
                 onClick={() => setIsCartModalOpen(true)}
-                className="relative inline-flex items-center justify-center p-2 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="relative inline-flex items-center justify-center p-1.5 xl:p-2 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 title="Open Broadband Cart"
               >
-                <ShoppingCart className="w-5 h-5" />
+                <ShoppingCart className="w-4 h-4 xl:w-5 xl:h-5" />
                 {effectiveCartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-xs animate-bounce">
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white font-black text-[9px] xl:text-[10px] w-3.5 h-3.5 xl:w-4 xl:h-4 rounded-full flex items-center justify-center shadow-xs animate-bounce">
                     {effectiveCartCount}
                   </span>
                 )}
@@ -274,24 +272,25 @@ export const Navbar: React.FC = () => {
 
               {/* Administrator Action */}
               {isAuthenticated && isAdmin ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 xl:gap-2">
                   <Link
                     to="/admin"
-                    className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold text-white bg-gradient-to-r from-blue-700 to-indigo-600 hover:from-blue-800 hover:to-indigo-700 shadow-xs transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 py-1 xl:py-1.5 px-2.5 xl:px-3 rounded-full text-xs font-bold text-white bg-gradient-to-r from-blue-700 to-indigo-600 hover:from-blue-800 hover:to-indigo-700 shadow-xs transition-all cursor-pointer whitespace-nowrap"
                     title="Open Administration Console"
                   >
                     <ShieldCheck className="w-3.5 h-3.5 text-blue-200" />
-                    <span>Admin Console</span>
+                    <span className="hidden xl:inline">Admin Console</span>
+                    <span className="xl:hidden">Admin</span>
                   </Link>
 
                   <div className="relative" ref={profileDropdownRef}>
                     <button
                       type="button"
                       onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                      className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 pl-1.5 pr-2 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors cursor-pointer"
                       title="Admin Account"
                     >
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold text-[11px] flex items-center justify-center">
+                      <div className="w-5 h-5 xl:w-6 xl:h-6 rounded-full bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold text-[10px] xl:text-[11px] flex items-center justify-center">
                         {(currentUser?.displayName || 'A').charAt(0).toUpperCase()}
                       </div>
                       <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
@@ -417,7 +416,8 @@ export const Navbar: React.FC = () => {
 
               <Button
                 variant="primary"
-                size="md"
+                size="sm"
+                className="px-3 xl:px-4 py-1.5 xl:py-2 text-xs xl:text-sm font-bold whitespace-nowrap shadow-sm shrink-0"
                 onClick={() => setIsQuoteModalOpen(true)}
               >
                 Get a Quote
