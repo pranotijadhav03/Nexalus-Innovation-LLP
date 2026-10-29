@@ -774,44 +774,54 @@ export const CustomerAccountPage: React.FC = () => {
   // =========================================================================
   if (!isAuthenticated || !currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="max-w-xl w-full bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto animate-in fade-in duration-200">
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-[#070e20] via-[#0b1739] to-[#0d1d49] px-6 py-6 text-white border-b border-slate-800 relative">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/30 border border-blue-400/40 text-blue-400 flex items-center justify-center">
-                <Wifi className="w-6 h-6 text-cyan-400" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs uppercase tracking-widest text-cyan-400 font-black">
-                    Nexalus Broadband Portal
-                  </span>
-                  <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-400/30 font-bold">
-                    Sangli &amp; Chiplun
-                  </span>
-                </div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
-                  Customer &amp; Subscriber Portal
-                </h1>
-              </div>
+      <div className="min-h-screen bg-slate-950/90 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative isolate">
+        {/* Subtle Background Architectural Motif */}
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-25 pointer-events-none"
+          style={{
+            backgroundImage: "url('/images/parent-company-hero-banner.jpg')"
+          }}
+          aria-hidden="true"
+        />
+
+        <div className="max-w-xl w-full bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden my-auto animate-in fade-in duration-200 relative z-10">
+          {/* Header Banner - Premium Corporate Nexalus Identity */}
+          <div className="bg-gradient-to-b from-slate-50 via-white to-slate-50/50 p-6 sm:p-8 pb-4 text-center border-b border-slate-100 relative">
+            {/* Nexalus Logo Seal */}
+            <div className="flex justify-center mb-3">
+              <img
+                src="/images/parent-company-logo.jpg"
+                alt="Nexalus Innovations LLP"
+                className="w-20 h-20 sm:w-22 sm:h-22 rounded-full object-cover shadow-md border-2 border-[#c5a059]/50 ring-4 ring-amber-50/80 bg-white"
+              />
             </div>
-            <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-              Sign in to manage your active fiber broadband, view data consumption, recharge packs, download GST tax invoices, and raise support tickets.
+
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50/90 border border-blue-200/70 text-[#0b2545] text-[11px] font-bold tracking-wider uppercase mb-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#0b2545]" />
+              <span>CUSTOMER PORTAL &bull; ACCOUNT ACCESS</span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+              {authMode === 'login' ? 'Welcome back' : 'Customer Registration'}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto leading-relaxed font-medium">
+              {authMode === 'login'
+                ? 'Sign in to manage your service requests, quotations and account details.'
+                : 'Create your account to request broadband, CCTV consultations, and track service requests.'}
             </p>
 
             {/* Sub Tabs */}
-            <div className="flex gap-2 mt-5 bg-slate-900/60 p-1 rounded-xl border border-slate-700/60">
+            <div className="flex gap-2 mt-5 bg-slate-100 p-1 rounded-2xl border border-slate-200/80 max-w-md mx-auto">
               <button
                 type="button"
                 onClick={() => {
                   setAuthMode('login');
                   setLoginError(null);
                 }}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   authMode === 'login'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-300 hover:text-white'
+                    ? 'bg-[#0b2545] text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <LogIn className="w-3.5 h-3.5" />
@@ -823,10 +833,10 @@ export const CustomerAccountPage: React.FC = () => {
                   setAuthMode('register');
                   setRegError(null);
                 }}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   authMode === 'register'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-300 hover:text-white'
+                    ? 'bg-[#0b2545] text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <UserPlus className="w-3.5 h-3.5" />
@@ -840,7 +850,7 @@ export const CustomerAccountPage: React.FC = () => {
             {authMode === 'login' && (
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 {loginError && (
-                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                     <span>{loginError}</span>
                   </div>
@@ -860,7 +870,7 @@ export const CustomerAccountPage: React.FC = () => {
                       value={loginEmail}
                       onChange={e => setLoginEmail(e.target.value)}
                       required
-                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#0b2545] focus:ring-2 focus:ring-[#0b2545]/15 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-2xs"
                     />
                   </div>
                 </div>
@@ -876,7 +886,7 @@ export const CustomerAccountPage: React.FC = () => {
                         setResetEmail(loginEmail);
                         setAuthMode('forgot_password');
                       }}
-                      className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                      className="text-xs font-semibold text-slate-500 hover:text-[#0b2545] hover:underline transition-colors cursor-pointer"
                     >
                       Forgot password?
                     </button>
@@ -891,7 +901,7 @@ export const CustomerAccountPage: React.FC = () => {
                       value={loginPassword}
                       onChange={e => setLoginPassword(e.target.value)}
                       required
-                      className="w-full pl-10 pr-10 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                      className="w-full pl-10 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm bg-slate-50/70 hover:bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#0b2545] focus:ring-2 focus:ring-[#0b2545]/15 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-2xs"
                     />
                     <button
                       type="button"
@@ -904,16 +914,29 @@ export const CustomerAccountPage: React.FC = () => {
                 </div>
 
                 <div className="pt-2">
-                  <Button
+                  <button
                     type="submit"
-                    variant="primary"
-                    size="md"
-                    isLoading={isLoggingIn}
-                    icon={<LogIn className="w-4 h-4" />}
-                    className="w-full font-bold shadow-md shadow-blue-600/20"
+                    disabled={isLoggingIn}
+                    className="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-[#0b2545] hover:bg-[#071930] active:bg-[#051322] shadow-md shadow-[#0b2545]/20 hover:shadow-lg hover:shadow-[#0b2545]/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                   >
-                    Sign In to Subscriber Portal
-                  </Button>
+                    {isLoggingIn ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Signing In...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Sign In</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Footer Security Note */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium text-center">
+                  <Shield className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>Your information is secure and will only be used to process your service requests.</span>
                 </div>
               </form>
             )}

@@ -930,9 +930,25 @@ export const HomePage: React.FC = () => {
           3. Enterprise IT Networking (White Background)
           ========================================================================= */}
 
-      {/* 4.1: CCTV Surveillance */}
-      <section className="w-full bg-white text-slate-900 py-16 sm:py-20 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
+      {/* 4.1: CCTV Surveillance (Subtle Faded Architectural CCTV Background) */}
+      <section className="relative w-full text-slate-900 py-16 sm:py-20 border-b border-slate-200/90 overflow-hidden isolate">
+        {/* CCTV Commercial Photography Background */}
+        <div
+          className="absolute inset-0 z-[-2] bg-no-repeat pointer-events-none"
+          style={{
+            backgroundImage: `url('/images/cctv_background.png')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'left center'
+          }}
+          aria-hidden="true"
+        />
+        {/* Soft White Translucent Overlay (0.74 Opacity for Pristine Foreground Contrast) */}
+        <div
+          className="absolute inset-0 z-[-1] bg-white/75 pointer-events-none"
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
           <div className="space-y-2 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold tracking-wider border border-blue-200/60">
               <Shield className="w-3.5 h-3.5 text-blue-600" />
