@@ -3851,6 +3851,91 @@ export async function deleteTeamMember(id: string): Promise<boolean> {
   return true;
 }
 
+export function subscribeToTeamMembers(
+  callback: (members: TeamMember[]) => void,
+  division?: string
+): () => void {
+  let unsubFirestore: (() => void) | null = null;
+
+  const emitMembers = () => {
+    try {
+      const cached = getCachedTeamMembers(division);
+      callback(cached);
+    } catch (err) {
+      console.warn('Error reading cached team members:', err);
+    }
+  };
+
+  // 1. Immediately emit cached members synchronously for zero-lag UI
+  emitMembers();
+
+  // 2. Asynchronously fetch fresh members
+  const syncFresh = async () => {
+    try {
+      const data = await getTeamMembers(division);
+      callback(data);
+    } catch (e) {
+      console.warn('Error fetching fresh team members in subscriber:', e);
+    }
+  };
+  syncFresh();
+
+  // 3. Real-time Firestore onSnapshot listener
+  if (isFirebaseConfigured && db) {
+    try {
+      const colRef = collection(db, 'team_members');
+      unsubFirestore = onSnapshot(colRef, (snapshot) => {
+        if (!snapshot.empty) {
+          const fresh = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as TeamMember));
+          setLocalItem(STORAGE_KEYS.TEAM, fresh);
+          let filtered = fresh;
+          if (division && division !== 'all') {
+            filtered = fresh.filter(m => !m.division || m.division === 'all' || m.division === division);
+          }
+          callback(filtered);
+        }
+      }, (err) => {
+        console.warn('Firestore onSnapshot error for team_members:', err);
+      });
+    } catch (e) {
+      console.warn('Could not attach Firestore onSnapshot for team_members:', e);
+    }
+  }
+
+  // 4. Same-tab live update listener
+  const handleUpdate = (e: any) => {
+    if (!e.detail || e.detail.key === 'team' || e.detail.key === STORAGE_KEYS.TEAM) {
+      emitMembers();
+      syncFresh();
+    }
+  };
+
+  // 5. Cross-tab storage listener (Fires instantly when admin saves in another tab)
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEYS.TEAM || !e.key) {
+      emitMembers();
+      syncFresh();
+    }
+  };
+
+  // 6. Window focus listener (Fires immediately when user switches to tab)
+  const handleFocus = () => {
+    emitMembers();
+    syncFresh();
+  };
+
+  window.addEventListener('nexalus_data_update', handleUpdate);
+  window.addEventListener('storage', handleStorage);
+  window.addEventListener('focus', handleFocus);
+
+  return () => {
+    if (unsubFirestore) unsubFirestore();
+    window.removeEventListener('nexalus_data_update', handleUpdate);
+    window.removeEventListener('storage', handleStorage);
+    window.removeEventListener('focus', handleFocus);
+  };
+}
+
 // ----------------------------------------------------
 // RECEIPT & INVOICE TEMPLATE SETTINGS
 // ----------------------------------------------------

@@ -17,6 +17,7 @@ interface ProjectGallerySectionProps {
   subtitle?: string;
   maxProjects?: number;
   theme?: 'light' | 'dark';
+  className?: string;
 }
 
 export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
@@ -24,7 +25,8 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
   title,
   subtitle,
   maxProjects = 6,
-  theme = 'light'
+  theme = 'light',
+  className = ''
 }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,7 +130,7 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
       ? 'Chiplun Depot Logistics & Supply Portfolio'
       : division === 'nexalus-innovations'
       ? 'Featured Engineering & Surveillance Case Studies'
-      : 'Proven Client Projects & Turnkey Deployments';
+      : 'Project Gallery';
 
   const defaultSubtitle =
     division === 'am-distributors'
@@ -138,7 +140,23 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
       : 'Explore real-world engineering deployments completed by Nexalus Innovations LLP — verified installations across industrial zones, enterprise tech parks, and residential communities.';
 
   return (
-    <section className={`w-full ${isLight ? 'bg-white text-slate-900 border-slate-200/90' : 'bg-slate-900 text-white border-slate-800'} py-16 sm:py-24 border-b relative overflow-hidden`}>
+    <section className={`w-full ${isLight ? 'text-slate-900 border-slate-200/90' : 'text-white border-slate-800'} py-16 sm:py-24 border-b relative overflow-hidden isolate ${className}`}>
+      {/* Project Gallery Commercial Photography Background */}
+      <div
+        className="absolute inset-0 z-[-2] bg-no-repeat pointer-events-none"
+        style={{
+          backgroundImage: `url('/images/project%20gallary%20background%201.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center'
+        }}
+        aria-hidden="true"
+      />
+      {/* Soft Translucent Overlay (0.60 Opacity for High Contrast Foreground & Crisp Readability) */}
+      <div
+        className={`absolute inset-0 z-[-1] ${isLight ? 'bg-white/60' : 'bg-slate-950/78'} pointer-events-none`}
+        aria-hidden="true"
+      />
+
       {/* Background radial glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-blue-500/5 blur-3xl pointer-events-none" />
 

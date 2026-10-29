@@ -6,6 +6,7 @@ import { auth, db } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
+  Wifi,
   X,
   User,
   UserCheck,
@@ -334,9 +335,35 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
   return (
     <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
       <div
-        className="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden transform transition-all my-auto"
+        className={`relative bg-white w-full ${
+          view === 'choice' ? 'max-w-4xl' : view === 'register' ? 'max-w-3xl' : 'max-w-xl'
+        } rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden transform transition-all my-auto`}
         onClick={e => e.stopPropagation()}
       >
+        <style>{`
+          @keyframes nexalusLogoFade {
+            0%, 100% {
+              opacity: 1;
+              transform: scale(1);
+              box-shadow: 0 6px 24px -2px rgba(197, 160, 89, 0.45);
+            }
+            50% {
+              opacity: 0.35;
+              transform: scale(0.96);
+              box-shadow: 0 2px 10px -2px rgba(197, 160, 89, 0.15);
+            }
+          }
+          @keyframes nexalusAuraPulse {
+            0%, 100% {
+              opacity: 0.65;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.2;
+              transform: scale(0.9);
+            }
+          }
+        `}</style>
         {/* Subtle Corporate Architectural Background Watermark */}
         <div
           className="absolute inset-0 bg-cover bg-center opacity-30 pointer-events-none"
@@ -404,38 +431,85 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
           {/* VIEW 1: CHOICE STATE (Are you a new or existing customer?) */}
           {view === 'choice' && (
             <div className="space-y-6">
-              <div className="text-center space-y-3">
-                {/* Official Corporate Seal with Champagne Gold Accent */}
-                <div className="flex justify-center">
-                  <div className="relative group">
+              {/* Subtle Architectural Grid Pattern Overlay */}
+              <div
+                className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(#0b2545_1px,transparent_1px)] [background-size:18px_18px] opacity-[0.035] pointer-events-none"
+                aria-hidden="true"
+              />
+
+              <div className="relative text-center space-y-3.5">
+                {/* Official Corporate Seal with Champagne Gold Accent & Fade In/Out Animation */}
+                <div className="flex items-center justify-center gap-4 sm:gap-6">
+                  {/* Left Micro-Trust Pill */}
+                  <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50/90 border border-slate-200/80 text-[11px] font-semibold text-slate-600 shadow-2xs backdrop-blur-xs">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Verified Partner</span>
+                  </div>
+
+                  {/* Centered Seal with Radiant Aura & Fade Animation */}
+                  <div className="relative flex justify-center items-center group">
+                    <div
+                      className="absolute w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-tr from-amber-400/25 via-blue-500/15 to-transparent blur-xl pointer-events-none"
+                      style={{ animation: 'nexalusAuraPulse 3.5s ease-in-out infinite' }}
+                    />
                     <img
                       src="/images/parent-company-logo.jpg"
                       alt="Nexalus Innovations LLP Official Seal"
-                      className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-md border-2 border-[#c5a059]/50 ring-4 ring-amber-50/80 bg-white"
+                      className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-[#c5a059]/70 ring-4 ring-amber-50/90 bg-white shadow-lg"
+                      style={{ animation: 'nexalusLogoFade 3.5s ease-in-out infinite' }}
                     />
+                  </div>
+
+                  {/* Right Micro-Trust Pill */}
+                  <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50/90 border border-slate-200/80 text-[11px] font-semibold text-slate-600 shadow-2xs backdrop-blur-xs">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>ISO Certified</span>
                   </div>
                 </div>
 
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50/90 border border-blue-200/70 text-[#0b2545] text-[11px] font-bold tracking-wide">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50/90 border border-blue-200/70 text-[#0b2545] text-[11px] font-bold tracking-wider uppercase">
                   <UserCheck className="w-3.5 h-3.5 text-blue-600" />
                   <span>CLIENT ONBOARDING &amp; ACCOUNT PORTAL</span>
                 </div>
 
-                <div>
+                <div className="space-y-1">
                   <h4 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                     Welcome to Nexalus Innovations LLP
                   </h4>
-                  <p className="text-sm font-bold text-slate-700 mt-1">
+                  <p className="text-sm sm:text-base font-bold text-slate-700">
                     Are you a new customer or an existing customer?
                   </p>
                 </div>
 
-                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed font-medium">
+                {/* 3 Core Solution Pillars to Fill the Space Purposefully */}
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-0.5">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-teal-50/90 border border-teal-200/70 text-teal-800 text-[11px] font-semibold">
+                    <Wifi className="w-3.5 h-3.5 text-teal-600" />
+                    <span>High-Speed Fiber</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50/90 border border-blue-200/70 text-blue-800 text-[11px] font-semibold">
+                    <Shield className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Commercial CCTV</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-50/90 border border-indigo-200/70 text-indigo-800 text-[11px] font-semibold">
+                    <Building className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Enterprise IT</span>
+                  </span>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto leading-relaxed font-medium">
                   Select your onboarding option below to request fiber internet, book commercial CCTV consultations, and track service requests.
                 </p>
+
+                {/* Champagne Gold Refined Separator */}
+                <div className="flex items-center justify-center gap-3 pt-0.5">
+                  <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#c5a059]/40 to-transparent" />
+                  <span className="text-[10px] text-[#c5a059] font-serif">✦</span>
+                  <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#c5a059]/40 to-transparent" />
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-1">
                 {/* Choice 1: New Customer */}
                 <button
                   type="button"
@@ -443,20 +517,31 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     setFormError(null);
                     setView('register');
                   }}
-                  className="group relative p-5 sm:p-6 bg-gradient-to-b from-white to-sky-50/40 hover:to-sky-50/70 rounded-3xl border-2 border-slate-200/80 hover:border-blue-600 text-left transition-all duration-200 shadow-sm hover:shadow-xl hover:shadow-blue-600/10 cursor-pointer flex flex-col justify-between"
+                  className="group relative p-6 sm:p-7 bg-white rounded-3xl border-2 border-slate-200/90 hover:border-blue-600 text-left transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-blue-600/10 cursor-pointer flex flex-col justify-between overflow-hidden isolate"
                 >
-                  <div className="space-y-4">
+                  {/* Subtle Realistic Architectural Glass Building Backdrop on the Right */}
+                  <div
+                    className="absolute right-0 top-0 bottom-0 w-1/2 bg-cover bg-right opacity-15 group-hover:opacity-25 transition-opacity duration-300 pointer-events-none"
+                    style={{ backgroundImage: "url('/images/nexalus-facility-cctv-network.jpg')" }}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent pointer-events-none"
+                    aria-hidden="true"
+                  />
+
+                  <div className="relative z-10 space-y-4">
                     <div className="flex items-center justify-between">
-                      <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow-md shadow-blue-600/25">
-                        <UserPlus className="w-5 h-5" />
+                      <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200/80 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                        <UserPlus className="w-6 h-6 text-blue-600" />
                       </div>
-                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60">
                         First Time
                       </span>
                     </div>
 
                     <div>
-                      <h5 className="text-lg font-black text-slate-900 group-hover:text-blue-700 transition-colors">
+                      <h5 className="text-xl font-black text-slate-900 group-hover:text-blue-700 transition-colors">
                         New Customer
                       </h5>
                       <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -464,30 +549,30 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                       </p>
                     </div>
 
-                    <div className="space-y-1.5 pt-1 text-[11px] text-slate-600 font-medium">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <div className="space-y-2 pt-1 text-xs text-slate-600 font-medium">
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                         <span>Instant connection inquiries</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
                         <span>On-site surveys and consultations</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                        <span>Transparent pricing</span>
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>Transparent corporate pricing</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                        <span>Dedicated support</span>
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>Dedicated priority onboarding</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-5 pt-3.5 border-t border-slate-200/80">
-                    <div className="w-full py-2.5 px-4 rounded-xl text-xs font-black text-white bg-[#0b2545] hover:bg-[#071930] flex items-center justify-center gap-2 shadow-sm transition-all">
+                  <div className="relative z-10 mt-6 pt-4 border-t border-slate-100">
+                    <div className="w-full py-3 px-5 rounded-xl text-xs sm:text-sm font-black text-white bg-[#0b2545] hover:bg-[#071930] flex items-center justify-center gap-2 shadow-sm transition-all group-hover:gap-3">
                       <span>Get Started</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </button>
@@ -499,20 +584,31 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                     setFormError(null);
                     setView('login');
                   }}
-                  className="group relative p-5 sm:p-6 bg-gradient-to-b from-white to-slate-50/50 hover:to-slate-100/70 rounded-3xl border-2 border-slate-200/80 hover:border-slate-800 text-left transition-all duration-200 shadow-sm hover:shadow-xl hover:shadow-slate-900/10 cursor-pointer flex flex-col justify-between"
+                  className="group relative p-6 sm:p-7 bg-white rounded-3xl border-2 border-slate-200/90 hover:border-slate-800 text-left transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-slate-900/10 cursor-pointer flex flex-col justify-between overflow-hidden isolate"
                 >
-                  <div className="space-y-4">
+                  {/* Subtle Realistic Desk / Office Commercial Photography on the Right */}
+                  <div
+                    className="absolute right-0 top-0 bottom-0 w-1/2 bg-cover bg-right opacity-15 group-hover:opacity-25 transition-opacity duration-300 pointer-events-none"
+                    style={{ backgroundImage: "url('/images/pexels-switch-desk.jpg')" }}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent pointer-events-none"
+                    aria-hidden="true"
+                  />
+
+                  <div className="relative z-10 space-y-4">
                     <div className="flex items-center justify-between">
-                      <div className="w-11 h-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow-md shadow-slate-900/25">
-                        <LogIn className="w-5 h-5" />
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 text-slate-800 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                        <LogIn className="w-6 h-6 text-slate-800" />
                       </div>
-                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-slate-200 text-slate-800 border border-slate-300">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                         Returning
                       </span>
                     </div>
 
                     <div>
-                      <h5 className="text-lg font-black text-slate-900 group-hover:text-slate-900 transition-colors">
+                      <h5 className="text-xl font-black text-slate-900 group-hover:text-slate-900 transition-colors">
                         Existing Customer
                       </h5>
                       <p className="text-xs text-slate-500 mt-1 leading-relaxed">
@@ -520,32 +616,44 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                       </p>
                     </div>
 
-                    <div className="space-y-1.5 pt-1 text-[11px] text-slate-600 font-medium">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-slate-800 shrink-0" />
+                    <div className="space-y-2 pt-1 text-xs text-slate-600 font-medium">
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-slate-700 shrink-0" />
                         <span>Track quotation progress</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-slate-800 shrink-0" />
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-slate-700 shrink-0" />
                         <span>Manage service requests</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-slate-800 shrink-0" />
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-slate-700 shrink-0" />
                         <span>View saved service addresses</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-slate-800 shrink-0" />
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-slate-700 shrink-0" />
                         <span>Dedicated customer desk</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-5 pt-3.5 border-t border-slate-200/80">
-                    <div className="w-full py-2.5 px-4 rounded-xl text-xs font-black text-slate-800 bg-white border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2 shadow-2xs transition-all">
+                  <div className="relative z-10 mt-6 pt-4 border-t border-slate-100">
+                    <div className="w-full py-3 px-5 rounded-xl text-xs sm:text-sm font-black text-slate-900 bg-white border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 flex items-center justify-center gap-2 shadow-2xs transition-all group-hover:gap-3">
                       <span>Sign In</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
+                </button>
+              </div>
+
+              {/* Task 3: Continue Without Logging In */}
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={handleDismiss}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer inline-flex items-center gap-1.5 group py-1.5"
+                >
+                  <span>Continue browsing website without logging in</span>
+                  <span className="text-slate-400 group-hover:translate-x-0.5 transition-transform">→</span>
                 </button>
               </div>
 

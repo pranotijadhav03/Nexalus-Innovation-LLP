@@ -39,6 +39,55 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
   const [quotePrefillCity, setQuotePrefillCity] = useState('');
 
+  // Dynamic Animated Typewriter Placeholder Effect
+  const placeholderPhrases = useMemo(() => [
+    'Enter your city (e.g. Chiplun, Ratnagiri)...',
+    'Search Ratnagiri (1 Gbps Fiber & 4K CCTV)...',
+    'Search Sangli operational zone...',
+    'Search Pune enterprise infrastructure...',
+    'Search Mumbai connectivity hub...',
+    'Search Kolhapur field network...',
+    'Search by PIN code (e.g. 415605)...'
+  ], []);
+
+  const [animatedPlaceholder, setAnimatedPlaceholder] = useState('');
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const [isDeletingPhrase, setIsDeletingPhrase] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+
+  useEffect(() => {
+    if (searchTerm || isInputFocused) return;
+
+    const currentPhrase = placeholderPhrases[phraseIndex];
+    let timeout: any;
+
+    if (!isDeletingPhrase) {
+      if (charIndex < currentPhrase.length) {
+        timeout = setTimeout(() => {
+          setAnimatedPlaceholder(currentPhrase.substring(0, charIndex + 1));
+          setCharIndex(prev => prev + 1);
+        }, 55);
+      } else {
+        timeout = setTimeout(() => {
+          setIsDeletingPhrase(true);
+        }, 2200);
+      }
+    } else {
+      if (charIndex > 0) {
+        timeout = setTimeout(() => {
+          setAnimatedPlaceholder(currentPhrase.substring(0, charIndex - 1));
+          setCharIndex(prev => prev - 1);
+        }, 30);
+      } else {
+        setIsDeletingPhrase(false);
+        setPhraseIndex(prev => (prev + 1) % placeholderPhrases.length);
+      }
+    }
+
+    return () => clearTimeout(timeout);
+  }, [charIndex, isDeletingPhrase, phraseIndex, placeholderPhrases, searchTerm, isInputFocused]);
+
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const isLight = theme === 'light';
 
@@ -163,8 +212,24 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
         isLight
           ? 'bg-white text-slate-900 border-slate-200/90'
           : 'bg-slate-950 text-white border-slate-800'
-      } py-16 sm:py-24 border-b relative overflow-hidden ${className}`}
+      } py-16 sm:py-24 border-b relative overflow-hidden isolate ${className}`}
     >
+      {/* Coverage Area Commercial Photography Background */}
+      <div
+        className="absolute inset-0 z-[-2] bg-no-repeat pointer-events-none"
+        style={{
+          backgroundImage: `url('/images/coverage%20area%20background.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center'
+        }}
+        aria-hidden="true"
+      />
+      {/* Soft Translucent Overlay (0.58 Opacity for High Contrast Foreground & Clearly Visible Photography) */}
+      <div
+        className={`absolute inset-0 z-[-1] ${isLight ? 'bg-white/58' : 'bg-slate-950/75'} pointer-events-none`}
+        aria-hidden="true"
+      />
+
       {/* Background Lighting Gradients */}
       <div className="absolute top-1/4 -left-48 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -190,15 +255,21 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
           </div>
         </BlurZoomReveal>
 
-        {/* Google-Style Search Interface */}
+        {/* Google-Style Search Interface with Animated Typewriter Placeholder & Luminous Halo */}
         <BlurZoomReveal direction="up" delay={80}>
-          <div ref={searchContainerRef} className="max-w-2xl mx-auto relative">
+          <div ref={searchContainerRef} className="max-w-2xl mx-auto relative group">
+            {/* Ambient Animated Halo Glow */}
+            <div
+              className="absolute -inset-1.5 rounded-full bg-gradient-to-r from-blue-500/20 via-cyan-400/25 to-blue-600/20 blur-md opacity-40 group-hover:opacity-75 transition-opacity duration-500 pointer-events-none"
+              style={{ animation: 'pulse 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}
+            />
+
             <div className={`relative flex items-center ${
               isLight
-                ? 'bg-slate-50 border-2 border-slate-200 focus-within:border-blue-500 focus-within:ring-blue-500/10'
-                : 'bg-slate-900/95 border-2 border-slate-700 focus-within:border-cyan-400 focus-within:ring-cyan-500/20'
-            } rounded-full shadow-xl transition-all p-1.5 pl-5 sm:pl-6 focus-within:ring-4`}>
-              <Search className={`w-5 h-5 ${isLight ? 'text-blue-600' : 'text-cyan-400'} shrink-0 pointer-events-none`} />
+                ? 'bg-white/95 backdrop-blur-md border-2 border-slate-200/90 shadow-xl focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/15'
+                : 'bg-slate-900/95 backdrop-blur-md border-2 border-slate-700 shadow-2xl focus-within:border-cyan-400 focus-within:ring-4 focus-within:ring-cyan-500/20'
+            } rounded-full transition-all duration-300 p-1.5 pl-5 sm:pl-6`}>
+              <Search className={`w-5 h-5 ${isLight ? 'text-blue-600' : 'text-cyan-400'} shrink-0 pointer-events-none transition-transform group-focus-within:scale-110`} />
 
               <input
                 type="text"
@@ -212,7 +283,11 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                   }
                 }}
                 onFocus={() => {
+                  setIsInputFocused(true);
                   if (searchTerm.trim()) setShowSuggestions(true);
+                }}
+                onBlur={() => {
+                  setIsInputFocused(false);
                 }}
                 onKeyDown={e => {
                   if (e.key === 'Enter') {
@@ -220,8 +295,8 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                     executeSearch();
                   }
                 }}
-                placeholder="Enter city or area (e.g. Chiplun, Ratnagiri, Sangli, Pune, Mumbai, Kolhapur)..."
-                className={`w-full px-3 py-3 sm:py-3.5 bg-transparent ${isLight ? 'text-slate-900 placeholder-slate-400' : 'text-white placeholder-slate-400'} text-sm sm:text-base outline-none`}
+                placeholder={isInputFocused ? 'Type city, pin code or area name...' : (animatedPlaceholder ? `${animatedPlaceholder}|` : 'Enter city or area (e.g. Chiplun, Ratnagiri, Sangli, Pune)...')}
+                className={`w-full px-3 py-3 sm:py-3.5 bg-transparent ${isLight ? 'text-slate-900 placeholder-slate-400' : 'text-white placeholder-slate-400'} text-sm sm:text-base outline-none font-medium`}
               />
 
               {searchTerm && (
@@ -238,7 +313,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
               <button
                 type="button"
                 onClick={() => executeSearch()}
-                className="px-5 sm:px-7 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs sm:text-sm rounded-full shrink-0 shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer"
+                className="px-5 sm:px-7 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs sm:text-sm rounded-full shrink-0 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transform hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <span>Search</span>
                 <ArrowRight className="w-4 h-4 hidden sm:inline" />
@@ -278,11 +353,43 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
               </div>
             )}
 
-            {/* Search Prompt when no search made yet */}
+            {/* Search Prompt and Quick-Access City Chips when no search made yet */}
             {!hasSearched && (
-              <p className={`text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'} mt-3`}>
-                💡 Tip: Type your city name in the search box above and click <span className={`${isLight ? 'text-blue-600' : 'text-cyan-300'} font-semibold`}>&ldquo;Search&rdquo;</span> or press Enter.
-              </p>
+              <div className="mt-4 space-y-2.5 animate-in fade-in duration-500">
+                {/* Popular Search City Chips */}
+                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 text-xs">
+                  <span className={`inline-flex items-center gap-1.5 ${isLight ? 'text-slate-500' : 'text-slate-400'} font-semibold mr-1`}>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span>Live Hubs:</span>
+                  </span>
+
+                  {['Chiplun', 'Ratnagiri', 'Sangli', 'Pune', 'Mumbai', 'Kolhapur'].map(quickCity => (
+                    <button
+                      key={quickCity}
+                      type="button"
+                      onClick={() => {
+                        setSearchTerm(quickCity);
+                        executeSearch(quickCity);
+                      }}
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer transform hover:-translate-y-0.5 ${
+                        isLight
+                          ? 'bg-white/90 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200/90 shadow-2xs hover:border-blue-300 hover:shadow-xs'
+                          : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-800 shadow-2xs hover:border-cyan-500/40'
+                      }`}
+                    >
+                      <MapPin className="w-3 h-3 text-blue-500 shrink-0" />
+                      <span>{quickCity}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <p className={`text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                  💡 Tip: Click any live operational hub above or type your location to check 1 Gbps Fiber &amp; 4K CCTV availability.
+                </p>
+              </div>
             )}
           </div>
         </BlurZoomReveal>

@@ -413,9 +413,9 @@ export const HomePage: React.FC = () => {
           )}
         </div>
 
-        {/* Cinematic directional contrast scrim for pristine text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/98 via-[#0f2444]/90 via-48% md:via-42% to-transparent pointer-events-none z-1" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/85 via-transparent to-[#0a1628]/50 pointer-events-none z-1" />
+        {/* Decreased fade scrim: keeps text readable while letting background imagery remain visibly clear */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/88 via-[#0f2444]/65 via-42% md:via-36% to-transparent pointer-events-none z-1" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/70 via-transparent to-[#0a1628]/30 pointer-events-none z-1" />
 
         {/* Carousel Arrow Controls (Visible if multiple slides exist) */}
         {heroSlides.length > 1 && (
@@ -534,26 +534,45 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* =========================================================================
-          SLIDE 2: OUR BRANDS (CLEAN WHITE THEME)
+          SLIDE 2: OUR BRANDS (WITH OUR BRANDS BACKGROUND IMAGE & ANIMATIONS)
           ========================================================================= */}
-      <section className="w-full bg-white py-16 sm:py-20 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="text-center max-w-3xl mx-auto space-y-2.5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-wider border border-blue-200">
-              <Building2 className="w-3.5 h-3.5 text-blue-600" />
-              <span>Our Brands</span>
+      <section className="relative w-full text-slate-900 py-16 sm:py-20 border-b border-slate-200/90 overflow-hidden isolate">
+        {/* Our Brands Commercial Photography Background */}
+        <div
+          className="absolute inset-0 z-[-2] bg-no-repeat pointer-events-none"
+          style={{
+            backgroundImage: `url('/images/our%20brands%20background.png')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center center'
+          }}
+          aria-hidden="true"
+        />
+        {/* Decreased fade overlay (0.54 Opacity so background imagery is visibly clear & vibrant) */}
+        <div
+          className="absolute inset-0 z-[-1] bg-white/54 pointer-events-none"
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <BlurZoomReveal direction="up" delay={0}>
+            <div className="text-center max-w-3xl mx-auto space-y-2.5">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-wider border border-blue-200">
+                <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                <span>Our Brands</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
+                Our Brands
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
+                Under <strong>Nexalus Innovations LLP</strong>, we manage two specialized operational brands delivering engineering excellence and regional supply chain logistics.
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-              Our Brands
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
-              Under <strong>Nexalus Innovations LLP</strong>, we manage two specialized operational brands delivering engineering excellence and regional supply chain logistics.
-            </p>
-          </div>
+          </BlurZoomReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Division 1: Nexalus Innovations */}
-            <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-blue-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group">
+            <BlurZoomReveal direction="left" xOffset={-50} delay={0} duration={800} className="h-full flex flex-col">
+              <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-blue-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
               <Link to="/brands/nexalus-innovations" className="block relative h-64 overflow-hidden bg-slate-100 cursor-pointer">
                 <img
                   src="/images/server-racks-4508751.jpg"
@@ -612,8 +631,11 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
 
+            </BlurZoomReveal>
+
             {/* Division 2: A.M. Distributors Chiplun */}
-            <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-teal-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group">
+            <BlurZoomReveal direction="right" xOffset={50} delay={120} duration={800} className="h-full flex flex-col">
+              <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-teal-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
               <Link to="/brands/am-distributors" className="block relative h-64 overflow-hidden bg-slate-100 cursor-pointer">
                 <img
                   src="/images/projects/real-warehouse-distribution.jpg"
@@ -671,6 +693,7 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
           </div>
         </div>
       </section>
@@ -683,9 +706,39 @@ export const HomePage: React.FC = () => {
       )}
 
       {/* =========================================================================
-          SECTION: PROJECT GALLERY
+          COMBINED SECTION: INFRASTRUCTURE COVERAGE SEARCH & VERIFIED PROJECT GALLERY
           ========================================================================= */}
-      <ProjectGallerySection division="corporate" theme="light" />
+      <div id="service-coverage-and-gallery" className="w-full bg-white border-b border-slate-200/90 relative overflow-hidden">
+        {/* Subtle Background Lighting Gradients */}
+        <div className="absolute top-1/4 -left-48 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10">
+          {/* 1. Find Nexalus Service & Infrastructure in Your Area (Search First) */}
+          <AreasCoveredSection
+            division="corporate"
+            theme="light"
+            className="border-b-0 pb-8 sm:pb-12 pt-16 sm:pt-20"
+          />
+
+          {/* Elegant Integrated Divider between Coverage Search & Verified Project Gallery */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center gap-4">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-slate-200" />
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-600/30 ring-4 ring-blue-50" />
+              <div className="flex-1 h-px bg-gradient-to-l from-transparent via-slate-200 to-slate-200" />
+            </div>
+          </div>
+
+          {/* 2. Verified Project Gallery (Immediately Following) */}
+          <ProjectGallerySection
+            division="corporate"
+            theme="light"
+            title="Project Gallery"
+            className="border-b-0 pt-8 sm:pt-12 pb-16 sm:pb-24"
+          />
+        </div>
+      </div>
 
       {/* =========================================================================
           SECTION 3: INTEGRATED TECHNOLOGY INFRASTRUCTURE (3 PILLARS - RICH CORPORATE BLUE THEME)
@@ -942,29 +995,32 @@ export const HomePage: React.FC = () => {
           }}
           aria-hidden="true"
         />
-        {/* Soft White Translucent Overlay (0.74 Opacity for Pristine Foreground Contrast) */}
+        {/* Soft White Translucent Overlay (0.64 Opacity for Crisp Foreground Readability) */}
         <div
-          className="absolute inset-0 z-[-1] bg-white/75 pointer-events-none"
+          className="absolute inset-0 z-[-1] bg-white/64 pointer-events-none"
           aria-hidden="true"
         />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
-          <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold tracking-wider border border-blue-200/60">
-              <Shield className="w-3.5 h-3.5 text-blue-600" />
-              <span>CCTV Surveillance</span>
+          <BlurZoomReveal direction="up" delay={0}>
+            <div className="space-y-2 max-w-3xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold tracking-wider border border-blue-200/60">
+                <Shield className="w-3.5 h-3.5 text-blue-600" />
+                <span>CCTV Surveillance</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
+                Security &amp; Surveillance
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Explore CCTV cameras and surveillance equipment for commercial, industrial, and institutional environments.
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-              Security &amp; Surveillance
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Explore CCTV cameras and surveillance equipment for commercial, industrial, and institutional environments.
-            </p>
-          </div>
+          </BlurZoomReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* CCTV Card 1 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <BlurZoomReveal direction="left" xOffset={-50} delay={0} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
+              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
               <div>
                 <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
                   <img
@@ -996,9 +1052,11 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
 
             {/* CCTV Card 2 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <BlurZoomReveal direction="center" yOffset={30} delay={120} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
+              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
               <div>
                 <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
                   <img
@@ -1030,9 +1088,11 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
 
             {/* CCTV Card 3 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <BlurZoomReveal direction="right" xOffset={50} delay={240} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
+              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
               <div>
                 <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
                   <img
@@ -1064,42 +1124,64 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
           </div>
 
-          <div className="text-center pt-2 sm:pt-4">
-            <Link to="/products?brand=cp-plus">
-              <Button
-                variant="outline"
-                size="md"
-                className="font-bold border-blue-600 text-blue-600 hover:bg-blue-50"
-                icon={<ArrowRight className="w-4 h-4" />}
-              >
-                View All CCTV Products
-              </Button>
-            </Link>
-          </div>
+          <BlurZoomReveal direction="up" delay={150}>
+            <div className="text-center pt-2 sm:pt-4">
+              <Link to="/products?brand=cp-plus">
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="font-bold border-blue-600 text-blue-600 hover:bg-blue-50"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                >
+                  View All CCTV Products
+                </Button>
+              </Link>
+            </div>
+          </BlurZoomReveal>
         </div>
       </section>
 
       {/* 4.2: Fiber Internet & Connectivity (RICH CORPORATE BLUE THEME) */}
-      <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-20 border-b border-blue-900/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
-          <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-semibold tracking-wider border border-teal-400/30">
-              <Wifi className="w-3.5 h-3.5 text-teal-400" />
-              <span>Fiber Internet</span>
+      <section className="relative w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-20 border-b border-blue-900/40 overflow-hidden isolate">
+        {/* Swapped Background: Enterprise Networking Gear Blended into Navy Theme */}
+        <div
+          className="absolute inset-0 z-[-2] bg-no-repeat pointer-events-none"
+          style={{
+            backgroundImage: `url('/images/Enterprise_IT_Networking_background.png')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'right center'
+          }}
+          aria-hidden="true"
+        />
+        {/* Rich Corporate Navy Overlay (0.65 Opacity Preserving Rich Navy Identity & Crisp Readability) */}
+        <div
+          className="absolute inset-0 z-[-1] bg-[#0a1628]/65 pointer-events-none"
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
+          <BlurZoomReveal direction="up" delay={0}>
+            <div className="space-y-2 max-w-3xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-semibold tracking-wider border border-teal-400/30">
+                <Wifi className="w-3.5 h-3.5 text-teal-400" />
+                <span>Fiber Internet</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+                Fiber Internet &amp; Connectivity
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Explore fiber connectivity equipment, ONT devices, Wi-Fi solutions, and related networking products.
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-              Fiber Internet &amp; Connectivity
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Explore fiber connectivity equipment, ONT devices, Wi-Fi solutions, and related networking products.
-            </p>
-          </div>
+          </BlurZoomReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Fiber Card 1 */}
-            <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group">
+            <BlurZoomReveal direction="left" xOffset={-50} delay={0} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
+              <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group h-full">
               <div>
                 <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
                   <img
@@ -1131,9 +1213,11 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
 
             {/* Fiber Card 2 */}
-            <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group">
+            <BlurZoomReveal direction="center" yOffset={30} delay={120} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
+              <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group h-full">
               <div>
                 <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
                   <img
@@ -1165,9 +1249,11 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
 
             {/* Fiber Card 3 */}
-            <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group">
+            <BlurZoomReveal direction="right" xOffset={50} delay={240} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
+              <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group h-full">
               <div>
                 <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
                   <img
@@ -1199,42 +1285,64 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
           </div>
 
-          <div className="text-center pt-2 sm:pt-4">
-            <Link to="/products?brand=one-broadband">
-              <Button
-                variant="primary"
-                size="md"
-                className="font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-900/40"
-                icon={<ArrowRight className="w-4 h-4" />}
-              >
-                View All Internet Products
-              </Button>
-            </Link>
-          </div>
+          <BlurZoomReveal direction="up" delay={150}>
+            <div className="text-center pt-2 sm:pt-4">
+              <Link to="/products?brand=one-broadband">
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-900/40"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                >
+                  View All Internet Products
+                </Button>
+              </Link>
+            </div>
+          </BlurZoomReveal>
         </div>
       </section>
 
       {/* 4.3: Enterprise IT Networking */}
-      <section className="w-full bg-white text-slate-900 py-16 sm:py-20 border-b border-slate-200/90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
-          <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold tracking-wider border border-indigo-200/60">
-              <Server className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Enterprise IT Networking</span>
+      <section className="relative w-full bg-white text-slate-900 py-16 sm:py-20 border-b border-slate-200/90 overflow-hidden isolate">
+        {/* Swapped Background: Fiber Internet Commercial Photography Background */}
+        <div
+          className="absolute inset-0 z-[-2] bg-no-repeat pointer-events-none"
+          style={{
+            backgroundImage: `url('/images/Fiber_Internet_background.png')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'left center'
+          }}
+          aria-hidden="true"
+        />
+        {/* Soft White Translucent Overlay (0.64 Opacity for High Contrast Foreground) */}
+        <div
+          className="absolute inset-0 z-[-1] bg-white/64 pointer-events-none"
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
+          <BlurZoomReveal direction="up" delay={0}>
+            <div className="text-center max-w-3xl mx-auto space-y-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold tracking-wider border border-indigo-200/60 shadow-2xs">
+                <Server className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Enterprise IT Networking</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
+                Enterprise Networking Equipment
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl mx-auto">
+                Explore networking hardware for business connectivity, structured infrastructure, and enterprise network deployments.
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-              Enterprise Networking Equipment
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Explore networking hardware for business connectivity, structured infrastructure, and enterprise network deployments.
-            </p>
-          </div>
+          </BlurZoomReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Networking Card 1 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <BlurZoomReveal direction="left" xOffset={-50} delay={0} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
+              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
               <div>
                 <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
                   <img
@@ -1266,9 +1374,11 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
 
             {/* Networking Card 2 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <BlurZoomReveal direction="center" yOffset={30} delay={120} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
+              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
               <div>
                 <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
                   <img
@@ -1300,9 +1410,11 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
 
             {/* Networking Card 3 */}
-            <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+            <BlurZoomReveal direction="right" xOffset={50} delay={240} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
+              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
               <div>
                 <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
                   <img
@@ -1334,20 +1446,23 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+            </BlurZoomReveal>
           </div>
 
-          <div className="text-center pt-2 sm:pt-4">
-            <Link to="/products?brand=itti-networking">
-              <Button
-                variant="outline"
-                size="md"
-                className="font-bold border-indigo-600 text-indigo-600 hover:bg-indigo-50"
-                icon={<ArrowRight className="w-4 h-4" />}
-              >
-                View All Networking Products
-              </Button>
-            </Link>
-          </div>
+          <BlurZoomReveal direction="up" delay={150}>
+            <div className="text-center pt-2 sm:pt-4">
+              <Link to="/products?brand=itti-networking">
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="font-bold border-indigo-600 text-indigo-600 hover:bg-indigo-50"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                >
+                  View All Networking Products
+                </Button>
+              </Link>
+            </div>
+          </BlurZoomReveal>
         </div>
       </section>
 
@@ -1361,31 +1476,33 @@ export const HomePage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-12 relative z-10">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-cyan-300 text-xs font-black uppercase tracking-wider border border-blue-400/30">
-                <Wifi className="w-3.5 h-3.5 text-cyan-400" />
-                <span>HIGH-SPEED BROADBAND INFRASTRUCTURE</span>
+          <BlurZoomReveal direction="up" delay={0}>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div className="space-y-3 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-cyan-300 text-xs font-black uppercase tracking-wider border border-blue-400/30">
+                  <Wifi className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>HIGH-SPEED BROADBAND INFRASTRUCTURE</span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+                  High-Speed Broadband Plans &amp; Tariffs
+                </h2>
+                <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+                  Connect your business or home with symmetrical optical fiber internet powered by leading tier-1 providers with local installation and maintenance by Nexalus.
+                </p>
               </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-                High-Speed Broadband Plans &amp; Tariffs
-              </h2>
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                Connect your business or home with symmetrical optical fiber internet powered by leading tier-1 providers with local installation and maintenance by Nexalus.
-              </p>
-            </div>
 
-            <Link to="/plans">
-              <Button
-                variant="outline"
-                size="md"
-                className="font-bold border-cyan-400 text-cyan-300 hover:bg-cyan-500/10 whitespace-nowrap cursor-pointer"
-                icon={<ArrowRight className="w-4 h-4" />}
-              >
-                View Full Plans &amp; Comparison
-              </Button>
-            </Link>
-          </div>
+              <Link to="/plans">
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="font-bold border-cyan-400 text-cyan-300 hover:bg-cyan-500/10 whitespace-nowrap cursor-pointer"
+                  icon={<ArrowRight className="w-4 h-4" />}
+                >
+                  View Full Plans &amp; Comparison
+                </Button>
+              </Link>
+            </div>
+          </BlurZoomReveal>
 
           {/* Broadband Cart Saved Plans Banner */}
           {cartItems.length > 0 && (
@@ -1456,7 +1573,8 @@ export const HomePage: React.FC = () => {
           )}
 
           {/* Provider Selector Tabs */}
-          <div className="inline-flex flex-wrap p-1.5 bg-slate-800/90 rounded-2xl border border-slate-700/80 gap-1.5">
+          <BlurZoomReveal direction="up" delay={80}>
+            <div className="inline-flex flex-wrap p-1.5 bg-slate-800/90 rounded-2xl border border-slate-700/80 gap-1.5">
             <button
               type="button"
               onClick={() => setHomeProviderTab('airtel')}
@@ -1509,16 +1627,33 @@ export const HomePage: React.FC = () => {
               <span>One Broadband (FTTH)</span>
             </button>
           </div>
+          </BlurZoomReveal>
 
           {/* Plans Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {homeProviderTab === 'one-broadband' ? (
               // Legacy One Broadband Plans Preview
-              homeOnePlans.slice(0, 3).map((plan) => (
-                <div
-                  key={plan.id}
-                  className="rounded-3xl bg-slate-800/80 border border-slate-700/80 hover:border-teal-500/60 transition-all duration-300 p-6 sm:p-8 flex flex-col justify-between shadow-xl group relative"
-                >
+              homeOnePlans.slice(0, 3).map((plan, idx) => {
+                const colPos = idx % 3;
+                const direction = colPos === 0 ? 'left' : colPos === 1 ? 'center' : 'right';
+                const xOffset = colPos === 0 ? -50 : colPos === 2 ? 50 : 0;
+                const yOffset = colPos === 1 ? 30 : 0;
+                const delay = colPos * 120;
+                return (
+                  <BlurZoomReveal
+                    key={plan.id}
+                    direction={direction}
+                    xOffset={xOffset}
+                    yOffset={yOffset}
+                    delay={delay}
+                    duration={800}
+                    blur={10}
+                    scale={0.94}
+                    className="h-full flex flex-col"
+                  >
+                    <div
+                      className="rounded-3xl bg-slate-800/80 border border-slate-700/80 hover:border-teal-500/60 transition-all duration-300 p-6 sm:p-8 flex flex-col justify-between shadow-xl group relative h-full"
+                    >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30">
@@ -1620,7 +1755,9 @@ export const HomePage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              ))
+                  </BlurZoomReveal>
+                );
+              })
             ) : (
               // Multi-Provider (Airtel, BSNL, RailWire) Plans Preview
               (() => {
@@ -1660,7 +1797,12 @@ export const HomePage: React.FC = () => {
                   );
                 }
 
-                return currentPlans.map((plan) => {
+                return currentPlans.map((plan, idx) => {
+                  const colPos = idx % 3;
+                  const direction = colPos === 0 ? 'left' : colPos === 1 ? 'center' : 'right';
+                  const xOffset = colPos === 0 ? -50 : colPos === 2 ? 50 : 0;
+                  const yOffset = colPos === 1 ? 30 : 0;
+                  const delay = colPos * 120;
                   const providerTheme = {
                     airtel: { border: 'hover:border-rose-500/60', badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-500/30', btn: 'bg-rose-600 hover:bg-rose-500' },
                     bsnl: { border: 'hover:border-blue-500/60', badgeBg: 'bg-blue-500/20 text-blue-300 border-blue-500/30', btn: 'bg-blue-600 hover:bg-blue-500' },
@@ -1668,10 +1810,20 @@ export const HomePage: React.FC = () => {
                   }[homeProviderTab] || { border: 'hover:border-blue-500/60', badgeBg: 'bg-blue-500/20 text-blue-300 border-blue-500/30', btn: 'bg-blue-600 hover:bg-blue-500' };
 
                   return (
-                    <div
+                    <BlurZoomReveal
                       key={plan.id}
-                      className={`rounded-3xl bg-slate-800/80 border border-slate-700/80 ${providerTheme.border} transition-all duration-300 p-6 sm:p-8 flex flex-col justify-between shadow-xl group relative`}
+                      direction={direction}
+                      xOffset={xOffset}
+                      yOffset={yOffset}
+                      delay={delay}
+                      duration={800}
+                      blur={10}
+                      scale={0.94}
+                      className="h-full flex flex-col"
                     >
+                      <div
+                        className={`rounded-3xl bg-slate-800/80 border border-slate-700/80 ${providerTheme.border} transition-all duration-300 p-6 sm:p-8 flex flex-col justify-between shadow-xl group relative h-full`}
+                      >
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${providerTheme.badgeBg} border`}>
@@ -1778,6 +1930,7 @@ export const HomePage: React.FC = () => {
                         </button>
                       </div>
                     </div>
+                    </BlurZoomReveal>
                   );
                 });
               })()
@@ -1793,21 +1946,25 @@ export const HomePage: React.FC = () => {
           ========================================================================= */}
       <section className="w-full bg-white py-16 sm:py-24 border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-wider border border-blue-200 shadow-2xs">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span>Where We Provide Services</span>
+          {/* Section Header */}
+          <BlurZoomReveal direction="up" delay={0}>
+            <div className="text-center max-w-3xl mx-auto space-y-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-wider border border-blue-200 shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                <span>Where We Provide Services</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
+                Where Our CCTV, Internet &amp; Network Services Are Used
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
+                Nexalus Innovations LLP installs security cameras, high-speed optical fiber internet, and networking setups across these key places:
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-              Where Our CCTV, Internet &amp; Network Services Are Used
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
-              Nexalus Innovations LLP installs security cameras, high-speed optical fiber internet, and networking setups across these key places:
-            </p>
-          </div>
+          </BlurZoomReveal>
 
           {/* 4 Interactive Places Tabs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <BlurZoomReveal direction="up" delay={80}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <button
               type="button"
               onClick={() => setActivePlace('offices')}
@@ -1940,9 +2097,11 @@ export const HomePage: React.FC = () => {
               </div>
             </button>
           </div>
+          </BlurZoomReveal>
 
           {/* Dynamic Place Details Showcase Box */}
-          <div className="rounded-3xl bg-white border border-slate-200/90 shadow-2xl shadow-blue-900/10 p-6 sm:p-10 space-y-8">
+          <BlurZoomReveal direction="up" yOffset={30} delay={140} duration={800} blur={10} scale={0.97}>
+            <div className="rounded-3xl bg-white border border-slate-200/90 shadow-2xl shadow-blue-900/10 p-6 sm:p-10 space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left Column: Place Name & How Services Are Used */}
               <div className="lg:col-span-7 space-y-5">
@@ -2195,6 +2354,7 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
           </div>
+          </BlurZoomReveal>
         </div>
       </section>
 
@@ -2204,58 +2364,76 @@ export const HomePage: React.FC = () => {
       <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-24 border-b border-blue-900/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="p-8 sm:p-12 rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-2xl space-y-10">
-            <div className="max-w-3xl space-y-2">
-              <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">
-                Verified Value &amp; Engineering Standards
-              </span>
-              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
-                Why Organizations Choose Nexalus as Their Infrastructure Partner
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                We eliminate multi-vendor friction by combining surveillance hardware distribution with optical network engineering under one unified contract.
-              </p>
-            </div>
+            <BlurZoomReveal direction="up" delay={0}>
+              <div className="max-w-3xl space-y-2">
+                <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">
+                  Verified Value &amp; Engineering Standards
+                </span>
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
+                  Why Organizations Choose Nexalus as Their Infrastructure Partner
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  We eliminate multi-vendor friction by combining surveillance hardware distribution with optical network engineering under one unified contract.
+                </p>
+              </div>
+            </BlurZoomReveal>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-cyan-400 border border-blue-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                  <Shield className="w-6 h-6" />
+              <BlurZoomReveal direction="left" xOffset={-40} delay={0} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
+                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-cyan-400 border border-blue-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                      <Shield className="w-6 h-6" />
+                    </div>
+                    <h4 className="font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">Single Vendor Accountability</h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      No finger-pointing between your internet service provider and security hardware vendor. We own the complete fiber pipe and video stream.
+                    </p>
+                  </div>
                 </div>
-                <h4 className="font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">Single Vendor Accountability</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  No finger-pointing between your internet service provider and security hardware vendor. We own the complete fiber pipe and video stream.
-                </p>
-              </div>
+              </BlurZoomReveal>
 
-              <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group">
-                <div className="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                  <Award className="w-6 h-6" />
+              <BlurZoomReveal direction="center" yOffset={30} delay={100} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
+                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                      <Award className="w-6 h-6" />
+                    </div>
+                    <h4 className="font-bold text-white text-sm group-hover:text-sky-300 transition-colors">100% Genuine OEM Hardware</h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Direct authorized systems integrator for commercial 4K cameras, next-gen hardware firewalls, and dedicated optical fiber leased lines. Authentic serial numbers and warranties.
+                    </p>
+                  </div>
                 </div>
-                <h4 className="font-bold text-white text-sm group-hover:text-sky-300 transition-colors">100% Genuine OEM Hardware</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Direct authorized systems integrator for commercial 4K cameras, next-gen hardware firewalls, and dedicated optical fiber leased lines. Authentic serial numbers and warranties.
-                </p>
-              </div>
+              </BlurZoomReveal>
 
-              <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                  <Wifi className="w-6 h-6" />
+              <BlurZoomReveal direction="center" yOffset={30} delay={200} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
+                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                      <Wifi className="w-6 h-6" />
+                    </div>
+                    <h4 className="font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">Precision Fiber Engineering</h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Pure optical fiber backhaul designed with redundant ring topologies for minimal jitter, OTDR-tested loss, and enterprise uptime reliability.
+                    </p>
+                  </div>
                 </div>
-                <h4 className="font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">Precision Fiber Engineering</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Pure optical fiber backhaul designed with redundant ring topologies for minimal jitter, OTDR-tested loss, and enterprise uptime reliability.
-                </p>
-              </div>
+              </BlurZoomReveal>
 
-              <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group">
-                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                  <Server className="w-6 h-6" />
+              <BlurZoomReveal direction="right" xOffset={40} delay={300} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
+                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                      <Server className="w-6 h-6" />
+                    </div>
+                    <h4 className="font-bold text-white text-sm group-hover:text-indigo-300 transition-colors">Quarterly Health Audits (AMC)</h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Proactive camera lens cleaning, NVR storage health diagnostics, optical loop testing, and certified rapid restoration SLAs.
+                    </p>
+                  </div>
                 </div>
-                <h4 className="font-bold text-white text-sm group-hover:text-indigo-300 transition-colors">Quarterly Health Audits (AMC)</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Proactive camera lens cleaning, NVR storage health diagnostics, optical loop testing, and certified rapid restoration SLAs.
-                </p>
-              </div>
+              </BlurZoomReveal>
             </div>
           </div>
         </div>
@@ -2266,10 +2444,7 @@ export const HomePage: React.FC = () => {
           ========================================================================= */}
       <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="nexalus" />
 
-      {/* =========================================================================
-          SECTION: AREAS COVERED & SERVICE AVAILABILITY CHECKER
-          ========================================================================= */}
-      <AreasCoveredSection division="corporate" theme="light" />
+
 
       {/* =========================================================================
           SLIDE 8: BUSINESS ENQUIRY & SITE SURVEY CTA BANNER (RICH CORPORATE BLUE THEME)
@@ -2279,31 +2454,35 @@ export const HomePage: React.FC = () => {
           <div className="relative rounded-3xl bg-[#0c1c38]/90 text-white p-8 sm:p-14 shadow-2xl overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 border border-blue-700/50">
             <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] opacity-15 [background-size:20px_20px] pointer-events-none" />
 
-            <div className="relative space-y-3 text-center md:text-left max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-900/60 text-sky-400 text-xs font-bold border border-blue-700/50 backdrop-blur-xs">
-                <span className="w-2 h-2 rounded-full bg-sky-400 inline-block animate-pulse" />
-                <span>Free Engineering Consultation</span>
+            <BlurZoomReveal direction="left" xOffset={-40} delay={0} duration={800} blur={10} className="w-full md:w-auto">
+              <div className="relative space-y-3 text-center md:text-left max-w-xl">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-900/60 text-sky-400 text-xs font-bold border border-blue-700/50 backdrop-blur-xs">
+                  <span className="w-2 h-2 rounded-full bg-sky-400 inline-block animate-pulse" />
+                  <span>Free Engineering Consultation</span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+                  Ready to Upgrade Your Connectivity &amp; Security?
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Request a free onsite site survey, custom optical bandwidth proposal, or CCTV Bill of Quantities (BoQ). Our certified engineering team responds promptly.
+                </p>
               </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-                Ready to Upgrade Your Connectivity &amp; Security?
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Request a free onsite site survey, custom optical bandwidth proposal, or CCTV Bill of Quantities (BoQ). Our certified engineering team responds promptly.
-              </p>
-            </div>
+            </BlurZoomReveal>
 
-            <div className="relative flex flex-col sm:flex-row items-center gap-3 shrink-0">
-              <Link to="/contact">
-                <Button
-                  variant="white"
-                  size="lg"
-                  className="px-8 py-4 font-black shadow-xl shadow-blue-950/40 hover:scale-[1.03] active:scale-95 transition-all text-slate-950 bg-white hover:bg-sky-50"
-                  icon={<ArrowRight className="w-4 h-4" />}
-                >
-                  Contact Sales Desk
-                </Button>
-              </Link>
-            </div>
+            <BlurZoomReveal direction="right" xOffset={40} delay={120} duration={800} scale={0.95} className="shrink-0">
+              <div className="relative flex flex-col sm:flex-row items-center gap-3 shrink-0">
+                <Link to="/contact">
+                  <Button
+                    variant="white"
+                    size="lg"
+                    className="px-8 py-4 font-black shadow-xl shadow-blue-950/40 hover:scale-[1.03] active:scale-95 transition-all text-slate-950 bg-white hover:bg-sky-50"
+                    icon={<ArrowRight className="w-4 h-4" />}
+                  >
+                    Contact Sales Desk
+                  </Button>
+                </Link>
+              </div>
+            </BlurZoomReveal>
           </div>
         </div>
       </section>

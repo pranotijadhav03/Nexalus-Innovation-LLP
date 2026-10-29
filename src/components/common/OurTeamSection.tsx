@@ -1,54 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
 import { TeamMember } from '../../types';
-import { getTeamMembers } from '../../firebase/services';
+import { getTeamMembers, getCachedTeamMembers, subscribeToTeamMembers } from '../../firebase/services';
 import { initialTeamMembers } from '../../data/initialData';
 import { BlurZoomReveal } from './BlurZoomReveal';
 
 interface OurTeamSectionProps {
   division?: 'all' | 'corporate' | 'nexalus-innovations' | 'am-distributors';
+  brandId?: string;
   bgClassName?: string;
   theme?: 'light' | 'dark';
 }
 
 export const OurTeamSection: React.FC<OurTeamSectionProps> = ({
   division = 'all',
+  brandId,
   bgClassName,
   theme = 'light',
 }) => {
-  const [members, setMembers] = useState<TeamMember[]>(initialTeamMembers);
+  const effectiveDivision = (division && division !== 'all')
+    ? division
+    : (brandId && brandId !== 'corporate' && brandId !== 'all')
+    ? brandId
+    : division;
+
+  // Synchronously initialize with instant local cache
+  const [members, setMembers] = useState<TeamMember[]>(() => getCachedTeamMembers(effectiveDivision));
   const isDark = theme === 'dark';
 
-  // Load team members from Firebase or fallback to initial data
+  // Real-time synchronization across Firestore, cross-tab localStorage, and window focus
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadMembers() {
-      try {
-        const data = await getTeamMembers(division);
-        if (isMounted && data) {
-          setMembers(data);
-        }
-      } catch (err) {
-        console.error('Failed to load team members:', err);
+    const unsubscribe = subscribeToTeamMembers((updated) => {
+      if (updated && updated.length > 0) {
+        setMembers(updated);
       }
-    }
+    }, effectiveDivision);
 
-    loadMembers();
-
-    const handleUpdate = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (!customEvent.detail?.key || customEvent.detail?.key === 'team') {
-        loadMembers();
-      }
-    };
-
-    window.addEventListener('nexalus_data_update', handleUpdate);
     return () => {
-      isMounted = false;
-      window.removeEventListener('nexalus_data_update', handleUpdate);
+      unsubscribe();
     };
-  }, [division]);
+  }, [effectiveDivision]);
 
   const displayMembers = members.length > 0 ? members : initialTeamMembers;
 

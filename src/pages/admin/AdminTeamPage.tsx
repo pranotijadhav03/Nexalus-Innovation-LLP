@@ -9,7 +9,8 @@ import {
   updateTeamMember,
   deleteTeamMember,
   uploadImageFile,
-  getCachedTeamMembers
+  getCachedTeamMembers,
+  subscribeToTeamMembers
 } from '../../firebase/services';
 import { TeamMember, CompanyScopeId } from '../../types';
 import { Input, TextArea, Select } from '../../components/common/Input';
@@ -209,6 +210,12 @@ export const AdminTeamPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    const unsub = subscribeToTeamMembers((fresh) => {
+      if (fresh && fresh.length > 0) {
+        setMembers(fresh);
+      }
+    }, 'all');
+    return () => unsub();
   }, []);
 
   const openCreateModal = () => {
@@ -318,6 +325,7 @@ export const AdminTeamPage: React.FC = () => {
         success('Member Added', `${payload.name} has been added to Our Team.`);
       }
       setIsModalOpen(false);
+      setMembers(getCachedTeamMembers('all'));
       await loadData();
     } catch (err: any) {
       error('Save Failed', err.message);
@@ -343,6 +351,7 @@ export const AdminTeamPage: React.FC = () => {
       await deleteTeamMember(deleteCandidate.id);
       success('Member Removed', `${deleteCandidate.name} has been removed from Our Team.`);
       setDeleteCandidate(null);
+      setMembers(getCachedTeamMembers('all'));
       await loadData();
     } catch (err: any) {
       error('Delete Failed', err.message);
