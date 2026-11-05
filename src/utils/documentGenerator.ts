@@ -159,7 +159,8 @@ export function printDocumentHtml(title: string, htmlContent: string) {
  * Generate HTML string for COD Booking Confirmation Slip
  */
 export function generateBookingSlipHtml(order: PlanOrder, customSettings?: ReceiptSettings): string {
-  const settings = customSettings || getCachedReceiptSettings();
+  const compId = order.companyId || (order.brandId === 'am-distributors' ? 'am-distributors' : order.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
+  const settings = customSettings || getCachedReceiptSettings(compId);
   const c = {
     ...VERIFIED_COMPANY_DETAILS,
     name: settings.companyName || VERIFIED_COMPANY_DETAILS.name,
@@ -209,8 +210,8 @@ export function generateBookingSlipHtml(order: PlanOrder, customSettings?: Recei
 
             <!-- Document Title & Details Right -->
             <td style="vertical-align:top; text-align:right; width:42%;">
-              <div style="font-size:20px; font-weight:900; letter-spacing:0.04em; color:#ffffff; text-transform:uppercase;">
-                BOOKING SLIP
+              <div style="font-size:18px; font-weight:900; letter-spacing:0.04em; color:#ffffff; text-transform:uppercase;">
+                ${settings.bookingTitle || (compId === 'am-distributors' ? 'WHOLESALE DISPATCH CONFIRMATION' : compId === 'nexalus-innovations' ? 'COMMERCIAL PROCUREMENT CONFIRMATION' : 'BOOKING SLIP')}
               </div>
               <div style="font-size:11.5px; font-weight:700; color:#fde68a; margin-top:2px; font-family:monospace;">
                 Ref No. #${order.id}
@@ -404,7 +405,8 @@ ${order.paymentStatus === 'paid' ? `
  * Generate HTML string for Official Paid Payment Receipt
  */
 export function generatePaidReceiptHtml(order: PlanOrder, customSettings?: ReceiptSettings): string {
-  const settings = customSettings || getCachedReceiptSettings();
+  const compId = order.companyId || (order.brandId === 'am-distributors' ? 'am-distributors' : order.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
+  const settings = customSettings || getCachedReceiptSettings(compId);
   const c = {
     ...VERIFIED_COMPANY_DETAILS,
     name: settings.companyName || VERIFIED_COMPANY_DETAILS.name,
@@ -417,7 +419,8 @@ export function generatePaidReceiptHtml(order: PlanOrder, customSettings?: Recei
     email: settings.email || VERIFIED_COMPANY_DETAILS.email,
     website: settings.website || VERIFIED_COMPANY_DETAILS.website
   };
-  const receiptNo = order.receiptNumber || order.paymentDetails?.receiptNumber || `RCP-2026-${order.id.replace('ORD-PLN-', '')}`;
+  const defaultPrefix = compId === 'am-distributors' ? 'B2B-CHL' : compId === 'nexalus-innovations' ? 'NEX-TECH' : 'RCP-NEX';
+  const receiptNo = order.receiptNumber || order.paymentDetails?.receiptNumber || `${settings.receiptPrefix || defaultPrefix}-${order.id.replace('ORD-PLN-', '')}`;
   const paidAmount = order.paymentDetails?.amount || (typeof order.price === 'number' ? order.price : parseFloat(String(order.price)) || 0);
   const paidFormatted = formatIndianCurrency(paidAmount);
   const paymentDate = order.paymentDetails?.collectedAt || order.updatedAt;
@@ -457,8 +460,8 @@ export function generatePaidReceiptHtml(order: PlanOrder, customSettings?: Recei
 
             <!-- Document Title & Details Right -->
             <td style="vertical-align:top; text-align:right; width:42%;">
-              <div style="font-size:20px; font-weight:900; letter-spacing:0.04em; color:#ffffff; text-transform:uppercase;">
-                PAYMENT RECEIPT
+              <div style="font-size:18px; font-weight:900; letter-spacing:0.04em; color:#ffffff; text-transform:uppercase;">
+                ${settings.receiptTitle || (compId === 'am-distributors' ? 'B2B WHOLESALE DELIVERY CHALLAN & INVOICE' : compId === 'nexalus-innovations' ? 'COMMERCIAL HARDWARE TAX INVOICE' : 'PAYMENT RECEIPT')}
               </div>
               <div style="font-size:11.5px; font-weight:700; color:#34d399; margin-top:2px; font-family:monospace;">
                 Ref No. ${receiptNo}
@@ -513,19 +516,31 @@ export function generatePaidReceiptHtml(order: PlanOrder, customSettings?: Recei
             </tr>
           </thead>
           <tbody>
+            ${(order.items && order.items.length > 0) ? order.items.map((it, idx) => `
+            <tr style="background:${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom:1px solid #e2e8f0;">
+              <td style="padding:7px 10px; font-size:10.5px; text-align:center; color:#64748b; font-weight:600;">${idx + 1}</td>
+              <td style="padding:7px 10px; font-size:11px;">
+                <strong style="color:#0f172a; font-size:11.5px;">${it.planName}</strong>
+                ${it.providerName ? `<div style="font-size:9.5px; color:#64748b; margin-top:1px;">${it.providerName}</div>` : ''}
+              </td>
+              <td style="padding:7px 10px; font-size:10.5px; font-weight:600; color:#334155;">${order.providerName || c.name}</td>
+              <td style="padding:7px 10px; font-size:10.5px; font-weight:800; color:#2563eb; text-align:center;">Qty: ${it.quantity || 1}</td>
+              <td style="padding:7px 10px; font-size:10.5px; text-align:center; color:#334155;">${formatIndianCurrency(it.unitPrice || ((it.totalPrice || 0) / Math.max(1, it.quantity || 1)))} each</td>
+              <td style="padding:7px 10px; font-size:11.5px; font-weight:800; color:#0f172a; text-align:right;">${formatIndianCurrency(it.totalPrice || ((it.unitPrice || 0) * (it.quantity || 1)))}</td>
+            </tr>`).join('') : `
             <tr style="background:#ffffff; border-bottom:1px solid #e2e8f0;">
               <td style="padding:7px 10px; font-size:10.5px; text-align:center; color:#64748b; font-weight:600;">1</td>
               <td style="padding:7px 10px; font-size:11px;">
                 <strong style="color:#0f172a; font-size:11.5px;">${order.planName}</strong>
                 <div style="font-size:9.5px; color:#64748b; margin-top:1px;">
-                  High-Speed Optical Broadband Service Provisioning &amp; Unlimited Access
+                  ${order.speed || 'Service Provisioning / Wholesale Delivery'}
                 </div>
               </td>
               <td style="padding:7px 10px; font-size:10.5px; font-weight:600; color:#334155;">${order.providerName}</td>
-              <td style="padding:7px 10px; font-size:10.5px; font-weight:800; color:#2563eb; text-align:center;">${order.speed}</td>
-              <td style="padding:7px 10px; font-size:10.5px; text-transform:capitalize; color:#334155; text-align:center;">${order.billingPeriod.replace(/_/g, ' ')}</td>
+              <td style="padding:7px 10px; font-size:10.5px; font-weight:800; color:#2563eb; text-align:center;">Qty: ${order.quantity || 1}</td>
+              <td style="padding:7px 10px; font-size:10.5px; text-transform:capitalize; color:#334155; text-align:center;">${(order.billingPeriod || 'delivery').replace(/_/g, ' ')}</td>
               <td style="padding:7px 10px; font-size:11.5px; font-weight:800; color:#0f172a; text-align:right;">${paidFormatted}</td>
-            </tr>
+            </tr>`}
             <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0;">
               <td style="padding:6px 10px; font-size:10px; text-align:center; color:#64748b; font-weight:600;">2</td>
               <td style="padding:6px 10px; font-size:10px; color:#475569;" colSpan="4">

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
   getReceiptSettings,
@@ -34,8 +36,28 @@ import { VERIFIED_COMPANY_DETAILS } from '../../utils/documentGenerator';
 
 export const AdminReceiptSettingsPage: React.FC = () => {
   const { success, error } = useToast();
-  const [selectedCompany, setSelectedCompany] = useState<'nexalus-llp' | 'am-distributors' | 'nexalus-innovations'>('nexalus-llp');
-  const [settings, setSettings] = useState<ReceiptSettings>(() => getCachedReceiptSettings('nexalus-llp'));
+  const { isSuperAdmin, isAmAdmin, isInnovationsAdmin } = useAuth();
+  const [searchParams] = useSearchParams();
+  const outletCtx = useOutletContext<{ activeConsole?: string } | null>();
+  const consoleParam = searchParams.get('console') || outletCtx?.activeConsole;
+
+  const initialCompany =
+    consoleParam === 'am-distributors' || isAmAdmin
+      ? 'am-distributors'
+      : consoleParam === 'nexalus-innovations' || isInnovationsAdmin
+      ? 'nexalus-innovations'
+      : 'nexalus-llp';
+
+  const [selectedCompany, setSelectedCompany] = useState<'nexalus-llp' | 'am-distributors' | 'nexalus-innovations'>(initialCompany);
+  const [settings, setSettings] = useState<ReceiptSettings>(() => getCachedReceiptSettings(initialCompany));
+
+  useEffect(() => {
+    if (consoleParam === 'am-distributors' || isAmAdmin) {
+      setSelectedCompany('am-distributors');
+    } else if (consoleParam === 'nexalus-innovations' || isInnovationsAdmin) {
+      setSelectedCompany('nexalus-innovations');
+    }
+  }, [consoleParam, isAmAdmin, isInnovationsAdmin]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingSign, setIsUploadingSign] = useState(false);
@@ -480,6 +502,28 @@ export const AdminReceiptSettingsPage: React.FC = () => {
                 placeholder="Leave blank or disable toggle above"
                 value={settings.tagline || ''}
                 onChange={e => handleChange('tagline', e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Input
+                label="Doc Number Prefix *"
+                placeholder="e.g. B2B-CHL, RCP-NEX, NEX-TECH"
+                value={settings.receiptPrefix || (selectedCompany === 'am-distributors' ? 'B2B-CHL' : selectedCompany === 'nexalus-innovations' ? 'NEX-TECH' : 'RCP-NEX')}
+                onChange={e => handleChange('receiptPrefix', e.target.value.toUpperCase().trim())}
+                required
+              />
+              <Input
+                label="Paid Document / Challan Title"
+                placeholder="e.g. B2B WHOLESALE DELIVERY CHALLAN"
+                value={settings.receiptTitle || ''}
+                onChange={e => handleChange('receiptTitle', e.target.value)}
+              />
+              <Input
+                label="Booking / Dispatch Title"
+                placeholder="e.g. WHOLESALE DISPATCH CONFIRMATION"
+                value={settings.bookingTitle || ''}
+                onChange={e => handleChange('bookingTitle', e.target.value)}
               />
             </div>
 
