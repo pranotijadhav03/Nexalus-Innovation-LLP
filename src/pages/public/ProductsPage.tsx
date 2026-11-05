@@ -1,10 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { getProducts, getCategories, getCachedProducts, getCachedCategories, subscribeToProducts, subscribeToCategories } from '../../firebase/services';
-import { Product, ProductCategory } from '../../types';
+import {
+  getProducts,
+  getCategories,
+  getCachedProducts,
+  getCachedCategories,
+  subscribeToProducts,
+  subscribeToCategories,
+  addToPlanCart,
+  removeFromPlanCart,
+  updateCartItemQuantity,
+  getScopedPlanCart
+} from '../../firebase/services';
+import { Product, ProductCategory, CartPlanItem } from '../../types';
 import { initialProducts, initialCategories } from '../../data/initialData';
 import { QuoteModal } from '../../components/common/QuoteModal';
 import { WhatsAppShareModal } from '../../components/common/WhatsAppShareModal';
+import { useToast } from '../../context/ToastContext';
 import {
   Search,
   X,
@@ -13,7 +25,10 @@ import {
   Package,
   Layers,
   CheckCircle2,
-  PhoneCall
+  PhoneCall,
+  ShoppingCart,
+  Plus,
+  Minus
 } from 'lucide-react';
 
 // Badge color & text helper to match Samarth Enterprises aesthetic
@@ -62,6 +77,69 @@ export const ProductsPage: React.FC = () => {
   const [activeQuoteProduct, setActiveQuoteProduct] = useState<Product | null>(null);
   const [activeWhatsAppProduct, setActiveWhatsAppProduct] = useState<Product | null>(null);
   const [isBulkQuoteOpen, setIsBulkQuoteOpen] = useState(false);
+  const { success } = useToast();
+
+  // Scoped Parent Company Cart Items
+  const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => {
+    try {
+      return getScopedPlanCart('nexalus-llp');
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    const handleCartSync = () => {
+      try {
+        setCartItems(getScopedPlanCart('nexalus-llp'));
+      } catch {}
+    };
+    window.addEventListener('nexalus_plan_cart_updated', handleCartSync);
+    window.addEventListener('storage', handleCartSync);
+    return () => {
+      window.removeEventListener('nexalus_plan_cart_updated', handleCartSync);
+      window.removeEventListener('storage', handleCartSync);
+    };
+  }, []);
+
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToPlanCart({
+      planId: product.id,
+      planName: product.name,
+      providerName: 'Nexalus Innovations LLP',
+      speed: product.categoryName || 'Commercial Hardware',
+      price: product.price || 0,
+      unitPrice: product.price || 0,
+      quantity: 1,
+      billingPeriod: 'Standard Procurement',
+      brandId: (product.brandId || 'cp-plus') as any,
+      companyId: 'nexalus-llp'
+    });
+    success('Added to Cart', `${product.name} (Qty: 1) has been added to your cart.`);
+  };
+
+  const handleIncreaseQty = (e: React.MouseEvent, cartItem: CartPlanItem, product: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const currentQty = cartItem.quantity || 1;
+    const stock = product.stockQuantity !== undefined ? product.stockQuantity : 15;
+    if (stock > 0 && currentQty >= stock) return;
+    updateCartItemQuantity(cartItem.id, currentQty + 1);
+  };
+
+  const handleDecreaseQty = (e: React.MouseEvent, cartItem: CartPlanItem, product: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const currentQty = cartItem.quantity || 1;
+    if (currentQty <= 1) {
+      removeFromPlanCart(cartItem.id);
+      success('Removed from Cart', `${product.name} removed from your cart.`);
+    } else {
+      updateCartItemQuantity(cartItem.id, currentQty - 1);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -462,6 +540,8 @@ export const ProductsPage: React.FC = () => {
                   const displayImage =
                     (product.images && product.images.length > 0 ? product.images[0] : null) ||
                     '/images/products/cp-bullet.jpg';
+                  const cartItem = cartItems.find(i => i.planId === product.id);
+                  const stockQty = product.stockQuantity !== undefined ? product.stockQuantity : 15;
 
                   return (
                     <div
@@ -518,22 +598,84 @@ export const ProductsPage: React.FC = () => {
                         </p>
                       </div>
 
-                      {/* Bottom Action Row: Enquire Now Button + Arrow Detail Button */}
-                      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center gap-2">
+                      {/* Dedicated Price Row */}
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-baseline justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block leading-tight mb-0.5">
+                            {cartItem && (cartItem.quantity || 1) > 1 ? `Total (${cartItem.quantity} items)` : 'Price'}
+                          </span>
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                              {product.price
+                                ? (cartItem && (cartItem.quantity || 1) > 1
+                                    ? `₹${((product.price || 0) * (cartItem.quantity || 1)).toLocaleString('en-IN')}`
+                                    : `₹${product.price.toLocaleString('en-IN')}`)
+                                : 'Contact for Pricing'}
+                            </span>
+                            {cartItem && (cartItem.quantity || 1) > 1 && product.price ? (
+                              <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                ₹{product.price.toLocaleString('en-IN')} / unit
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom Action Row: Enquire Now Button + Add to Cart/Qty Stepper + Arrow Detail Button */}
+                      <div className="mt-2.5 flex items-center gap-2">
                         {/* Enquire Now Button (Navy #09223f) */}
                         <button
                           type="button"
                           onClick={() => setActiveQuoteProduct(product)}
-                          className="flex-1 bg-[#09223f] hover:bg-blue-700 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
+                          className="flex-1 bg-[#09223f] hover:bg-blue-700 text-white font-bold text-xs sm:text-sm py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-[0.98] whitespace-nowrap"
                         >
                           <span>Enquire Now</span>
                         </button>
+
+                        {/* Add to Cart / Quantity Stepper Option */}
+                        {cartItem ? (
+                          <div
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                            className="inline-flex items-center rounded-xl border border-blue-300 bg-blue-50 text-blue-900 p-1 shadow-2xs gap-1.5 shrink-0"
+                            title={`${cartItem.quantity || 1} in cart`}
+                          >
+                            <button
+                              type="button"
+                              onClick={(e) => handleDecreaseQty(e, cartItem, product)}
+                              title="Decrease Quantity"
+                              className="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs hover:bg-white active:scale-90 transition-all cursor-pointer text-slate-700 hover:text-rose-600"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="text-xs font-black min-w-5 text-center px-0.5">
+                              {cartItem.quantity || 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleIncreaseQty(e, cartItem, product)}
+                              title="Increase Quantity"
+                              disabled={stockQty > 0 && (cartItem.quantity || 1) >= stockQty}
+                              className="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs hover:bg-white active:scale-90 transition-all cursor-pointer text-slate-700 hover:text-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => handleAddToCart(e, product)}
+                            title="Add to Cart"
+                            className="w-9 h-9 rounded-xl border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer flex items-center justify-center shrink-0 active:scale-95"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                          </button>
+                        )}
 
                         {/* Arrow Button (View Full Product Details Page) */}
                         <Link
                           to={'/products/' + product.id}
                           title="View Product Details"
-                          className="w-10 h-10 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 hover:text-blue-600 flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95"
+                          className="w-9 h-9 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 hover:text-blue-600 flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95"
                         >
                           <ArrowRight className="w-4 h-4" />
                         </Link>

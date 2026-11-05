@@ -11,7 +11,8 @@ import {
   getPlanCart,
   removeFromPlanCart,
   clearPlanCart,
-  updateCartItemQuantity
+  updateCartItemQuantity,
+  isCartItemBelongingToCompany
 } from '../../firebase/services';
 import { CartPlanItem } from '../../types';
 import { PlanOrderModal } from '../../components/common/PlanOrderModal';
@@ -542,18 +543,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
 
   // Scoped Cart Items strictly for the current company
   const scopedCartItems = useMemo(() => {
-    return cartItems.filter((item: CartPlanItem) => {
-      const itemComp = (item.companyId || '').trim();
-      const itemBrand = (item.brandId || '').trim();
-      const planId = (item.planId || '').trim();
-      if (effectiveScope === 'am-distributors') {
-        return itemComp === 'am-distributors' || itemBrand === 'am-distributors' || itemComp === 'am' || itemBrand === 'am' || planId.startsWith('prod-am');
-      }
-      if (effectiveScope === 'nexalus-innovations') {
-        return itemComp === 'nexalus-innovations' || itemBrand === 'nexalus-innovations' || (planId.startsWith('prod-nexalus-') && !planId.includes('llp'));
-      }
-      return itemComp === 'nexalus-llp' || (!itemComp && itemBrand !== 'am-distributors' && itemBrand !== 'nexalus-innovations' && !planId.startsWith('prod-am'));
-    });
+    return cartItems.filter((item: CartPlanItem) => isCartItemBelongingToCompany(item, effectiveScope));
   }, [cartItems, effectiveScope]);
 
   const activeOrder = scopedCustomerOrders.find((o: PlanOrder) => o.status === 'activated' || o.paymentStatus === 'paid') || scopedCustomerOrders[0];
@@ -1735,75 +1725,18 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
 
   return (
     <div className="min-h-screen bg-slate-100/70 pb-16 font-sans">
-      {/* Top Banner Bar */}
-      <div className={`text-white border-b shadow-md ${
-        effectiveScope === 'am-distributors'
-          ? 'bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 border-emerald-900/60'
-          : effectiveScope === 'nexalus-innovations'
-          ? 'bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 border-indigo-900/60'
-          : 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-slate-800'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* Multi-Company Portal Switcher */}
+      <div className="bg-white/95 backdrop-blur-xs border-b border-slate-200 py-2.5 px-4 sm:px-6 lg:px-8 shadow-2xs">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-slate-600 font-bold">
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-              className="lg:hidden p-2 rounded-xl bg-white/10 text-slate-200 hover:text-white"
+              className="lg:hidden p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 cursor-pointer"
+              title="Toggle Menu"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-2.5">
-              <div className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${companyMeta.avatarBg} text-white flex items-center justify-center font-black text-sm shadow-md`}>
-                {subscriberName.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-sm text-white tracking-tight">
-                    {subscriberName}
-                  </span>
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                    effectiveScope === 'am-distributors'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30'
-                      : effectiveScope === 'nexalus-innovations'
-                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30'
-                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30'
-                  }`}>
-                    {effectiveScope === 'am-distributors' ? 'Wholesale Partner' : effectiveScope === 'nexalus-innovations' ? 'CCTV & Tech Client' : activePlanStatus}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-[11px] text-slate-300">
-                  <span className="font-mono text-cyan-300">ID: {subscriberId}</span>
-                  <span>•</span>
-                  <span className="truncate text-slate-400 hidden sm:inline">{companyMeta.shortName}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <Link
-              to={companyMeta.homeUrl}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white text-xs font-semibold transition-colors"
-            >
-              <span>{companyMeta.shortName} Home</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold transition-colors cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Multi-Company Portal Switcher */}
-      <div className="bg-white/90 backdrop-blur-xs border-b border-slate-200 py-2 px-4 sm:px-6 lg:px-8 shadow-2xs">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-slate-600 font-bold">
             <Building className="w-3.5 h-3.5 text-slate-400" />
             <span>Active Portal:</span>
             <span className="text-slate-900 font-extrabold">{companyMeta.name}</span>

@@ -28,7 +28,7 @@ import { FloatingCallButton } from '../common/FloatingCallButton';
 import { CustomerChoiceModal } from '../common/CustomerChoiceModal';
 import { useAuth } from '../../context/AuthContext';
 import { User, UserCheck, LogOut, ChevronDown, ShoppingCart, Package } from 'lucide-react';
-import { isCustomerLinkedToCompany, getPlanCart } from '../../firebase/services';
+import { isCustomerLinkedToCompany, getPlanCart, getScopedPlanCart } from '../../firebase/services';
 import {
   getCachedBanners,
   subscribeToBanners,
@@ -116,17 +116,10 @@ export const AmDistributorsLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Track A.M. Distributors cart item count
+  // Track A.M. Distributors cart item count (distinct products count)
   const [cartCount, setCartCount] = useState<number>(() => {
     try {
-      const items = getPlanCart(currentUser?.uid);
-      return items
-        .filter((i: any) => {
-          const comp = (i.companyId || i.brandId || '').toLowerCase();
-          const pid = (i.planId || '').toLowerCase();
-          return comp === 'am' || comp === 'am-distributors' || pid.startsWith('prod-am');
-        })
-        .reduce((sum: number, i: any) => sum + (i.quantity || 1), 0);
+      return getScopedPlanCart('am-distributors', currentUser?.uid).length;
     } catch {
       return 0;
     }
@@ -135,14 +128,7 @@ export const AmDistributorsLayout: React.FC = () => {
   React.useEffect(() => {
     const syncCart = () => {
       try {
-        const items = getPlanCart(currentUser?.uid);
-        const count = items
-          .filter((i: any) => {
-            const comp = (i.companyId || i.brandId || '').toLowerCase();
-            const pid = (i.planId || '').toLowerCase();
-            return comp === 'am' || comp === 'am-distributors' || pid.startsWith('prod-am');
-          })
-          .reduce((sum: number, i: any) => sum + (i.quantity || 1), 0);
+        const count = getScopedPlanCart('am-distributors', currentUser?.uid).length;
         setCartCount(count);
       } catch {}
     };

@@ -269,107 +269,109 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               )}
             </div>
 
-            {/* Price & Action Row */}
-            <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                  {cartItem && (cartItem.quantity || 1) > 1 ? `Price (${cartItem.quantity} items)` : 'Official Price'}
+            {/* Dedicated Price Row */}
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-baseline justify-between gap-2">
+              <div className="min-w-0">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block leading-tight mb-0.5">
+                  {cartItem && (cartItem.quantity || 1) > 1 ? `Total (${cartItem.quantity} items)` : 'Official Price'}
                 </span>
-                <span className="text-sm sm:text-base font-extrabold text-slate-900 truncate">
-                  {cartItem && (cartItem.quantity || 1) > 1
-                    ? `₹${((product.price || 0) * (cartItem.quantity || 1)).toLocaleString('en-IN')}`
-                    : formatPrice(product.price)}
-                </span>
-                {cartItem && (cartItem.quantity || 1) > 1 && product.price ? (
-                  <span className="text-[10px] text-slate-400 font-semibold">
-                    ₹{product.price.toLocaleString('en-IN')} each
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                    {cartItem && (cartItem.quantity || 1) > 1
+                      ? `₹${((product.price || 0) * (cartItem.quantity || 1)).toLocaleString('en-IN')}`
+                      : formatPrice(product.price)}
                   </span>
-                ) : null}
-              </div>
-
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                {/* 1. Enquire Now Button (Clean Action) */}
-                <button
-                  type="button"
-                  onClick={() => setIsQuoteOpen(true)}
-                  className={`py-2 px-3 sm:px-3.5 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer text-white flex items-center justify-center gap-1.5 ${
-                    isAm
-                      ? 'bg-teal-700 hover:bg-teal-800'
-                      : isCctv
-                      ? 'bg-indigo-700 hover:bg-indigo-800'
-                      : 'bg-[#09223f] hover:bg-blue-700'
-                  }`}
-                >
-                  <span>Enquire Now</span>
-                </button>
-
-                {/* 2. Add to Cart / Quantity Stepper Option */}
-                {cartItem ? (
-                  <div
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    className={`inline-flex items-center rounded-xl border p-1 shadow-2xs gap-1.5 ${
-                      isAm
-                        ? 'border-teal-300 bg-teal-50 text-teal-900'
-                        : isCctv
-                        ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
-                        : 'border-blue-300 bg-blue-50 text-blue-900'
-                    }`}
-                    title={`${cartItem.quantity || 1} in cart`}
-                  >
-                    <button
-                      type="button"
-                      onClick={handleDecreaseQty}
-                      title="Decrease Quantity"
-                      className="w-5 h-5 rounded-md flex items-center justify-center font-black text-xs hover:bg-white active:scale-90 transition-all cursor-pointer text-slate-700 hover:text-rose-600"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="text-xs font-black min-w-4 text-center">
-                      {cartItem.quantity || 1}
+                  {cartItem && (cartItem.quantity || 1) > 1 && product.price ? (
+                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                      ₹{product.price.toLocaleString('en-IN')} / unit
                     </span>
-                    <button
-                      type="button"
-                      onClick={handleIncreaseQty}
-                      title="Increase Quantity"
-                      disabled={stockQty > 0 && (cartItem.quantity || 1) >= stockQty}
-                      className="w-5 h-5 rounded-md flex items-center justify-center font-black text-xs hover:bg-white active:scale-90 transition-all cursor-pointer text-slate-700 hover:text-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : (
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Row: Enquire Now + Cart/Qty Stepper + Arrow Detail Link */}
+            <div className="mt-2.5 flex items-center gap-1.5 sm:gap-2">
+              {/* 1. Enquire Now Button (Clean Action with flex-1) */}
+              <button
+                type="button"
+                onClick={() => setIsQuoteOpen(true)}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer text-white flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                  isAm
+                    ? 'bg-teal-700 hover:bg-teal-800'
+                    : isCctv
+                    ? 'bg-indigo-700 hover:bg-indigo-800'
+                    : 'bg-[#09223f] hover:bg-blue-700'
+                }`}
+              >
+                <span>Enquire Now</span>
+              </button>
+
+              {/* 2. Add to Cart / Quantity Stepper Option */}
+              {cartItem ? (
+                <div
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  className={`inline-flex items-center rounded-xl border p-1 shadow-2xs gap-1.5 shrink-0 ${
+                    isAm
+                      ? 'border-teal-300 bg-teal-50 text-teal-900'
+                      : isCctv
+                      ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
+                      : 'border-blue-300 bg-blue-50 text-blue-900'
+                  }`}
+                  title={`${cartItem.quantity || 1} in cart`}
+                >
                   <button
                     type="button"
-                    onClick={handleAddToCart}
-                    title="Add to Cart"
-                    className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 active:scale-95 ${
-                      isAm
-                        ? 'border-teal-200 text-teal-700 hover:bg-teal-50'
-                        : isCctv
-                        ? 'border-indigo-200 text-indigo-700 hover:bg-indigo-50'
-                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
+                    onClick={handleDecreaseQty}
+                    title="Decrease Quantity"
+                    className="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs hover:bg-white active:scale-90 transition-all cursor-pointer text-slate-700 hover:text-rose-600"
                   >
-                    <ShoppingCart className="w-4 h-4" />
+                    <Minus className="w-3.5 h-3.5" />
                   </button>
-                )}
-
-                {/* 3. View More Button (Scoped to Brand) */}
-                <Link
-                  to={productDetailUrl}
-                  className={`inline-flex items-center justify-center gap-1 py-2 px-2.5 sm:px-3 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  <span className="text-xs font-black min-w-5 text-center px-0.5">
+                    {cartItem.quantity || 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleIncreaseQty}
+                    title="Increase Quantity"
+                    disabled={stockQty > 0 && (cartItem.quantity || 1) >= stockQty}
+                    className="w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs hover:bg-white active:scale-90 transition-all cursor-pointer text-slate-700 hover:text-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  title="Add to Cart"
+                  className={`w-9 h-9 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 active:scale-95 ${
                     isAm
-                      ? 'text-teal-700 hover:text-teal-800 hover:bg-teal-50 border border-teal-200'
+                      ? 'border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300'
                       : isCctv
-                      ? 'text-indigo-700 hover:text-indigo-800 hover:bg-indigo-50 border border-indigo-200'
-                      : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50 border border-slate-200'
+                      ? 'border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300'
+                      : 'border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
                   }`}
-                  title="View Complete Specifications & Purchase Options"
                 >
-                  <span>View More</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
+                  <ShoppingCart className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* 3. Arrow Button (Only Arrow as user requested!) */}
+              <Link
+                to={productDetailUrl}
+                className={`w-9 h-9 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 active:scale-95 ${
+                  isAm
+                    ? 'border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300'
+                    : isCctv
+                    ? 'border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300'
+                    : 'border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                }`}
+                title="View Product Specifications & Purchase Options"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         </div>

@@ -23,6 +23,7 @@ import { QuoteModal } from './QuoteModal';
 import { PlanCartModal } from './PlanCartModal';
 import {
   getPlanCart,
+  getScopedPlanCart,
   getCachedCategories,
   getCachedProducts,
   subscribeToCategories,
@@ -133,7 +134,7 @@ export const Navbar: React.FC = () => {
   };
   const [cartCount, setCartCount] = useState<number>(() => {
     try {
-      return getPlanCart().length;
+      return getScopedPlanCart('nexalus-llp').length;
     } catch {
       return 0;
     }
@@ -150,7 +151,7 @@ export const Navbar: React.FC = () => {
 
   React.useEffect(() => {
     const handleCartUpdate = (e?: any) => {
-      const items = e?.detail || getPlanCart();
+      const items = getScopedPlanCart('nexalus-llp');
       setCartCount(Array.isArray(items) ? items.length : 0);
     };
     const handleOpenCart = () => {

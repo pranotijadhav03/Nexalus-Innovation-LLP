@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import {
   getPlanCart,
+  getScopedPlanCart,
+  isCartItemBelongingToCompany,
   removeFromPlanCart,
   clearPlanCart
 } from '../../firebase/services';
@@ -33,6 +35,7 @@ export interface PlanCartModalProps {
     billingPeriod?: string;
     brandId?: any;
   }) => void;
+  companyId?: string;
 }
 
 const getProviderBadge = (providerName: string) => {
@@ -55,28 +58,32 @@ const getProviderBadge = (providerName: string) => {
 export const PlanCartModal: React.FC<PlanCartModalProps> = ({
   isOpen,
   onClose,
-  onProceedToOrder
+  onProceedToOrder,
+  companyId = 'nexalus-llp'
 }) => {
   const navigate = useNavigate();
   const { isCustomer, isAuthenticated, currentUser } = useAuth();
   const { info } = useToast();
   const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => {
     try {
-      return isAuthenticated ? getPlanCart() : [];
+      return isAuthenticated ? getScopedPlanCart(companyId) : [];
     } catch {
       return [];
     }
   });
 
-  // Sync cart items with user account and events
+  // Sync cart items with user account and events strictly scoped to companyId
   useEffect(() => {
     const refreshCart = (e?: any) => {
       if (!isAuthenticated) {
         setCartItems([]);
         return;
       }
-      const items = e?.detail || getPlanCart();
-      setCartItems(Array.isArray(items) ? items : []);
+      if (e?.detail && Array.isArray(e.detail)) {
+        setCartItems(e.detail.filter((item: CartPlanItem) => isCartItemBelongingToCompany(item, companyId)));
+      } else {
+        setCartItems(getScopedPlanCart(companyId));
+      }
     };
 
     refreshCart();
@@ -92,7 +99,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
       window.removeEventListener('nexalus_plan_cart_updated', refreshCart);
       window.removeEventListener('storage', refreshCart);
     };
-  }, [isOpen, isAuthenticated]);
+  }, [isOpen, isAuthenticated, companyId]);
 
   // Close on Escape key
   useEffect(() => {
@@ -293,7 +300,7 @@ export const PlanCartModal: React.FC<PlanCartModalProps> = ({
           <div className="p-4 sm:p-5 bg-white border-t border-slate-200/80 flex items-center justify-between gap-3 shrink-0">
             <button
               type="button"
-              onClick={() => clearPlanCart()}
+              onClick={() => clearPlanCart(companyId)}
               className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer flex items-center gap-1.5 group"
               title="Clear all plans from cart"
             >

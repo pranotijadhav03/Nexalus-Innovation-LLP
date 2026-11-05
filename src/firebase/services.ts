@@ -2680,18 +2680,61 @@ export function removeFromPlanCart(cartItemId: string, explicitUserId?: string):
   return updated;
 }
 
-export function clearPlanCart(explicitUserId?: string | any): void {
-  const uid = typeof explicitUserId === 'string' ? explicitUserId : getActiveCartUserId();
-  if (uid) {
-    setLocalItem(`nexalus_plan_cart_${uid}`, []);
+export function isCartItemBelongingToCompany(item: CartPlanItem, companyId: string): boolean {
+  const itemComp = (item.companyId || (item as any).brandId || '').toLowerCase().trim();
+  const planId = (item.planId || '').toLowerCase().trim();
+
+  if (companyId === 'am-distributors' || companyId === 'am') {
+    return itemComp === 'am' || itemComp === 'am-distributors' || planId.startsWith('prod-am');
   }
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('nexalus_plan_cart');
+
+  if (companyId === 'nexalus-innovations') {
+    return (
+      itemComp === 'nexalus-innovations' ||
+      planId.startsWith('prod-ni') ||
+      (planId.startsWith('prod-nexalus-') && !planId.includes('llp'))
+    );
+  }
+
+  // Parent company (Nexalus Innovations LLP / Broadband / Telecom)
+  return (
+    (itemComp === 'nexalus-llp' ||
+      itemComp === 'nexalus-telecom' ||
+      (!itemComp.includes('am') && !itemComp.includes('innovations'))) &&
+    !planId.startsWith('prod-am') &&
+    !(planId.startsWith('prod-nexalus-') && !planId.includes('llp')) &&
+    !planId.startsWith('prod-ni')
+  );
+}
+
+export function getScopedPlanCart(companyId: string, explicitUserId?: string): CartPlanItem[] {
+  const allItems = getPlanCart(explicitUserId);
+  return allItems.filter(item => isCartItemBelongingToCompany(item, companyId));
+}
+
+export function clearPlanCart(companyId?: string, explicitUserId?: string | any): void {
+  const uid = typeof explicitUserId === 'string' ? explicitUserId : getActiveCartUserId();
+  const cartKey = uid ? `nexalus_plan_cart_${uid}` : 'nexalus_plan_cart_guest';
+
+  if (companyId && typeof companyId === 'string') {
+    const current = getLocalItem<CartPlanItem[]>(cartKey, []);
+    const remaining = current.filter(item => !isCartItemBelongingToCompany(item, companyId));
+    setLocalItem(cartKey, remaining);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: remaining }));
     }
-  } catch {}
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: [] }));
+  } else {
+    if (uid) {
+      setLocalItem(cartKey, []);
+    }
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('nexalus_plan_cart');
+      }
+    } catch {}
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: [] }));
+    }
   }
 }
 
