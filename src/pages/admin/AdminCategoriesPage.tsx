@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getCategories, createCategory, updateCategory, deleteCategory, getCachedCategories } from '../../firebase/services';
+import { getCategories, createCategory, updateCategory, deleteCategory, getCachedCategories, subscribeToCategories } from '../../firebase/services';
 import { ProductCategory, BrandId, CompanyScopeId } from '../../types';
 import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import { Input, TextArea, Select } from '../../components/common/Input';
@@ -18,12 +18,20 @@ export const AdminCategoriesPage: React.FC = () => {
   const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
   const { success, error } = useToast();
 
-  const effectiveBrand: BrandId | 'nexalus' =
+  const effectiveBrand: 'am-distributors' | 'nexalus-innovations' | 'corporate' =
     activeConsole === 'am-distributors' || isAmAdmin
       ? 'am-distributors'
       : activeConsole === 'nexalus-innovations' || isInnovationsAdmin
       ? 'nexalus-innovations'
-      : 'nexalus';
+      : 'corporate';
+
+  const currentCompanyScope: CompanyScopeId = activeConsole === 'am-distributors' || isAmAdmin
+    ? 'am-distributors'
+    : (activeConsole === 'nexalus-innovations' || isInnovationsAdmin ? 'nexalus-innovations' : 'nexalus-llp');
+
+  const defaultBrand: BrandId = currentCompanyScope === 'am-distributors'
+    ? 'am-distributors'
+    : (currentCompanyScope === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus');
 
   const [categories, setCategories] = useState<ProductCategory[]>(() =>
     getCachedCategories(effectiveBrand)
@@ -31,13 +39,7 @@ export const AdminCategoriesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(null);
   const [name, setName] = useState('');
-  const [brandId, setBrandId] = useState<BrandId>(
-    isAmAdmin || activeConsole === 'am-distributors'
-      ? 'am-distributors'
-      : activeConsole === 'nexalus-innovations' || isInnovationsAdmin
-      ? 'nexalus-innovations'
-      : ('nexalus' as any)
-  );
+  const [brandId, setBrandId] = useState<BrandId>(defaultBrand);
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -50,14 +52,15 @@ export const AdminCategoriesPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [activeBrandFilter, activeConsole]);
+    const unsub = subscribeToCategories((cats) => {
+      if (cats && cats.length > 0) setCategories(cats);
+    }, effectiveBrand);
+    return () => unsub();
+  }, [activeBrandFilter, activeConsole, effectiveBrand]);
 
   const openCreateModal = () => {
     setEditingCategory(null);
     setName('');
-    const defaultBrand = isAmAdmin || activeConsole === 'am-distributors'
-      ? 'am-distributors'
-      : 'nexalus-innovations';
     setBrandId(defaultBrand);
     setDescription('');
     setIsModalOpen(true);
@@ -82,7 +85,9 @@ export const AdminCategoriesPage: React.FC = () => {
       return;
     }
 
-    if (!canManageBrand(brandId)) {
+    const assignedBrand: BrandId = editingCategory ? brandId : defaultBrand;
+
+    if (!canManageBrand(assignedBrand)) {
       error('Access Denied', 'Cannot assign category to unauthorized operating unit.');
       return;
     }
@@ -93,7 +98,7 @@ export const AdminCategoriesPage: React.FC = () => {
       if (editingCategory) {
         await updateCategory(editingCategory.id, {
           name,
-          brandId,
+          brandId: assignedBrand,
           slug,
           description
         });
@@ -101,7 +106,7 @@ export const AdminCategoriesPage: React.FC = () => {
       } else {
         await createCategory({
           name,
-          brandId,
+          brandId: assignedBrand,
           companyId: currentCompanyScope,
           slug,
           description
@@ -132,21 +137,14 @@ export const AdminCategoriesPage: React.FC = () => {
     }
   };
 
-  const currentCompanyScope: CompanyScopeId = activeConsole === 'am-distributors' || isAmAdmin
-    ? 'am-distributors'
-    : (activeConsole === 'nexalus-innovations' || isInnovationsAdmin ? 'nexalus-innovations' : 'nexalus-llp');
-
   const filteredCategories = categories.filter(c => {
     if (activeConsole === 'am-distributors' || isAmAdmin) {
-      return c.companyId === 'am-distributors' || c.brandId === 'am-distributors' || c.id.startsWith('cat-am-');
+      return c.id.startsWith('cat-am');
     }
     if (activeConsole === 'nexalus-innovations' || isInnovationsAdmin) {
-      return c.companyId === 'nexalus-innovations' ||
-        ['nexalus-innovations', 'cp-plus', 'one-broadband', 'itti-networking'].includes(c.brandId) ||
-        c.id.startsWith('cat-nex-');
+      return c.id.startsWith('cat-nexalus-') && !c.id.includes('llp');
     }
-    // Parent Corporate Master (Nexalus Innovations LLP):
-    return c.companyId === 'nexalus-llp' || c.brandId === 'nexalus' || c.id.startsWith('cat-llp-') || c.id.startsWith('cat-corp-');
+    return c.id.includes('nexalus-llp');
   });
 
   return (
@@ -208,7 +206,6 @@ export const AdminCategoriesPage: React.FC = () => {
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
               <tr>
                 <th className="py-3.5 px-4">Category Name</th>
-                <th className="py-3.5 px-4">Brand Division</th>
                 <th className="py-3.5 px-4">Description</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -216,7 +213,7 @@ export const AdminCategoriesPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {filteredCategories.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-500">
+                  <td colSpan={3} className="py-8 text-center text-slate-500">
                     No product categories registered for this workspace.
                   </td>
                 </tr>
@@ -225,9 +222,6 @@ export const AdminCategoriesPage: React.FC = () => {
                   <tr key={cat.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4 font-bold text-slate-900">
                       {cat.name}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <BrandBadge brandId={cat.brandId} size="sm" />
                     </td>
                     <td className="py-3.5 px-4 text-slate-600">
                       {cat.description || '—'}
@@ -285,19 +279,25 @@ export const AdminCategoriesPage: React.FC = () => {
             <div className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between ${
               activeConsole === 'am-distributors' || isAmAdmin
                 ? 'bg-teal-50 border-teal-200 text-teal-900'
+                : activeConsole === 'nexalus-innovations' || isInnovationsAdmin
+                ? 'bg-indigo-50 border-indigo-200 text-indigo-900'
                 : 'bg-blue-50 border-blue-200 text-blue-900'
             }`}>
               <span>
                 {activeConsole === 'am-distributors' || isAmAdmin
-                  ? 'A.M. Distributors Chiplun (FMCG Cold-Chain & Logistics)'
-                  : 'Nexalus Innovations LLP (Commercial Hardware)'}
+                  ? 'A.M. Distributors Chiplun (FMCG Logistics)'
+                  : activeConsole === 'nexalus-innovations' || isInnovationsAdmin
+                  ? 'Nexalus Innovations (CCTV, Fiber & IT Networking)'
+                  : 'Nexalus Innovations LLP (Corporate Parent Infrastructure)'}
               </span>
               <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${
-                activeConsole === 'am-distributors' || isAmAdmin
+                activeConsole === 'am-distributors' || isAmAdmin || activeConsole === 'nexalus-innovations' || isInnovationsAdmin
                   ? 'bg-teal-200 text-teal-800'
                   : 'bg-blue-200 text-blue-800'
               }`}>
-                {activeConsole === 'am-distributors' || isAmAdmin ? 'Child Division' : 'Parent Company'}
+                {activeConsole === 'am-distributors' || isAmAdmin || activeConsole === 'nexalus-innovations' || isInnovationsAdmin
+                  ? 'Child Division'
+                  : 'Parent Company'}
               </span>
             </div>
           </div>

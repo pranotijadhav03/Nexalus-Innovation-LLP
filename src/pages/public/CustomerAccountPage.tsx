@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../firebase/config';
@@ -10,14 +10,15 @@ import {
   subscribeToCustomerPlanOrders,
   getPlanCart,
   removeFromPlanCart,
-  clearPlanCart
+  clearPlanCart,
+  updateCartItemQuantity
 } from '../../firebase/services';
 import { CartPlanItem } from '../../types';
 import { PlanOrderModal } from '../../components/common/PlanOrderModal';
 import { PlanOrder } from '../../types';
 import { DocumentViewerModal } from '../../components/common/DocumentViewerModal';
 import { formatIndianCurrency, formatDateIndian } from '../../utils/documentGenerator';
-import { Enquiry, CustomerDeliveryAddress } from '../../types';
+import { Enquiry, CustomerDeliveryAddress, CompanyScopeId } from '../../types';
 import {
   User,
   UserCheck,
@@ -51,6 +52,7 @@ import {
   CreditCard,
   Receipt,
   Plus,
+  Minus,
   ShoppingCart,
   Activity,
   History,
@@ -97,6 +99,74 @@ const INDIAN_STATES = [
   'Madhya Pradesh',
   'Delhi',
   'Other'
+];
+
+// A.M. Distributors Chiplun - FMCG & Cold-Chain Logistics Inquiries
+const AM_DISTRIBUTORS_TICKET_SUBJECTS = [
+  'Morning route delivery schedule inquiry',
+  'Commercial 20L water jar refill request',
+  'Bulk dairy / milk crate order inquiry',
+  'Ice cream refrigeration / deep freezer issue',
+  'Damaged goods / Breakage report on route',
+  'Depot delivery challan copy required',
+  'Wholesale pricing quotation for FMCG retail',
+  'Route reschedule / Address change for supply',
+  'Billing & trade invoice inquiry',
+  'Other distribution inquiry'
+];
+
+// Nexalus Innovations - Commercial CCTV & Enterprise Hardware Service Tickets
+const NEXALUS_INNOVATIONS_TICKET_SUBJECTS = [
+  'CCTV camera offline / Video loss',
+  'NVR storage / Hard drive full or error',
+  'AI motion alert & PTZ tracking configuration',
+  'Night vision / IR cut filter malfunctioning',
+  'Optical PoE switch port down',
+  'Optical fiber patch cord or SFP transceiver issue',
+  'Remote mobile app surveillance access problem',
+  'On-site technician visit / AMC routine inspection',
+  'New camera point installation / Site expansion',
+  'Hardware warranty replacement request',
+  'AMC contract renewal / Invoicing query',
+  'Other CCTV & hardware technical grievance'
+];
+
+const AM_SAMPLE_TICKETS = [
+  {
+    id: 'DEPOT-48102',
+    subject: 'Morning route delivery schedule inquiry',
+    priority: 'medium',
+    status: 'Resolved',
+    date: '20 Oct 2024',
+    description: 'Confirmed daily dispatch at 05:30 AM for Chiplun market route.'
+  },
+  {
+    id: 'DEPOT-49214',
+    subject: 'Commercial 20L water jar refill request',
+    priority: 'low',
+    status: 'Open',
+    date: '28 Oct 2024',
+    description: 'Routine weekly replenishment of 50 mineral water jars scheduled.'
+  }
+];
+
+const NEXALUS_INNOVATIONS_SAMPLE_TICKETS = [
+  {
+    id: 'CCTV-71029',
+    subject: 'AI motion alert & PTZ tracking configuration',
+    priority: 'medium',
+    status: 'Resolved',
+    date: '19 Oct 2024',
+    description: 'Configured perimeter boundary tripwire on 4K outdoor bullet cameras.'
+  },
+  {
+    id: 'CCTV-72810',
+    subject: 'On-site technician visit / AMC routine inspection',
+    priority: 'high',
+    status: 'Open',
+    date: '27 Oct 2024',
+    description: 'Quarterly camera lens cleaning and PoE switch health audit booked.'
+  }
 ];
 
 // 22 Exact Support Ticket Subjects from RailWire / Nexalus Broadband login.mp4 video
@@ -204,7 +274,11 @@ type PortalSection =
   | 'ott_recharge'          // 11. OTT Recharge
   | 'offline_appeal';       // 12. Offline Appeal
 
-export const CustomerAccountPage: React.FC = () => {
+export interface CustomerAccountPageProps {
+  brandScope?: CompanyScopeId;
+}
+
+export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandScope }) => {
   const {
     currentUser,
     isAuthenticated,
@@ -217,6 +291,67 @@ export const CustomerAccountPage: React.FC = () => {
   const { success, error } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Multi-Company Scope Resolution
+  const effectiveScope: CompanyScopeId = (
+    brandScope ||
+    (location.pathname.includes('/am-distributors') ? 'am-distributors' :
+     location.pathname.includes('/nexalus-innovations') ? 'nexalus-innovations' :
+     'nexalus-llp')
+  );
+
+  const isChildCompany = effectiveScope !== 'nexalus-llp';
+
+  const companyMeta = {
+    'am-distributors': {
+      name: 'A.M. Distributors Chiplun',
+      shortName: 'A.M. Distributors',
+      tagline: 'Wholesale FMCG & Cold-Chain Logistics Hub',
+      badge: 'Wholesale Depot Partner',
+      themeColor: 'emerald',
+      avatarBg: 'from-emerald-600 to-teal-500',
+      logo: '/images/am-distributors-logo.png',
+      homeUrl: '/brands/am-distributors',
+      productsUrl: '/brands/am-distributors/products',
+      contactUrl: '/brands/am-distributors/contact',
+      portalTitle: 'Wholesale Depot Partner Portal',
+      portalSub: 'Manage wholesale supply, route dispatches, delivery challans, and depot inquiries.'
+    },
+    'nexalus-innovations': {
+      name: 'Nexalus Innovations',
+      shortName: 'Nexalus Innovations',
+      tagline: 'Commercial 4K AI CCTV & Enterprise Hardware',
+      badge: 'CCTV & Hardware Client',
+      themeColor: 'indigo',
+      avatarBg: 'from-indigo-600 to-blue-600',
+      logo: '/images/nexalus-innovations-logo.png',
+      homeUrl: '/brands/nexalus-innovations',
+      productsUrl: '/brands/nexalus-innovations/products',
+      contactUrl: '/brands/nexalus-innovations/contact',
+      portalTitle: 'Client Tech & Surveillance Portal',
+      portalSub: 'Manage CCTV installations, optical switches, hardware orders, and AMC maintenance tickets.'
+    },
+    'nexalus-llp': {
+      name: 'Nexalus Innovations LLP',
+      shortName: 'Nexalus Broadband',
+      tagline: 'High-Speed Commercial Fiber & Telecom Infrastructure',
+      badge: 'Active Broadband Subscriber',
+      themeColor: 'blue',
+      avatarBg: 'from-blue-600 to-cyan-500',
+      logo: '/images/parent-company-logo.jpg',
+      homeUrl: '/',
+      productsUrl: '/plans-pricing',
+      contactUrl: '/contact',
+      portalTitle: 'Subscriber Account Access',
+      portalSub: 'Sign in to manage your high-speed broadband, OTT subscriptions, invoices, and service requests.'
+    }
+  }[effectiveScope === 'am-distributors' ? 'am-distributors' : effectiveScope === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp'];
+
+  const currentTicketSubjects = effectiveScope === 'am-distributors'
+    ? AM_DISTRIBUTORS_TICKET_SUBJECTS
+    : effectiveScope === 'nexalus-innovations'
+    ? NEXALUS_INNOVATIONS_TICKET_SUBJECTS
+    : TICKET_SUBJECTS;
 
   // Auth View State for Unauthenticated Visitors: 'login' | 'register' | 'forgot_password'
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot_password'>(() => {
@@ -346,9 +481,84 @@ export const CustomerAccountPage: React.FC = () => {
     setDocModalOpen(true);
   };
 
-  const activeOrder = customerOrders.find(o => o.status === 'activated' || o.paymentStatus === 'paid') || customerOrders[0];
-  const activePlanName = activeOrder ? `${activeOrder.providerName} - ${activeOrder.planName}` : 'No Active Subscription';
-  const activePlanSpeed = activeOrder ? activeOrder.speed : 'Unprovisioned';
+  // Scoped Customer Orders strictly for this company
+  const scopedCustomerOrders = useMemo(() => {
+    return customerOrders.filter((order: PlanOrder) => {
+      const orderComp = (order.companyId || '').trim();
+      const orderBrand = (order.brandId || '').trim();
+      const planNameLower = (order.planName || '').toLowerCase();
+      const providerLower = (order.providerName || '').toLowerCase();
+      const isBroadband = Boolean(
+        order.providerName ||
+        planNameLower.includes('airtel') ||
+        planNameLower.includes('bsnl') ||
+        planNameLower.includes('railwire') ||
+        planNameLower.includes('broadband') ||
+        planNameLower.includes('mbps') ||
+        providerLower.includes('airtel') ||
+        providerLower.includes('bsnl') ||
+        providerLower.includes('railwire') ||
+        providerLower.includes('one')
+      );
+
+      if (effectiveScope === 'am-distributors') {
+        if (isBroadband) return false;
+        return orderComp === 'am-distributors' || orderComp === 'am' || orderBrand === 'am-distributors';
+      }
+      if (effectiveScope === 'nexalus-innovations') {
+        if (isBroadband || orderComp === 'nexalus-llp' || orderComp === 'corporate') return false;
+        return orderComp === 'nexalus-innovations' || orderBrand === 'nexalus-innovations';
+      }
+      if (isBroadband) return true;
+      return orderComp === 'nexalus-llp' || orderComp === 'corporate' || !orderComp;
+    });
+  }, [customerOrders, effectiveScope]);
+
+  const scopedTotalSpend = useMemo(() => {
+    return scopedCustomerOrders.reduce((sum: number, o: PlanOrder) => sum + (Number(o.price) || 0), 0);
+  }, [scopedCustomerOrders]);
+
+  const scopedInquiries = useMemo(() => {
+    return inquiries.filter((inq: Enquiry) => {
+      const bId = (inq.brandId || inq.websiteId || '').trim();
+      const inqSource = ((inq as any).source || '').trim();
+      if (effectiveScope === 'am-distributors') {
+        return bId === 'am-distributors' || inqSource === 'am-distributors';
+      }
+      if (effectiveScope === 'nexalus-innovations') {
+        return bId === 'nexalus-innovations' || inqSource === 'nexalus-innovations';
+      }
+      return bId === 'nexalus-llp' || bId === 'corporate' || !bId;
+    });
+  }, [inquiries, effectiveScope]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const sec = params.get('section') as PortalSection;
+    if (sec) {
+      setActiveSection(sec);
+    }
+  }, [location.search]);
+
+  // Scoped Cart Items strictly for the current company
+  const scopedCartItems = useMemo(() => {
+    return cartItems.filter((item: CartPlanItem) => {
+      const itemComp = (item.companyId || '').trim();
+      const itemBrand = (item.brandId || '').trim();
+      const planId = (item.planId || '').trim();
+      if (effectiveScope === 'am-distributors') {
+        return itemComp === 'am-distributors' || itemBrand === 'am-distributors' || itemComp === 'am' || itemBrand === 'am' || planId.startsWith('prod-am');
+      }
+      if (effectiveScope === 'nexalus-innovations') {
+        return itemComp === 'nexalus-innovations' || itemBrand === 'nexalus-innovations' || (planId.startsWith('prod-nexalus-') && !planId.includes('llp'));
+      }
+      return itemComp === 'nexalus-llp' || (!itemComp && itemBrand !== 'am-distributors' && itemBrand !== 'nexalus-innovations' && !planId.startsWith('prod-am'));
+    });
+  }, [cartItems, effectiveScope]);
+
+  const activeOrder = scopedCustomerOrders.find((o: PlanOrder) => o.status === 'activated' || o.paymentStatus === 'paid') || scopedCustomerOrders[0];
+  const activePlanName = activeOrder ? `${activeOrder.providerName || ''} ${activeOrder.planName}`.trim() : 'No Active Subscription';
+  const activePlanSpeed = activeOrder ? (activeOrder.speed || 'Standard') : 'Unprovisioned';
   const activePlanFee = activeOrder ? formatIndianCurrency(activeOrder.price) : '₹0.00';
   const activePlanStatus = activeOrder
     ? (activeOrder.status === 'activated' ? 'Active Connection' : activeOrder.paymentStatus === 'paid' ? 'Paid / Scheduled' : 'Pending Installation')
@@ -359,27 +569,38 @@ export const CustomerAccountPage: React.FC = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<typeof SAMPLE_RECEIPTS[0] | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
-  // Support Tickets State & Modal
-  const [ticketsList, setTicketsList] = useState([
-    {
-      id: 'TKT-82910',
-      subject: 'Slow browsing speed',
-      priority: 'high',
-      status: 'Resolved',
-      date: '18 Oct 2024',
-      description: 'Speed test showing 12 Mbps instead of 40 Mbps.'
-    },
-    {
-      id: 'TKT-83401',
-      subject: 'Wi-Fi router / ONT configuration issue',
-      priority: 'medium',
-      status: 'Open',
-      date: '24 Oct 2024',
-      description: 'Need dual-band 5GHz SSID configuration support.'
-    }
-  ]);
+  // Support Tickets State & Modal - strictly user-logged tickets
+  const [ticketsList, setTicketsList] = useState<any[]>(() => {
+    try {
+      const key = `nexa_tickets_${currentUser?.uid || 'guest'}_${effectiveScope}`;
+      const stored = localStorage.getItem(key);
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return [];
+  });
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
-  const [ticketSubject, setTicketSubject] = useState(TICKET_SUBJECTS[0]);
+  const [ticketSubject, setTicketSubject] = useState(currentTicketSubjects[0] || TICKET_SUBJECTS[0]);
+
+  useEffect(() => {
+    try {
+      const key = `nexa_tickets_${currentUser?.uid || 'guest'}_${effectiveScope}`;
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        setTicketsList(JSON.parse(stored));
+      } else {
+        setTicketsList([]);
+      }
+    } catch {
+      setTicketsList([]);
+    }
+    setTicketSubject(
+      effectiveScope === 'am-distributors'
+        ? AM_DISTRIBUTORS_TICKET_SUBJECTS[0]
+        : effectiveScope === 'nexalus-innovations'
+        ? NEXALUS_INNOVATIONS_TICKET_SUBJECTS[0]
+        : TICKET_SUBJECTS[0]
+    );
+  }, [effectiveScope, currentUser?.uid]);
   const [ticketPriority, setTicketPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [ticketDescription, setTicketDescription] = useState('');
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
@@ -401,25 +622,57 @@ export const CustomerAccountPage: React.FC = () => {
   const [selectedGateway, setSelectedGateway] = useState<'ntt_data' | 'billdesk' | 'razorpay_upi'>('ntt_data');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // Initialize form fields when currentUser loads
+  // Initialize form fields: credentials (name, phone, dob) linked, but delivery address STRICTLY scoped to company
   useEffect(() => {
     if (currentUser) {
-      // Split full name if separate first/last name not present
       const parts = (currentUser.displayName || '').split(' ');
       setProfileFirstName(currentUser.firstName || parts[0] || '');
       setProfileLastName(currentUser.lastName || parts.slice(1).join(' ') || '');
       setProfileDob(currentUser.dateOfBirth || '');
       setProfilePhone(currentUser.phone || '');
-      if (currentUser.deliveryAddress) {
-        setProfileAddress(currentUser.deliveryAddress.address || '');
-        setProfileCity(currentUser.deliveryAddress.city || '');
-        setProfileState(currentUser.deliveryAddress.state || 'Maharashtra');
-        setProfilePostcode(currentUser.deliveryAddress.postcode || '');
-        setProfileCountry(currentUser.deliveryAddress.country || 'India');
-        setProfileAdditionalInfo(currentUser.deliveryAddress.additionalDeliveryInfo || '');
+
+      if (isChildCompany) {
+        // Child company has its own independent address - DO NOT pull parent broadband address
+        const scopedAddr = currentUser.companyProfiles?.[effectiveScope]?.deliveryAddress;
+        if (scopedAddr && scopedAddr.address) {
+          setProfileAddress(scopedAddr.address);
+          setProfileCity(scopedAddr.city || (effectiveScope === 'am-distributors' ? 'Chiplun' : 'Sangli'));
+          setProfileState(scopedAddr.state || 'Maharashtra');
+          setProfilePostcode(scopedAddr.postcode || (effectiveScope === 'am-distributors' ? '415605' : '416416'));
+          setProfileCountry(scopedAddr.country || 'India');
+          setProfileAdditionalInfo(scopedAddr.additionalDeliveryInfo || '');
+        } else {
+          // Fresh empty address for child company
+          setProfileAddress('');
+          setProfileCity(effectiveScope === 'am-distributors' ? 'Chiplun' : 'Sangli');
+          setProfileState('Maharashtra');
+          setProfilePostcode(effectiveScope === 'am-distributors' ? '415605' : '416416');
+          setProfileCountry('India');
+          setProfileAdditionalInfo('');
+        }
+      } else {
+        // Parent company broadband address
+        if (currentUser.deliveryAddress) {
+          setProfileAddress(currentUser.deliveryAddress.address || '');
+          setProfileCity(currentUser.deliveryAddress.city || '');
+          setProfileState(currentUser.deliveryAddress.state || 'Maharashtra');
+          setProfilePostcode(currentUser.deliveryAddress.postcode || '');
+          setProfileCountry(currentUser.deliveryAddress.country || 'India');
+          setProfileAdditionalInfo(currentUser.deliveryAddress.additionalDeliveryInfo || '');
+        }
       }
     }
-  }, [currentUser]);
+  }, [currentUser, effectiveScope, isChildCompany]);
+
+  // Guard active section: child companies must NOT show broadband, payments, iptv, ott, data usage
+  useEffect(() => {
+    if (isChildCompany) {
+      const allowed: PortalSection[] = ['account_summary', 'my_cart', 'broadband_orders', 'my_profile', 'support_tickets', 'portal_password'];
+      if (!allowed.includes(activeSection)) {
+        setActiveSection('account_summary');
+      }
+    }
+  }, [isChildCompany, activeSection]);
 
   // Load Customer Inquiries
   useEffect(() => {
@@ -645,12 +898,13 @@ export const CustomerAccountPage: React.FC = () => {
         lastName: profileLastName.trim(),
         dateOfBirth: profileDob.trim(),
         phone: profilePhone.trim(),
-        deliveryAddress: updatedDelivery
+        deliveryAddress: updatedDelivery,
+        companyScope: effectiveScope
       });
 
       if (res) {
         await refreshUserProfile();
-        success('Profile Saved', 'Your subscriber details and service address have been updated.');
+        success('Profile Saved', `Your details and address for ${companyMeta.name} have been updated.`);
       } else {
         error('Save Failed', 'Could not update your profile. Please try again.');
       }
@@ -731,7 +985,8 @@ export const CustomerAccountPage: React.FC = () => {
 
     setIsSubmittingTicket(true);
     setTimeout(() => {
-      const newTicketId = `TKT-${Math.floor(10000 + Math.random() * 90000)}`;
+      const prefix = effectiveScope === 'am-distributors' ? 'DEPOT' : effectiveScope === 'nexalus-innovations' ? 'CCTV' : 'TKT';
+      const newTicketId = `${prefix}-${Math.floor(10000 + Math.random() * 90000)}`;
       const newTicket = {
         id: newTicketId,
         subject: ticketSubject,
@@ -741,11 +996,18 @@ export const CustomerAccountPage: React.FC = () => {
         description: ticketDescription.trim()
       };
 
-      setTicketsList(prev => [newTicket, ...prev]);
+      setTicketsList(prev => {
+        const updated = [newTicket, ...prev];
+        try {
+          const key = `nexa_tickets_${currentUser?.uid || 'guest'}_${effectiveScope}`;
+          localStorage.setItem(key, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
       setIsSubmittingTicket(false);
       setIsNewTicketModalOpen(false);
       setTicketDescription('');
-      success('Ticket Raised Successfully', `Your support ticket #${newTicketId} has been assigned to Nexalus LCO.`);
+      success('Ticket Raised Successfully', `Your support ticket #${newTicketId} has been assigned to ${companyMeta.shortName} team.`);
     }, 900);
   };
 
@@ -787,27 +1049,39 @@ export const CustomerAccountPage: React.FC = () => {
         <div className="max-w-xl w-full bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden my-auto animate-in fade-in duration-200 relative z-10">
           {/* Header Banner - Premium Corporate Nexalus Identity */}
           <div className="bg-gradient-to-b from-slate-50 via-white to-slate-50/50 p-6 sm:p-8 pb-4 text-center border-b border-slate-100 relative">
-            {/* Nexalus Logo Seal */}
+            {/* Company Logo Seal */}
             <div className="flex justify-center mb-3">
               <img
-                src="/images/parent-company-logo.jpg"
-                alt="Nexalus Innovations LLP"
-                className="w-20 h-20 sm:w-22 sm:h-22 rounded-full object-cover shadow-md border-2 border-[#c5a059]/50 ring-4 ring-amber-50/80 bg-white"
+                src={companyMeta.logo}
+                alt={companyMeta.name}
+                className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl object-cover shadow-md border-2 border-slate-200 ring-4 ring-slate-100 bg-white"
               />
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50/90 border border-blue-200/70 text-[#0b2545] text-[11px] font-bold tracking-wider uppercase mb-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#0b2545]" />
-              <span>CUSTOMER PORTAL &bull; ACCOUNT ACCESS</span>
+            <div className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase mb-2 ${
+              effectiveScope === 'am-distributors'
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : effectiveScope === 'nexalus-innovations'
+                ? 'bg-indigo-50 text-indigo-800 border border-indigo-200'
+                : 'bg-blue-50 text-[#0b2545] border border-blue-200'
+            }`}>
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{companyMeta.badge} &bull; ACCOUNT PORTAL</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-              {authMode === 'login' ? 'Welcome back' : 'Customer Registration'}
+              {authMode === 'login'
+                ? (effectiveScope === 'am-distributors' ? 'Wholesale Partner Sign In' : effectiveScope === 'nexalus-innovations' ? 'Client Tech Sign In' : 'Welcome back')
+                : (effectiveScope === 'am-distributors' ? 'Wholesale Partner Registration' : effectiveScope === 'nexalus-innovations' ? 'Client Tech Registration' : 'Customer Registration')}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto leading-relaxed font-medium">
               {authMode === 'login'
-                ? 'Sign in to manage your service requests, quotations and account details.'
-                : 'Create your account to request broadband, CCTV consultations, and track service requests.'}
+                ? companyMeta.portalSub
+                : (effectiveScope === 'am-distributors'
+                    ? 'Register your retail store or commercial depot for daily milk, water and FMCG supply.'
+                    : effectiveScope === 'nexalus-innovations'
+                    ? 'Register for commercial 4K AI CCTV surveillance, optical hardware, and AMC service agreements.'
+                    : 'Create your account to request broadband, CCTV consultations, and track service requests.')}
             </p>
 
             {/* Sub Tabs */}
@@ -1402,44 +1676,84 @@ export const CustomerAccountPage: React.FC = () => {
   // =========================================================================
   // VIEW: AUTHENTICATED SUBSCRIBER PORTAL (12 SIDEBAR SECTIONS FROM login.mp4)
   // =========================================================================
-  const subscriberName = currentUser.displayName || `${profileFirstName} ${profileLastName}`.trim() || 'Pranoday Jadhav';
-  const subscriberId = currentUser.subscriberId || (currentUser.uid ? 'CUST-' + currentUser.uid.slice(0, 8).toUpperCase() : 'CUST-PORTAL');
-  const associatedLco = currentUser.associatedLco || 'Nexalus Innovations LLP_Sangli';
+  const subscriberName = currentUser.displayName || `${profileFirstName} ${profileLastName}`.trim() || 'Customer Account';
+  const scopedProfile = currentUser.companyProfiles?.[effectiveScope];
+  const rawScopedId = scopedProfile?.subscriberId;
+  const isInvalidChildSub = effectiveScope !== 'nexalus-llp' && (!rawScopedId || rawScopedId.startsWith('SUB-'));
+  const scopedCompanyPrefix = effectiveScope === 'am-distributors' ? 'AM-' : effectiveScope === 'nexalus-innovations' ? 'TECH-' : 'SUB-';
+  const subscriberId = isInvalidChildSub
+    ? (scopedCompanyPrefix + (currentUser.uid ? currentUser.uid.slice(0, 6).toUpperCase() : Math.floor(100000 + Math.random() * 900000)))
+    : (rawScopedId || (currentUser.uid ? (scopedCompanyPrefix + currentUser.uid.slice(0, 6).toUpperCase()) : 'CUST-PORTAL'));
+  const associatedLco = effectiveScope === 'am-distributors'
+    ? 'A.M. Distributors Chiplun'
+    : effectiveScope === 'nexalus-innovations'
+    ? 'Nexalus Innovations Technical Support Desk'
+    : (currentUser.associatedLco || 'Nexalus Innovations LLP_Sangli');
   const planName = currentUser.planName || 'FUP40Mbps-2Mbps 2500GB x10';
   const planFee = currentUser.planFee || '₹ 470.82';
   const subscriptionStatus = currentUser.subscriptionStatus || 'Active';
 
-  const sidebarItems: { id: PortalSection; label: string; badge?: number; icon: React.ReactNode }[] = [
-    { id: 'account_summary', label: 'Account Summary', icon: <UserCheck className="w-4 h-4" /> },
-    { id: 'broadband_orders', label: 'Broadband Orders & Slips', icon: <ShoppingCart className="w-4 h-4" /> },
-    { id: 'my_profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
-    { id: 'portal_password', label: 'Portal Password Change', icon: <Lock className="w-4 h-4" /> },
-//     { id: 'internet_password', label: 'Internet Password Change', icon: <Wifi className="w-4 h-4" /> },
-    { id: 'payments', label: 'Payments (Recharge)', icon: <CreditCard className="w-4 h-4" /> },
-    { id: 'my_cart', label: 'My Cart', badge: cartItems.length, icon: <ShoppingCart className="w-4 h-4" /> },
-//     { id: 'data_usage', label: 'My Data Usage', icon: <Activity className="w-4 h-4" /> },
-    { id: 'support_tickets', label: 'My Support Tickets', icon: <HelpCircle className="w-4 h-4" /> },
-    { id: 'old_transactions', label: 'Old Transactions', icon: <History className="w-4 h-4" /> },
-    { id: 'iptv_pack', label: 'IPTV PACK', icon: <Tv className="w-4 h-4" /> },
-    { id: 'ott_recharge', label: 'OTT Recharge', icon: <Film className="w-4 h-4" /> },
-    { id: 'offline_appeal', label: 'Offline Appeal', icon: <Scale className="w-4 h-4" /> }
-  ];
+  const scopedAddressDisplay = (scopedProfile?.deliveryAddress?.address
+    ? `${scopedProfile.deliveryAddress.address}, ${scopedProfile.deliveryAddress.city || ''} ${scopedProfile.deliveryAddress.postcode || ''}`
+    : (isChildCompany ? '' : (profileAddress ? `${profileAddress}, ${profileCity} ${profilePostcode}` : ''))
+  ).trim();
+
+  // Strictly scoped sidebar sections: My Profile is fixed across all three companies
+  const sidebarItems: { id: PortalSection; label: string; badge?: number; icon: React.ReactNode }[] = (
+    effectiveScope === 'am-distributors'
+      ? [
+          { id: 'account_summary', label: 'Account Summary', icon: <Package className="w-4 h-4" /> },
+          { id: 'my_cart', label: 'My Cart', badge: scopedCartItems.length > 0 ? scopedCartItems.length : undefined, icon: <ShoppingCart className="w-4 h-4" /> },
+          { id: 'broadband_orders', label: 'My Orders & Challans', badge: scopedCustomerOrders.length > 0 ? scopedCustomerOrders.length : undefined, icon: <ShoppingBag className="w-4 h-4" /> },
+          { id: 'my_profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
+          { id: 'support_tickets', label: 'Support & Inquiries', badge: (scopedInquiries.length + ticketsList.length) > 0 ? (scopedInquiries.length + ticketsList.length) : undefined, icon: <HelpCircle className="w-4 h-4" /> },
+          { id: 'portal_password', label: 'Security & Password', icon: <Lock className="w-4 h-4" /> }
+        ]
+      : effectiveScope === 'nexalus-innovations'
+      ? [
+          { id: 'account_summary', label: 'Account Summary', icon: <ShieldCheck className="w-4 h-4" /> },
+          { id: 'my_cart', label: 'My Cart', badge: scopedCartItems.length > 0 ? scopedCartItems.length : undefined, icon: <ShoppingCart className="w-4 h-4" /> },
+          { id: 'broadband_orders', label: 'Hardware Orders', badge: scopedCustomerOrders.length > 0 ? scopedCustomerOrders.length : undefined, icon: <ShoppingBag className="w-4 h-4" /> },
+          { id: 'my_profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
+          { id: 'support_tickets', label: 'Support Tickets', badge: (scopedInquiries.length + ticketsList.length) > 0 ? (scopedInquiries.length + ticketsList.length) : undefined, icon: <HelpCircle className="w-4 h-4" /> },
+          { id: 'portal_password', label: 'Security & Password', icon: <Lock className="w-4 h-4" /> }
+        ]
+      : [
+          { id: 'account_summary', label: 'Account Summary', icon: <UserCheck className="w-4 h-4" /> },
+          { id: 'broadband_orders', label: 'Broadband Orders & Slips', badge: scopedCustomerOrders.length > 0 ? scopedCustomerOrders.length : undefined, icon: <ShoppingCart className="w-4 h-4" /> },
+          { id: 'my_cart', label: 'My Cart', badge: scopedCartItems.length > 0 ? scopedCartItems.length : undefined, icon: <ShoppingCart className="w-4 h-4" /> },
+          { id: 'my_profile', label: 'My Profile', icon: <User className="w-4 h-4" /> },
+          { id: 'portal_password', label: 'Portal Password Change', icon: <Lock className="w-4 h-4" /> },
+          { id: 'payments', label: 'Payments (Recharge)', icon: <CreditCard className="w-4 h-4" /> },
+          { id: 'support_tickets', label: 'My Support Tickets', badge: ticketsList.length > 0 ? ticketsList.length : undefined, icon: <HelpCircle className="w-4 h-4" /> },
+          { id: 'old_transactions', label: 'Old Transactions', icon: <History className="w-4 h-4" /> },
+          { id: 'iptv_pack', label: 'IPTV PACK', icon: <Tv className="w-4 h-4" /> },
+          { id: 'ott_recharge', label: 'OTT Recharge', icon: <Film className="w-4 h-4" /> },
+          { id: 'offline_appeal', label: 'Offline Appeal', icon: <Scale className="w-4 h-4" /> }
+        ]
+  );
 
   return (
     <div className="min-h-screen bg-slate-100/70 pb-16 font-sans">
       {/* Top Banner Bar */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white border-b border-slate-800 shadow-md">
+      <div className={`text-white border-b shadow-md ${
+        effectiveScope === 'am-distributors'
+          ? 'bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 border-emerald-900/60'
+          : effectiveScope === 'nexalus-innovations'
+          ? 'bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 border-indigo-900/60'
+          : 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-slate-800'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-              className="lg:hidden p-2 rounded-xl bg-slate-800 text-slate-200 hover:text-white"
+              className="lg:hidden p-2 rounded-xl bg-white/10 text-slate-200 hover:text-white"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center font-black text-sm shadow-md">
+              <div className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${companyMeta.avatarBg} text-white flex items-center justify-center font-black text-sm shadow-md`}>
                 {subscriberName.charAt(0).toUpperCase()}
               </div>
               <div>
@@ -1447,14 +1761,20 @@ export const CustomerAccountPage: React.FC = () => {
                   <span className="font-extrabold text-sm text-white tracking-tight">
                     {subscriberName}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-400/30">
-                    {activePlanStatus}
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                    effectiveScope === 'am-distributors'
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30'
+                      : effectiveScope === 'nexalus-innovations'
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30'
+                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30'
+                  }`}>
+                    {effectiveScope === 'am-distributors' ? 'Wholesale Partner' : effectiveScope === 'nexalus-innovations' ? 'CCTV & Tech Client' : activePlanStatus}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-[11px] text-slate-300">
                   <span className="font-mono text-cyan-300">ID: {subscriberId}</span>
                   <span>•</span>
-                  <span className="truncate text-slate-400 hidden sm:inline">LCO: {associatedLco}</span>
+                  <span className="truncate text-slate-400 hidden sm:inline">{companyMeta.shortName}</span>
                 </div>
               </div>
             </div>
@@ -1462,10 +1782,10 @@ export const CustomerAccountPage: React.FC = () => {
 
           <div className="flex items-center gap-2.5">
             <Link
-              to="/"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
+              to={companyMeta.homeUrl}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white text-xs font-semibold transition-colors"
             >
-              <span>Main Site</span>
+              <span>{companyMeta.shortName} Home</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
             <button
@@ -1480,19 +1800,65 @@ export const CustomerAccountPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Multi-Company Portal Switcher */}
+      <div className="bg-white/90 backdrop-blur-xs border-b border-slate-200 py-2 px-4 sm:px-6 lg:px-8 shadow-2xs">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-slate-600 font-bold">
+            <Building className="w-3.5 h-3.5 text-slate-400" />
+            <span>Active Portal:</span>
+            <span className="text-slate-900 font-extrabold">{companyMeta.name}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <Link
+              to="/account"
+              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all text-xs ${
+                effectiveScope === 'nexalus-llp'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
+              }`}
+            >
+              <Wifi className="w-3.5 h-3.5" />
+              <span>Nexalus Broadband</span>
+            </Link>
+            <Link
+              to="/brands/nexalus-innovations/account"
+              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all text-xs ${
+                effectiveScope === 'nexalus-innovations'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Nexalus Innovations</span>
+            </Link>
+            <Link
+              to="/brands/am-distributors/account"
+              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all text-xs ${
+                effectiveScope === 'am-distributors'
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
+              }`}
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>A.M. Distributors</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Main Layout: 12-Section Sidebar + Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
-          {/* SIDEBAR NAVIGATION (Desktop & Mobile Drawer) */}
+          {/* SIDEBAR NAVIGATION (Desktop Sticky & Mobile Drawer) */}
           <aside
-            className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl lg:shadow-xs lg:static lg:w-64 lg:rounded-2xl border border-slate-200/90 lg:block transition-transform duration-200 ${
+            className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl lg:shadow-xs lg:sticky lg:top-20 lg:self-start lg:w-64 lg:rounded-2xl border border-slate-200/90 lg:block transition-transform duration-200 max-h-[calc(100vh-6rem)] overflow-y-auto ${
               isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
             }`}
           >
             {/* Mobile Sidebar Header */}
             <div className="p-4 border-b border-slate-100 flex lg:hidden items-center justify-between bg-slate-900 text-white">
               <span className="font-bold text-xs uppercase tracking-wider text-cyan-400">
-                Subscriber Portal Menu
+                {companyMeta.shortName} Portal Menu
               </span>
               <button
                 type="button"
@@ -1506,16 +1872,30 @@ export const CustomerAccountPage: React.FC = () => {
             {/* Subscriber Info Pill */}
             <div className="p-4 border-b border-slate-100 bg-slate-50/70">
               <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Subscriber Account
+                {effectiveScope === 'am-distributors'
+                  ? 'Distributor Partner'
+                  : effectiveScope === 'nexalus-innovations'
+                  ? 'Enterprise Tech Client'
+                  : 'Subscriber Account'}
               </div>
               <div className="font-extrabold text-sm text-slate-900 truncate mt-0.5">
                 {subscriberName}
               </div>
-              <div className="text-[11px] text-blue-700 font-mono font-bold mt-0.5">
-                SUB: {subscriberId}
+              <div className={`text-[11px] font-mono font-bold mt-0.5 ${
+                effectiveScope === 'am-distributors'
+                  ? 'text-emerald-700'
+                  : effectiveScope === 'nexalus-innovations'
+                  ? 'text-indigo-700'
+                  : 'text-blue-700'
+              }`}>
+                {effectiveScope === 'nexalus-llp' ? `SUB: ${subscriberId}` : `ID: ${subscriberId}`}
               </div>
               <div className="text-[10px] text-slate-500 truncate mt-1">
-                {associatedLco}
+                {effectiveScope === 'am-distributors'
+                  ? 'A.M. Distributors Chiplun'
+                  : effectiveScope === 'nexalus-innovations'
+                  ? 'Nexalus Innovations Desk'
+                  : associatedLco}
               </div>
             </div>
 
@@ -1523,6 +1903,11 @@ export const CustomerAccountPage: React.FC = () => {
             <nav className="p-2 space-y-0.5">
               {sidebarItems.map(item => {
                 const isActive = activeSection === item.id;
+                const activeColor = effectiveScope === 'am-distributors'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : effectiveScope === 'nexalus-innovations'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-blue-600 text-white shadow-sm';
                 return (
                   <button
                     key={item.id}
@@ -1533,8 +1918,8 @@ export const CustomerAccountPage: React.FC = () => {
                     }}
                     className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
                       isActive
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-slate-700 hover:bg-slate-100 hover:text-blue-700'
+                        ? activeColor
+                        : 'text-slate-700 hover:bg-slate-100'
                     }`}
                   >
                     <span className={isActive ? 'text-white' : 'text-slate-400'}>
@@ -1577,111 +1962,306 @@ export const CustomerAccountPage: React.FC = () => {
           {/* MAIN CONTENT AREA */}
           <main className="flex-1 w-full space-y-6">
             {/* ------------------------------------------------------------- */}
-            {/* 1. ACCOUNT SUMMARY (Exact Dashboard from login.mp4) */}
+            {/* 1. ACCOUNT SUMMARY (Scoped by Company) */}
             {/* ------------------------------------------------------------- */}
             {activeSection === 'account_summary' && (
               <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Hero Summary Card */}
-                <div className="bg-gradient-to-br from-[#0c1a3d] via-[#102454] to-[#0a1633] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-blue-900/50 relative overflow-hidden">
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-cyan-400 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-blue-500/30 border-2 border-white/20">
-                        {subscriberName.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                            {subscriberName}
-                          </h2>
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                            {subscriptionStatus}
-                          </span>
+                {/* HERO CARD SCOPED BY COMPANY */}
+                {effectiveScope === 'am-distributors' ? (
+                  /* A.M. Distributors Chiplun - Real FMCG & Logistics Customer Summary */
+                  <div className="bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#022c22] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-emerald-800/50 relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-emerald-500/30 border-2 border-white/20">
+                          {subscriberName.charAt(0).toUpperCase()}
                         </div>
-                        <p className="text-xs text-cyan-300 font-mono mt-0.5">
-                          Customer ID: <strong className="text-white">{subscriberId}</strong>
-                        </p>
-                        <p className="text-xs text-slate-300 mt-0.5">
-                          Associated LCO: <strong className="text-white">{associatedLco}</strong>
-                        </p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                              {subscriberName}
+                            </h2>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                              {scopedCustomerOrders.length > 0 ? 'Verified Partner' : 'Registered Partner'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-teal-300 font-mono mt-0.5">
+                            Account ID: <strong className="text-white">{subscriberId}</strong>
+                          </p>
+                          <p className="text-xs text-slate-200 mt-0.5">
+                            Registered Email: <strong className="text-white">{currentUser.email}</strong>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          to="/brands/am-distributors/products"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/30 transition-all"
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>Wholesale Catalog</span>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setActiveSection('broadband_orders')}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all cursor-pointer"
+                        >
+                          <Receipt className="w-3.5 h-3.5" />
+                          <span>My Orders &amp; Challans</span>
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => setActiveSection('payments')}
-                        icon={<CreditCard className="w-3.5 h-3.5" />}
-                        className="shadow-md shadow-blue-600/30 font-bold"
-                      >
-                        Recharge Now
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setActiveSection('broadband_orders')}
-                        icon={<Receipt className="w-3.5 h-3.5" />}
-                      >
-                        View Receipts
-                      </Button>
+                    {/* Real Dynamic User Activity Metrics */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/10">
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[11px] font-bold text-emerald-200 uppercase tracking-wider flex items-center gap-1.5">
+                          <ShoppingBag className="w-3.5 h-3.5 text-emerald-300" />
+                          <span>Total Purchases</span>
+                        </div>
+                        <div className="text-lg font-extrabold text-white mt-1">
+                          {scopedCustomerOrders.length} {scopedCustomerOrders.length === 1 ? 'Order' : 'Orders'}
+                        </div>
+                        <div className="text-xs text-teal-300 font-medium mt-1">
+                          {scopedCustomerOrders.length > 0
+                            ? `Latest: ${new Date(scopedCustomerOrders[0].createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                            : 'No purchases made yet'}
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[11px] font-bold text-emerald-200 uppercase tracking-wider flex items-center gap-1.5">
+                          <Receipt className="w-3.5 h-3.5 text-emerald-300" />
+                          <span>Total Purchases Value</span>
+                        </div>
+                        <div className="text-xl font-black text-emerald-300 mt-1">
+                          {formatIndianCurrency(scopedTotalSpend)}
+                        </div>
+                        <div className="text-[11px] text-slate-200 mt-1">
+                          {scopedCustomerOrders.length > 0 ? 'Verified B2B Billing' : '0 B2B Delivery Challans'}
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[11px] font-bold text-emerald-200 uppercase tracking-wider flex items-center gap-1.5">
+                          <HelpCircle className="w-3.5 h-3.5 text-emerald-300" />
+                          <span>Inquiries &amp; Requests</span>
+                        </div>
+                        <div className="text-lg font-extrabold text-white mt-1">
+                          {scopedInquiries.length + ticketsList.length} Active
+                        </div>
+                        <div className="text-[11px] text-teal-300 font-semibold mt-1">
+                          {scopedInquiries.length + ticketsList.length > 0 ? 'Logged queries on record' : 'No pending queries'}
+                        </div>
+                      </div>
                     </div>
                   </div>
+                ) : effectiveScope === 'nexalus-innovations' ? (
+                  /* Nexalus Innovations - Real Hardware & Surveillance Customer Summary */
+                  <div className="bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#0f172a] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-800/50 relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500 to-blue-500 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-indigo-500/30 border-2 border-white/20">
+                          {subscriberName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                              {subscriberName}
+                            </h2>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-indigo-400/20 text-indigo-300 border border-indigo-400/30">
+                              {scopedCustomerOrders.length > 0 ? 'Enterprise Client' : 'Registered Client'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-cyan-300 font-mono mt-0.5">
+                            Client ID: <strong className="text-white">{subscriberId}</strong>
+                          </p>
+                          <p className="text-xs text-slate-200 mt-0.5">
+                            Registered Email: <strong className="text-white">{currentUser.email}</strong>
+                          </p>
+                        </div>
+                      </div>
 
-                  {/* 3 Metrics Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/10">
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                      <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                        Current Plan
-                      </div>
-                      <div className="text-sm font-extrabold text-white mt-1 truncate">
-                        {activePlanName}
-                      </div>
-                      <div className="text-xs text-cyan-300 font-bold mt-1">
-                        Tariff: {activePlanFee}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          to="/brands/nexalus-innovations/products"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-black text-xs shadow-md shadow-indigo-500/30 transition-all"
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5" />
+                          <span>Hardware Catalog</span>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setActiveSection('support_tickets')}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all cursor-pointer"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5" />
+                          <span>Raise Support Ticket</span>
+                        </button>
                       </div>
                     </div>
 
-                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                      <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                        Data Allowance
+                    {/* Real Dynamic Hardware Activity Metrics */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/10">
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider flex items-center gap-1.5">
+                          <ShoppingCart className="w-3.5 h-3.5 text-indigo-300" />
+                          <span>Hardware Orders</span>
+                        </div>
+                        <div className="text-lg font-extrabold text-white mt-1">
+                          {scopedCustomerOrders.length} {scopedCustomerOrders.length === 1 ? 'Order' : 'Orders'}
+                        </div>
+                        <div className="text-xs text-cyan-300 font-medium mt-1">
+                          {scopedCustomerOrders.length > 0
+                            ? `Latest: ${new Date(scopedCustomerOrders[0].createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                            : 'No hardware orders yet'}
+                        </div>
                       </div>
-                      <div className="text-xl font-black text-emerald-400 mt-1">
-                        {activeOrder ? 'Truly Unlimited' : 'Unprovisioned'}
-                      </div>
-                      <div className="text-[11px] text-slate-300 mt-1">
-                        {activeOrder ? `${activeOrder.speed} Commercial Fiber` : 'Book a plan to activate'}
-                      </div>
-                    </div>
 
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                      <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                        Billing &amp; Installation
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider flex items-center gap-1.5">
+                          <Receipt className="w-3.5 h-3.5 text-indigo-300" />
+                          <span>Procurement Spend</span>
+                        </div>
+                        <div className="text-xl font-black text-indigo-300 mt-1">
+                          {formatIndianCurrency(scopedTotalSpend)}
+                        </div>
+                        <div className="text-[11px] text-slate-200 mt-1">
+                          {scopedCustomerOrders.length > 0 ? 'GST Invoiced Hardware' : '₹0.00 Total Spent'}
+                        </div>
                       </div>
-                      <div className="text-base font-extrabold text-white mt-1">
-                        {activeOrder ? activeOrder.billingPeriod : 'Not Subscribed'}
-                      </div>
-                      <div className="text-[11px] text-cyan-300 font-semibold mt-1">
-                        {activeOrder ? (activeOrder.paymentStatus === 'paid' ? 'Payment Verified' : 'Pay on Installation (COD)') : 'Self-Serve Portal'}
+
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider flex items-center gap-1.5">
+                          <HelpCircle className="w-3.5 h-3.5 text-indigo-300" />
+                          <span>Service &amp; AMC Tickets</span>
+                        </div>
+                        <div className="text-lg font-extrabold text-white mt-1">
+                          {scopedInquiries.length + ticketsList.length} Active
+                        </div>
+                        <div className="text-[11px] text-cyan-300 font-semibold mt-1">
+                          {scopedInquiries.length + ticketsList.length > 0 ? 'Logged tickets on record' : 'No open tickets'}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  /* Nexalus Innovations LLP - Corporate Telecom / Broadband Hero */
+                  <div className="bg-gradient-to-br from-[#0c1a3d] via-[#102454] to-[#0a1633] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-blue-900/50 relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-cyan-400 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-blue-500/30 border-2 border-white/20">
+                          {subscriberName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                              {subscriberName}
+                            </h2>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                              {subscriptionStatus}
+                            </span>
+                          </div>
+                          <p className="text-xs text-cyan-300 font-mono mt-0.5">
+                            Customer ID: <strong className="text-white">{subscriberId}</strong>
+                          </p>
+                          <p className="text-xs text-slate-300 mt-0.5">
+                            Associated LCO: <strong className="text-white">{associatedLco}</strong>
+                          </p>
+                        </div>
+                      </div>
 
-                {/* Account Details Table */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => setActiveSection('payments')}
+                          icon={<CreditCard className="w-3.5 h-3.5" />}
+                          className="shadow-md shadow-blue-600/30 font-bold"
+                        >
+                          Recharge Now
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setActiveSection('broadband_orders')}
+                          icon={<Receipt className="w-3.5 h-3.5" />}
+                        >
+                          View Receipts
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* 3 Metrics Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/10">
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                          Current Plan
+                        </div>
+                        <div className="text-sm font-extrabold text-white mt-1 truncate">
+                          {activePlanName}
+                        </div>
+                        <div className="text-xs text-cyan-300 font-bold mt-1">
+                          Tariff: {activePlanFee}
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                          Data Allowance
+                        </div>
+                        <div className="text-xl font-black text-emerald-400 mt-1">
+                          {activeOrder ? 'Truly Unlimited' : 'Unprovisioned'}
+                        </div>
+                        <div className="text-[11px] text-slate-300 mt-1">
+                          {activeOrder ? `${activeOrder.speed} Commercial Fiber` : 'Book a plan to activate'}
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                        <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                          Billing &amp; Installation
+                        </div>
+                        <div className="text-base font-extrabold text-white mt-1">
+                          {activeOrder ? activeOrder.billingPeriod : 'Not Subscribed'}
+                        </div>
+                        <div className="text-[11px] text-cyan-300 font-semibold mt-1">
+                          {activeOrder ? (activeOrder.paymentStatus === 'paid' ? 'Payment Verified' : 'Pay on Installation (COD)') : 'Self-Serve Portal'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Account Details Table (Scoped by Company) */}
                 <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs">
                   <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
                     <div>
                       <h3 className="text-base font-black text-slate-900 tracking-tight">
-                        Subscriber Profile &amp; Connection Metadata
+                        {effectiveScope === 'am-distributors'
+                          ? 'Wholesale Partner Profile & Logistics Parameters'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'Commercial Client Infrastructure & Site Profile'
+                          : 'Subscriber Profile & Connection Metadata'}
                       </h3>
                       <p className="text-xs text-slate-500">
-                        RailWire / Nexalus Broadband authenticated network parameters.
+                        {effectiveScope === 'am-distributors'
+                          ? 'A.M. Distributors Chiplun authenticated partner credentials & delivery address.'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'Nexalus Innovations enterprise hardware client profile & installation premises.'
+                          : 'RailWire / Nexalus Broadband authenticated network parameters.'}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setActiveSection('my_profile')}
-                      className="text-xs font-bold text-blue-600 hover:text-blue-800"
+                      className={`text-xs font-bold ${
+                        effectiveScope === 'am-distributors'
+                          ? 'text-emerald-700 hover:text-emerald-900'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'text-indigo-700 hover:text-indigo-900'
+                          : 'text-blue-600 hover:text-blue-800'
+                      }`}
                     >
                       Edit Profile →
                     </button>
@@ -1689,12 +2269,12 @@ export const CustomerAccountPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-xs">
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Subscriber Name:</span>
+                      <span className="text-slate-500 font-medium">{effectiveScope === 'am-distributors' ? 'Partner / Business Name:' : effectiveScope === 'nexalus-innovations' ? 'Client / Business Name:' : 'Subscriber Name:'}</span>
                       <strong className="text-slate-900 font-bold">{subscriberName}</strong>
                     </div>
 
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Customer ID:</span>
+                      <span className="text-slate-500 font-medium">Account ID:</span>
                       <strong className="text-blue-700 font-mono font-bold">{subscriberId}</strong>
                     </div>
 
@@ -1704,56 +2284,139 @@ export const CustomerAccountPage: React.FC = () => {
                     </div>
 
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Registered Mobile:</span>
+                      <span className="text-slate-500 font-medium">Contact Mobile:</span>
                       <strong className="text-slate-900 font-bold">{currentUser.phone || profilePhone || '+91 9158886444'}</strong>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Registration Date:</span>
-                      <strong className="text-slate-900 font-bold">12 Oct 2023</strong>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Last Renewal:</span>
-                      <strong className="text-slate-900 font-bold">12 Oct 2024</strong>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Term Plan Validity:</span>
-                      <strong className="text-slate-900 font-bold">1 Month (30 Days)</strong>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Bandwidth Speed:</span>
-                      <strong className="text-emerald-700 font-bold">40 Mbps Download / 2 Mbps FUP</strong>
-                    </div>
+                    {effectiveScope === 'am-distributors' ? (
+                      <>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Depot Delivery Address:</span>
+                          <strong className="text-slate-900 font-bold truncate max-w-[200px]" title={scopedAddressDisplay}>
+                            {scopedAddressDisplay || 'Not set (Click Edit Profile)'}
+                          </strong>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Delivery City &amp; PIN:</span>
+                          <strong className="text-slate-900 font-bold">
+                            {scopedProfile?.deliveryAddress?.city ? `${scopedProfile.deliveryAddress.city} - ${scopedProfile.deliveryAddress.postcode || '415605'}` : (profileCity ? `${profileCity} - ${profilePostcode}` : 'Chiplun - 415605')}
+                          </strong>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Account Status:</span>
+                          <strong className="text-emerald-700 font-bold">
+                            {scopedCustomerOrders.length > 0 ? 'Active Commercial Buyer' : 'Registered Partner'}
+                          </strong>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Purchases On Record:</span>
+                          <strong className="text-slate-900 font-bold">
+                            {scopedCustomerOrders.length > 0 ? `${scopedCustomerOrders.length} wholesale order(s)` : '0 orders placed'}
+                          </strong>
+                        </div>
+                      </>
+                    ) : effectiveScope === 'nexalus-innovations' ? (
+                      <>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Installation Site Address:</span>
+                          <strong className="text-slate-900 font-bold truncate max-w-[200px]" title={scopedAddressDisplay}>
+                            {scopedAddressDisplay || 'Not set (Click Edit Profile)'}
+                          </strong>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Site City &amp; PIN:</span>
+                          <strong className="text-slate-900 font-bold">
+                            {scopedProfile?.deliveryAddress?.city ? `${scopedProfile.deliveryAddress.city} - ${scopedProfile.deliveryAddress.postcode || '416416'}` : (profileCity ? `${profileCity} - ${profilePostcode}` : 'Sangli - 416416')}
+                          </strong>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Client Account Status:</span>
+                          <strong className="text-indigo-700 font-bold">
+                            {scopedCustomerOrders.length > 0 ? 'Enterprise Client' : 'Registered Tech Account'}
+                          </strong>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Hardware Procured:</span>
+                          <strong className="text-slate-900 font-bold">
+                            {scopedCustomerOrders.length > 0 ? `${scopedCustomerOrders.length} order(s) on record` : '0 hardware orders'}
+                          </strong>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Installation Address:</span>
+                          <strong className="text-slate-900 font-bold truncate max-w-[200px]">
+                            {profileAddress ? `${profileAddress}, ${profileCity}` : 'Sangli, Maharashtra'}
+                          </strong>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Broadband Status:</span>
+                          <strong className="text-slate-900 font-bold">{activePlanStatus}</strong>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Term Plan Validity:</span>
+                          <strong className="text-slate-900 font-bold">1 Month (30 Days)</strong>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Fiber Speed Tier:</span>
+                          <strong className="text-slate-900 font-bold">{activePlanSpeed}</strong>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {/* Quick Action Grid */}
+                  {/* Quick Action Grid Scoped by Company */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
                     <button
                       type="button"
                       onClick={() => setActiveSection('broadband_orders')}
-                      className="p-3.5 rounded-2xl bg-blue-50/80 hover:bg-blue-100 border border-blue-200 text-left transition-colors cursor-pointer">
-                      <ShoppingCart className="w-5 h-5 text-blue-600 mb-1.5" />
-                      <div className="font-bold text-xs text-blue-950">Broadband Orders</div>
-                      <div className="text-[10px] text-blue-700 mt-0.5">Booking Slips</div>
+                      className={`p-3.5 rounded-2xl border text-left transition-colors cursor-pointer ${
+                        effectiveScope === 'am-distributors'
+                          ? 'bg-emerald-50/80 hover:bg-emerald-100 border-emerald-200'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'bg-indigo-50/80 hover:bg-indigo-100 border-indigo-200'
+                          : 'bg-blue-50/80 hover:bg-blue-100 border-blue-200'
+                      }`}
+                    >
+                      {effectiveScope === 'am-distributors' ? (
+                        <>
+                          <ShoppingBag className="w-5 h-5 text-emerald-600 mb-1.5" />
+                          <div className="font-bold text-xs text-emerald-950">Wholesale Orders</div>
+                          <div className="text-[10px] text-emerald-700 mt-0.5">Depot Challans</div>
+                        </>
+                      ) : effectiveScope === 'nexalus-innovations' ? (
+                        <>
+                          <ShoppingCart className="w-5 h-5 text-indigo-600 mb-1.5" />
+                          <div className="font-bold text-xs text-indigo-950">Hardware Orders</div>
+                          <div className="text-[10px] text-indigo-700 mt-0.5">CCTV Equipment</div>
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-5 h-5 text-blue-600 mb-1.5" />
+                          <div className="font-bold text-xs text-blue-950">Broadband Orders</div>
+                          <div className="text-[10px] text-blue-700 mt-0.5">Booking Slips</div>
+                        </>
+                      )}
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setActiveSection('my_cart')}
-                      className="p-3.5 rounded-2xl bg-emerald-50/80 hover:bg-emerald-100 border border-emerald-200 text-left transition-colors cursor-pointer"
+                      onClick={() => setActiveSection('my_profile')}
+                      className="p-3.5 rounded-2xl bg-slate-50/80 hover:bg-slate-100 border border-slate-200 text-left transition-colors cursor-pointer"
                     >
-                      <Receipt className="w-5 h-5 text-emerald-600 mb-1.5" />
-                      <div className="font-bold text-xs text-emerald-950">Tax Invoices</div>
-                      <div className="text-[10px] text-emerald-700 mt-0.5">GST Cum-Receipts</div>
+                      <MapPin className="w-5 h-5 text-slate-600 mb-1.5" />
+                      <div className="font-bold text-xs text-slate-900">
+                        {effectiveScope === 'am-distributors' ? 'Depot Address' : effectiveScope === 'nexalus-innovations' ? 'Site Location' : 'Service Address'}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Delivery Details</div>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setActiveSection('portal_password')}
-                      className="p-3.5 rounded-2xl bg-cyan-50/80 hover:bg-cyan-100 border border-cyan-200 text-left transition-colors cursor-pointer">
+                      className="p-3.5 rounded-2xl bg-cyan-50/80 hover:bg-cyan-100 border border-cyan-200 text-left transition-colors cursor-pointer"
+                    >
                       <Lock className="w-5 h-5 text-indigo-600 mb-1.5" />
                       <div className="font-bold text-xs text-indigo-950">Security &amp; Pass</div>
                       <div className="text-[10px] text-indigo-700 mt-0.5">Reset Password</div>
@@ -1765,7 +2428,9 @@ export const CustomerAccountPage: React.FC = () => {
                       className="p-3.5 rounded-2xl bg-purple-50/80 hover:bg-purple-100 border border-purple-200 text-left transition-colors cursor-pointer"
                     >
                       <HelpCircle className="w-5 h-5 text-purple-600 mb-1.5" />
-                      <div className="font-bold text-xs text-purple-950">Support Desk</div>
+                      <div className="font-bold text-xs text-purple-950">
+                        {effectiveScope === 'am-distributors' ? 'Route Inquiries' : effectiveScope === 'nexalus-innovations' ? 'AMC Support Desk' : 'Support Desk'}
+                      </div>
                       <div className="text-[10px] text-purple-700 mt-0.5">Raise Ticket</div>
                     </button>
                   </div>
@@ -1773,46 +2438,92 @@ export const CustomerAccountPage: React.FC = () => {
               </div>
             )}
 
-            
-            {/* ------------------------------------------------------------- */}
-            {/* 2. BROADBAND ORDERS & BOOKING SLIPS */}
+            {/* 2. ORDERS & CHALLANS (Scoped by Company) */}
             {/* ------------------------------------------------------------- */}
             {activeSection === 'broadband_orders' && (
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
                 <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                      My Broadband Plan Orders
+                      {effectiveScope === 'am-distributors'
+                        ? 'Wholesale Supply Orders & Delivery Challans'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'Hardware & CCTV Equipment Orders'
+                        : 'My Broadband Plan Orders'}
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Track broadband reservations, technician scheduling, and download official Booking Slips.
+                      {effectiveScope === 'am-distributors'
+                        ? 'Official B2B delivery challans and wholesale supply bookings with A.M. Distributors Chiplun.'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'Hardware procurement, optical networking switches, and surveillance invoices.'
+                        : 'Track broadband reservations, technician scheduling, and download official Booking Slips.'}
                     </p>
                   </div>
                   <Link
-                    to="/plans-pricing"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-colors self-start sm:self-auto"
+                    to={companyMeta.productsUrl}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white font-bold text-xs shadow-xs transition-colors self-start sm:self-auto ${
+                      effectiveScope === 'am-distributors'
+                        ? 'bg-emerald-600 hover:bg-emerald-700'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'bg-indigo-600 hover:bg-indigo-700'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Browse Plans</span>
+                    <span>{effectiveScope === 'am-distributors' ? 'Browse Catalog' : effectiveScope === 'nexalus-innovations' ? 'Browse Hardware' : 'Browse Plans'}</span>
                   </Link>
                 </div>
 
-                {customerOrders.length === 0 ? (
+                {scopedCustomerOrders.length === 0 ? (
                   <div className="p-12 text-center rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto">
-                      <ShoppingCart className="w-6 h-6" />
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto ${
+                      effectiveScope === 'am-distributors'
+                        ? 'bg-emerald-100 text-emerald-600'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'bg-indigo-100 text-indigo-600'
+                        : 'bg-blue-100 text-blue-600'
+                    }`}>
+                      {effectiveScope === 'am-distributors' ? (
+                        <Package className="w-6 h-6" />
+                      ) : effectiveScope === 'nexalus-innovations' ? (
+                        <ShieldCheck className="w-6 h-6" />
+                      ) : (
+                        <ShoppingCart className="w-6 h-6" />
+                      )}
                     </div>
                     <div className="space-y-1">
-                      <h3 className="font-bold text-slate-900 text-sm">No Broadband Orders Yet</h3>
+                      <h3 className="font-bold text-slate-900 text-sm">
+                        {effectiveScope === 'am-distributors'
+                          ? 'No Wholesale Orders on Record'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'No Hardware Orders on Record'
+                          : 'No Broadband Orders Yet'}
+                      </h3>
                       <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                        You have not placed any broadband plan bookings yet. Choose high-speed optical fiber from Airtel, BSNL, or RailWire.
+                        {effectiveScope === 'am-distributors'
+                          ? 'You have not placed any wholesale depot bookings yet. Book daily milk crates, mineral water jars, or ice creams.'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'You have not placed any equipment orders yet. Browse our commercial CCTV cameras, optical switches, and NVRs.'
+                          : 'You have not placed any broadband plan bookings yet. Choose high-speed optical fiber from Airtel, BSNL, or RailWire.'}
                       </p>
                     </div>
                     <Link
-                      to="/plans-pricing"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-colors"
+                      to={companyMeta.productsUrl}
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white font-bold text-xs shadow-md transition-colors ${
+                        effectiveScope === 'am-distributors'
+                          ? 'bg-emerald-600 hover:bg-emerald-700'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'bg-indigo-600 hover:bg-indigo-700'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
                     >
-                      <span>Explore Broadband Plans &rarr;</span>
+                      <span>
+                        {effectiveScope === 'am-distributors'
+                          ? 'Explore Wholesale Catalog →'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'Explore Hardware Catalog →'
+                          : 'Explore Broadband Plans →'}
+                      </span>
                     </Link>
                   </div>
                 ) : (
@@ -1820,26 +2531,38 @@ export const CustomerAccountPage: React.FC = () => {
                     <table className="w-full text-xs text-left">
                       <thead className="bg-slate-900 text-white uppercase text-[10px] font-bold">
                         <tr>
-                          <th className="py-3 px-4">Order ID &amp; Date</th>
-                          <th className="py-3 px-4">Package &amp; Speed</th>
-                          <th className="py-3 px-4">Tariff</th>
+                          <th className="py-3 px-4">
+                            {effectiveScope === 'am-distributors' ? 'Challan ID & Date' : 'Order ID & Date'}
+                          </th>
+                          <th className="py-3 px-4">
+                            {effectiveScope === 'am-distributors' ? 'Product / Supplies' : effectiveScope === 'nexalus-innovations' ? 'Hardware Item' : 'Package & Speed'}
+                          </th>
+                          <th className="py-3 px-4">
+                            {effectiveScope === 'am-distributors' ? 'Amount' : 'Tariff'}
+                          </th>
                           <th className="py-3 px-4">Payment</th>
                           <th className="py-3 px-4">Status</th>
                           <th className="py-3 px-4 text-right">Official Documents</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 bg-white">
-                        {customerOrders.map(order => (
+                        {scopedCustomerOrders.map((order: PlanOrder) => (
                           <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
                             <td className="py-3.5 px-4 whitespace-nowrap">
-                              <span className="font-mono font-bold text-blue-700 block">#{order.id}</span>
-                              <span className="text-[10px] text-slate-400">
+                              <span className="text-xs font-bold text-slate-800 block">
                                 {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {order.id.slice(0, 14)}
                               </span>
                             </td>
                             <td className="py-3.5 px-4">
-                              <div className="font-bold text-slate-900">{order.providerName} - {order.planName}</div>
-                              <div className="text-[10px] text-blue-600 font-semibold">{order.speed} Symmetrical &bull; {order.billingPeriod.replace(/_/g, ' ')}</div>
+                              <div className="font-bold text-slate-900">
+                                {order.providerName ? `${order.providerName} - ${order.planName}` : order.planName}
+                              </div>
+                              <div className="text-[10px] text-blue-600 font-semibold">
+                                {order.speed ? `${order.speed} Symmetrical • ` : ''}{(order.billingPeriod || 'Standard Delivery').replace(/_/g, ' ')}
+                              </div>
                             </td>
                             <td className="py-3.5 px-4 font-black text-slate-900 whitespace-nowrap">
                               {formatIndianCurrency(order.price)}
@@ -1853,12 +2576,12 @@ export const CustomerAccountPage: React.FC = () => {
                                 {order.paymentStatus === 'paid' ? 'Paid & Verified' : 'Payment Pending'}
                               </span>
                               <div className="text-[10px] text-slate-500 mt-0.5 uppercase font-medium">
-                                {order.paymentMethod.replace(/_/g, ' ')}
+                                {(order.paymentMethod || 'Online').replace(/_/g, ' ')}
                               </div>
                             </td>
                             <td className="py-3.5 px-4 whitespace-nowrap">
                               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 capitalize">
-                                {order.status.replace(/_/g, ' ')}
+                                {(order.status || 'pending').replace(/_/g, ' ')}
                               </span>
                             </td>
                             <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-1.5">
@@ -1904,17 +2627,24 @@ export const CustomerAccountPage: React.FC = () => {
               </div>
             )}
 
-            {/* ------------------------------------------------------------- */}
             {/* 2. MY PROFILE */}
             {/* ------------------------------------------------------------- */}
             {activeSection === 'my_profile' && (
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
                 <div className="border-b border-slate-100 pb-4">
                   <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                    Subscriber Profile &amp; KYC Address
+                    {effectiveScope === 'am-distributors'
+                      ? 'Wholesale Partner Profile & Depot Delivery Address'
+                      : effectiveScope === 'nexalus-innovations'
+                      ? 'Client Tech Profile & Installation Site Address'
+                      : 'Subscriber Profile & KYC Address'}
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Update your personal registration fields, contact numbers, and installation address.
+                    {effectiveScope === 'am-distributors'
+                      ? 'Update your wholesale trade contact details, authorized representative, and Chiplun depot delivery address.'
+                      : effectiveScope === 'nexalus-innovations'
+                      ? 'Update your enterprise contact details, site manager, and CCTV / hardware installation premises.'
+                      : 'Update your personal registration fields, contact numbers, and installation address.'}
                   </p>
                 </div>
 
@@ -1997,8 +2727,20 @@ export const CustomerAccountPage: React.FC = () => {
 
                   <div className="pt-2 border-t border-slate-100 space-y-4">
                     <div className="flex items-center gap-2 text-xs font-black text-slate-800 uppercase tracking-wider">
-                      <MapPin className="w-4 h-4 text-blue-600" />
-                      <span>Service &amp; Installation Address</span>
+                      <MapPin className={`w-4 h-4 ${
+                        effectiveScope === 'am-distributors'
+                          ? 'text-emerald-600'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'text-indigo-600'
+                          : 'text-blue-600'
+                      }`} />
+                      <span>
+                        {effectiveScope === 'am-distributors'
+                          ? 'Depot / Retail Delivery Location (Chiplun & Konkan Belt)'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'Surveillance Installation & Hardware Site Address'
+                          : 'Service & Installation Address'}
+                      </span>
                     </div>
 
                     <div>
@@ -2321,24 +3063,43 @@ export const CustomerAccountPage: React.FC = () => {
             )}
 
             {/* ------------------------------------------------------------- */}
-            {/* 6. MY CART (Broadband Plans & Hardware Cart) */}
+            {/* 6. MY CART (Company-Scoped Supplies, Hardware & Plans Cart) */}
             {activeSection === 'my_cart' && (
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs space-y-6 animate-in fade-in duration-200">
                 <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                      <ShoppingCart className="w-5 h-5 text-blue-600" />
-                      <span>My Broadband &amp; Products Cart</span>
+                      <ShoppingCart className={`w-5 h-5 ${
+                        effectiveScope === 'am-distributors'
+                          ? 'text-teal-600'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'text-indigo-600'
+                          : 'text-blue-600'
+                      }`} />
+                      <span>
+                        {effectiveScope === 'am-distributors'
+                          ? 'A.M. Distributors Procurement Cart'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'Nexalus Innovations Hardware Cart'
+                          : 'My Broadband & Products Cart'}
+                      </span>
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Broadband subscriptions or equipment saved in your cart ready for reservation and physical installation.
+                      {effectiveScope === 'am-distributors'
+                        ? 'Wholesale dairy, beverage, and confectionery stock saved in your cart ready for dispatch.'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'Commercial hardware, CCTV surveillance systems, and networking equipment saved in your cart.'
+                        : 'Broadband subscriptions or equipment saved in your cart ready for reservation and physical installation.'}
                     </p>
                   </div>
 
-                  {cartItems.length > 0 && (
+                  {scopedCartItems.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => clearPlanCart()}
+                      onClick={() => {
+                        scopedCartItems.forEach(i => removeFromPlanCart(i.id));
+                        success('Cart Cleared', 'All items have been removed from your cart.');
+                      }}
                       className="text-xs font-bold text-slate-500 hover:text-rose-600 transition-colors cursor-pointer self-start sm:self-auto"
                     >
                       Clear All Items
@@ -2346,60 +3107,168 @@ export const CustomerAccountPage: React.FC = () => {
                   )}
                 </div>
 
-                {cartItems.length === 0 ? (
+                {scopedCartItems.length === 0 ? (
                   <div className="p-12 text-center space-y-4 max-w-md mx-auto">
-                    <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
-                      <ShoppingBag className="w-8 h-8 text-blue-500" />
+                    <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mx-auto shadow-inner ${
+                      effectiveScope === 'am-distributors'
+                        ? 'bg-teal-50 text-teal-600'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'bg-indigo-50 text-indigo-600'
+                        : 'bg-blue-50 text-blue-600'
+                    }`}>
+                      <ShoppingBag className="w-8 h-8" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-base font-bold text-slate-800">Your Cart is Currently Empty</h3>
+                      <h3 className="text-base font-bold text-slate-800">
+                        {effectiveScope === 'am-distributors'
+                          ? 'Your Wholesale Cart is Currently Empty'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'Your Hardware Cart is Currently Empty'
+                          : 'Your Cart is Currently Empty'}
+                      </h3>
                       <p className="text-xs text-slate-500">
-                        Explore our high-speed optical fiber broadband packages or commercial hardware catalog and add plans to your cart.
+                        {effectiveScope === 'am-distributors'
+                          ? 'Explore our wholesale supply catalog and add dairy, beverages, or grocery products to your order.'
+                          : effectiveScope === 'nexalus-innovations'
+                          ? 'Explore our commercial hardware catalog and add technical infrastructure products to your cart.'
+                          : 'Explore our high-speed optical fiber broadband packages or commercial hardware catalog and add plans to your cart.'}
                       </p>
                     </div>
                     <div className="flex items-center justify-center gap-3 pt-2">
-                      <Link to="/plans">
-                        <Button variant="primary" size="sm" icon={<Wifi className="w-4 h-4" />}>
-                          Browse Plans &amp; Pricing
-                        </Button>
-                      </Link>
-                      <Link to="/products">
-                        <Button variant="outline" size="sm" icon={<Package className="w-4 h-4" />}>
-                          Hardware Catalog
-                        </Button>
-                      </Link>
+                      {effectiveScope === 'am-distributors' ? (
+                        <>
+                          <Link to="/brands/am-distributors/products">
+                            <Button variant="primary" size="sm" icon={<Package className="w-4 h-4" />}>
+                              Browse Wholesale Catalog
+                            </Button>
+                          </Link>
+                          <Link to="/brands/am-distributors">
+                            <Button variant="outline" size="sm" icon={<Building className="w-4 h-4" />}>
+                              Depot Overview
+                            </Button>
+                          </Link>
+                        </>
+                      ) : effectiveScope === 'nexalus-innovations' ? (
+                        <>
+                          <Link to="/brands/nexalus-innovations/products">
+                            <Button variant="primary" size="sm" icon={<Package className="w-4 h-4" />}>
+                              Hardware Catalog
+                            </Button>
+                          </Link>
+                          <Link to="/brands/nexalus-innovations">
+                            <Button variant="outline" size="sm" icon={<ShieldCheck className="w-4 h-4" />}>
+                              Innovations Home
+                            </Button>
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <Link to="/plans">
+                            <Button variant="primary" size="sm" icon={<Wifi className="w-4 h-4" />}>
+                              Browse Plans &amp; Pricing
+                            </Button>
+                          </Link>
+                          <Link to="/products">
+                            <Button variant="outline" size="sm" icon={<Package className="w-4 h-4" />}>
+                              Hardware Catalog
+                            </Button>
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {/* Cart Items List */}
                     <div className="space-y-3">
-                      {cartItems.map((item) => (
+                      {scopedCartItems.map((item) => (
                         <div
                           key={item.id}
-                          className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-blue-300 transition-all shadow-xs"
+                          className={`p-5 rounded-2xl bg-slate-50 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all shadow-xs ${
+                            effectiveScope === 'am-distributors'
+                              ? 'border-teal-200/80 hover:border-teal-400'
+                              : effectiveScope === 'nexalus-innovations'
+                              ? 'border-indigo-200/80 hover:border-indigo-400'
+                              : 'border-slate-200/90 hover:border-blue-300'
+                          }`}
                         >
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-200">
-                                {item.providerName || 'High-Speed Broadband'}
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+                                effectiveScope === 'am-distributors'
+                                  ? 'bg-teal-100 text-teal-800 border-teal-200'
+                                  : effectiveScope === 'nexalus-innovations'
+                                  ? 'bg-indigo-100 text-indigo-800 border-indigo-200'
+                                  : 'bg-blue-100 text-blue-800 border-blue-200'
+                              }`}>
+                                {item.providerName || (
+                                  effectiveScope === 'am-distributors'
+                                    ? 'A.M. Distributors Chiplun'
+                                    : effectiveScope === 'nexalus-innovations'
+                                    ? 'Nexalus Innovations'
+                                    : 'High-Speed Broadband'
+                                )}
                               </span>
-                              <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
+                              <span className="text-xs font-black text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
                                 {item.speed}
                               </span>
                             </div>
                             <h4 className="text-sm font-extrabold text-slate-900">{item.planName}</h4>
                             <p className="text-xs text-slate-500 capitalize">
-                              Billing Cycle: <strong>{(item.billingPeriod || 'monthly').replace(/_/g, ' ')}</strong> &bull; Fiber Line Feasibility: <strong>Verified</strong>
+                              {effectiveScope === 'am-distributors'
+                                ? `Order Type: Standard Wholesale Supply • Cold-Chain Verified`
+                                : effectiveScope === 'nexalus-innovations'
+                                ? `Category: Commercial Hardware & Systems • Warranty Included`
+                                : `Billing Cycle: ${(item.billingPeriod || 'monthly').replace(/_/g, ' ')} • Line Feasibility: Verified`}
                             </p>
                           </div>
 
                           <div className="flex items-center gap-3 sm:self-center w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-200">
+                            {/* Quantity Stepper */}
+                            <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const q = (item.quantity || 1) - 1;
+                                  if (q <= 0) {
+                                    removeFromPlanCart(item.id);
+                                    success('Item Removed', `${item.planName} removed from cart.`);
+                                  } else {
+                                    updateCartItemQuantity(item.id, q);
+                                  }
+                                }}
+                                title="Decrease Quantity"
+                                className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="w-8 text-center font-black text-xs text-slate-800">
+                                {item.quantity || 1}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateCartItemQuantity(item.id, (item.quantity || 1) + 1);
+                                }}
+                                title="Increase Quantity"
+                                className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+
                             <div className="text-left sm:text-right">
-                              <span className="text-[10px] text-slate-400 block font-bold uppercase">Plan Rate</span>
+                              <span className="text-[10px] text-slate-400 block font-bold uppercase">
+                                {item.quantity && item.quantity > 1 ? `Total (${item.quantity} units)` : (effectiveScope === 'am-distributors' ? 'Procurement Price' : 'Price / Rate')}
+                              </span>
                               <span className="text-lg font-black text-slate-900 font-mono">
                                 {formatIndianCurrency(item.price)}
                               </span>
+                              {item.quantity && item.quantity > 1 && item.unitPrice ? (
+                                <span className="text-[10px] text-slate-400 block font-semibold">
+                                  {formatIndianCurrency(item.unitPrice)} each
+                                </span>
+                              ) : null}
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -2407,14 +3276,23 @@ export const CustomerAccountPage: React.FC = () => {
                                 size="sm"
                                 variant="primary"
                                 onClick={() => setOrderPlanModalItem(item)}
-                                className="font-bold text-xs shadow-md shadow-blue-600/20"
+                                className={`font-bold text-xs shadow-md ${
+                                  effectiveScope === 'am-distributors'
+                                    ? 'bg-teal-700 hover:bg-teal-800 shadow-teal-700/20'
+                                    : effectiveScope === 'nexalus-innovations'
+                                    ? 'bg-indigo-700 hover:bg-indigo-800 shadow-indigo-700/20'
+                                    : 'shadow-blue-600/20'
+                                }`}
                               >
-                                Subscribe Now
+                                {effectiveScope === 'am-distributors' ? 'Order Supply' : effectiveScope === 'nexalus-innovations' ? 'Procure Item' : 'Subscribe Now'}
                               </Button>
 
                               <button
                                 type="button"
-                                onClick={() => removeFromPlanCart(item.id)}
+                                onClick={() => {
+                                  removeFromPlanCart(item.id);
+                                  success('Item Removed', `${item.planName} removed from cart.`);
+                                }}
                                 className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
                                 title="Remove from Cart"
                               >
@@ -2427,27 +3305,57 @@ export const CustomerAccountPage: React.FC = () => {
                     </div>
 
                     {/* Summary Card */}
-                    <div className="p-5 rounded-2xl bg-indigo-50/60 border border-indigo-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className={`p-5 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4 ${
+                      effectiveScope === 'am-distributors'
+                        ? 'bg-teal-50/60 border-teal-200/80'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'bg-indigo-50/60 border-indigo-200/80'
+                        : 'bg-blue-50/60 border-blue-200/80'
+                    }`}>
                       <div className="text-xs text-slate-600 space-y-0.5 text-center sm:text-left">
-                        <div>Standard Optical Drop Line &amp; ONU Setup: <strong className="text-emerald-700">Free / Included</strong></div>
-                        <div className="text-[11px] text-slate-400">Total {cartItems.length} plan(s) in cart. COD payment collected on physical installation.</div>
+                        <div>
+                          {effectiveScope === 'am-distributors'
+                            ? <>Depot Dispatch &amp; Cold-Chain Warehousing: <strong className="text-emerald-700">Verified Ready</strong></>
+                            : effectiveScope === 'nexalus-innovations'
+                            ? <>Hardware Inspection &amp; Installation: <strong className="text-emerald-700">Enterprise Support Included</strong></>
+                            : <>Standard Optical Drop Line &amp; ONU Setup: <strong className="text-emerald-700">Free / Included</strong></>}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          {effectiveScope === 'am-distributors'
+                            ? `Total ${scopedCartItems.length} product(s) in cart. Wholesale Delivery Challan issued on dispatch.`
+                            : effectiveScope === 'nexalus-innovations'
+                            ? `Total ${scopedCartItems.length} item(s) in cart. Official tax invoice generated with order confirmation.`
+                            : `Total ${scopedCartItems.length} plan(s) in cart. COD payment collected on physical installation.`}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <Link to="/plans">
+                        <Link to={
+                          effectiveScope === 'am-distributors'
+                            ? '/brands/am-distributors/products'
+                            : effectiveScope === 'nexalus-innovations'
+                            ? '/brands/nexalus-innovations/products'
+                            : '/plans'
+                        }>
                           <Button variant="outline" size="sm">
-                            Add Another Plan
+                            {effectiveScope === 'am-distributors' ? 'Add More Supplies' : effectiveScope === 'nexalus-innovations' ? 'Add More Hardware' : 'Add Another Plan'}
                           </Button>
                         </Link>
-                        {cartItems.length > 0 && (
+                        {scopedCartItems.length > 0 && (
                           <Button
                             variant="primary"
                             size="sm"
-                            onClick={() => setOrderPlanModalItem(cartItems[0])}
+                            onClick={() => setOrderPlanModalItem(scopedCartItems[0])}
                             icon={<Zap className="w-4 h-4" />}
-                            className="font-bold shadow-md shadow-blue-600/30"
+                            className={`font-bold shadow-md ${
+                              effectiveScope === 'am-distributors'
+                                ? 'bg-teal-700 hover:bg-teal-800 shadow-teal-700/30'
+                                : effectiveScope === 'nexalus-innovations'
+                                ? 'bg-indigo-700 hover:bg-indigo-800 shadow-indigo-700/30'
+                                : 'shadow-blue-600/30'
+                            }`}
                           >
-                            Order First Plan
+                            Proceed with Order
                           </Button>
                         )}
                       </div>
@@ -2540,10 +3448,18 @@ export const CustomerAccountPage: React.FC = () => {
                 <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-black text-slate-900 tracking-tight">
-                      My Support Tickets &amp; Grievances
+                      {effectiveScope === 'am-distributors'
+                        ? 'Wholesale & Route Inquiries'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'AMC Maintenance & Technical Service Tickets'
+                        : 'My Support Tickets & Grievances'}
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Raise technical assistance tickets directly with your Nexalus LCO.
+                      {effectiveScope === 'am-distributors'
+                        ? 'Log delivery schedule inquiries, cold-chain freezer issues, and daily distribution requests.'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'Request on-site technician visits, report CCTV camera faults, and manage your AMC SLA.'
+                        : 'Raise technical assistance tickets directly with your Nexalus LCO.'}
                     </p>
                   </div>
                   <Button
@@ -2552,15 +3468,40 @@ export const CustomerAccountPage: React.FC = () => {
                     size="sm"
                     onClick={() => setIsNewTicketModalOpen(true)}
                     icon={<HelpCircle className="w-4 h-4" />}
-                    className="font-bold shadow-md shadow-blue-600/20"
+                    className={`font-bold shadow-md ${
+                      effectiveScope === 'am-distributors'
+                        ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                        : effectiveScope === 'nexalus-innovations'
+                        ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
+                        : 'shadow-blue-600/20'
+                    }`}
                   >
-                    Create New Ticket
+                    {effectiveScope === 'am-distributors'
+                      ? 'Raise Route Inquiry'
+                      : effectiveScope === 'nexalus-innovations'
+                      ? 'Raise AMC Ticket'
+                      : 'Create New Ticket'}
                   </Button>
                 </div>
 
                 {/* Tickets List */}
                 <div className="space-y-3">
-                  {ticketsList.map(tkt => (
+                  {ticketsList.length === 0 ? (
+                    <div className="p-10 text-center rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto">
+                        <HelpCircle className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="font-bold text-slate-900 text-sm">
+                          No Support Tickets On Record
+                        </h3>
+                        <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                          You do not have any open or resolved tickets. Need technical support or have a query? Click the button above to log a ticket.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    ticketsList.map(tkt => (
                     <div
                       key={tkt.id}
                       className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 hover:border-blue-300 transition-colors"
@@ -2588,7 +3529,7 @@ export const CustomerAccountPage: React.FC = () => {
                         <span className="uppercase font-bold text-slate-500">Priority: {tkt.priority}</span>
                       </div>
                     </div>
-                  ))}
+                  )))}
                 </div>
               </div>
             )}
@@ -2935,7 +3876,7 @@ export const CustomerAccountPage: React.FC = () => {
       )}
 
       {/* ===================================================================== */}
-      {/* MODAL 2: CREATE SUPPORT TICKET (22 Categories from login.mp4) */}
+      {/* MODAL 2: CREATE SUPPORT TICKET (Scoped by Company) */}
       {/* ===================================================================== */}
       {isNewTicketModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
@@ -2943,10 +3884,18 @@ export const CustomerAccountPage: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-black text-slate-900">
-                  Create Support Ticket
+                  {effectiveScope === 'am-distributors'
+                    ? 'Create Wholesale / Route Inquiry'
+                    : effectiveScope === 'nexalus-innovations'
+                    ? 'Raise AMC / Hardware Support Ticket'
+                    : 'Create Support Ticket'}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Select your grievance subject from the 22 standardized support categories.
+                  {effectiveScope === 'am-distributors'
+                    ? 'Select your distribution or cold-chain logistics inquiry category.'
+                    : effectiveScope === 'nexalus-innovations'
+                    ? 'Select your CCTV surveillance or hardware maintenance grievance.'
+                    : 'Select your grievance subject from the standardized support categories.'}
                 </p>
               </div>
               <button
@@ -2968,7 +3917,7 @@ export const CustomerAccountPage: React.FC = () => {
                   onChange={e => setTicketSubject(e.target.value)}
                   className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
                 >
-                  {TICKET_SUBJECTS.map((subj, idx) => (
+                  {currentTicketSubjects.map((subj, idx) => (
                     <option key={idx} value={subj}>
                       {idx + 1}. {subj}
                     </option>
@@ -3146,6 +4095,19 @@ export const CustomerAccountPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* PLAN ORDER & INSTANT CHECKOUT MODAL */}
+      <PlanOrderModal
+        isOpen={Boolean(orderPlanModalItem)}
+        onClose={() => setOrderPlanModalItem(null)}
+        plan={orderPlanModalItem}
+        onOrderSuccess={(orderId) => {
+          if (orderPlanModalItem?.id) {
+            removeFromPlanCart(orderPlanModalItem.id);
+          }
+          setOrderPlanModalItem(null);
+        }}
+      />
 
       {/* DOCUMENT VIEWER MODAL FOR BOOKING SLIP & OFFICIAL PAID RECEIPT */}
       <DocumentViewerModal

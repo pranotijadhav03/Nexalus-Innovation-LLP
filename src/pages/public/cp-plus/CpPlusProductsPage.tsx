@@ -50,7 +50,7 @@ export const CpPlusProductsPage: React.FC = () => {
     const matchesCat = selectedCategory === 'all' || p.categoryId === selectedCategory;
     const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.modelNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.modelNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCat && matchesSearch;
   });
@@ -77,7 +77,7 @@ export const CpPlusProductsPage: React.FC = () => {
           </div>
 
           {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1">
+          <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto pb-1">
             <button
               onClick={() => setSelectedCategory('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${

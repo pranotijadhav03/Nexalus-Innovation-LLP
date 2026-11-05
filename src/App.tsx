@@ -10,9 +10,11 @@ import { AboutPage } from './pages/public/AboutPage';
 import { BrandsPage } from './pages/public/BrandsPage';
 import { SolutionsPage } from './pages/public/SolutionsPage';
 import { ProductsPage } from './pages/public/ProductsPage';
+import { ProductDetailPage } from './pages/public/ProductDetailPage';
 import { QuotePage } from './pages/public/QuotePage';
 import { ContactPage } from './pages/public/ContactPage';
 import { PlansPricingPage } from './pages/public/PlansPricingPage';
+import { ProjectsPage } from './pages/public/ProjectsPage';
 import { CustomerAccountPage } from './pages/public/CustomerAccountPage';
 import { NotFoundPage } from './pages/public/NotFoundPage';
 import { NexalusInnovationsPage } from './pages/public/divisions/NexalusInnovationsPage';
@@ -78,26 +80,28 @@ import { AmDistributorsContactPage } from './pages/public/am-distributors/AmDist
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter useTransitions={false}>
       <AuthProvider>
         <ToastProvider>
           <Routes>
             {/* Corporate Parent Portal Public Layout Routes */}
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/brands" element={<BrandsPage />} />
-              <Route path="/services" element={<SolutionsPage />} />
-              <Route path="/solutions" element={<Navigate to="/services" replace />} />
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/plans" element={<PlansPricingPage />} />
-              <Route path="/pricing" element={<Navigate to="/plans" replace />} />
-              <Route path="/projects" element={<Navigate to="/products" replace />} />
-              <Route path="/quote" element={<QuotePage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/account" element={<CustomerAccountPage />} />
-              <Route path="/login" element={<CustomerAccountPage />} />
-              <Route path="/register" element={<CustomerAccountPage />} />
+            <Route path="/" element={<PublicLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="about" element={<AboutPage />} />
+              <Route path="brands" element={<BrandsPage />} />
+              <Route path="services" element={<SolutionsPage />} />
+              <Route path="solutions" element={<Navigate to="/services" replace />} />
+              <Route path="products" element={<ProductsPage />} />
+              <Route path="products/:id" element={<ProductDetailPage />} />
+              <Route path="plans" element={<PlansPricingPage />} />
+              <Route path="pricing" element={<Navigate to="/plans" replace />} />
+              <Route path="projects" element={<ProjectsPage />} />
+              <Route path="coverage" element={<Navigate to="/#service-coverage-area" replace />} />
+              <Route path="quote" element={<QuotePage />} />
+              <Route path="contact" element={<ContactPage />} />
+              <Route path="account" element={<CustomerAccountPage />} />
+              <Route path="login" element={<CustomerAccountPage />} />
+              <Route path="register" element={<CustomerAccountPage />} />
             </Route>
 
             {/* Nexalus Innovations Sub-Website Portal */}
@@ -105,8 +109,11 @@ function App() {
               <Route index element={<NexalusInnovationsPage />} />
               <Route path="about" element={<NexalusInnovationsAboutPage />} />
               <Route path="products" element={<NexalusInnovationsProductsPage />} />
+              <Route path="products/:id" element={<ProductDetailPage />} />
               <Route path="services" element={<NexalusInnovationsServicesPage />} />
               <Route path="contact" element={<NexalusInnovationsContactPage />} />
+              <Route path="account" element={<CustomerAccountPage brandScope="nexalus-innovations" />} />
+              <Route path="profile" element={<Navigate to="/brands/nexalus-innovations/account" replace />} />
             </Route>
 
             {/* A.M. Distributors Chiplun Sub-Website Portal */}
@@ -114,8 +121,11 @@ function App() {
               <Route index element={<AmDistributorsPage />} />
               <Route path="about" element={<AmDistributorsAboutPage />} />
               <Route path="products" element={<AmDistributorsProductsPage />} />
+              <Route path="products/:id" element={<ProductDetailPage />} />
               <Route path="services" element={<AmDistributorsServicesPage />} />
               <Route path="contact" element={<AmDistributorsContactPage />} />
+              <Route path="account" element={<CustomerAccountPage brandScope="am-distributors" />} />
+              <Route path="profile" element={<Navigate to="/brands/am-distributors/account" replace />} />
             </Route>
 
             {/* Sub-Website Direct Route Aliases */}

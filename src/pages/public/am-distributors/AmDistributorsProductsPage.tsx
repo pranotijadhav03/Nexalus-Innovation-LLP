@@ -1,36 +1,40 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getProducts, getCategories, getCachedProducts, getCachedCategories } from '../../../firebase/services';
+import { getProducts, getCategories, getCachedProducts, getCachedCategories, subscribeToProducts, subscribeToCategories } from '../../../firebase/services';
 import { Product, ProductCategory } from '../../../types';
 import { initialProducts, initialCategories } from '../../../data/initialData';
 import { ProductCard } from '../../../components/brand/ProductCard';
-import { Truck, Droplets, IceCream, Milk, Package, Sparkles } from 'lucide-react';
+import { Truck, Droplets, IceCream, Milk, Package, Sparkles, Search, X } from 'lucide-react';
 
 const DEFAULT_AM_CATEGORIES: ProductCategory[] = [
   {
     id: 'cat-am-water',
     brandId: 'am-distributors',
-    name: 'Packaged Mineral Water',
-    slug: 'packaged-mineral-water-chiplun',
+    companyId: 'am',
+    name: 'Packaged Mineral Water (Chiplun)',
+    slug: 'mineral-water',
     description: 'Hygienically packaged 20L natural mineral water dispenser jars and retail bottle crates with automated steam sanitization.'
   },
   {
     id: 'cat-am-icecream',
     brandId: 'am-distributors',
-    name: 'Commercial Ice Creams',
-    slug: 'commercial-ice-cream-chiplun',
+    companyId: 'am',
+    name: 'Ice Cream Distribution',
+    slug: 'ice-cream',
     description: 'Certified -18°C refrigerated delivery of commercial bulk ice cream tubs, cones, and retail bars for parlors and banquets.'
   },
   {
     id: 'cat-am-dairy',
     brandId: 'am-distributors',
-    name: 'Milk & Dairy Products',
-    slug: 'milk-dairy-products-chiplun',
+    companyId: 'am',
+    name: 'Milk, Butter & All Dairy Products',
+    slug: 'dairy-products',
     description: 'Fresh pasteurized standardized milk pouches, churned table butter, ghee, and cheese blocks delivered daily at 4:00 AM.'
   }
 ];
 
 export const AmDistributorsProductsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<Product[]>(() =>
     getCachedProducts('am-distributors')
   );
@@ -59,6 +63,14 @@ export const AmDistributorsProductsPage: React.FC = () => {
   useEffect(() => {
     loadData();
 
+    const unsubCats = subscribeToCategories((cats) => {
+      if (cats && cats.length > 0) setCategories(cats);
+    }, 'am-distributors');
+
+    const unsubProds = subscribeToProducts((prods) => {
+      if (prods && prods.length > 0) setProducts(prods);
+    }, 'am-distributors');
+
     // Listen for real-time cross-tab updates when admin creates/edits/deletes products or categories
     const handleUpdate = () => {
       const freshProds = getCachedProducts('am-distributors');
@@ -75,19 +87,44 @@ export const AmDistributorsProductsPage: React.FC = () => {
     window.addEventListener('storage', handleUpdate);
 
     return () => {
+      unsubCats();
+      unsubProds();
       window.removeEventListener('nexalus_data_update', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
   }, []);
 
-  // Filter products by selected category
+  // Filter products by selected category and search query
   const displayedProducts = useMemo(() => {
-    if (selectedCategory === 'all') return products;
-    return products.filter(p =>
-      p.categoryId === selectedCategory ||
-      p.categoryId.toLowerCase().includes(selectedCategory.toLowerCase())
-    );
-  }, [products, selectedCategory]);
+    return products.filter(p => {
+      if (p.published === false) return false;
+
+      // Category filter
+      if (selectedCategory !== 'all') {
+        const matchesCategory = p.categoryId === selectedCategory ||
+          p.categoryId.toLowerCase().includes(selectedCategory.toLowerCase());
+        if (!matchesCategory) return false;
+      }
+
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = (p.name || '').toLowerCase().includes(q);
+        const matchesModel = (p.modelNumber || '').toLowerCase().includes(q);
+        const matchesCat = (p.categoryName || '').toLowerCase().includes(q);
+        const matchesDesc = (p.description || '').toLowerCase().includes(q);
+        const matchesSpecs = Object.entries(p.specifications || {}).some(
+          ([k, v]) => k.toLowerCase().includes(q) || String(v).toLowerCase().includes(q)
+        );
+
+        if (!matchesName && !matchesModel && !matchesCat && !matchesDesc && !matchesSpecs) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [products, selectedCategory, searchQuery]);
 
   // Dynamically determine background image based on selected category & its products
   const currentBgImage = useMemo(() => {
@@ -95,7 +132,6 @@ export const AmDistributorsProductsPage: React.FC = () => {
       return '/images/am-warehouse-depot.jpg';
     }
 
-    // 1. Look for a product in this category that has an image
     const prodsInCat = products.filter(
       p =>
         p.categoryId === selectedCategory ||
@@ -106,7 +142,6 @@ export const AmDistributorsProductsPage: React.FC = () => {
       return prodWithImage.images[0];
     }
 
-    // 2. Keyword fallback (if admin created a category before adding product photos)
     const catObj = categories.find(c => c.id === selectedCategory || c.slug === selectedCategory);
     const catKey = (catObj?.name || catObj?.slug || selectedCategory).toLowerCase();
 
@@ -151,10 +186,9 @@ export const AmDistributorsProductsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-12 sm:space-y-16 pb-20">
+    <div className="space-y-10 sm:space-y-12 pb-20 bg-slate-50 min-h-screen">
       {/* Header with Dynamic Category Background Image */}
       <section className="relative overflow-hidden bg-slate-950 text-white py-16 sm:py-24 border-b border-slate-800 transition-all duration-700 ease-in-out">
-        {/* Dynamic Category Background Image with Crisp Clear Visibility */}
         <div className="absolute inset-0">
           <img
             key={currentBgImage}
@@ -162,7 +196,6 @@ export const AmDistributorsProductsPage: React.FC = () => {
             alt={heroTitle}
             className="w-full h-full object-cover object-center opacity-80 filter brightness-90 contrast-110 scale-100 transition-all duration-700 ease-out animate-in fade-in"
           />
-          {/* Subtle vignette gradient: leaves center clear to show the product clearly while keeping text readable */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/60" />
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-transparent to-slate-950/75" />
         </div>
@@ -182,22 +215,53 @@ export const AmDistributorsProductsPage: React.FC = () => {
       </section>
 
       {/* Catalog Grid & Dynamic Category Tabs */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 mb-8 flex-wrap">
-          {/* All Products Tab */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Search Bar & Result Summary Bar */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="relative w-full sm:max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search mineral water, milk, ice cream, butter..."
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          <span className="text-xs font-bold text-slate-500 whitespace-nowrap self-start sm:self-center">
+            Showing <span className="text-slate-900 font-black">{displayedProducts.length}</span> of {products.length} FMCG SKUs
+          </span>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pb-2">
           <button
             type="button"
             onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
               selectedCategory === 'all'
                 ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
-            All Products ({products.length})
+            <span>All Products</span>
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+              selectedCategory === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {products.length}
+            </span>
           </button>
 
-          {/* Dynamic Categories (including any added by admin in Firestore) */}
           {categories.map(cat => {
             const count = products.filter(
               p => p.categoryId === cat.id || p.categoryId.toLowerCase().includes(cat.id.toLowerCase())
@@ -209,7 +273,7 @@ export const AmDistributorsProductsPage: React.FC = () => {
                 key={cat.id}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30'
                     : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -231,7 +295,7 @@ export const AmDistributorsProductsPage: React.FC = () => {
 
         {/* Product Cards Grid */}
         {displayedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {displayedProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -239,20 +303,25 @@ export const AmDistributorsProductsPage: React.FC = () => {
         ) : (
           <div className="p-12 bg-white rounded-3xl border border-slate-200 text-center space-y-3">
             <Package className="w-12 h-12 text-slate-300 mx-auto" />
-            <h3 className="text-base font-bold text-slate-800">No Products Found in this Category</h3>
+            <h3 className="text-base font-bold text-slate-800">No Products Found</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              New wholesale inventory is regularly added by our depot managers. Check back shortly or view all items.
+              {searchQuery
+                ? `No products matched "${searchQuery}". Try different keywords or reset your search.`
+                : 'No products are currently available in this category.'}
             </p>
             <button
               type="button"
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => {
+                setSelectedCategory('all');
+                setSearchQuery('');
+              }}
               className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors cursor-pointer"
             >
-              View All Products
+              Reset Filters
             </button>
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 };

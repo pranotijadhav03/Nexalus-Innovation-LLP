@@ -19,7 +19,9 @@ import {
   AlertCircle,
   Wifi,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -39,6 +41,9 @@ export interface PlanOrderModalProps {
     price: number | string;
     billingPeriod?: string;
     brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
+    companyId?: string;
+    quantity?: number;
+    unitPrice?: number;
   } | null;
   onOrderSuccess?: (orderId: string) => void;
 }
@@ -62,10 +67,23 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   const [preferredSlot, setPreferredSlot] = useState('Immediate / Next Working Day');
   const [paymentMethod, setPaymentMethod] = useState<PlanOrder['paymentMethod']>('pay_on_installation');
   const [notes, setNotes] = useState('');
+  const [orderQty, setOrderQty] = useState(1);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<PlanOrder | null>(null);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && plan) {
+      setOrderQty(Math.max(1, (plan as any)?.quantity || 1));
+    }
+  }, [isOpen, plan]);
+
+  const rawPrice = typeof plan?.price === 'number' ? plan.price : parseFloat(String(plan?.price)) || 0;
+  const unitPrice = typeof (plan as any)?.unitPrice === 'number' && (plan as any).unitPrice > 0
+    ? (plan as any).unitPrice
+    : ((plan as any)?.quantity && (plan as any).quantity > 1 ? rawPrice / (plan as any).quantity : rawPrice);
+  const totalCalculatedPrice = unitPrice * orderQty;
 
   // Auto-close and redirect to Customer Login if accessed without Customer session
   useEffect(() => {
@@ -176,10 +194,12 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
         planName: plan.planName,
         providerName: plan.providerName,
         speed: plan.speed,
-        price: plan.price,
+        price: totalCalculatedPrice,
+        quantity: orderQty,
+        unitPrice: unitPrice,
         billingPeriod: plan.billingPeriod || 'monthly',
-        brandId: 'nexalus-innovations',
-        companyId: 'nexalus',
+        brandId: ((plan as any)?.brandId || 'nexalus') as any,
+        companyId: ((plan as any)?.companyId || 'nexalus-llp') as any,
         customerName: customerName.trim(),
         phone: cleanPhone,
         email: emailToSave,
@@ -258,7 +278,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
 
             <div className="space-y-1.5">
               <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                Booking ID: {completedOrder.id}
+                Booking Confirmed
               </span>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
                 Plan Order Received!
@@ -420,16 +440,42 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                 </div>
               </div>
 
-              <div className="text-left sm:text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-blue-100/80 w-full sm:w-auto">
-                <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none">
-                  ₹{typeof plan.price === 'number' ? plan.price.toLocaleString('en-IN') : plan.price}
+              <div className="flex flex-col sm:items-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-blue-100/80 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase text-slate-500">Qty:</span>
+                  <div className="flex items-center rounded-lg border border-slate-300 bg-white p-0.5 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setOrderQty(prev => Math.max(1, prev - 1))}
+                      className="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <span className="w-7 text-center font-black text-xs text-slate-900">
+                      {orderQty}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setOrderQty(prev => prev + 1)}
+                      className="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">
-                  / {plan.billingPeriod || 'month'}
-                </div>
-                <div className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 bg-emerald-100/70 border border-emerald-300/60 px-2 py-0.5 rounded-md mt-1.5">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  <span>Free Standard Setup</span>
+
+                <div className="text-left sm:text-right">
+                  <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none">
+                    ₹{totalCalculatedPrice.toLocaleString('en-IN')}
+                  </div>
+                  {orderQty > 1 && (
+                    <div className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                      (₹{unitPrice.toLocaleString('en-IN')} × {orderQty})
+                    </div>
+                  )}
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                    / {plan.billingPeriod || 'procurement'}
+                  </div>
                 </div>
               </div>
             </div>

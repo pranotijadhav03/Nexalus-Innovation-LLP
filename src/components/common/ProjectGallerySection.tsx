@@ -235,10 +235,10 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
 
               return (
                 <BlurZoomReveal
-                  key={proj.id}
+                  key={`${proj.id}-${idx}`}
                   direction={direction}
                   delay={delay}
-                  duration={800}
+                  duration={350}
                   blur={10}
                   scale={0.93}
                   className="h-full flex flex-col"

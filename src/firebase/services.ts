@@ -1,4 +1,4 @@
-export type { ReceiptSettings, CompanyScopeId } from '../types';
+export type { ReceiptSettings, CompanyScopeId, CustomerCompanyProfile } from '../types';
 import {
   collection,
   doc,
@@ -18,6 +18,7 @@ import { initializeApp as initSecondaryApp, deleteApp as deleteSecondaryApp } fr
 import { getAuth as getSecondaryAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 import {
   Brand,
+  CustomerCompanyProfile,
   CustomerDeliveryAddress,
   CustomerRegistrationData,
   PlanOrder,
@@ -128,13 +129,6 @@ const lastNotifyTimes = new Map<string, number>();
 
 function notifyDataUpdate(key: string): void {
   const now = Date.now();
-  const lastTime = lastNotifyTimes.get(key) || 0;
-  // Eliminate rapid feedback loops and broadcast storms
-  if (now - lastTime < 400) {
-    return;
-  }
-  lastNotifyTimes.set(key, now);
-
   try {
     // 1. Dispatch event to current tab
     window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key } }));
@@ -149,6 +143,7 @@ function sanitizeStoredBanners(parsed: any): any {
   if (!Array.isArray(parsed)) return parsed;
   return parsed.map((b: any) => {
     if (!b) return b;
+    const defaultBanner = initialBanners.find(ib => ib.id === b.id || ib.brandId === b.brandId);
     let t = b.title;
     let s = b.subtitle;
     let c1 = b.ctaText;
@@ -161,7 +156,20 @@ function sanitizeStoredBanners(parsed: any): any {
     }
     if (c1 && c1.includes('aaa')) c1 = 'Request a Quotation';
     if (c2 && c2.includes('aaa')) c2 = 'Explore Solutions';
-    return { ...b, title: t, subtitle: s, ctaText: c1, secondaryCtaText: c2 };
+    return {
+      ...(defaultBanner || {}),
+      ...b,
+      navbarSettings: b.navbarSettings || defaultBanner?.navbarSettings,
+      ourBrandsCards: b.ourBrandsCards || defaultBanner?.ourBrandsCards,
+      whereServicesUsed: b.whereServicesUsed || defaultBanner?.whereServicesUsed,
+      distributionVerticals: b.distributionVerticals || defaultBanner?.distributionVerticals,
+      footerSettings: b.footerSettings || defaultBanner?.footerSettings,
+      showcaseProductIds: b.showcaseProductIds || defaultBanner?.showcaseProductIds,
+      title: t,
+      subtitle: s,
+      ctaText: c1,
+      secondaryCtaText: c2
+    };
   });
 }
 
@@ -207,56 +215,251 @@ function setLocalItem<T>(key: string, value: T, notify = true): void {
   }
 }
 
+/**
+ * Recursively cleans any undefined properties so Firestore writes never fail
+ * with "Unsupported field value: undefined"
+ */
+export function cleanFirestoreData<T extends Record<string, any>>(obj: T): any {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(item => (typeof item === 'object' && item !== null ? cleanFirestoreData(item) : item));
+  }
+  const clean: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        clean[key] = cleanFirestoreData(value);
+      } else if (Array.isArray(value)) {
+        clean[key] = value.map(item => (typeof item === 'object' && item !== null ? cleanFirestoreData(item) : item));
+      } else {
+        clean[key] = value;
+      }
+    }
+  }
+  return clean;
+}
+
+// Auto-purge obsolete localStorage items from previous versions with stale non-standard IDs
+if (typeof window !== 'undefined' && window.localStorage) {
+  try {
+    const rawProds = window.localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    if (rawProds) {
+      const parsed = JSON.parse(rawProds);
+      if (Array.isArray(parsed)) {
+        const hasStale = parsed.some((p: any) => 
+          !p || typeof p.id !== 'string' || (
+            !p.id.includes('nexalus-llp') &&
+            !(p.id.startsWith('prod-nexalus-') && !p.id.includes('llp')) &&
+            !p.id.startsWith('prod-am')
+          )
+        );
+        if (hasStale || parsed.length < initialProducts.length) {
+          window.localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(initialProducts));
+        }
+      }
+    }
+    const rawCats = window.localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+    if (rawCats) {
+      const parsed = JSON.parse(rawCats);
+      if (Array.isArray(parsed)) {
+        const hasStale = parsed.some((c: any) => 
+          !c || typeof c.id !== 'string' || (
+            !c.id.includes('nexalus-llp') &&
+            !(c.id.startsWith('cat-nexalus-') && !c.id.includes('llp')) &&
+            !c.id.startsWith('cat-am')
+          )
+        );
+        if (hasStale || parsed.length < initialCategories.length) {
+          window.localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(initialCategories));
+        }
+      }
+    }
+  } catch {
+    // Ignore storage parse issues
+  }
+}
+
 // ----------------------------------------------------
 // SYNCHRONOUS CACHE GETTERS (Instant 0ms Page Paint)
 // ----------------------------------------------------
-export function getCachedProducts(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): Product[] {
+export function getCachedProducts(brandId?: BrandId | CompanyScopeId | 'corporate' | 'all'): Product[] {
   let products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
-  let changed = false;
+  
+  // Guard against any obsolete products in storage
+  const hasInvalid = !Array.isArray(products) || products.some(p => 
+    !p || typeof p.id !== 'string' || (
+      !p.id.includes('nexalus-llp') && 
+      !(p.id.startsWith('prod-nexalus-') && !p.id.includes('llp')) && 
+      !p.id.startsWith('prod-am')
+    )
+  );
+  if (hasInvalid || products.length === 0) {
+    products = initialProducts;
+    setLocalItem(STORAGE_KEYS.PRODUCTS, initialProducts, false);
+  }
+
+  // Ensure all recent and existing products have explicit inventory fields populated
+  let needsSync = false;
   products = products.map(p => {
-    if (p.id === 'prod-nex-2' && p.categoryId !== 'cat-enterprise-networking') {
-      changed = true;
-      return { ...p, categoryId: 'cat-enterprise-networking', categoryName: 'Enterprise Networking' };
-    }
-    if (p.id === 'prod-nex-1' && p.categoryId !== 'cat-cctv-surveillance') {
-      changed = true;
-      return { ...p, categoryId: 'cat-cctv-surveillance', categoryName: 'CCTV Surveillance' };
+    if (p.stockQuantity === undefined || p.lowStockThreshold === undefined) {
+      needsSync = true;
+      const isAm = p.id.startsWith('prod-am') || p.brandId === 'am-distributors';
+      const defaultStock = isAm ? 120 : 25;
+      const defaultThresh = isAm ? 20 : 8;
+      const finalStock = p.stockQuantity !== undefined ? p.stockQuantity : (p.availability === 'out_of_stock' ? 0 : defaultStock);
+      const finalThresh = p.lowStockThreshold !== undefined ? p.lowStockThreshold : defaultThresh;
+      return {
+        ...p,
+        stockQuantity: finalStock,
+        lowStockThreshold: finalThresh,
+        availability: finalStock === 0 ? 'out_of_stock' : p.availability
+      };
     }
     return p;
   });
-  if (changed || !products.some(p => p.categoryId === 'cat-cctv-surveillance')) {
+
+  if (needsSync) {
     setLocalItem(STORAGE_KEYS.PRODUCTS, products, false);
   }
+
   if (brandId && brandId !== 'all') {
-    if (brandId === 'am-distributors') {
-      products = products.filter(p => p.brandId === 'am-distributors');
-    } else {
-      // Both corporate parent and Nexalus Innovations manage the commercial technology & hardware catalog (matching Landing Page)
-      products = products.filter(p => p.brandId !== 'am-distributors');
+    if (brandId === 'am-distributors' || (brandId as any) === 'am') {
+      return products.filter(p => p.id.startsWith('prod-am') || p.companyId === 'am-distributors');
     }
+    if (brandId === 'nexalus-innovations') {
+      return products.filter(p => (p.id.startsWith('prod-nexalus-') && !p.id.includes('llp')) || p.companyId === 'nexalus-innovations');
+    }
+    // Parent company: Nexalus Innovations LLP (ONLY products with nexalus-llp in ID or companyId)
+    return products.filter(p => p.id.includes('nexalus-llp') || p.companyId === 'nexalus-llp');
   }
   return products;
 }
 
-export function getCachedCategories(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): ProductCategory[] {
-  let categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
-  if (!categories.some(c => c.id === 'cat-cctv-surveillance') || categories.length < initialCategories.length) {
-    const existingIds = new Set(categories.map(c => c.id));
-    const missing = initialCategories.filter(c => !existingIds.has(c.id));
-    if (missing.length > 0) {
-      categories = [...categories, ...missing];
-      setLocalItem(STORAGE_KEYS.CATEGORIES, categories, false);
+export function subscribeToProducts(
+  callback: (products: Product[]) => void,
+  brandId?: BrandId | CompanyScopeId | 'corporate' | 'all'
+): () => void {
+  const emitCached = () => {
+    try {
+      const prods = getCachedProducts(brandId);
+      callback(prods);
+    } catch (err) {
+      console.warn('Initial product emit warning:', err);
+    }
+  };
+
+  emitCached();
+
+  let unsubFirestore: (() => void) | null = null;
+  if (isFirebaseConfigured && db) {
+    try {
+      const colRef = collection(db, 'products');
+      unsubFirestore = onSnapshot(colRef, () => {
+        getProducts(brandId === 'all' ? undefined : brandId).then(data => callback(data)).catch(() => emitCached());
+      }, () => emitCached());
+    } catch {
+      emitCached();
     }
   }
-  if (brandId && brandId !== 'all') {
-    if (brandId === 'am-distributors') {
-      categories = categories.filter(c => c.brandId === 'am-distributors');
-    } else {
-      // Both corporate parent and Nexalus Innovations manage all commercial tech categories (matching Landing Page)
-      categories = categories.filter(c => c.brandId !== 'am-distributors');
+
+  const handleUpdate = (e: any) => {
+    if (!e.detail || e.detail.key === STORAGE_KEYS.PRODUCTS) {
+      emitCached();
     }
+  };
+
+  window.addEventListener('nexalus_data_update', handleUpdate);
+  window.addEventListener('storage', handleUpdate);
+
+  return () => {
+    if (unsubFirestore) unsubFirestore();
+    window.removeEventListener('nexalus_data_update', handleUpdate);
+    window.removeEventListener('storage', handleUpdate);
+  };
+}
+
+export const OBSOLETE_CATEGORY_IDS = new Set([
+  'cat-access', 'cat-bullet', 'cat-cctv-surveillance', 'cat-dome',
+  'cat-enterprise-networking', 'cat-extenders', 'cat-ip', 'cat-mesh',
+  'cat-nvr', 'cat-onu', 'cat-optical-fiber', 'cat-ptz', 'cat-routers'
+]);
+
+export function isObsoleteCategoryId(id: string): boolean {
+  if (!id || typeof id !== 'string') return true;
+  if (OBSOLETE_CATEGORY_IDS.has(id)) return true;
+  if (id.startsWith('cat-itti-')) return true;
+  if (id.startsWith('cat-nex-') && !id.startsWith('cat-nexalus-')) return true;
+  const isParent = id.includes('nexalus-llp');
+  const isInnovations = id.startsWith('cat-nexalus-') && !id.includes('llp');
+  const isAm = id.startsWith('cat-am');
+  return !(isParent || isInnovations || isAm);
+}
+
+export function getCachedCategories(brandId?: BrandId | CompanyScopeId | 'corporate' | 'all'): ProductCategory[] {
+  let categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
+  
+  // Guard against any obsolete categories in storage
+  categories = categories.filter(c => c && typeof c.id === 'string' && !isObsoleteCategoryId(c.id));
+  if (categories.length === 0) {
+    categories = initialCategories;
+    setLocalItem(STORAGE_KEYS.CATEGORIES, initialCategories, false);
+  }
+
+  if (brandId && brandId !== 'all') {
+    if (brandId === 'am-distributors' || (brandId as any) === 'am') {
+      return categories.filter(c => c.id.startsWith('cat-am') || c.companyId === 'am-distributors');
+    }
+    if (brandId === 'nexalus-innovations') {
+      return categories.filter(c => (c.id.startsWith('cat-nexalus-') && !c.id.includes('llp')) || c.companyId === 'nexalus-innovations');
+    }
+    // Parent company: Nexalus Innovations LLP (ONLY categories with nexalus-llp in ID or companyId)
+    return categories.filter(c => c.id.includes('nexalus-llp') || c.companyId === 'nexalus-llp');
   }
   return categories;
+}
+
+export function subscribeToCategories(
+  callback: (categories: ProductCategory[]) => void,
+  brandId?: BrandId | CompanyScopeId | 'corporate' | 'all'
+): () => void {
+  const emitCached = () => {
+    try {
+      const cats = getCachedCategories(brandId);
+      callback(cats);
+    } catch (err) {
+      console.warn('Initial category emit warning:', err);
+    }
+  };
+
+  emitCached();
+
+  let unsubFirestore: (() => void) | null = null;
+  if (isFirebaseConfigured && db) {
+    try {
+      const colRef = collection(db, 'categories');
+      unsubFirestore = onSnapshot(colRef, () => {
+        getCategories(brandId === 'all' ? undefined : brandId).then(data => callback(data)).catch(() => emitCached());
+      }, () => emitCached());
+    } catch {
+      emitCached();
+    }
+  }
+
+  const handleUpdate = (e: any) => {
+    if (!e.detail || e.detail.key === STORAGE_KEYS.CATEGORIES) {
+      emitCached();
+    }
+  };
+
+  window.addEventListener('nexalus_data_update', handleUpdate);
+  window.addEventListener('storage', handleUpdate);
+
+  return () => {
+    if (unsubFirestore) unsubFirestore();
+    window.removeEventListener('nexalus_data_update', handleUpdate);
+    window.removeEventListener('storage', handleUpdate);
+  };
 }
 
 export function getCachedServices(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): Service[] {
@@ -476,29 +679,17 @@ export async function getBrandById(id: BrandId): Promise<Brand | undefined> {
 // ----------------------------------------------------
 // PRODUCT CATEGORIES
 // ----------------------------------------------------
-export async function getCategories(brandId?: BrandId | 'nexalus' | 'corporate' | 'all'): Promise<ProductCategory[]> {
+export async function getCategories(brandId?: BrandId | CompanyScopeId | 'corporate' | 'all'): Promise<ProductCategory[]> {
   if (isFirebaseConfigured && db) {
     try {
       const q = collection(db, 'categories');
-      const snapshot = await withTimeout(getDocs(q), 1200);
+      const snapshot = await withTimeout(getDocs(q), 2500);
       if (!snapshot.empty) {
-        const fsCats = snapshot.docs.map(d => d.data() as ProductCategory);
-        const existingIds = new Set(fsCats.map(c => c.id));
-        const localCats = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
-        const merged = [...fsCats, ...localCats.filter(c => !existingIds.has(c.id))];
-        setLocalItem(STORAGE_KEYS.CATEGORIES, merged, false);
-
-        // Auto-seed baseline categories to Firestore if missing
-        const missingFromFs = initialCategories.filter(c => !existingIds.has(c.id));
-        if (missingFromFs.length > 0) {
-          for (const missingCat of missingFromFs) {
-            setDoc(doc(db, 'categories', missingCat.id), missingCat).catch(() => {});
-          }
-        }
-      } else {
-        // If Firestore is empty, seed all initialCategories
-        for (const cat of initialCategories) {
-          setDoc(doc(db, 'categories', cat.id), cat).catch(() => {});
+        const fsCats = snapshot.docs
+          .map(d => ({ id: d.id, ...d.data() } as ProductCategory))
+          .filter(c => c && typeof c.id === 'string' && !isObsoleteCategoryId(c.id));
+        if (fsCats.length > 0) {
+          setLocalItem(STORAGE_KEYS.CATEGORIES, fsCats, false);
         }
       }
     } catch (e) {
@@ -506,24 +697,7 @@ export async function getCategories(brandId?: BrandId | 'nexalus' | 'corporate' 
     }
   }
 
-  let categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
-  if (categories.length < initialCategories.length) {
-    const existingIds = new Set(categories.map(c => c.id));
-    const missing = initialCategories.filter(c => !existingIds.has(c.id));
-    if (missing.length > 0) {
-      categories = [...categories, ...missing];
-      setLocalItem(STORAGE_KEYS.CATEGORIES, categories, false);
-    }
-  }
-  if (brandId && brandId !== 'all') {
-    if (brandId === 'am-distributors') {
-      categories = categories.filter(c => c.brandId === 'am-distributors');
-    } else {
-      // Both corporate parent and Nexalus Innovations manage all commercial tech categories (matching Landing Page)
-      categories = categories.filter(c => c.brandId !== 'am-distributors');
-    }
-  }
-  return categories;
+  return getCachedCategories(brandId);
 }
 
 export async function createCategory(cat: Omit<ProductCategory, 'id'>, companyScope?: CompanyScopeId): Promise<ProductCategory> {
@@ -533,15 +707,21 @@ export async function createCategory(cat: Omit<ProductCategory, 'id'>, companySc
       : (cat.brandId === 'nexalus' ? 'nexalus-llp' : 'nexalus-innovations')
   );
 
-  const prefix = compId === 'am-distributors'
-    ? 'cat-am-'
-    : compId === 'nexalus-llp'
-    ? 'cat-llp-'
-    : 'cat-nex-';
+  const companyKey = compId === 'am-distributors'
+    ? 'am'
+    : compId === 'nexalus-innovations'
+    ? 'nexalus'
+    : 'nexalus-llp';
+
+  const assignedBrand: BrandId = compId === 'am-distributors'
+    ? 'am-distributors'
+    : compId === 'nexalus-innovations'
+    ? 'nexalus-innovations'
+    : 'nexalus';
 
   const slugified = (cat.slug || cat.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-  const cleanSlug = slugified.replace(/^cat-(nex|am|llp)-/, '');
-  const id = `${prefix}${cleanSlug || Date.now()}`;
+  const cleanSlug = slugified.replace(/^cat-(nexalus-llp|nexalus|am|llp|nex)-/, '');
+  const id = `cat-${companyKey}-${cleanSlug || 'general'}`;
 
   const companyName = compId === 'am-distributors'
     ? 'A.M. Distributors Chiplun'
@@ -552,15 +732,17 @@ export async function createCategory(cat: Omit<ProductCategory, 'id'>, companySc
   const newCat: ProductCategory = {
     ...cat,
     id,
+    brandId: assignedBrand,
     companyId: compId,
     companyName
   };
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, 'categories', newCat.id), newCat);
-    } catch (e) {
-      console.warn('Firestore createCategory error:', e);
+      await setDoc(doc(db, 'categories', newCat.id), cleanFirestoreData(newCat));
+    } catch (e: any) {
+      console.error('Firestore createCategory error:', e);
+      throw new Error(`Failed to save category to database: ${e.message}`);
     }
   }
 
@@ -584,7 +766,7 @@ export async function updateCategory(id: string, updates: Partial<ProductCategor
   };
   if (isFirebaseConfigured && db) {
     try {
-      await updateDoc(doc(db, 'categories', id), updates);
+      await updateDoc(doc(db, 'categories', id), cleanFirestoreData(updates));
     } catch (e) {
       console.warn('Firestore updateCategory error:', e);
     }
@@ -606,6 +788,23 @@ export async function updateCategory(id: string, updates: Partial<ProductCategor
     });
     if (changed) {
       setLocalItem(STORAGE_KEYS.PRODUCTS, updatedProducts);
+    }
+    // Also update all matching products in Firestore so categoryName stays in sync
+    if (isFirebaseConfigured && db) {
+      try {
+        const qProds = query(collection(db, 'products'), where('categoryId', '==', id));
+        getDocs(qProds).then(snap => {
+          snap.forEach(async (docSnap) => {
+            try {
+              await updateDoc(docSnap.ref, { categoryName: updates.name });
+            } catch {}
+          });
+        }).catch(err => {
+          console.warn('Firestore sync product categoryName error:', err);
+        });
+      } catch (err) {
+        console.warn('Firestore sync product categoryName error:', err);
+      }
     }
   }
 
@@ -635,97 +834,45 @@ export async function deleteCategory(id: string): Promise<void> {
 // ----------------------------------------------------
 // PRODUCTS
 // ----------------------------------------------------
-export async function getProducts(brandId?: BrandId | 'nexalus' | 'corporate', publishedOnly = false): Promise<Product[]> {
+export async function getProducts(brandId?: BrandId | CompanyScopeId | 'corporate' | 'all', publishedOnly = false): Promise<Product[]> {
   if (isFirebaseConfigured && db) {
     try {
-      const constraints: any[] = [];
-      if (brandId) {
-        if (brandId === 'nexalus-innovations') {
-          constraints.push(where('brandId', 'in', ['nexalus-innovations', 'cp-plus', 'one-broadband', 'itti-networking']));
-        } else if (brandId === 'corporate' || (brandId as any) === 'nexalus') {
-          constraints.push(where('brandId', '==', 'nexalus'));
-        } else {
-          constraints.push(where('brandId', '==', brandId));
-        }
-      }
-      if (publishedOnly) constraints.push(where('published', '==', true));
-      const q = constraints.length > 0
-        ? query(collection(db, 'products'), ...constraints)
-        : collection(db, 'products');
-      const snapshot = await withTimeout(getDocs(q), 1200);
+      const q = collection(db, 'products');
+      const snapshot = await withTimeout(getDocs(q), 2500);
       if (!snapshot.empty) {
-        return snapshot.docs.map(d => d.data() as Product);
+        const fsProds = snapshot.docs
+          .map(d => {
+            const data = d.data();
+            const isAm = d.id.startsWith('prod-am') || data.brandId === 'am-distributors';
+            const defaultStock = isAm ? 120 : 25;
+            const defaultThresh = isAm ? 20 : 8;
+            const stockQty = data.stockQuantity !== undefined ? data.stockQuantity : (data.availability === 'out_of_stock' ? 0 : defaultStock);
+            const thresh = data.lowStockThreshold !== undefined ? data.lowStockThreshold : defaultThresh;
+            return {
+              id: d.id,
+              ...data,
+              stockQuantity: stockQty,
+              lowStockThreshold: thresh,
+              availability: stockQty === 0 ? 'out_of_stock' : (data.availability || 'in_stock')
+            } as Product;
+          })
+          .filter(p => 
+            p.id.includes('nexalus-llp') || 
+            (p.id.startsWith('prod-nexalus-') && !p.id.includes('llp')) || 
+            p.id.startsWith('prod-am')
+          );
+        if (fsProds.length > 0) {
+          setLocalItem(STORAGE_KEYS.PRODUCTS, fsProds, false);
+        }
       }
     } catch (e) {
       console.warn('Firestore getProducts error:', e);
     }
   }
 
-  let products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
-  let hasStoreUpdates = false;
-
-  // Auto-migrate legacy/book image URLs stored in localStorage
-  const initialMap = new Map(initialProducts.map(ip => [ip.id, ip]));
-  products = products.map(p => {
-    const initProd = initialMap.get(p.id);
-    if (initProd) {
-      const currentImg = p.images?.[0] || '';
-      if (
-        !currentImg ||
-        currentImg.includes('photo-1544716278-ca5e3f4abd8c') || // Book image removal
-        currentImg.includes('photo-1589793463308-658ed42e524e') || // 404 URL removal
-        currentImg.includes('photo-1582139329536-e7284fece509') // Vault door removal
-      ) {
-        hasStoreUpdates = true;
-        return { ...p, images: initProd.images };
-      }
-    }
-    return p;
-  });
-
-  // Ensure product categories are correctly mapped
-  products = products.map(p => {
-    if (p.id === 'prod-nex-2' && p.categoryId !== 'cat-enterprise-networking') {
-      hasStoreUpdates = true;
-      return { ...p, categoryId: 'cat-enterprise-networking', categoryName: 'Enterprise Networking' };
-    }
-    if (p.id === 'prod-nex-1' && p.categoryId !== 'cat-cctv-surveillance') {
-      hasStoreUpdates = true;
-      return { ...p, categoryId: 'cat-cctv-surveillance', categoryName: 'CCTV Surveillance' };
-    }
-    return p;
-  });
-
-  if (products.length < initialProducts.length || !products.some(p => p.categoryId === 'cat-cctv-surveillance')) {
-    const existingIds = new Set(products.map(p => p.id));
-    const missing = initialProducts.filter(p => !existingIds.has(p.id));
-    if (missing.length > 0) {
-      products = [...products, ...missing];
-      hasStoreUpdates = true;
-    }
-    products = products.map(p => {
-      const initP = initialMap.get(p.id);
-      if (initP && initP.categoryId && p.categoryId !== initP.categoryId) {
-        hasStoreUpdates = true;
-        return { ...p, categoryId: initP.categoryId, categoryName: initP.categoryName, brandId: initP.brandId };
-      }
-      return p;
-    });
-  }
-
-  if (hasStoreUpdates) {
-    setLocalItem(STORAGE_KEYS.PRODUCTS, products, false);
-  }
-  if (brandId) {
-    if (brandId === 'am-distributors') {
-      products = products.filter(p => p.brandId === 'am-distributors');
-    } else {
-      // Both corporate parent and Nexalus Innovations manage the commercial technology & hardware catalog (matching Landing Page)
-      products = products.filter(p => p.brandId !== 'am-distributors');
-    }
-  }
+  let products = getCachedProducts(brandId);
   if (publishedOnly) {
-    products = products.filter(p => p.published);
+    products = products.filter(p => p.published !== false);
   }
   return products;
 }
@@ -745,52 +892,25 @@ export async function createProduct(
       : (productData.brandId === 'nexalus' ? 'nexalus-llp' : 'nexalus-innovations')
   );
 
-  let prefix = 'prod-nex-';
-  if (compId === 'am-distributors') {
-    prefix = 'prod-am-';
-  } else if (compId === 'nexalus-llp') {
-    prefix = 'prod-llp-';
-  } else if (productData.brandId === 'cp-plus') {
-    prefix = 'prod-cp-';
-  } else if (productData.brandId === 'one-broadband') {
-    prefix = 'prod-ob-';
-  } else if (productData.brandId === 'itti-networking') {
-    prefix = 'prod-itti-';
-  } else {
-    prefix = 'prod-nex-';
-  }
+  const companyKey = compId === 'am-distributors'
+    ? 'am'
+    : compId === 'nexalus-innovations'
+    ? 'nexalus'
+    : 'nexalus-llp';
 
-  // Determine next sequential product ID across local cache & initial products
-  const products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
-  let maxSeq = 0;
-  for (const p of products) {
-    if (p.id && p.id.startsWith(prefix)) {
-      const num = parseInt(p.id.slice(prefix.length), 10);
-      if (!isNaN(num) && num > maxSeq) {
-        maxSeq = num;
-      }
-    }
-  }
+  const assignedBrand: BrandId = compId === 'am-distributors'
+    ? 'am-distributors'
+    : compId === 'nexalus-innovations'
+    ? 'nexalus-innovations'
+    : 'nexalus';
 
-  // Also verify against Firestore to prevent duplicate sequence numbers
-  if (isFirebaseConfigured && db) {
-    try {
-      const snap = await withTimeout(getDocs(collection(db, 'products')), 1200);
-      if (!snap.empty) {
-        snap.forEach(docSnap => {
-          const docId = docSnap.id;
-          if (docId.startsWith(prefix)) {
-            const num = parseInt(docId.slice(prefix.length), 10);
-            if (!isNaN(num) && num > maxSeq) {
-              maxSeq = num;
-            }
-          }
-        });
-      }
-    } catch {}
-  }
+  const rawSlug = (productData.slug || productData.name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  const cleanSlug = rawSlug.replace(/^prod-(nexalus-llp|nexalus|am|llp|nex|cp|ob|itti)-/, '');
+  const id = `prod-${companyKey}-${cleanSlug || 'item'}`;
 
-  const id = `${prefix}${maxSeq + 1}`;
   const now = new Date().toISOString();
   const companyName = compId === 'am-distributors'
     ? 'A.M. Distributors Chiplun'
@@ -801,6 +921,7 @@ export async function createProduct(
   const newProduct: Product = {
     ...productData,
     id,
+    brandId: assignedBrand,
     companyId: compId,
     companyName,
     createdAt: now,
@@ -809,14 +930,16 @@ export async function createProduct(
 
   if (isFirebaseConfigured && db) {
     try {
-      await setDoc(doc(db, 'products', id), newProduct);
-    } catch (e) {
-      console.warn('Firestore createProduct error:', e);
+      await setDoc(doc(db, 'products', id), cleanFirestoreData(newProduct));
+    } catch (e: any) {
+      console.error('Firestore createProduct error:', e);
+      throw new Error(`Failed to save product to database: ${e.message}`);
     }
   }
 
-  setLocalItem(STORAGE_KEYS.PRODUCTS, [newProduct, ...products]);
-  await addAuditLog('CREATE_PRODUCT', `Added product: ${newProduct.name} (${newProduct.modelNumber})`, newProduct.brandId);
+  const existingProducts = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+  setLocalItem(STORAGE_KEYS.PRODUCTS, [newProduct, ...existingProducts]);
+  await addAuditLog('CREATE_PRODUCT', `Added product: ${newProduct.name}${newProduct.modelNumber ? ` (${newProduct.modelNumber})` : ''}`, newProduct.brandId);
   return newProduct;
 }
 
@@ -824,26 +947,49 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
   const now = new Date().toISOString();
   const products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
   const index = products.findIndex(p => p.id === id);
-  if (index === -1) return null;
-
-  const updated: Product = {
-    ...products[index],
-    ...updates,
-    updatedAt: now
-  };
 
   if (isFirebaseConfigured && db) {
     try {
-      await updateDoc(doc(db, 'products', id), { ...updates, updatedAt: now });
+      await updateDoc(doc(db, 'products', id), cleanFirestoreData({ ...updates, updatedAt: now }));
     } catch (e) {
       console.warn('Firestore updateProduct error:', e);
     }
   }
 
-  products[index] = updated;
-  setLocalItem(STORAGE_KEYS.PRODUCTS, products);
-  await addAuditLog('UPDATE_PRODUCT', `Updated product: ${updated.name}`, updated.brandId);
+  let updated: Product;
+  if (index !== -1) {
+    updated = {
+      ...products[index],
+      ...updates,
+      updatedAt: now
+    };
+    products[index] = updated;
+    setLocalItem(STORAGE_KEYS.PRODUCTS, products);
+  } else {
+    updated = {
+      id,
+      ...updates,
+      updatedAt: now
+    } as Product;
+    setLocalItem(STORAGE_KEYS.PRODUCTS, [updated, ...products]);
+  }
+
+  await addAuditLog('UPDATE_PRODUCT', `Updated product: ${updated.name || id}`, updated.brandId);
   return updated;
+}
+
+export async function updateProductStock(id: string, newStock: number, customThreshold?: number): Promise<Product | null> {
+  const products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+  const existing = products.find(p => p.id === id);
+  const threshold = customThreshold !== undefined ? customThreshold : (existing?.lowStockThreshold ?? 10);
+  const validStock = Math.max(0, Math.round(newStock));
+  const autoAvailability = validStock === 0 ? 'out_of_stock' : 'in_stock';
+  
+  return updateProduct(id, {
+    stockQuantity: validStock,
+    lowStockThreshold: threshold,
+    availability: autoAvailability
+  });
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
@@ -1594,11 +1740,39 @@ export async function getProjects(brandId?: BrandId | 'nexalus', publishedOnly =
     projects = initialProjects;
     setLocalItem(STORAGE_KEYS.PROJECTS, initialProjects, false);
   }
-  // Clean up any legacy random timestamp IDs in local cache
-  if (projects.some(p => p.id === 'proj-1793190569157')) {
-    projects = projects.map(p => p.id === 'proj-1793190569157' ? { ...p, id: 'proj-4' } : p);
-    setLocalItem(STORAGE_KEYS.PROJECTS, projects);
+
+  // Deduplicate and ensure all projects have strictly unique IDs
+  const seenIds = new Set<string>();
+  let needsSync = false;
+  const uniqueProjects: Project[] = [];
+
+  for (let i = 0; i < projects.length; i++) {
+    const p = projects[i];
+    if (!p) continue;
+    let pid = p.id;
+    if (!pid || pid === 'proj-1793190569157' || seenIds.has(pid)) {
+      needsSync = true;
+      // If duplicate proj-4, assign proj-3 if vacant, otherwise generate unique sequential ID
+      if (pid === 'proj-4' && !seenIds.has('proj-3') && !projects.some(other => other.id === 'proj-3')) {
+        pid = 'proj-3';
+      } else {
+        pid = `proj-${p.brandId === 'am-distributors' ? 'am-' : ''}${i + 1}`;
+        if (seenIds.has(pid)) {
+          pid = `${pid}-${Date.now().toString().slice(-4)}`;
+        }
+      }
+    }
+    seenIds.add(pid);
+    uniqueProjects.push(pid === p.id ? p : { ...p, id: pid });
   }
+
+  if (needsSync) {
+    projects = uniqueProjects;
+    setLocalItem(STORAGE_KEYS.PROJECTS, projects, false);
+  } else {
+    projects = uniqueProjects;
+  }
+
   if (brandId) {
     if (brandId === 'nexalus') {
       projects = projects.filter(p => p.brandId === 'nexalus');
@@ -1632,7 +1806,7 @@ export async function createProject(projectData: Omit<Project, 'id' | 'createdAt
     prefix = 'proj-';
   }
 
-  // Determine next sequential project ID across local cache & Firestore
+  // Determine next sequential project ID across local cache (instant, no network wait)
   const projects = getLocalItem<Project[]>(STORAGE_KEYS.PROJECTS, initialProjects);
   let maxSeq = 0;
   for (const p of projects) {
@@ -1645,23 +1819,11 @@ export async function createProject(projectData: Omit<Project, 'id' | 'createdAt
     }
   }
 
-  // Check Firestore directly to prevent sequence collisions
-  if (isFirebaseConfigured && db) {
-    try {
-      const snap = await withTimeout(getDocs(collection(db, 'projects')), 3000);
-      snap.forEach(d => {
-        if (d.id.startsWith(prefix)) {
-          const rest = d.id.slice(prefix.length);
-          const num = parseInt(rest, 10);
-          if (!isNaN(num) && num > maxSeq && num < 1000000) {
-            maxSeq = num;
-          }
-        }
-      });
-    } catch {}
+  let nextId = `${prefix}${maxSeq + 1}`;
+  if (projects.some(p => p.id === nextId)) {
+    nextId = `${prefix}${Date.now()}`;
   }
-
-  const id = `${prefix}${maxSeq + 1}`;
+  const id = nextId;
   const now = new Date().toISOString();
   const newProject: Project = {
     ...projectData,
@@ -1672,17 +1834,16 @@ export async function createProject(projectData: Omit<Project, 'id' | 'createdAt
 
   const updated = [newProject, ...projects.filter(p => p.id !== id)];
   setLocalItem(STORAGE_KEYS.PROJECTS, updated);
+  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.PROJECTS } }));
 
+  // Non-blocking Firestore save & audit log for instantaneous UI response
   if (isFirebaseConfigured && db) {
-    try {
-      await withTimeout(setDoc(doc(db, 'projects', id), newProject), 4000);
-    } catch (e) {
-      console.warn('Firestore createProject error:', e);
-    }
+    setDoc(doc(db, 'projects', id), cleanFirestoreData(newProject)).catch(e => {
+      console.warn('Firestore createProject background save error:', e);
+    });
   }
 
-  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.PROJECTS } }));
-  await addAuditLog('CREATE_PROJECT', 'Created project: ' + newProject.title, newProject.brandId === 'nexalus' ? 'general' : newProject.brandId);
+  addAuditLog('CREATE_PROJECT', 'Created project: ' + newProject.title, newProject.brandId === 'nexalus' ? 'general' : newProject.brandId).catch(() => {});
   return newProject;
 }
 
@@ -1698,15 +1859,16 @@ export async function updateProject(id: string, updates: Partial<Project>): Prom
   };
   projects[index] = updated;
   setLocalItem(STORAGE_KEYS.PROJECTS, projects);
+  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.PROJECTS } }));
 
+  // Non-blocking Firestore save & audit log
   if (isFirebaseConfigured && db) {
-    try {
-      await withTimeout(setDoc(doc(db, 'projects', id), updated, { merge: true }), 4000);
-    } catch {}
+    setDoc(doc(db, 'projects', id), cleanFirestoreData(updated), { merge: true }).catch(e => {
+      console.warn('Firestore updateProject background save error:', e);
+    });
   }
 
-  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.PROJECTS } }));
-  await addAuditLog('UPDATE_PROJECT', 'Updated project: ' + updated.title, updated.brandId === 'nexalus' ? 'general' : updated.brandId);
+  addAuditLog('UPDATE_PROJECT', 'Updated project: ' + updated.title, updated.brandId === 'nexalus' ? 'general' : updated.brandId).catch(() => {});
   return updated;
 }
 
@@ -1717,15 +1879,16 @@ export async function deleteProject(id: string): Promise<boolean> {
 
   const updated = projects.filter(p => p.id !== id);
   setLocalItem(STORAGE_KEYS.PROJECTS, updated);
+  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.PROJECTS } }));
 
+  // Non-blocking Firestore delete & audit log
   if (isFirebaseConfigured && db) {
-    try {
-      await withTimeout(deleteDoc(doc(db, 'projects', id)), 4000);
-    } catch {}
+    deleteDoc(doc(db, 'projects', id)).catch(e => {
+      console.warn('Firestore deleteProject background delete error:', e);
+    });
   }
 
-  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: STORAGE_KEYS.PROJECTS } }));
-  await addAuditLog('DELETE_PROJECT', 'Deleted project: ' + target.title, target.brandId === 'nexalus' ? 'general' : target.brandId);
+  addAuditLog('DELETE_PROJECT', 'Deleted project: ' + target.title, target.brandId === 'nexalus' ? 'general' : target.brandId).catch(() => {});
   return true;
 }
 
@@ -1936,6 +2099,15 @@ export async function submitPlanOrder(
     );
   } catch (logErr) {
     console.warn('Could not write audit log:', logErr);
+  }
+
+  try {
+    if (newOrder.planId) {
+      const qty = Math.max(1, newOrder.quantity || 1);
+      await deductProductStock(newOrder.planId, qty);
+    }
+  } catch (stockErr) {
+    console.warn('Could not deduct product stock for order:', stockErr);
   }
 
   return { success: true, id, order: newOrder };
@@ -2185,9 +2357,19 @@ export async function updatePlanOrder(
     }
   }
 
+  const prevStatus = orders[idx].status;
   orders[idx] = updated;
   setLocalItem(STORAGE_KEYS.PLAN_ORDERS, orders);
   window.dispatchEvent(new CustomEvent('nexalus_plan_orders_updated', { detail: orders }));
+
+  // Auto-restore stock if an order gets cancelled
+  if (updates.status === 'cancelled' && prevStatus !== 'cancelled' && updated.planId) {
+    try {
+      await restoreProductStock(updated.planId, 1);
+    } catch (restErr) {
+      console.warn('Could not restore stock on cancellation:', restErr);
+    }
+  }
 
   await addAuditLog(
     'PLAN_ORDER_UPDATED',
@@ -2412,17 +2594,78 @@ export function addToPlanCart(item: Omit<CartPlanItem, 'id' | 'addedAt'>, explic
   const uid = explicitUserId || getActiveCartUserId();
   const cartKey = uid ? `nexalus_plan_cart_${uid}` : 'nexalus_plan_cart_guest';
   const current = uid ? getLocalItem<CartPlanItem[]>(cartKey, []) : [];
-  const newItem: CartPlanItem = {
-    ...item,
-    id: 'cart-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-    addedAt: new Date().toISOString()
-  };
-  const updated = [newItem, ...current];
+
+  const qtyToAdd = Math.max(1, item.quantity || 1);
+  const rawPrice = typeof item.price === 'number' ? item.price : parseFloat(String(item.price)) || 0;
+  const unitPrice = typeof item.unitPrice === 'number' && item.unitPrice > 0 ? item.unitPrice : rawPrice;
+
+  // Check if item already exists in cart (by planId)
+  const existingIndex = current.findIndex(i => (i.planId && item.planId && i.planId === item.planId));
+
+  let updated: CartPlanItem[];
+  let returnedItem: CartPlanItem;
+
+  if (existingIndex >= 0) {
+    const existing = current[existingIndex];
+    const newQty = (existing.quantity || 1) + qtyToAdd;
+    const existingUnitPrice = existing.unitPrice || unitPrice;
+    const updatedItem: CartPlanItem = {
+      ...existing,
+      quantity: newQty,
+      unitPrice: existingUnitPrice,
+      price: existingUnitPrice * newQty
+    };
+    updated = [...current];
+    updated[existingIndex] = updatedItem;
+    returnedItem = updatedItem;
+  } else {
+    const newItem: CartPlanItem = {
+      ...item,
+      id: 'cart-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      quantity: qtyToAdd,
+      unitPrice: unitPrice,
+      price: unitPrice * qtyToAdd,
+      addedAt: new Date().toISOString()
+    };
+    updated = [newItem, ...current];
+    returnedItem = newItem;
+  }
+
   setLocalItem(cartKey, updated);
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: updated }));
   }
-  return newItem;
+  return returnedItem;
+}
+
+export function updateCartItemQuantity(cartItemId: string, newQuantity: number, explicitUserId?: string): CartPlanItem[] {
+  const uid = explicitUserId || getActiveCartUserId();
+  const cartKey = uid ? `nexalus_plan_cart_${uid}` : 'nexalus_plan_cart_guest';
+  const current = uid ? getLocalItem<CartPlanItem[]>(cartKey, []) : [];
+
+  if (newQuantity <= 0) {
+    return removeFromPlanCart(cartItemId, explicitUserId);
+  }
+
+  const updated = current.map(item => {
+    if (item.id === cartItemId || item.planId === cartItemId) {
+      const currentQty = item.quantity || 1;
+      const uPrice = item.unitPrice || (typeof item.price === 'number' ? item.price / currentQty : (parseFloat(String(item.price)) / currentQty) || 0);
+      return {
+        ...item,
+        quantity: newQuantity,
+        unitPrice: uPrice,
+        price: uPrice * newQuantity
+      };
+    }
+    return item;
+  });
+
+  setLocalItem(cartKey, updated);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('nexalus_plan_cart_updated', { detail: updated }));
+  }
+  return updated;
 }
 
 export function removeFromPlanCart(cartItemId: string, explicitUserId?: string): CartPlanItem[] {
@@ -3496,6 +3739,138 @@ export async function uploadImageFile(file: File, folder = 'products'): Promise<
 // ----------------------------------------------------
 // CUSTOMER IDENTITY & ACCOUNT SERVICES
 // ----------------------------------------------------
+// ----------------------------------------------------
+// CUSTOMER AUTH & MULTI-COMPANY LINKING
+// ----------------------------------------------------
+export function getCompanyFriendlyName(scope?: string): string {
+  if (scope === 'am-distributors') return 'A.M. Distributors Chiplun';
+  if (scope === 'nexalus-innovations') return 'Nexalus Innovations';
+  return 'Nexalus Innovations LLP';
+}
+
+export function isCustomerLinkedToCompany(user?: AdminUser | null, scope?: CompanyScopeId): boolean {
+  if (!user) return false;
+  const target: CompanyScopeId = scope || 'nexalus-llp';
+  if (Array.isArray(user.associatedCompanies) && user.associatedCompanies.length > 0) {
+    return user.associatedCompanies.includes(target);
+  }
+  if (user.primaryCompany) {
+    return user.primaryCompany === target;
+  }
+  return target === 'nexalus-llp';
+}
+
+export async function linkCustomerToCompany(
+  uid: string,
+  targetCompany: CompanyScopeId,
+  customAddress?: CustomerDeliveryAddress
+): Promise<AdminUser> {
+  const users = await getUsers();
+  let user = users.find(u => u.uid === uid);
+  const now = new Date().toISOString();
+  const compName = getCompanyFriendlyName(targetCompany);
+  const compPrefix = targetCompany === 'am-distributors' ? 'AM-DEPOT-' : targetCompany === 'nexalus-innovations' ? 'TECH-' : 'CUST-';
+  const scopedSubscriberId = compPrefix + Math.floor(100000 + Math.random() * 900000);
+
+  const existingCompanies: CompanyScopeId[] = Array.isArray(user?.associatedCompanies)
+    ? [...user.associatedCompanies]
+    : [user?.primaryCompany || 'nexalus-llp'];
+
+  if (!existingCompanies.includes(targetCompany)) {
+    existingCompanies.push(targetCompany);
+  }
+
+  // When linking, a new company profile starts fresh with only customAddress if provided
+  const deliveryAddr: CustomerDeliveryAddress = customAddress && customAddress.address ? customAddress : {
+    address: '',
+    city: targetCompany === 'am-distributors' ? 'Chiplun' : 'Sangli',
+    state: 'Maharashtra',
+    postcode: targetCompany === 'am-distributors' ? '415605' : '416416',
+    country: 'India'
+  };
+
+  const existingProfiles = user?.companyProfiles || {};
+  const updatedProfiles: Record<string, CustomerCompanyProfile> = {
+    ...existingProfiles,
+    [targetCompany]: {
+      companyScope: targetCompany,
+      companyName: compName,
+      joinedAt: now,
+      deliveryAddress: deliveryAddr,
+      subscriberId: scopedSubscriberId
+    }
+  };
+
+  const updatedUser: AdminUser = {
+    ...(user || {
+      uid,
+      displayName: 'Customer',
+      email: '',
+      role: 'customer',
+      active: true,
+      createdAt: now
+    }),
+    associatedCompanies: existingCompanies,
+    companyProfiles: updatedProfiles,
+    updatedAt: now
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      await updateDoc(doc(db, 'users', uid), {
+        associatedCompanies: existingCompanies,
+        companyProfiles: updatedProfiles,
+        updatedAt: now
+      });
+      await addAuditLog('CUSTOMER_LINK_COMPANY', `Linked customer ${user?.displayName || uid} to ${compName}`, undefined, user?.email);
+    } catch (e) {
+      console.warn('Firestore linkCustomerToCompany error:', e);
+    }
+  }
+
+  // Update local storage cache
+  const updatedUsers = users.map(u => (u.uid === uid ? updatedUser : u));
+  setLocalItem(STORAGE_KEYS.USERS, updatedUsers);
+  try {
+    localStorage.setItem('nexalus_active_user_session_v3', JSON.stringify(updatedUser));
+  } catch {}
+  try {
+    window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: 'v10_nexalus_store_users' } }));
+  } catch {}
+
+  return updatedUser;
+}
+
+export async function deductProductStock(productId: string, quantityToDeduct: number = 1): Promise<void> {
+  const products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+  const prod = products.find(p => p.id === productId || p.slug === productId);
+  if (!prod) return;
+
+  const current = prod.stockQuantity !== undefined ? prod.stockQuantity : 25;
+  const newQty = Math.max(0, current - quantityToDeduct);
+  const newAvailability = newQty === 0 ? 'out_of_stock' : prod.availability;
+
+  await updateProduct(prod.id, {
+    stockQuantity: newQty,
+    availability: newAvailability
+  });
+}
+
+export async function restoreProductStock(productId: string, quantityToRestore: number = 1): Promise<void> {
+  const products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+  const prod = products.find(p => p.id === productId || p.slug === productId);
+  if (!prod) return;
+
+  const current = prod.stockQuantity !== undefined ? prod.stockQuantity : 0;
+  const newQty = current + quantityToRestore;
+  const newAvailability = newQty > 0 && prod.availability === 'out_of_stock' ? 'in_stock' : prod.availability;
+
+  await updateProduct(prod.id, {
+    stockQuantity: newQty,
+    availability: newAvailability
+  });
+}
+
 export async function registerCustomer(data: CustomerRegistrationData): Promise<{ user: AdminUser }> {
   const cleanEmail = data.email.trim().toLowerCase();
   const displayName = data.displayName.trim() || `${data.firstName || ''} ${data.lastName || ''}`.trim();
@@ -3505,6 +3880,8 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
   const phone = data.phone.trim();
   const now = new Date().toISOString();
   const subscriberId = 'SUB-' + Math.floor(100000 + Math.random() * 900000);
+  const compScope: CompanyScopeId = data.companyScope || 'nexalus-llp';
+  const compName = getCompanyFriendlyName(compScope);
 
   let uid = '';
 
@@ -3530,6 +3907,24 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
       email: cleanEmail,
       role: 'customer',
       phone,
+      primaryCompany: compScope,
+      associatedCompanies: [compScope],
+      companyProfiles: {
+        [compScope]: {
+          companyScope: compScope,
+          companyName: compName,
+          joinedAt: now,
+          deliveryAddress: {
+            address: data.deliveryAddress.address.trim(),
+            city: data.deliveryAddress.city.trim(),
+            state: data.deliveryAddress.state.trim() || 'Maharashtra',
+            postcode: data.deliveryAddress.postcode.trim(),
+            country: data.deliveryAddress.country.trim() || 'India',
+            additionalDeliveryInfo: data.deliveryAddress.additionalDeliveryInfo?.trim() || ''
+          },
+          subscriberId
+        }
+      },
       deliveryAddress: {
         address: data.deliveryAddress.address.trim(),
         city: data.deliveryAddress.city.trim(),
@@ -3538,7 +3933,7 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
         country: data.deliveryAddress.country.trim() || 'India',
         additionalDeliveryInfo: data.deliveryAddress.additionalDeliveryInfo?.trim() || ''
       },
-      planName: 'One Broadband Fiber Ultra 100Mbps',
+      planName: compScope === 'am-distributors' ? 'Packaged Mineral Water Depot Delivery' : 'One Broadband Fiber Ultra 100Mbps',
       planFee: 470.82,
       subscriptionStatus: 'Active',
       associatedLco: 'Nexalus Innovations LLP_Sangli',
@@ -3554,7 +3949,7 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
     await setDoc(doc(db, 'users', uid), customerUser, { merge: true });
 
     try {
-      await addAuditLog('CUSTOMER_REGISTER', `New customer registered: ${displayName} (${cleanEmail})`, undefined, cleanEmail);
+      await addAuditLog('CUSTOMER_REGISTER', `New customer registered: ${displayName} (${cleanEmail}) at ${compName}`, undefined, cleanEmail);
     } catch (logErr) {
       console.warn('Could not record customer registration audit log:', logErr);
     }
@@ -3585,6 +3980,24 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
     email: cleanEmail,
     role: 'customer',
     phone,
+    primaryCompany: compScope,
+    associatedCompanies: [compScope],
+    companyProfiles: {
+      [compScope]: {
+        companyScope: compScope,
+        companyName: compName,
+        joinedAt: now,
+        deliveryAddress: {
+          address: data.deliveryAddress.address.trim(),
+          city: data.deliveryAddress.city.trim(),
+          state: data.deliveryAddress.state.trim() || 'Maharashtra',
+          postcode: data.deliveryAddress.postcode.trim(),
+          country: data.deliveryAddress.country.trim() || 'India',
+          additionalDeliveryInfo: data.deliveryAddress.additionalDeliveryInfo?.trim() || ''
+        },
+        subscriberId
+      }
+    },
     deliveryAddress: {
       address: data.deliveryAddress.address.trim(),
       city: data.deliveryAddress.city.trim(),
@@ -3593,7 +4006,7 @@ export async function registerCustomer(data: CustomerRegistrationData): Promise<
       country: data.deliveryAddress.country.trim() || 'India',
       additionalDeliveryInfo: data.deliveryAddress.additionalDeliveryInfo?.trim() || ''
     },
-    planName: 'One Broadband Fiber Ultra 100Mbps',
+    planName: compScope === 'am-distributors' ? 'Packaged Mineral Water Depot Delivery' : 'One Broadband Fiber Ultra 100Mbps',
     planFee: 470.82,
     subscriptionStatus: 'Active',
     associatedLco: 'Nexalus Innovations LLP_Sangli',
@@ -3619,6 +4032,8 @@ export async function updateCustomerProfile(
     dateOfBirth?: string;
     phone?: string;
     deliveryAddress?: CustomerDeliveryAddress;
+    companyScope?: CompanyScopeId;
+    businessName?: string;
   }
 ): Promise<AdminUser | null> {
   const now = new Date().toISOString();
@@ -3629,6 +4044,43 @@ export async function updateCustomerProfile(
       const snap = await getDoc(userDocRef);
       if (snap.exists()) {
         const currentData = snap.data() as AdminUser;
+        const compScope = updates.companyScope;
+        let updatedCompanyProfiles = currentData.companyProfiles;
+        if (compScope) {
+          const existingProfiles = currentData.companyProfiles || {};
+          const compPrefix = compScope === 'am-distributors' ? 'AM-' : compScope === 'nexalus-innovations' ? 'TECH-' : 'SUB-';
+          const existingSub = existingProfiles[compScope]?.subscriberId;
+          const isInvalidSub = compScope !== 'nexalus-llp' && (!existingSub || existingSub.startsWith('SUB-'));
+          const cleanSubId = (!isInvalidSub && existingSub)
+            ? existingSub
+            : (compScope === 'nexalus-llp'
+                ? (currentData.subscriberId || ('SUB-' + Math.floor(100000 + Math.random() * 900000)))
+                : (compPrefix + Math.floor(100000 + Math.random() * 900000)));
+
+          const currentProfile = existingProfiles[compScope] || {
+            companyScope: compScope,
+            companyName: getCompanyFriendlyName(compScope),
+            joinedAt: now,
+            subscriberId: cleanSubId
+          };
+          updatedCompanyProfiles = {
+            ...existingProfiles,
+            [compScope]: {
+              ...currentProfile,
+              subscriberId: cleanSubId,
+              businessName: updates.businessName !== undefined ? updates.businessName.trim() : (currentProfile as any).businessName,
+              deliveryAddress: updates.deliveryAddress ? {
+                address: updates.deliveryAddress.address.trim(),
+                city: updates.deliveryAddress.city.trim(),
+                state: updates.deliveryAddress.state.trim(),
+                postcode: updates.deliveryAddress.postcode.trim(),
+                country: updates.deliveryAddress.country.trim() || 'India',
+                additionalDeliveryInfo: updates.deliveryAddress.additionalDeliveryInfo?.trim() || ''
+              } : currentProfile.deliveryAddress
+            }
+          };
+        }
+
         const merged: AdminUser = {
           ...currentData,
           displayName: updates.displayName?.trim() || currentData.displayName,
@@ -3644,6 +4096,7 @@ export async function updateCustomerProfile(
             country: updates.deliveryAddress.country.trim() || 'India',
             additionalDeliveryInfo: updates.deliveryAddress.additionalDeliveryInfo?.trim() || ''
           } : currentData.deliveryAddress,
+          companyProfiles: updatedCompanyProfiles || currentData.companyProfiles,
           updatedAt: now
         };
 
@@ -3654,6 +4107,7 @@ export async function updateCustomerProfile(
           ...(updates.dateOfBirth !== undefined ? { dateOfBirth: updates.dateOfBirth.trim() } : {}),
           ...(updates.phone !== undefined ? { phone: updates.phone.trim() } : {}),
           ...(updates.deliveryAddress ? { deliveryAddress: merged.deliveryAddress } : {}),
+          ...(updatedCompanyProfiles ? { companyProfiles: updatedCompanyProfiles } : {}),
           updatedAt: now
         });
 

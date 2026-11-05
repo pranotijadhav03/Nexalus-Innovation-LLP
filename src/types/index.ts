@@ -18,7 +18,7 @@ export interface Brand {
   updatedAt: string;
 }
 
-export type CompanyScopeId = 'nexalus-llp' | 'nexalus-innovations' | 'am-distributors';
+export type CompanyScopeId = 'nexalus-llp' | 'nexalus-innovations' | 'am-distributors' | 'nexalus' | 'am';
 
 export interface ProductCategory {
   id: string;
@@ -38,7 +38,7 @@ export interface Product {
   companyName?: string;
   name: string;
   slug: string;
-  modelNumber: string;
+  modelNumber?: string;
   categoryId: string;
   categoryName: string;
   description: string;
@@ -47,8 +47,14 @@ export interface Product {
   price?: number;
   currency?: string;
   availability: 'in_stock' | 'out_of_stock' | 'pre_order' | 'contact_for_price';
+  stockQuantity?: number;
+  lowStockThreshold?: number;
   featured: boolean;
   published: boolean;
+  parentShowcase?: 'cctv' | 'fiber' | 'networking' | 'none';
+  parentShowcaseOrder?: number;
+  divisionShowcase?: 'cctv' | 'fiber' | 'networking' | 'none';
+  divisionShowcaseOrder?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -95,10 +101,12 @@ export interface PlanOrder {
   providerName: string;
   speed: string;
   price: number | string;
+  quantity?: number;
+  unitPrice?: number;
   currency?: string;
   billingPeriod: string;
-  brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
-  companyId?: 'nexalus' | 'corporate_master';
+  brandId?: BrandId | string;
+  companyId?: CompanyScopeId | string;
   customerName: string;
   phone: string;
   email: string;
@@ -139,6 +147,9 @@ export interface CartPlanItem {
   price: number | string;
   billingPeriod: string;
   brandId?: BrandId | 'one-broadband' | 'nexalus-innovations';
+  companyId?: string;
+  quantity?: number;
+  unitPrice?: number;
   addedAt: string;
 }
 
@@ -440,6 +451,18 @@ export interface CustomerDeliveryAddress {
   additionalDeliveryInfo?: string;
 }
 
+export interface CustomerCompanyProfile {
+  companyScope: CompanyScopeId;
+  companyName: string;
+  businessName?: string;
+  joinedAt: string;
+  deliveryAddress?: CustomerDeliveryAddress;
+  planName?: string;
+  subscriptionStatus?: 'Active' | 'Pending' | 'Expired';
+  subscriberId?: string;
+  notes?: string;
+}
+
 export interface CustomerRegistrationData {
   displayName: string;
   firstName?: string;
@@ -449,6 +472,7 @@ export interface CustomerRegistrationData {
   phone: string;
   password: string;
   deliveryAddress: CustomerDeliveryAddress;
+  companyScope?: CompanyScopeId;
 }
 
 export interface AdminUser {
@@ -463,6 +487,9 @@ export interface AdminUser {
   assignedBrandId?: BrandId | 'all';
   phone?: string;
   deliveryAddress?: CustomerDeliveryAddress;
+  associatedCompanies?: CompanyScopeId[];
+  primaryCompany?: CompanyScopeId;
+  companyProfiles?: Record<string, CustomerCompanyProfile>;
   active: boolean;
   createdAt: string;
   lastLogin?: string;
@@ -517,6 +544,84 @@ export interface CustomSection {
   order: number;
 }
 
+export interface NavItemConfig {
+  id: string;
+  label: string;
+  path: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface NavbarSettings {
+  logoUrl?: string;
+  brandName?: string;
+  tagline?: string;
+  topBannerText?: string;
+  topBannerPhone?: string;
+  topBannerLinkText?: string;
+  topBannerLinkPath?: string;
+  showTopBanner?: boolean;
+  navLinks?: NavItemConfig[];
+  portalButtonLabel?: string;
+  showPortalButton?: boolean;
+  quoteButtonLabel?: string;
+  showQuoteButton?: boolean;
+}
+
+export interface BrandDivisionCard {
+  id: string;
+  name: string;
+  categoryTagline: string;
+  description: string;
+  image: string;
+  highlights: string[];
+  destinationPath: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface EnvironmentCategory {
+  id: string;
+  label: string;
+  title: string;
+  tagline?: string;
+  description: string;
+  image: string;
+  highlights: Array<{ title: string; subtitle: string }>;
+  scopeSummary: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface WhereServicesUsedSettings {
+  badge?: string;
+  title?: string;
+  description?: string;
+  environments?: EnvironmentCategory[];
+}
+
+export interface DistributionVertical {
+  id: string;
+  name: string;
+  description: string;
+  image?: string;
+  iconName?: string;
+  highlights: string[];
+  visible: boolean;
+  order: number;
+}
+
+export interface FooterSettings {
+  phone?: string;
+  email?: string;
+  address?: string;
+  workingHours?: string;
+  dispatchSchedule?: string;
+  description?: string;
+  socials?: Record<string, string>;
+  visible?: boolean;
+}
+
 export interface SiteBanner {
   customSections?: CustomSection[];
   id: string;
@@ -539,6 +644,22 @@ export interface SiteBanner {
   showFaqs?: boolean;
   showContact?: boolean;
   slides?: HeroSlide[];
+  navbarSettings?: NavbarSettings;
+  ourBrandsCards?: BrandDivisionCard[];
+  whereServicesUsed?: WhereServicesUsedSettings;
+  distributionVerticals?: DistributionVertical[];
+  footerSettings?: FooterSettings;
+  showcaseProductIds?: {
+    cctv?: string[];
+    fiber?: string[];
+    networking?: string[];
+  };
+  sectionsOrder?: Array<{
+    id: string;
+    name: string;
+    order: number;
+    visible: boolean;
+  }>;
   createdAt?: string;
   updatedAt?: string;
 }

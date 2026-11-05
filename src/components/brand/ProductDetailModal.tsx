@@ -52,7 +52,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const whatsappMessage = encodeURIComponent(
     `Hello Nexalus Innovations, I would like to order / purchase this product:\n\n` +
     `*Product:* ${product.name}\n` +
-    `*Model Number:* ${product.modelNumber}\n` +
+    (product.modelNumber ? `*Model Number:* ${product.modelNumber}\n` : '') +
     `*Category:* ${product.categoryName}\n` +
     `*Price:* ${formatPrice(product.price)}\n\n` +
     `Please share stock availability, delivery schedule, and payment details.`
@@ -60,12 +60,17 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   const specList = Object.entries(product.specifications || {});
 
+  const stockQty = product.stockQuantity !== undefined ? product.stockQuantity : 15;
+  const lowThreshold = product.lowStockThreshold !== undefined ? product.lowStockThreshold : 5;
+  const isOutOfStock = product.availability === 'out_of_stock' || stockQty <= 0;
+  const isLowStock = !isOutOfStock && stockQty <= lowThreshold;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={product.name}
-      subtitle={`Model: ${product.modelNumber} • Category: ${product.categoryName}`}
+      subtitle={product.modelNumber ? `Model: ${product.modelNumber} • Category: ${product.categoryName}` : `Category: ${product.categoryName}`}
       maxWidth="3xl"
     >
       <div className="space-y-6">
@@ -77,7 +82,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {imgError ? (
                 <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-100 rounded-xl">
                   <Camera className="w-12 h-12 text-slate-400 mb-2" />
-                  <span className="text-xs font-mono text-slate-500">{product.modelNumber}</span>
+                  <span className="text-xs font-mono text-slate-500">{product.modelNumber || product.name}</span>
                 </div>
               ) : (
                 <img
@@ -145,10 +150,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <Layers className="w-3 h-3" />
                 {product.categoryName}
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                <CheckCircle2 className="w-3 h-3" />
-                {product.availability === 'in_stock' ? 'In Stock • Ready to Dispatch' : 'Available on Order'}
-              </span>
+              {isOutOfStock ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                  <span>Out of Stock • Available on Pre-Order</span>
+                </span>
+              ) : isLowStock ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
+                  <span>🔥</span>
+                  <span>Only {stockQty} left in stock — Order Soon!</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>In Stock • Ready to Dispatch</span>
+                </span>
+              )}
             </div>
 
             {/* Price Box */}
@@ -162,9 +179,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     {formatPrice(product.price)}
                   </div>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-blue-200 text-blue-700 shadow-2xs">
-                  Model: {product.modelNumber}
-                </span>
+                {product.modelNumber && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-blue-200 text-blue-700 shadow-2xs">
+                    Model: {product.modelNumber}
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />

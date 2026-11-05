@@ -60,10 +60,10 @@ export const CpPlusProductDetailPage: React.FC = () => {
       <BrandHeader
         brandId="cp-plus"
         title={product.name}
-        subtitle={`Model Number: ${product.modelNumber} — Category: ${product.categoryName}`}
+        subtitle={product.modelNumber ? `Model Number: ${product.modelNumber} — Category: ${product.categoryName}` : `Category: ${product.categoryName}`}
         breadcrumbs={[
           { label: 'Products', path: '/brands/cp-plus/products' },
-          { label: product.modelNumber }
+          { label: product.modelNumber || product.name }
         ]}
       />
 

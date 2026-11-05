@@ -47,6 +47,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const isInnovationsConsole = activeConsole === 'nexalus-innovations' || isInnovationsAdmin;
   const isStrictAmOnly = isAmConsole;
 
+  const getConsoleLink = (path: string) => {
+    if (isAmConsole) {
+      return path.includes('?') ? `${path}&console=am-distributors` : `${path}?console=am-distributors`;
+    }
+    if (isInnovationsConsole) {
+      return path.includes('?') ? `${path}&console=nexalus-innovations` : `${path}?console=nexalus-innovations`;
+    }
+    return path;
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -132,7 +142,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
             <div className="space-y-1">
               <NavLink
-                to="/admin"
+                to={getConsoleLink('/admin')}
                 end
                 onClick={onClose}
                 className={({ isActive }) =>
@@ -158,7 +168,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
             <div className="space-y-1">
               <NavLink
-                to="/admin/products"
+                to={getConsoleLink('/admin/products')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -173,7 +183,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               </NavLink>
 
               <NavLink
-                to="/admin/categories"
+                to={getConsoleLink('/admin/categories')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -189,7 +199,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
               {!isStrictAmOnly && (
                 <NavLink
-                  to="/admin/plans"
+                  to={getConsoleLink('/admin/plans')}
                   onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -206,7 +216,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
               {!isStrictAmOnly && (
               <NavLink
-                to="/admin/orders"
+                to={getConsoleLink('/admin/orders')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -223,7 +233,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
               {!isStrictAmOnly && isSuperAdmin && (
                 <NavLink
-                  to="/admin/receipt-settings"
+                  to={getConsoleLink('/admin/receipt-settings')}
                   onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -239,7 +249,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               )}
 
               <NavLink
-                to="/admin/projects"
+                to={getConsoleLink('/admin/projects')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -254,7 +264,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               </NavLink>
 
               <NavLink
-                to="/admin/services"
+                to={getConsoleLink('/admin/services')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -271,7 +281,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
 
               <NavLink
-                to="/admin/service-areas"
+                to={getConsoleLink('/admin/service-areas')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -294,7 +304,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
             <div className="space-y-1">
               <NavLink
-                to="/admin/enquiries"
+                to={getConsoleLink('/admin/enquiries')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -309,7 +319,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               </NavLink>
 
               <NavLink
-                to="/admin/team"
+                to={getConsoleLink('/admin/team')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -324,7 +334,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               </NavLink>
 
               <NavLink
-                to="/admin/faqs"
+                to={getConsoleLink('/admin/faqs')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -340,7 +350,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
               {isSuperAdmin && (
                 <NavLink
-                  to="/admin/users?tab=customers"
+                  to={getConsoleLink('/admin/users?tab=customers')}
                   onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -364,7 +374,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
             <div className="space-y-1">
               <NavLink
-                to="/admin/content"
+                to={getConsoleLink('/admin/content')}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -390,7 +400,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
 
                 <NavLink
-                  to="/admin/seo"
+                  to={getConsoleLink('/admin/seo')}
                   onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${

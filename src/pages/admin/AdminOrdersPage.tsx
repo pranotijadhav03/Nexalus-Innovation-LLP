@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { AdminOutletContext } from '../../components/admin/AdminLayout';
 import {
   subscribeToPlanOrders,
   createPlanOrder,
@@ -58,8 +59,16 @@ const MAHARASHTRA_CITIES = [
 ];
 
 export const AdminOrdersPage: React.FC = () => {
-  const { currentUser, isSuperAdmin, isInnovationsAdmin, canManageBrand } = useAuth();
-  const outletCtx = useOutletContext<{ activeBrandFilter?: BrandId | 'all' }>();
+  const { currentUser, isSuperAdmin, isInnovationsAdmin, isAmAdmin, canManageBrand } = useAuth();
+  const outletCtx = useOutletContext<AdminOutletContext>();
+  const [searchParams] = useSearchParams();
+  const consoleParam = searchParams.get('console');
+  const effectiveConsole: 'master' | 'nexalus-innovations' | 'am-distributors' =
+    isAmAdmin || consoleParam === 'am-distributors' || outletCtx?.activeConsole === 'am-distributors'
+      ? 'am-distributors'
+      : isInnovationsAdmin || consoleParam === 'nexalus-innovations' || outletCtx?.activeConsole === 'nexalus-innovations'
+      ? 'nexalus-innovations'
+      : 'master';
   const { success, error } = useToast();
 
   const [orders, setOrders] = useState<PlanOrder[]>(() => getCachedPlanOrders());
@@ -307,7 +316,18 @@ export const AdminOrdersPage: React.FC = () => {
           setSelectedOrder(null);
         }
       } else {
-        // Create New Order
+        // Create New Order scoped to active company
+        const assignedComp = effectiveConsole === 'am-distributors'
+          ? 'am-distributors'
+          : effectiveConsole === 'nexalus-innovations'
+          ? 'nexalus-innovations'
+          : 'nexalus-llp';
+        const assignedBrand = effectiveConsole === 'am-distributors'
+          ? 'am-distributors'
+          : effectiveConsole === 'nexalus-innovations'
+          ? 'nexalus-innovations'
+          : 'nexalus';
+
         const created = await createPlanOrder({
           customerName: customerName.trim(),
           phone: phone.trim(),
@@ -325,7 +345,8 @@ export const AdminOrdersPage: React.FC = () => {
           status: orderStatus,
           notes: notes.trim(),
           assignedEngineer: assignedEngineer.trim(),
-          brandId: 'one-broadband'
+          brandId: assignedBrand,
+          companyId: assignedComp
         });
 
         success('Order Created', `Order #${created.id} recorded in Firebase successfully.`);
@@ -354,15 +375,48 @@ export const AdminOrdersPage: React.FC = () => {
     success('Copied', `${label} copied to clipboard.`);
   };
 
-  // Filter Orders scoped to company workspace
-  const activeBrand = outletCtx?.activeBrandFilter;
-  const isAmConsole = activeBrand === 'am-distributors';
+  // Strictly filter orders scoped to the active company workspace
+  const scopedOrders = React.useMemo(() => {
+    return orders.filter((order) => {
+      const orderComp = (order.companyId || '').trim();
+      const orderBrand = (order.brandId || '').trim();
+      const planNameLower = (order.planName || '').toLowerCase();
+      const providerLower = (order.providerName || '').toLowerCase();
+      const isBroadband = Boolean(
+        order.providerName ||
+        planNameLower.includes('airtel') ||
+        planNameLower.includes('bsnl') ||
+        planNameLower.includes('railwire') ||
+        planNameLower.includes('broadband') ||
+        planNameLower.includes('mbps') ||
+        providerLower.includes('airtel') ||
+        providerLower.includes('bsnl') ||
+        providerLower.includes('railwire') ||
+        providerLower.includes('one')
+      );
 
-  const filteredOrders = orders.filter((order) => {
-    // If viewing A.M. Distributors depot console, broadband orders are out of scope
-    if (isAmConsole) {
-      return false;
-    }
+      if (effectiveConsole === 'am-distributors') {
+        if (isBroadband) return false;
+        return orderComp === 'am-distributors' || orderComp === 'am' || orderBrand === 'am-distributors';
+      }
+
+      if (effectiveConsole === 'nexalus-innovations') {
+        // Child company hardware/installation orders ONLY.
+        // MUST NEVER include broadband plans or parent corporate orders!
+        if (isBroadband || orderComp === 'nexalus-llp' || orderComp === 'corporate') {
+          return false;
+        }
+        return orderComp === 'nexalus-innovations' || orderBrand === 'nexalus-innovations';
+      }
+
+      // Master Console: Parent Company (Nexalus Innovations LLP)
+      // Master handles all broadband plans and corporate parent orders
+      if (isBroadband) return true;
+      return orderComp === 'nexalus-llp' || orderComp === 'corporate' || orderBrand === 'nexalus' || !orderComp;
+    });
+  }, [orders, effectiveConsole]);
+
+  const filteredOrders = scopedOrders.filter((order) => {
     const s = search.toLowerCase();
     const matchesSearch =
       !s ||
@@ -382,14 +436,14 @@ export const AdminOrdersPage: React.FC = () => {
     return matchesSearch && matchesStatus && matchesProvider;
   });
 
-  // Status Metrics
-  const totalCount = orders.length;
-  const newCount = orders.filter((o) => o.status === 'new').length;
-  const scheduledCount = orders.filter(
+  // Status Metrics based on scopedOrders
+  const totalCount = scopedOrders.length;
+  const newCount = scopedOrders.filter((o) => o.status === 'new').length;
+  const scheduledCount = scopedOrders.filter(
     (o) => o.status === 'confirmed' || o.status === 'installation_scheduled'
   ).length;
-  const convertedCount = orders.filter((o) => o.status === 'converted').length;
-  const cancelledCount = orders.filter((o) => o.status === 'cancelled').length;
+  const convertedCount = scopedOrders.filter((o) => o.status === 'converted').length;
+  const cancelledCount = scopedOrders.filter((o) => o.status === 'cancelled').length;
 
   return (
     <div className="space-y-6">
@@ -398,7 +452,11 @@ export const AdminOrdersPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-              Live Broadband Provisioning Desk
+              {effectiveConsole === 'nexalus-innovations'
+                ? 'Nexalus Innovations Work Desk'
+                : effectiveConsole === 'am-distributors'
+                ? 'A.M. Distributors Depot Desk'
+                : 'Live Broadband Provisioning Desk'}
             </span>
             <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -406,10 +464,18 @@ export const AdminOrdersPage: React.FC = () => {
             </span>
           </div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 mt-1">
-            Broadband Plan Orders & Bookings
+            {effectiveConsole === 'nexalus-innovations'
+              ? 'Nexalus Innovations Orders & Deployments'
+              : effectiveConsole === 'am-distributors'
+              ? 'A.M. Distributors Wholesale Orders'
+              : 'Broadband Plan Orders & Bookings'}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage customer plan orders, provisioning requests, and door-to-door installation status.
+            {effectiveConsole === 'nexalus-innovations'
+              ? 'Manage commercial CCTV surveillance installations, networking hardware, and turnkey engineering orders.'
+              : effectiveConsole === 'am-distributors'
+              ? 'Manage packaged mineral water, commercial dairy, and cold-chain ice cream wholesale dispatch.'
+              : 'Manage customer plan orders, provisioning requests, and door-to-door installation status for Nexalus Innovations LLP.'}
           </p>
         </div>
 

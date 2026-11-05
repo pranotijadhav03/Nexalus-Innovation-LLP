@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Shield,
@@ -10,6 +10,8 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Activity,
   PhoneCall
 } from 'lucide-react';
@@ -19,29 +21,86 @@ import { ProjectGallerySection } from '../../../components/common/ProjectGallery
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
 import { CustomSectionsRenderer } from '../../../components/common/CustomSectionsRenderer';
-import { getProducts, subscribeToBanners, getCachedBanners } from '../../../firebase/services';
-import { SiteBanner } from '../../../types';
-import { initialProducts } from '../../../data/initialData';
+import { getProducts, getCachedProducts, subscribeToProducts, subscribeToBanners, getCachedBanners, getCachedCategories, subscribeToCategories } from '../../../firebase/services';
+import { SiteBanner, ProductCategory } from '../../../types';
+import { initialProducts, DEFAULT_INNOVATIONS_SECTIONS, DEFAULT_INNOVATIONS_SLIDES } from '../../../data/initialData';
 import { Product } from '../../../types';
 
 export const NexalusInnovationsPage: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-  const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
+  const [allProducts, setAllProducts] = useState<Product[]>(() => getCachedProducts('nexalus-innovations'));
   const [heroBanner, setHeroBanner] = useState<SiteBanner | null>(() => {
     const list = getCachedBanners('nexalus-innovations');
     const found = list.find(b => b.id === 'ban-innovations' || b.brandId === 'nexalus-innovations');
     return found || null;
   });
 
+  const [innoCategories, setInnoCategories] = useState<ProductCategory[]>(() =>
+    getCachedCategories('nexalus-innovations')
+  );
+
+  const cctvCategory = innoCategories.find(c => c.id === 'cat-nexalus-cctv');
+  const fiberCategory = innoCategories.find(c => c.id === 'cat-nexalus-internet');
+  const networkCategory = innoCategories.find(c => c.id === 'cat-nexalus-networking');
+  const electronicsCategory = innoCategories.find(c => c.id === 'cat-nexalus-electronics');
+
   // Independent toggle states for the 3 Z-pattern product sections (default open)
   const [showCctvProducts, setShowCctvProducts] = useState(true);
   const [showInternetProducts, setShowInternetProducts] = useState(true);
   const [showNetworkProducts, setShowNetworkProducts] = useState(true);
 
+  // Dynamic Multi-Slide Carousel State
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const heroSlides = useMemo(() => {
+    const raw = (heroBanner?.slides && heroBanner.slides.length > 0)
+      ? heroBanner.slides
+      : DEFAULT_INNOVATIONS_SLIDES;
+    return raw.filter(s => (s as any).visible !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [heroBanner?.slides]);
+
+  // Ensure currentSlide is within bounds when slides change
+  useEffect(() => {
+    if (currentSlide >= heroSlides.length) {
+      setCurrentSlide(0);
+    }
+  }, [heroSlides.length, currentSlide]);
+
+  // Automatic slide rotation every 5 seconds
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
+
+  const activeSlide = heroSlides[currentSlide] || heroSlides[0];
+
+  const handlePrevSlide = () => {
+    setCurrentSlide(prev => (prev === 0 ? heroSlides.length - 1 : prev - 1));
+  };
+
+  const handleNextSlide = () => {
+    setCurrentSlide(prev => (prev + 1) % heroSlides.length);
+  };
+
+  const innoSections = React.useMemo(() => {
+    const list = (heroBanner?.sectionsOrder && heroBanner.sectionsOrder.length > 0)
+      ? heroBanner.sectionsOrder
+      : DEFAULT_INNOVATIONS_SECTIONS;
+    return [...list].sort((a, b) => a.order - b.order);
+  }, [heroBanner?.sectionsOrder]);
+
+  const isSectionVisible = (secId: string) => {
+    const found = innoSections.find(s => s.id === secId);
+    return found ? found.visible !== false : true;
+  };
+
   useEffect(() => {
     async function load() {
       try {
-        const prods = await getProducts(undefined, true);
+        const prods = await getProducts('nexalus-innovations', true);
         if (prods && prods.length > 0) {
           setAllProducts(prods);
         }
@@ -56,11 +115,21 @@ export const NexalusInnovationsPage: React.FC = () => {
       if (b) setHeroBanner(b);
     }, 'nexalus-innovations');
 
+    const unsubCategories = subscribeToCategories((cats) => {
+      if (cats && cats.length > 0) setInnoCategories(cats);
+    }, 'nexalus-innovations');
+
+    const unsubProducts = subscribeToProducts((prods) => {
+      if (prods && prods.length > 0) setAllProducts(prods);
+    }, 'nexalus-innovations');
+
     const handleUpdate = () => {
       load();
       const list = getCachedBanners('nexalus-innovations');
       const found = list.find(b => b.id === 'ban-innovations' || b.brandId === 'nexalus-innovations');
       if (found) setHeroBanner(found);
+      const freshCats = getCachedCategories('nexalus-innovations');
+      if (freshCats && freshCats.length > 0) setInnoCategories(freshCats);
     };
 
     window.addEventListener('nexalus_data_update', handleUpdate);
@@ -69,6 +138,8 @@ export const NexalusInnovationsPage: React.FC = () => {
 
     return () => {
       unsubBanners();
+      unsubCategories();
+      unsubProducts();
       window.removeEventListener('nexalus_data_update', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
       window.removeEventListener('focus', handleUpdate);
@@ -79,112 +150,173 @@ export const NexalusInnovationsPage: React.FC = () => {
     return allProducts.find(p => p.id === id) || initialProducts.find(p => p.id === id) || initialProducts[0];
   };
 
-  // 1. Exactly 6 Curated CCTV Products
-  const cctvProductIds = ['prod-cp-1', 'prod-cp-2', 'prod-cp-5', 'prod-cp-3', 'prod-cp-4', 'prod-cp-6'];
-  const cctvProducts = cctvProductIds.map(getProduct).filter(Boolean);
+  // 1. All 9 CCTV Products for Nexalus Innovations (N6)
+  const cctvProducts = React.useMemo(() => {
+    return allProducts.filter(p => (p.categoryId === 'cat-nexalus-cctv' || p.categoryName?.toLowerCase().includes('cctv')) && p.published !== false);
+  }, [allProducts]);
 
-  // 2. Exactly 6 Curated High-Speed Fiber Internet Products
-  const internetProductIds = ['prod-ob-1', 'prod-ob-2', 'prod-ob-6', 'prod-ob-3', 'prod-ob-4', 'prod-ob-5'];
-  const internetProducts = internetProductIds.map(getProduct).filter(Boolean);
+  // 2. All 6 High-Speed Fiber Internet Products (N7)
+  const internetProducts = React.useMemo(() => {
+    return allProducts.filter(p => (p.categoryId === 'cat-nexalus-internet' || p.categoryName?.toLowerCase().includes('fiber') || p.categoryName?.toLowerCase().includes('internet')) && p.published !== false);
+  }, [allProducts]);
 
-  // 3. Exactly 6 Curated Enterprise Networking Products
-  const networkProductIds = ['prod-itti-6', 'prod-itti-1', 'prod-itti-2', 'prod-itti-4', 'prod-itti-5', 'prod-itti-3'];
-  const networkProducts = networkProductIds.map(getProduct).filter(Boolean);
+  // 3. All 13 Enterprise Networking & Infrastructure Products (N8)
+  const networkProducts = React.useMemo(() => {
+    return allProducts.filter(p => (p.categoryId === 'cat-nexalus-networking' || p.categoryId === 'cat-nexalus-electronics' || p.categoryName?.toLowerCase().includes('network') || p.categoryName?.toLowerCase().includes('hardware')) && p.published !== false);
+  }, [allProducts]);
 
-  return (
-    <div className="flex flex-col w-full space-y-16 sm:space-y-24 pb-20">
-      {/* =========================================================================
-          HERO SECTION (CORPORATE NAVY & ELECTRIC INDIGO THEME)
-          ========================================================================= */}
-      <section className="relative w-full overflow-hidden bg-gradient-to-b from-slate-950 via-[#0d132b] to-slate-950 text-white py-16 sm:py-24 border-b border-indigo-950">
-        {/* Subtle background tech accents */}
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+  const renderInnovationsSection = (secId: string) => {
+    switch (secId) {
+      case 'sec-inno-hero':
+        return (
+          <div key="sec-inno-hero" id="sec-inno-hero">
+            {/* Dynamic Multi-Slide Animated Hero Carousel */}
+            <section className="relative overflow-hidden bg-slate-950 text-white pt-16 sm:pt-20 pb-20 sm:pb-24 border-b border-indigo-950 select-none min-h-[560px] sm:min-h-[620px] flex flex-col justify-center">
+              {/* Animated Sliding Background Track with Smooth Cross-Fade */}
+              <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                {heroSlides.map((slide, index) => {
+                  const isActive = index === currentSlide;
+                  return (
+                    <div
+                      key={slide.id}
+                      className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                        isActive ? 'opacity-85 z-10' : 'opacity-0 z-0 pointer-events-none'
+                      }`}
+                    >
+                      <img
+                        src={slide.imageUrl || '/images/tony-webster-server-room.jpg'}
+                        alt={slide.title}
+                        className={`w-full h-full object-cover filter brightness-90 contrast-105 transition-transform duration-7000 ease-out ${
+                          isActive ? 'scale-105' : 'scale-100'
+                        }`}
+                      />
+                    </div>
+                  );
+                })}
+                {/* Tech Gradients and Accent Lighting */}
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-transparent z-15" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/60 z-15" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-3xl pointer-events-none z-15" />
+              </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-            {/* Left Content Column */}
-            <div className="lg:col-span-7 space-y-6 text-left">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950 text-cyan-300 text-xs font-bold border border-indigo-700/50 shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block animate-pulse" />
-                  <span>Division of Nexalus Innovations LLP • Commercial Infrastructure</span>
-                </div>
-                {heroBanner?.badge && (
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/40 text-cyan-300 text-xs font-bold shadow-sm">
-                    <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                    <span>{heroBanner.badge}</span>
+              {/* Prev / Next Slide Controls */}
+              {heroSlides.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevSlide}
+                    className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 p-2.5 sm:p-3 rounded-full bg-slate-950/60 hover:bg-indigo-600 text-white/80 hover:text-white backdrop-blur-md border border-white/10 transition-all cursor-pointer shadow-lg active:scale-95 group"
+                    title="Previous Slide"
+                  >
+                    <ChevronLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextSlide}
+                    className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 p-2.5 sm:p-3 rounded-full bg-slate-950/60 hover:bg-indigo-600 text-white/80 hover:text-white backdrop-blur-md border border-white/10 transition-all cursor-pointer shadow-lg active:scale-95 group"
+                    title="Next Slide"
+                  >
+                    <ChevronRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+                  </button>
+                </>
+              )}
+
+              {/* Slide Content */}
+              <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                <div className="max-w-3xl space-y-5 text-left">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 text-cyan-300 text-xs font-bold border border-indigo-700/60 shadow-sm backdrop-blur-md">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block animate-pulse" />
+                      <span>{activeSlide.badge || 'Enterprise Turnkey Engineering • Nexalus Innovations LLP'}</span>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-                {heroBanner?.title || 'Nexalus Innovations'}
-              </h1>
+                  <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
+                    {activeSlide.title}
+                  </h1>
 
-              <p className="text-base sm:text-xl text-cyan-300 font-bold">
-                Commercial CCTV Surveillance • High-Speed Optical Fiber Internet • Enterprise IT Networking
-              </p>
+                  {activeSlide.subtitle && (
+                    <p className="text-base sm:text-xl text-cyan-300 font-bold leading-snug">
+                      {activeSlide.subtitle}
+                    </p>
+                  )}
 
-              <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
-                The specialized engineering division of <strong className="text-white">Nexalus Innovations LLP</strong>. We architect and deploy certified 4K CCTV surveillance grids, high-speed optical fiber internet, Layer-2/3 managed PoE+ switching fabrics, and structured cabling for enterprises and commercial facilities.
-              </p>
+                  {activeSlide.description && (
+                    <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
+                      {activeSlide.description}
+                    </p>
+                  )}
 
-              <div className="flex flex-wrap items-center gap-4 pt-2">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-900/50 px-6 py-3 rounded-xl transition-all cursor-pointer border border-indigo-400/30"
-                  onClick={() => setIsQuoteModalOpen(true)}
-                  icon={<ArrowRight className="w-4 h-4 text-cyan-300" />}
-                >
-                  Request Commercial Proposal
-                </Button>
-                <Link to="/brands/nexalus-innovations/contact">
-                  <Button
-                    variant="outline-white"
-                    size="lg"
-                    className="border-indigo-800 hover:bg-indigo-950 text-indigo-200 hover:text-white font-semibold px-5 py-3 rounded-xl"
-                    icon={<PhoneCall className="w-4 h-4 text-cyan-400" />}
-                  >
-                    Contact Technology Desk
-                  </Button>
-                </Link>
-                <Link to="/brands/nexalus-innovations/products">
-                  <Button
-                    variant="outline-white"
-                    size="lg"
-                    className="border-slate-800 hover:bg-white/5 text-slate-300 font-semibold px-4 py-3 rounded-xl"
-                  >
-                    Products
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Right Image Showcase Column: AUTHENTIC REAL PHOTOGRAPH */}
-            <div className="lg:col-span-5">
-              <div className="relative group rounded-3xl overflow-hidden border border-blue-800/40 bg-slate-900 shadow-2xl shadow-blue-950/50">
-                <img
-                  src={heroBanner?.imageUrl || "/images/tony-webster-server-room.jpg"}
-                  alt={heroBanner?.title || "Nexalus Innovations Commercial Technology Facility"}
-                  className="w-full h-[320px] sm:h-[380px] lg:h-[420px] object-cover object-[70%_center] group-hover:scale-105 transition-transform duration-700"
-                />
-
-                <div className="absolute top-4 left-4">
-                  <span className="px-3.5 py-1.5 rounded-full bg-blue-600 text-white text-xs font-black shadow-md uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-sky-300 animate-pulse" />
-                    Engineering Facility
-                  </span>
+                  <div className="flex flex-wrap items-center gap-4 pt-2">
+                    {activeSlide.primaryCtaText && (
+                      <Link to={activeSlide.primaryCtaLink || '/brands/nexalus-innovations/contact'}>
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-900/50 px-6 py-3 rounded-xl transition-all cursor-pointer border border-indigo-400/30"
+                          icon={<ArrowRight className="w-4 h-4 text-cyan-300" />}
+                        >
+                          {activeSlide.primaryCtaText}
+                        </Button>
+                      </Link>
+                    )}
+                    {activeSlide.secondaryCtaText && (
+                      <Link to={activeSlide.secondaryCtaLink || '/brands/nexalus-innovations/contact'}>
+                        <Button
+                          variant="outline-white"
+                          size="lg"
+                          className="border-indigo-800 hover:bg-indigo-950 text-indigo-200 hover:text-white font-semibold px-5 py-3 rounded-xl"
+                          icon={<PhoneCall className="w-4 h-4 text-cyan-400" />}
+                        >
+                          {activeSlide.secondaryCtaText}
+                        </Button>
+                      </Link>
+                    )}
+                    <Link to="/brands/nexalus-innovations/products">
+                      <Button
+                        variant="outline-white"
+                        size="lg"
+                        className="border-slate-800 hover:bg-white/5 text-slate-300 font-semibold px-4 py-3 rounded-xl"
+                      >
+                        Products Catalog
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* =========================================================================
+              {/* Dots / Tabs at Bottom */}
+              {heroSlides.length > 1 && (
+                <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 w-full">
+                  <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    {heroSlides.map((slide, idx) => {
+                      const isActive = idx === currentSlide;
+                      return (
+                        <button
+                          key={slide.id || idx}
+                          type="button"
+                          onClick={() => setCurrentSlide(idx)}
+                          className={`group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-900/40 border border-indigo-400/40'
+                              : 'bg-white/10 hover:bg-white/20 text-slate-400 hover:text-white border border-white/10'
+                          }`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-cyan-300 animate-pulse' : 'bg-slate-400'}`} />
+                          <span className="hidden sm:inline truncate max-w-[140px]">{slide.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+        );
+      case 'sec-inno-sla':
+        return (
+          <div key="sec-inno-sla" id="sec-inno-sla">
+            {/* =========================================================================
           ENGINEERING SLA METRICS BAR
           ========================================================================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-10 relative z-20 w-full">
@@ -230,18 +362,30 @@ export const NexalusInnovationsPage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* =========================================================================
+          </div>
+        );
+      case 'sec-inno-team':
+        return (
+          <div key="sec-inno-team" id="sec-inno-team">
+            {/* =========================================================================
           OUR TEAM - NEXALUS INNOVATIONS TECH DIVISION (DIRECTLY AFTER HERO)
           ========================================================================= */}
       {heroBanner?.showTeam !== false && (
         <OurTeamSection division="nexalus-innovations" bgClassName="bg-slate-50/50" />
       )}
-
-      {/* FEATURED PROJECT GALLERY */}
+          </div>
+        );
+      case 'sec-inno-projects':
+        return (
+          <div key="sec-inno-projects" id="sec-inno-projects">
+            {/* FEATURED PROJECT GALLERY */}
       <ProjectGallerySection division="nexalus-innovations" />
-
-      {/* =========================================================================
+          </div>
+        );
+      case 'sec-inno-cctv':
+        return (
+          <div key="sec-inno-cctv" id="sec-inno-cctv">
+            {/* =========================================================================
           Z-TYPE ARCHITECTURE: SECTION 1 (CCTV SURVEILLANCE & SECURITY)
           ROW 1: LEFT = CCTV CARD (SLIDE IN LEFT) | RIGHT = CCTV INFO (SLIDE IN RIGHT)
           ========================================================================= */}
@@ -307,14 +451,14 @@ export const NexalusInnovationsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* READ MORE BUTTON: Expands / Toggles the 6 CCTV Products below */}
+              {/* READ MORE BUTTON: Expands / Toggles the {cctvProducts.length} CCTV Products below */}
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => setShowCctvProducts(!showCctvProducts)}
                   className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <span>{showCctvProducts ? 'Hide CCTV Products' : 'Read More & Explore CCTV Products (6 Items)'}</span>
+                  <span>{showCctvProducts ? 'Hide CCTV Products' : `Read More & Explore CCTV Products (${cctvProducts.length} Items)`}</span>
                   {showCctvProducts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
               </div>
@@ -330,7 +474,7 @@ export const NexalusInnovationsPage: React.FC = () => {
                   DIVISION 01 — VIDEO SURVEILLANCE &amp; SECURITY
                 </span>
                 <span className="text-xs text-sky-300 font-bold">
-                  6 OEM Certified Hardware Models
+                  {cctvProducts.length} OEM Certified Hardware Models
                 </span>
               </div>
 
@@ -398,14 +542,14 @@ export const NexalusInnovationsPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <h4 className="font-black text-slate-900 text-lg">
-                  Curated CCTV Hardware Portfolio (6 Certified Models)
+                  Curated CCTV Hardware Portfolio ({cctvProducts.length} Certified Models)
                 </h4>
                 <p className="text-xs text-slate-500">
                   Click any product to inspect specifications or request instant project quotation
                 </p>
               </div>
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                6 CCTV Products
+                {cctvProducts.length} CCTV Products
               </span>
             </div>
 
@@ -418,8 +562,12 @@ export const NexalusInnovationsPage: React.FC = () => {
         )}
         </div>
       </section>
-
-      {/* =========================================================================
+          </div>
+        );
+      case 'sec-inno-fiber':
+        return (
+          <div key="sec-inno-fiber" id="sec-inno-fiber">
+            {/* =========================================================================
           Z-TYPE ARCHITECTURE: SECTION 2 (OPTICAL FIBER BROADBAND & INTERNET)
           ROW 2: LEFT = FIBER INFO (SLIDE IN LEFT) | RIGHT = FIBER CARD (SLIDE IN RIGHT)
           [REVERSED ZIGZAG ROW]
@@ -436,7 +584,7 @@ export const NexalusInnovationsPage: React.FC = () => {
                   DIVISION 02 — OPTICAL FIBER BROADBAND &amp; FTTH
                 </span>
                 <span className="text-xs text-teal-300 font-bold">
-                  6 Optical Hardware &amp; Plan Models
+                  {internetProducts.length} Optical Hardware &amp; Plan Models
                 </span>
               </div>
 
@@ -556,14 +704,14 @@ export const NexalusInnovationsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* READ MORE BUTTON: Expands / Toggles the 6 Fiber Products below */}
+              {/* READ MORE BUTTON: Expands / Toggles the {internetProducts.length} Fiber Products below */}
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => setShowInternetProducts(!showInternetProducts)}
                   className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white bg-teal-600 hover:bg-teal-700 shadow-md shadow-teal-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <span>{showInternetProducts ? 'Hide Fiber Hardware' : 'Read More & Explore Fiber Products (6 Items)'}</span>
+                  <span>{showInternetProducts ? 'Hide Fiber Hardware' : `Read More & Explore Fiber Products (${internetProducts.length} Items)`}</span>
                   {showInternetProducts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
               </div>
@@ -577,14 +725,14 @@ export const NexalusInnovationsPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <h4 className="font-black text-slate-900 text-lg">
-                  Curated Optical Fiber &amp; Wi-Fi Portfolio (6 Certified Models)
+                  Curated Optical Fiber &amp; Wi-Fi Portfolio ({internetProducts.length} Certified Models)
                 </h4>
                 <p className="text-xs text-slate-500">
                   Click any product to inspect specifications or request instant project quotation
                 </p>
               </div>
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-                6 Fiber Products
+                {internetProducts.length} Fiber Products
               </span>
             </div>
 
@@ -597,8 +745,12 @@ export const NexalusInnovationsPage: React.FC = () => {
         )}
         </div>
       </section>
-
-      {/* =========================================================================
+          </div>
+        );
+      case 'sec-inno-networking':
+        return (
+          <div key="sec-inno-networking" id="sec-inno-networking">
+            {/* =========================================================================
           Z-TYPE ARCHITECTURE: SECTION 3 (ENTERPRISE IT NETWORKING & SWITCHES)
           ROW 3: LEFT = NETWORK CARD (SLIDE IN LEFT) | RIGHT = NETWORK INFO (SLIDE IN RIGHT)
           ========================================================================= */}
@@ -664,14 +816,14 @@ export const NexalusInnovationsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* READ MORE BUTTON: Expands / Toggles the 6 Network Products below */}
+              {/* READ MORE BUTTON: Expands / Toggles the {networkProducts.length} Network Products below */}
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => setShowNetworkProducts(!showNetworkProducts)}
                   className="flex-1 py-3 px-4 rounded-xl font-bold text-xs text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <span>{showNetworkProducts ? 'Hide Network Hardware' : 'Read More & Explore Network Products (6 Items)'}</span>
+                  <span>{showNetworkProducts ? 'Hide Network Hardware' : `Read More & Explore Network Products (${networkProducts.length} Items)`}</span>
                   {showNetworkProducts ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
               </div>
@@ -687,7 +839,7 @@ export const NexalusInnovationsPage: React.FC = () => {
                   DIVISION 03 — IT NETWORKING &amp; INFRASTRUCTURE
                 </span>
                 <span className="text-xs text-indigo-300 font-bold">
-                  6 Enterprise Hardware Models
+                  {networkProducts.length} Enterprise Hardware Models
                 </span>
               </div>
 
@@ -755,14 +907,14 @@ export const NexalusInnovationsPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <h4 className="font-black text-slate-900 text-lg">
-                  Curated Networking &amp; Switching Portfolio (6 Certified Models)
+                  Curated Networking &amp; Switching Portfolio ({networkProducts.length} Certified Models)
                 </h4>
                 <p className="text-xs text-slate-500">
                   Click any product to inspect specifications or request instant project quotation
                 </p>
               </div>
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                6 Network Products
+                {networkProducts.length} Network Products
               </span>
             </div>
 
@@ -775,15 +927,12 @@ export const NexalusInnovationsPage: React.FC = () => {
         )}
         </div>
       </section>
-
-
-
-      {/* =========================================================================
-          DYNAMIC CUSTOM SECTIONS (Configured via Admin Section Visibility)
-          ========================================================================= */}
-      <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="nexalus-innovations" />
-
-      {/* =========================================================================
+          </div>
+        );
+      case 'sec-inno-contact':
+        return (
+          <div key="sec-inno-contact" id="sec-inno-contact">
+            {/* =========================================================================
           SECTION 4: TECHNICAL OPERATIONS & SITE SURVEY DESK (DEEP MIDNIGHT BLUE)
           ========================================================================= */}
       <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -851,6 +1000,50 @@ export const NexalusInnovationsPage: React.FC = () => {
           </div>
         </div>
       </section>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex flex-col w-full space-y-16 sm:space-y-24 pb-20">
+      {innoSections.map(sec => {
+        if (sec.visible === false) return null;
+        return (
+          <div key={sec.id} id={sec.id} className="w-full relative scroll-mt-24">
+            {sec.id === 'sec-inno-hero' && <span id="hero" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-inno-sla' && <span id="sla" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-inno-team' && <span id="team" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-inno-projects' && <span id="projects" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-inno-cctv' && (
+              <>
+                <span id="cctv" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="section-cctv" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-inno-fiber' && (
+              <>
+                <span id="fiber" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="internet" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="section-internet" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-inno-networking' && (
+              <>
+                <span id="networking" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="section-networking" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-inno-contact' && <span id="contact" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {renderInnovationsSection(sec.id)}
+          </div>
+        );
+      })}
+      
+      {/* Dynamic Custom Sections configured via admin */}
+      <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="nexalus-innovations" />
 
       {/* Modal */}
       <QuoteModal
@@ -861,3 +1054,4 @@ export const NexalusInnovationsPage: React.FC = () => {
     </div>
   );
 };
+

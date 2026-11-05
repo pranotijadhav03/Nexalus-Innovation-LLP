@@ -25,9 +25,9 @@ export const CpPlusProjectsPage: React.FC = () => {
       />
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {projects.map(proj => (
-          <div
-            key={proj.id}
+        {projects.map((proj, idx) => (
+            <div
+              key={`${proj.id}-${idx}`}
             className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 grid grid-cols-1 lg:grid-cols-12"
           >
             <div className="lg:col-span-5 relative min-h-[240px]">

@@ -34,7 +34,10 @@ import {
 } from 'lucide-react';
 import { triggerSystemPushNotification, getEmailProviderUrl, getEmailProviderName } from '../../utils/notificationHelpers';
 
-export type CustomerModalView = 'choice' | 'register' | 'login' | 'forgot_password';
+import { CompanyScopeId, CustomerDeliveryAddress } from '../../types';
+import { getCompanyFriendlyName, isCustomerLinkedToCompany } from '../../firebase/services';
+
+export type CustomerModalView = 'choice' | 'register' | 'login' | 'forgot_password' | 'sso_link';
 
 export interface CustomerChoiceModalProps {
   isOpen: boolean;
@@ -42,6 +45,7 @@ export interface CustomerChoiceModalProps {
   initialView?: CustomerModalView;
   promptMessage?: string | null;
   authContext?: string | null;
+  targetCompanyScope?: CompanyScopeId;
 }
 
 const INDIAN_STATES = [
@@ -59,10 +63,59 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
   onClose,
   initialView = 'choice',
   promptMessage,
-  authContext
+  authContext,
+  targetCompanyScope
 }) => {
   const [view, setView] = useState<CustomerModalView>(initialView);
-  const { loginCustomer, registerCustomerAccount } = useAuth();
+  const { currentUser, isCustomer, loginCustomer, registerCustomerAccount, linkCompanyAccount, logout } = useAuth();
+
+  const getEffectiveCompanyScope = (): CompanyScopeId => {
+    if (targetCompanyScope) return targetCompanyScope;
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes('am-distributors')) return 'am-distributors';
+    if (path.includes('nexalus-innovations')) return 'nexalus-innovations';
+    return 'nexalus-llp';
+  };
+
+  const effectiveScope = getEffectiveCompanyScope();
+  const targetCompanyName = getCompanyFriendlyName(effectiveScope);
+
+  const isLinkedToTargetCompany = isCustomerLinkedToCompany(currentUser, effectiveScope);
+
+  const showSsoCard = Boolean(currentUser && isCustomer && !isLinkedToTargetCompany);
+
+  const originScope: CompanyScopeId =
+    currentUser?.primaryCompany ||
+    currentUser?.associatedCompanies?.[0] ||
+    (effectiveScope === 'am-distributors' ? 'nexalus-llp' : 'am-distributors');
+  const originCompanyName = getCompanyFriendlyName(originScope);
+
+  const existingDelivery = currentUser?.deliveryAddress || currentUser?.companyProfiles?.[originScope]?.deliveryAddress;
+  const [ssoAddress, setSsoAddress] = useState(existingDelivery?.address || '');
+  const [ssoCity, setSsoCity] = useState(existingDelivery?.city || '');
+  const [ssoState, setSsoState] = useState(existingDelivery?.state || 'Maharashtra');
+  const [ssoPostcode, setSsoPostcode] = useState(existingDelivery?.postcode || '');
+  const [ssoAdditional, setSsoAdditional] = useState(existingDelivery?.additionalDeliveryInfo || '');
+  const [isEditingSsoAddress, setIsEditingSsoAddress] = useState(false);
+
+  React.useEffect(() => {
+    if (currentUser) {
+      const existingScoped = currentUser.companyProfiles?.[effectiveScope]?.deliveryAddress;
+      if (existingScoped) {
+        setSsoAddress(existingScoped.address || '');
+        setSsoCity(existingScoped.city || '');
+        setSsoState(existingScoped.state || 'Maharashtra');
+        setSsoPostcode(existingScoped.postcode || '');
+        setSsoAdditional(existingScoped.additionalDeliveryInfo || '');
+      } else {
+        setSsoAddress('');
+        setSsoCity(effectiveScope === 'am-distributors' ? 'Chiplun' : 'Sangli');
+        setSsoState('Maharashtra');
+        setSsoPostcode(effectiveScope === 'am-distributors' ? '415605' : '416416');
+        setSsoAdditional('');
+      }
+    }
+  }, [currentUser, effectiveScope]);
   const { success, error } = useToast();
   const navigate = useNavigate();
 
@@ -105,10 +158,56 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
     }
   }, [isOpen, initialView]);
 
+  const handleSsoLinkConfirm = async () => {
+    if (!currentUser) return;
+    setIsSubmitting(true);
+    setFormError(null);
+    try {
+      const customAddr: CustomerDeliveryAddress = {
+        address: ssoAddress.trim(),
+        city: ssoCity.trim() || (effectiveScope === 'am-distributors' ? 'Chiplun' : 'Sangli'),
+        state: ssoState.trim() || 'Maharashtra',
+        postcode: ssoPostcode.trim() || (effectiveScope === 'am-distributors' ? '415605' : '416416'),
+        country: 'India',
+        additionalDeliveryInfo: ssoAdditional.trim()
+      };
+
+      const result = await linkCompanyAccount(effectiveScope, customAddr);
+      if (result.success) {
+        success(
+          'Account Linked Successfully!',
+          `You are now signed in to ${targetCompanyName} using your existing profile.`
+        );
+        handleAuthSuccess(result.user || currentUser);
+      } else {
+        setFormError(result.error || 'Failed to connect account.');
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'An error occurred while linking account.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSwitchAccount = async () => {
+    await logout();
+    setView('login');
+  };
+
+  const handleCreateSeparateAccount = async () => {
+    await logout();
+    setView('register');
+  };
+
   if (!isOpen) return null;
 
   const handleDismiss = () => {
     try {
+      const userKey = currentUser
+        ? ('nexalus_choice_dismissed_' + effectiveScope + '_' + currentUser.uid)
+        : ('nexalus_choice_dismissed_' + effectiveScope + '_guest');
+      sessionStorage.setItem(userKey, 'true');
+      sessionStorage.setItem('nexalus_choice_dismissed_' + effectiveScope, 'true');
       sessionStorage.setItem('nexalus_customer_choice_dismissed', 'true');
     } catch {}
     setFormError(null);
@@ -210,6 +309,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
         email: emailClean,
         phone: phoneClean,
         password: regPassword,
+        companyScope: effectiveScope,
         deliveryAddress: {
           address: regAddress.trim(),
           city: regCity.trim(),
@@ -336,7 +436,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
     <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
       <div
         className={`relative bg-white w-full ${
-          view === 'choice' ? 'max-w-4xl' : view === 'register' ? 'max-w-3xl' : 'max-w-xl'
+          view === 'choice' || view === 'sso_link' ? 'max-w-4xl' : view === 'register' ? 'max-w-3xl' : 'max-w-xl'
         } rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden transform transition-all my-auto`}
         onClick={e => e.stopPropagation()}
       >
@@ -474,10 +574,10 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
 
                 <div className="space-y-1">
                   <h4 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                    Welcome to Nexalus Innovations LLP
+                    Welcome to {targetCompanyName}
                   </h4>
                   <p className="text-sm sm:text-base font-bold text-slate-700">
-                    Are you a new customer or an existing customer?
+                    Sign In to Your Account or Create a New One
                   </p>
                 </div>
 
@@ -498,7 +598,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                 </div>
 
                 <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto leading-relaxed font-medium">
-                  Select your onboarding option below to request fiber internet, book commercial CCTV consultations, and track service requests.
+                  Already have an account? Sign In to continue. First time here? Register your profile in 1 minute.
                 </p>
 
                 {/* Champagne Gold Refined Separator */}
@@ -508,6 +608,39 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                   <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#c5a059]/40 to-transparent" />
                 </div>
               </div>
+
+              {showSsoCard && (
+                <div className="relative z-20 p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 text-white shadow-xl border-2 border-amber-400/50 animate-in slide-in-from-top-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-11 h-11 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 font-black text-base shadow-md mt-0.5">
+                        {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                            Active Account Detected
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm font-bold text-white mt-1">
+                          You are already signed in as <span className="text-amber-300">{currentUser?.displayName || currentUser?.email}</span> under {originCompanyName}.
+                        </p>
+                        <p className="text-[11px] text-slate-300 mt-0.5">
+                          Would you like to use this account for <strong>{targetCompanyName}</strong>?
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setView('sso_link')}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer shrink-0"
+                    >
+                      <span>Continue as {currentUser?.displayName?.split(' ')[0] || 'Customer'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-1">
                 {/* Choice 1: New Customer */}
@@ -536,13 +669,13 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                         <UserPlus className="w-6 h-6 text-blue-600" />
                       </div>
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60">
-                        First Time
+                        First Time • Sign Up
                       </span>
                     </div>
 
                     <div>
                       <h5 className="text-xl font-black text-slate-900 group-hover:text-blue-700 transition-colors">
-                        New Customer
+                        Create a New Account
                       </h5>
                       <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                         Create your verified profile to apply for broadband and security installations.
@@ -571,7 +704,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
 
                   <div className="relative z-10 mt-6 pt-4 border-t border-slate-100">
                     <div className="w-full py-3 px-5 rounded-xl text-xs sm:text-sm font-black text-white bg-[#0b2545] hover:bg-[#071930] flex items-center justify-center gap-2 shadow-sm transition-all group-hover:gap-3">
-                      <span>Get Started</span>
+                      <span>Register / Create Account</span>
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
@@ -603,13 +736,13 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                         <LogIn className="w-6 h-6 text-slate-800" />
                       </div>
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                        Returning
+                        Already Registered • Sign In
                       </span>
                     </div>
 
                     <div>
                       <h5 className="text-xl font-black text-slate-900 group-hover:text-slate-900 transition-colors">
-                        Existing Customer
+                        Sign In to Your Account
                       </h5>
                       <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                         Sign in to access your active inquiries, service quotes, and account dashboard.
@@ -638,7 +771,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
 
                   <div className="relative z-10 mt-6 pt-4 border-t border-slate-100">
                     <div className="w-full py-3 px-5 rounded-xl text-xs sm:text-sm font-black text-slate-900 bg-white border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50 flex items-center justify-center gap-2 shadow-2xs transition-all group-hover:gap-3">
-                      <span>Sign In</span>
+                      <span>Sign In to Account</span>
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
@@ -661,6 +794,197 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
               <div className="pt-3 border-t border-slate-100/90 flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium text-center">
                 <Shield className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 <span>Your information is secure and will only be used to process your service requests.</span>
+              </div>
+            </div>
+          )}
+
+          {/* VIEW: SMART SSO LINK CONFIRMATION */}
+          {view === 'sso_link' && (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="text-center space-y-2.5">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50/90 border border-blue-200/80 text-[#0b2545] text-[11px] font-bold tracking-wider uppercase">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>ONE-CLICK SINGLE SIGN-ON</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Connect Your Account
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">
+                  We detected your active session. Use your existing profile for <strong className="text-slate-900">{targetCompanyName}</strong> without needing a separate login password.
+                </p>
+              </div>
+
+              {/* Origin to Target Visual Connection Pill */}
+              <div className="p-4 sm:p-5 bg-slate-50 border border-slate-200/90 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="w-10 h-10 rounded-xl bg-[#0b2545] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                    {originCompanyName.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-slate-400">Current Profile Under</div>
+                    <div className="font-black text-slate-800 text-xs sm:text-sm">{originCompanyName}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-blue-700 font-extrabold text-xs bg-blue-100/80 px-3.5 py-1.5 rounded-full border border-blue-200">
+                  <span>Linking to</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-start sm:justify-end">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                    {targetCompanyName.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-slate-400">Target Company</div>
+                    <div className="font-black text-emerald-800 text-xs sm:text-sm">{targetCompanyName}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Details Card & Editable Delivery Address */}
+              <div className="bg-white border-2 border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-base flex items-center justify-center shadow-xs">
+                      {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h5 className="font-black text-slate-900 text-sm sm:text-base">
+                        {currentUser?.displayName || 'Customer'}
+                      </h5>
+                      <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                        <span className="font-medium">{currentUser?.email}</span>
+                        {currentUser?.phone && <span>• {currentUser.phone}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Verified Session</span>
+                  </span>
+                </div>
+
+                {/* Delivery & Service Address for Target Company */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Delivery &amp; Service Address for {targetCompanyName}</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingSsoAddress(!isEditingSsoAddress)}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                    >
+                      {isEditingSsoAddress ? 'Keep Pre-filled Address' : 'Edit Address for this company'}
+                    </button>
+                  </div>
+
+                  {isEditingSsoAddress ? (
+                    <div className="space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Street Address</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Plot No 12, Shivaji Nagar"
+                          value={ssoAddress}
+                          onChange={e => setSsoAddress(e.target.value)}
+                          className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">City</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Chiplun"
+                            value={ssoCity}
+                            onChange={e => setSsoCity(e.target.value)}
+                            className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 mb-1">Pincode</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 415605"
+                            maxLength={6}
+                            value={ssoPostcode}
+                            onChange={e => setSsoPostcode(e.target.value)}
+                            className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 font-mono"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Delivery Instructions (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="Landmark, shop number, or timing preference"
+                          value={ssoAdditional}
+                          onChange={e => setSsoAdditional(e.target.value)}
+                          className="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/90 text-xs text-slate-700 flex items-start gap-2.5">
+                      <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <div className="leading-relaxed">
+                        {ssoAddress ? (
+                          <>
+                            <p className="font-semibold text-slate-900">{ssoAddress}</p>
+                            <p className="text-slate-500">{ssoCity ? `${ssoCity}, ` : ''}{ssoState} - {ssoPostcode || '415605'}</p>
+                            {ssoAdditional && <p className="text-[11px] text-slate-400 mt-0.5">Note: {ssoAdditional}</p>}
+                          </>
+                        ) : (
+                          <p className="text-slate-500 italic">No delivery address saved yet. Click &quot;Edit Address for this company&quot; above to add one.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleSsoLinkConfirm}
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-[#0b2545] hover:bg-[#071930] active:scale-98 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-900/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Connecting Profile to {targetCompanyName}...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <span>Confirm &amp; Use Account for {targetCompanyName}</span>
+                      <ArrowRight className="w-4 h-4 ml-1" />
+                    </>
+                  )}
+                </button>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs pt-1 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleSwitchAccount}
+                    className="text-slate-500 hover:text-slate-800 font-semibold cursor-pointer py-1"
+                  >
+                    Sign in with another account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateSeparateAccount}
+                    className="text-blue-600 hover:text-blue-800 font-bold cursor-pointer py-1"
+                  >
+                    Create a separate new account
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1108,7 +1432,7 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
                       </>
                     ) : (
                       <>
-                        <span>Sign In</span>
+                        <span>Sign In to Account</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}

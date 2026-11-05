@@ -244,15 +244,23 @@ export const AdminEnquiriesPage: React.FC = () => {
   };
 
   // Counts for each website
-  const corporateCount = allEnquiriesRaw.filter(e => e.websiteId === 'corporate' || e.brandId === 'general').length;
+  const corporateCount = allEnquiriesRaw.filter(e =>
+    e.websiteId === 'corporate' ||
+    e.brandId === 'general' ||
+    e.brandId === 'nexalus' ||
+    e.brandId === 'one-broadband'
+  ).length;
+
   const innovationsCount = allEnquiriesRaw.filter(e =>
     e.websiteId === 'nexalus-innovations' ||
     e.brandId === 'nexalus-innovations' ||
-    e.brandId === 'cp-plus' ||
-    e.brandId === 'one-broadband' ||
-    e.brandId === 'itti-networking'
+    e.brandId === 'cp-plus'
   ).length;
-  const amCount = allEnquiriesRaw.filter(e => e.websiteId === 'am-distributors' || e.brandId === 'am-distributors').length;
+
+  const amCount = allEnquiriesRaw.filter(e =>
+    e.websiteId === 'am-distributors' ||
+    e.brandId === 'am-distributors'
+  ).length;
 
   const orderCount = allEnquiriesRaw.filter(e => e.enquiryType === 'order').length;
 
@@ -264,21 +272,22 @@ export const AdminEnquiriesPage: React.FC = () => {
       return enquiries.filter(e =>
         e.websiteId === 'nexalus-innovations' ||
         e.brandId === 'nexalus-innovations' ||
-        e.brandId === 'cp-plus' ||
-        e.brandId === 'one-broadband' ||
-        e.brandId === 'itti-networking'
+        e.brandId === 'cp-plus'
       );
     }
     if (brandFilter === 'corporate') {
-      return enquiries.filter(e => e.websiteId === 'corporate' || e.brandId === 'general' || e.brandId === 'nexalus');
+      return enquiries.filter(e =>
+        e.websiteId === 'corporate' ||
+        e.brandId === 'general' ||
+        e.brandId === 'nexalus' ||
+        e.brandId === 'one-broadband'
+      );
     }
     if (brandFilter === 'nexalus-innovations') {
       return enquiries.filter(e =>
         e.websiteId === 'nexalus-innovations' ||
         e.brandId === 'nexalus-innovations' ||
-        e.brandId === 'cp-plus' ||
-        e.brandId === 'one-broadband' ||
-        e.brandId === 'itti-networking'
+        e.brandId === 'cp-plus'
       );
     }
     if (brandFilter === 'am-distributors') {

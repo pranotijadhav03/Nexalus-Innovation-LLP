@@ -64,7 +64,15 @@ export const AdminDashboardPage: React.FC = () => {
   const setActiveConsole = outletCtx?.setActiveConsole || (() => {});
   const returnToMaster = outletCtx?.returnToMaster || (() => {});
 
-  const getNavPath = (path: string) => path;
+  const getNavPath = (path: string) => {
+    if (activeConsole === 'am-distributors') {
+      return path.includes('?') ? path + '&console=am-distributors' : path + '?console=am-distributors';
+    }
+    if (activeConsole === 'nexalus-innovations') {
+      return path.includes('?') ? path + '&console=nexalus-innovations' : path + '?console=nexalus-innovations';
+    }
+    return path;
+  };
 
   const initialProds = getCachedProducts(undefined);
   const initialEnqs = getCachedEnquiries('all');
@@ -159,7 +167,13 @@ export const AdminDashboardPage: React.FC = () => {
   const renderMasterDashboard = () => {
     // Parent company scoped data
     const corporateEnquiries = enquiries.filter(
-      e => e.websiteId === 'corporate' || (e.brandId as any) === 'general' || (e.brandId as any) === 'nexalus' || !e.brandId || (e.brandId as any) === 'all'
+      e =>
+        e.websiteId === 'corporate' ||
+        (e.brandId as any) === 'general' ||
+        (e.brandId as any) === 'nexalus' ||
+        (e.brandId as any) === 'one-broadband' ||
+        !e.brandId ||
+        (e.brandId as any) === 'all'
     );
     const newCorporateCount = corporateEnquiries.filter(e => e.status === 'new').length;
     const inProgressCorporateCount = corporateEnquiries.filter(
@@ -475,9 +489,6 @@ export const AdminDashboardPage: React.FC = () => {
                 <div key={order.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-xs font-black text-slate-900">
-                        {order.id}
-                      </span>
                       <span className="text-xs font-bold text-slate-800">
                         {order.customerName}
                       </span>
@@ -540,26 +551,19 @@ export const AdminDashboardPage: React.FC = () => {
     const techProducts = products.filter(
       p =>
         p.brandId === 'nexalus-innovations' ||
-        p.brandId === 'cp-plus' ||
-        p.brandId === 'one-broadband' ||
-        p.brandId === 'itti-networking'
+        p.companyId === 'nexalus-innovations' ||
+        (p.id.startsWith('prod-nexalus-') && !p.id.includes('llp'))
     );
     const cctvProducts = techProducts.filter(
-      p => p.brandId === 'cp-plus' || p.categoryId === 'cat-cctv' || p.categoryId === 'cat-ip'
+      p => p.categoryId === 'cat-nexalus-cctv' || p.name.toLowerCase().includes('cctv') || p.name.toLowerCase().includes('camera')
     );
     const techServices = services.filter(
-      s =>
-        s.brandId === 'nexalus' ||
-        s.brandId === 'nexalus-innovations' ||
-        s.brandId === 'one-broadband' ||
-        s.brandId === 'itti-networking'
+      s => s.brandId === 'nexalus-innovations'
     );
     const techEnquiries = enquiries.filter(
       e =>
-        e.brandId === 'nexalus-innovations' ||
-        e.brandId === 'cp-plus' ||
-        e.brandId === 'one-broadband' ||
-        e.brandId === 'itti-networking'
+        e.websiteId === 'nexalus-innovations' ||
+        e.brandId === 'nexalus-innovations'
     );
     const newTechLeads = techEnquiries.filter(e => e.status === 'new').length;
 

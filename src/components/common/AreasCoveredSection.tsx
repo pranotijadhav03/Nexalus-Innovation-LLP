@@ -403,7 +403,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
                 {matchedAreas.map((area, idx) => {
                   const isAm = area.brandId === 'am-distributors';
                   return (
-                    <BlurZoomReveal key={area.id || idx} direction="up" delay={idx * 60}>
+                    <BlurZoomReveal key={area.id || idx} direction="up" delay={Math.min(idx * 40, 160)}>
                       <div className={`rounded-3xl ${
                         isLight
                           ? 'bg-slate-50/80 border-slate-200/90 shadow-xl'

@@ -16,8 +16,8 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from '../firebase/config';
-import { AdminUser, BrandId, CustomerRegistrationData } from '../types';
-import { addAuditLog, registerCustomer, withTimeout, getCachedUsers, getPlanCart } from '../firebase/services';
+import { AdminUser, BrandId, CustomerRegistrationData, CompanyScopeId, CustomerDeliveryAddress } from '../types';
+import { addAuditLog, registerCustomer, withTimeout, getCachedUsers, getPlanCart, linkCustomerToCompany } from '../firebase/services';
 
 interface AuthContextType {
   currentUser: AdminUser | null;
@@ -28,6 +28,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: AdminUser }>;
   loginCustomer: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: AdminUser }>;
   registerCustomerAccount: (data: CustomerRegistrationData) => Promise<{ success: boolean; error?: string; user?: AdminUser }>;
+  linkCompanyAccount: (targetCompany: CompanyScopeId, customAddress?: CustomerDeliveryAddress) => Promise<{ success: boolean; error?: string; user?: AdminUser }>;
   refreshUserProfile: () => Promise<void>;
   logout: () => Promise<void>;
   canManageBrand: (brandId: BrandId | 'general' | 'nexalus' | 'nexalus-innovations' | 'am-distributors') => boolean;
@@ -112,6 +113,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               deliveryAddress: data.deliveryAddress,
               assignedBrandId: effectiveBrand,
               active: true,
+              primaryCompany: data.primaryCompany || 'nexalus-llp',
+              associatedCompanies: data.associatedCompanies || (data.primaryCompany ? [data.primaryCompany] : ['nexalus-llp']),
+              companyProfiles: data.companyProfiles || {},
               createdAt: data.createdAt || new Date().toISOString(),
               lastLogin: data.lastLogin
             };
@@ -140,6 +144,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 deliveryAddress: data.deliveryAddress,
                 assignedBrandId: data.assignedBrandId,
                 active: true,
+                primaryCompany: data.primaryCompany || 'nexalus-llp',
+                associatedCompanies: data.associatedCompanies || (data.primaryCompany ? [data.primaryCompany] : ['nexalus-llp']),
+                companyProfiles: data.companyProfiles || {},
                 createdAt: data.createdAt || new Date().toISOString(),
                 lastLogin: data.lastLogin
               };
@@ -231,6 +238,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       role: 'customer',
       phone: firebaseUser.phoneNumber || '',
       active: true,
+      primaryCompany: 'nexalus-llp',
+      associatedCompanies: ['nexalus-llp'],
+      companyProfiles: {},
       createdAt: new Date().toISOString(),
       lastLogin: new Date().toISOString()
     };
@@ -536,6 +546,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const linkCompanyAccount = async (
+    targetCompany: CompanyScopeId,
+    customAddress?: CustomerDeliveryAddress
+  ): Promise<{ success: boolean; error?: string; user?: AdminUser }> => {
+    if (!currentUser) return { success: false, error: 'No authenticated customer session found.' };
+    setIsLoading(true);
+    try {
+      const updatedUser = await linkCustomerToCompany(currentUser.uid, targetCompany, customAddress);
+      setCurrentUser(updatedUser);
+      setIsLoading(false);
+      return { success: true, user: updatedUser };
+    } catch (err: any) {
+      setIsLoading(false);
+      return { success: false, error: err.message || 'Failed to link account to company.' };
+    }
+  };
+
   const logout = async (): Promise<void> => {
     try {
       localStorage.removeItem(ACTIVE_USER_CACHE_KEY);
@@ -618,6 +645,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         loginCustomer,
         registerCustomerAccount,
+        linkCompanyAccount,
         refreshUserProfile,
         logout,
         canManageBrand,

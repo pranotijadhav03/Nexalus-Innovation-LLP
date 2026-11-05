@@ -31,10 +31,10 @@ export const AdminLayout: React.FC = () => {
 
   const location = useLocation();
 
-  // Synchronously compute effective console on EVERY render directly from URL, role, or session
+  // Synchronously compute effective console on EVERY render directly from URL, role, or storage
   const paramConsole = searchParams.get('console');
   const savedConsole = typeof window !== 'undefined'
-    ? (sessionStorage.getItem(CONSOLE_STORAGE_KEY) as AdminConsoleMode)
+    ? ((sessionStorage.getItem(CONSOLE_STORAGE_KEY) || localStorage.getItem(CONSOLE_STORAGE_KEY)) as AdminConsoleMode)
     : null;
 
   const effectiveConsole: AdminConsoleMode = isInnovationsAdmin
@@ -43,16 +43,27 @@ export const AdminLayout: React.FC = () => {
     ? 'am-distributors'
     : (paramConsole === 'nexalus-innovations' || paramConsole === 'am-distributors' || paramConsole === 'master')
     ? (paramConsole as AdminConsoleMode)
-    : isSuperAdmin
-    ? 'master'
     : (savedConsole === 'nexalus-innovations' || savedConsole === 'am-distributors' || savedConsole === 'master')
     ? savedConsole
     : 'master';
 
-  // Synchronize sessionStorage whenever effective console changes
+  // Synchronize sessionStorage, localStorage and URL query param whenever effective console changes
   useEffect(() => {
-    sessionStorage.setItem(CONSOLE_STORAGE_KEY, effectiveConsole);
-  }, [effectiveConsole]);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(CONSOLE_STORAGE_KEY, effectiveConsole);
+      localStorage.setItem(CONSOLE_STORAGE_KEY, effectiveConsole);
+    }
+    const currentParam = searchParams.get('console');
+    if (effectiveConsole !== 'master' && currentParam !== effectiveConsole) {
+      const next = new URLSearchParams(searchParams);
+      next.set('console', effectiveConsole);
+      setSearchParams(next, { replace: true });
+    } else if (effectiveConsole === 'master' && currentParam) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('console');
+      setSearchParams(next, { replace: true });
+    }
+  }, [effectiveConsole, searchParams, setSearchParams]);
 
   const setActiveConsole = (mode: AdminConsoleMode) => {
     if (!isSuperAdmin) {
@@ -60,7 +71,10 @@ export const AdminLayout: React.FC = () => {
       if (isAmAdmin && mode !== 'am-distributors') return;
     }
 
-    sessionStorage.setItem(CONSOLE_STORAGE_KEY, mode);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(CONSOLE_STORAGE_KEY, mode);
+      localStorage.setItem(CONSOLE_STORAGE_KEY, mode);
+    }
 
     const currentParams = new URLSearchParams(searchParams);
     if (mode === 'master') {
@@ -138,7 +152,7 @@ export const AdminLayout: React.FC = () => {
         />
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          <Outlet context={outletContext} />
+          <Outlet key={location.pathname + location.search} context={outletContext} />
         </main>
       </div>
     </div>

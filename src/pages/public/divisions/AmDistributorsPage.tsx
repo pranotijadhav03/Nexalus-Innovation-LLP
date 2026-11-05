@@ -20,6 +20,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
+import { TypewriterHeading } from '../../../components/common/TypewriterHeading';
 import { BlurZoomReveal } from '../../../components/common/BlurZoomReveal';
 import { OurTeamSection } from '../../../components/common/OurTeamSection';
 import { ProjectGallerySection } from '../../../components/common/ProjectGallerySection';
@@ -29,7 +30,7 @@ import { SiteBanner, Product } from '../../../types';
 import { QuoteModal } from '../../../components/common/QuoteModal';
 import { ProductCard } from '../../../components/brand/ProductCard';
 import { CustomSectionsRenderer } from '../../../components/common/CustomSectionsRenderer';
-import { initialProducts, DEFAULT_AM_SLIDES } from '../../../data/initialData';
+import { initialProducts, DEFAULT_AM_SLIDES, DEFAULT_AM_SECTIONS } from '../../../data/initialData';
 
 export const AmDistributorsPage: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
@@ -168,28 +169,104 @@ export const AmDistributorsPage: React.FC = () => {
 
   const activeSlide = heroSlides[currentSlide] || heroSlides[0];
 
-  // Typewriter effect for Slide Title (sync with slide changes)
-  const [typedTitle, setTypedTitle] = useState('');
-  const [isTitleDone, setIsTitleDone] = useState(false);
-
-  useEffect(() => {
-    setTypedTitle('');
-    setIsTitleDone(false);
-    let index = 0;
-    const target = activeSlide?.title || '';
-    if (!target) return;
-
-    const interval = setInterval(() => {
-      index++;
-      setTypedTitle(target.slice(0, index));
-      if (index >= target.length) {
-        setIsTitleDone(true);
-        clearInterval(interval);
+  const distributionVerticals = useMemo(() => {
+    if (heroBanner?.distributionVerticals && heroBanner.distributionVerticals.length > 0) {
+      return heroBanner.distributionVerticals
+        .filter(v => v.visible !== false)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
+    return [
+      {
+        id: 'vert-water',
+        name: 'Packaged Mineral Water',
+        description: 'Purified mineral water in heavy-duty 20-litre hermetic dispenser jars and retail bottle crates with automated steam sanitization.',
+        iconName: 'Droplets',
+        highlights: [
+          '20-Litre Hermetic Dispenser Jars',
+          '500ml & 1L Crates Available',
+          'Daily Doorstep Office & Home Delivery'
+        ],
+        visible: true,
+        order: 1
+      },
+      {
+        id: 'vert-icecream',
+        name: 'Ice Cream Distributor',
+        description: 'Certified -18°C refrigerated reefer delivery vans supplying retail freezer display cabinets, hotels, banquet halls, and restaurants.',
+        iconName: 'IceCream',
+        highlights: [
+          '-18°C Insulated Refrigerated Vans',
+          'Bulk 5L Tubs, Premium Cones & Bars',
+          'Strict Cold-Chain Temperature Log'
+        ],
+        visible: true,
+        order: 2
+      },
+      {
+        id: 'vert-milk',
+        name: 'Pasteurized Milk',
+        description: 'Lab-tested pasteurized fresh cow and buffalo milk pouches distributed in crates during early morning 4:00 AM dispatch routes.',
+        iconName: 'Milk',
+        highlights: [
+          'Daily Early Morning 4:00 AM Dispatch',
+          'Standardized Fat 4.5%, SNF 8.5%',
+          'Dairy Outlets & Institutional Supply'
+        ],
+        visible: true,
+        order: 3
+      },
+      {
+        id: 'vert-dairy',
+        name: 'Butter & All Dairy',
+        description: 'Pure table butter, desi cow ghee, paneer, and processed cheese blocks for bakeries, institutional caterers, and supermarkets.',
+        iconName: 'Truck',
+        highlights: [
+          'Salted Table Butter (100g, 500g)',
+          '1kg & 2.5kg Cheese Blocks',
+          '100% FSSAI Certified Genuine Dairy'
+        ],
+        visible: true,
+        order: 4
       }
-    }, 28);
+    ];
+  }, [heroBanner]);
 
-    return () => clearInterval(interval);
-  }, [activeSlide?.title, currentSlide]);
+  const getVerticalTheme = (index: number, iconName?: string) => {
+    const iconKey = (iconName || '').toLowerCase();
+    if (iconKey.includes('droplet') || iconKey.includes('water')) {
+      return {
+        bg: 'bg-teal-50',
+        text: 'text-teal-600',
+        border: 'border-teal-100',
+        Icon: Droplets
+      };
+    }
+    if (iconKey.includes('ice') || iconKey.includes('cream')) {
+      return {
+        bg: 'bg-rose-50',
+        text: 'text-rose-600',
+        border: 'border-rose-100',
+        Icon: IceCream
+      };
+    }
+    if (iconKey.includes('milk')) {
+      return {
+        bg: 'bg-sky-50',
+        text: 'text-sky-600',
+        border: 'border-sky-100',
+        Icon: Milk
+      };
+    }
+    const colorThemes = [
+      { bg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-100', Icon: Droplets },
+      { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-100', Icon: IceCream },
+      { bg: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-100', Icon: Milk },
+      { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100', Icon: Truck }
+    ];
+    return colorThemes[index % colorThemes.length];
+  };
+
+  
 
   const handlePrevSlide = () => {
     setCurrentSlide(prev => (prev - 1 + heroSlides.length) % heroSlides.length);
@@ -199,9 +276,21 @@ export const AmDistributorsPage: React.FC = () => {
     setCurrentSlide(prev => (prev + 1) % heroSlides.length);
   };
 
-  return (
-    <div className="space-y-16 sm:space-y-24 pb-20">
-      {/* 1. HERO BANNER WITH SLIDING PRODUCT IMAGES, DYNAMIC CONTENT & REDUCED FADE OVERLAY */}
+  const amSections = React.useMemo(() => {
+    const list = (heroBanner?.sectionsOrder && heroBanner.sectionsOrder.length > 0)
+      ? heroBanner.sectionsOrder
+      : DEFAULT_AM_SECTIONS;
+    const savedIds = new Set(list.map(s => s.id));
+    const missing = DEFAULT_AM_SECTIONS.filter(d => !savedIds.has(d.id));
+    return [...list, ...missing].sort((a, b) => a.order - b.order);
+  }, [heroBanner?.sectionsOrder]);
+
+  const renderAmSection = (secId: string) => {
+    switch (secId) {
+      case 'sec-am-hero':
+        return (
+          <div key="sec-am-hero" id="sec-am-hero">
+            {/* 1. HERO BANNER WITH SLIDING PRODUCT IMAGES, DYNAMIC CONTENT & REDUCED FADE OVERLAY */}
       <section className="relative overflow-hidden bg-slate-950 text-white pt-20 pb-24 border-b border-slate-800 select-none min-h-[560px] sm:min-h-[620px] flex flex-col justify-center">
         {/* Animated Sliding Background Track with Smooth Cross-Fade */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -226,8 +315,8 @@ export const AmDistributorsPage: React.FC = () => {
           })}
 
           {/* Crisp, clean, luminous background with subtle bottom & top contrast protection */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/35 to-slate-950/20 z-10" />
-          <div className="absolute inset-0 bg-slate-950/25 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-slate-950/30 z-10" />
+          <div className="absolute inset-0 bg-slate-950/40 z-10" />
         </div>
 
         {/* Previous / Next Arrow Controls (Desktop) */}
@@ -253,14 +342,9 @@ export const AmDistributorsPage: React.FC = () => {
         {/* Dynamic Foreground Content with Staggered Slide Animations */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-4xl py-6">
           <div key={currentSlide} className="space-y-6">
-            {/* Main Slide Title with Dynamic Typewriter Effect */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_14px_rgba(0,0,0,0.9)] min-h-[1.25em]">
-              <span>{typedTitle || '\u00A0'}</span>
-              <span
-                className={`inline-block w-2 sm:w-2.5 h-7 sm:h-11 bg-teal-400 rounded-xs ml-1.5 align-middle transition-opacity duration-300 ${
-                  isTitleDone ? 'opacity-0' : 'animate-pulse opacity-100'
-                }`}
-              />
+            {/* Main Slide Title with Typewriter (fast, no blank, min-h prevents layout shift) */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] [text-shadow:_0_2px_14px_rgba(0,0,0,0.9)] min-h-[1.2em]">
+              <TypewriterHeading text={activeSlide.title || ''} cursorColor="bg-teal-400" />
             </h1>
 
             {/* Tailored Subtitle with Gradient Text Shimmer */}
@@ -318,16 +402,28 @@ export const AmDistributorsPage: React.FC = () => {
           </div>
         )}
       </section>
-
-      {/* OUR TEAM - A.M. DISTRIBUTORS CHIPLUN (DIRECTLY AFTER HERO) */}
+          </div>
+        );
+      case 'sec-am-team':
+        return (
+          <div key="sec-am-team" id="sec-am-team">
+            {/* OUR TEAM - A.M. DISTRIBUTORS CHIPLUN (DIRECTLY AFTER HERO) */}
       {heroBanner?.showTeam !== false && (
         <OurTeamSection division="am-distributors" theme="light" />
       )}
-
-      {/* PROJECT GALLERY */}
+          </div>
+        );
+      case 'sec-am-projects':
+        return (
+          <div key="sec-am-projects" id="sec-am-projects">
+            {/* PROJECT GALLERY */}
       <ProjectGallerySection division="am-distributors" theme="dark" maxProjects={12} />
-
-      {/* 2. CORE BUSINESS VERTICALS */}
+          </div>
+        );
+      case 'sec-am-verticals':
+        return (
+          <div key="sec-am-verticals" id="sec-am-verticals">
+            {/* 2. CORE BUSINESS VERTICALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <BlurZoomReveal direction="up" delay={0} duration={650} yOffset={35} once>
           <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
@@ -344,125 +440,43 @@ export const AmDistributorsPage: React.FC = () => {
         </BlurZoomReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-          {/* Vertical 1: Packaged Mineral Water */}
-          <BlurZoomReveal direction="up" delay={0} duration={700} yOffset={40} once className="h-full">
-            <div className="h-full p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
-                  <Droplets className="w-6 h-6" />
+          {distributionVerticals.map((vertical, index) => {
+            const theme = getVerticalTheme(index, vertical.iconName);
+            const IconComponent = theme.Icon;
+            return (
+              <BlurZoomReveal key={vertical.id || index} direction="up" delay={Math.min(index * 60, 200)} duration={350} yOffset={40} once className="h-full">
+                <div className="h-full p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className={`w-12 h-12 rounded-2xl ${theme.bg} ${theme.text} flex items-center justify-center border ${theme.border}`}>
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900">{vertical.name}</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      {vertical.description}
+                    </p>
+                  </div>
+                  {vertical.highlights && vertical.highlights.length > 0 && (
+                    <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
+                      {vertical.highlights.map((hl, hlIdx) => (
+                        <li key={hlIdx} className="flex items-center gap-1.5 font-medium">
+                          <CheckCircle2 className={`w-3.5 h-3.5 ${theme.text} shrink-0`} />
+                          <span>{hl}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">Packaged Mineral Water</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Purified mineral water in heavy-duty 20-litre hermetic dispenser jars and retail bottle crates with automated steam sanitization.
-                </p>
-              </div>
-              <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                  20-Litre Hermetic Dispenser Jars
-                </li>
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                  500ml &amp; 1L Crates Available
-                </li>
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                  Daily Doorstep Office &amp; Home Delivery
-                </li>
-              </ul>
-            </div>
-          </BlurZoomReveal>
-
-          {/* Vertical 2: Ice Cream Distributor */}
-          <BlurZoomReveal direction="up" delay={120} duration={700} yOffset={40} once className="h-full">
-            <div className="h-full p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
-                  <IceCream className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Ice Cream Distributor</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Certified -18°C refrigerated reefer delivery vans supplying retail freezer display cabinets, hotels, banquet halls, and restaurants.
-                </p>
-              </div>
-              <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                  -18°C Insulated Refrigerated Vans
-                </li>
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                  Bulk 5L Tubs, Premium Cones &amp; Bars
-                </li>
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                  Strict Cold-Chain Temperature Log
-                </li>
-              </ul>
-            </div>
-          </BlurZoomReveal>
-
-          {/* Vertical 3: Farm-Fresh Milk */}
-          <BlurZoomReveal direction="up" delay={240} duration={700} yOffset={40} once className="h-full">
-            <div className="h-full p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
-                  <Milk className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Pasteurized Milk</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Lab-tested pasteurized fresh cow and buffalo milk pouches distributed in crates during early morning 4:00 AM dispatch routes.
-                </p>
-              </div>
-              <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                  Daily Early Morning 4:00 AM Dispatch
-                </li>
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                  Standardized Fat 4.5%, SNF 8.5%
-                </li>
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                  Dairy Outlets &amp; Institutional Supply
-                </li>
-              </ul>
-            </div>
-          </BlurZoomReveal>
-
-          {/* Vertical 4: Butter & All Dairy */}
-          <BlurZoomReveal direction="up" delay={360} duration={700} yOffset={40} once className="h-full">
-            <div className="h-full p-6 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-                  <Truck className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Butter &amp; All Dairy</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Pure table butter, desi cow ghee, paneer, and processed cheese blocks for bakeries, institutional caterers, and supermarkets.
-                </p>
-              </div>
-              <ul className="text-xs text-slate-500 space-y-1.5 pt-2 border-t border-slate-100">
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  Salted Table Butter (100g, 500g)
-                </li>
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  1kg &amp; 2.5kg Cheese Blocks
-                </li>
-                <li className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  100% FSSAI Certified Genuine Dairy
-                </li>
-              </ul>
-            </div>
-          </BlurZoomReveal>
+              </BlurZoomReveal>
+            );
+          })}
         </div>
       </section>
-
-      {/* 3. DIVISION PRODUCTS CATALOG */}
+          </div>
+        );
+      case 'sec-am-catalog':
+        return (
+          <div key="sec-am-catalog" id="sec-am-catalog">
+            {/* 3. DIVISION PRODUCTS CATALOG */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
@@ -492,15 +506,12 @@ export const AmDistributorsPage: React.FC = () => {
           ))}
         </div>
       </section>
-
-
-
-      {/* =========================================================================
-          DYNAMIC CUSTOM SECTIONS (Configured via Admin Section Visibility)
-          ========================================================================= */}
-      <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="am-distributors" />
-
-      {/* 4. FACILITY & OPERATIONS SPOTLIGHT */}
+          </div>
+        );
+      case 'sec-am-facility':
+        return (
+          <div key="sec-am-facility" id="sec-am-facility">
+            {/* 4. FACILITY & OPERATIONS SPOTLIGHT */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="p-8 sm:p-12 rounded-3xl bg-slate-900 text-white border border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-6 space-y-4">
@@ -551,9 +562,62 @@ export const AmDistributorsPage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* AREAS COVERED & SERVICE AVAILABILITY CHECKER */}
+          </div>
+        );
+      case 'sec-am-coverage':
+        return (
+          <div key="sec-am-coverage" id="sec-am-coverage">
+            {/* AREAS COVERED & SERVICE AVAILABILITY CHECKER */}
       <AreasCoveredSection division="am-distributors" theme="light" />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="space-y-16 sm:space-y-24 pb-20">
+      {amSections.map(sec => {
+        if (sec.visible === false) return null;
+        return (
+          <div key={sec.id} id={sec.id} className="w-full relative scroll-mt-24">
+            {sec.id === 'sec-am-hero' && <span id="hero" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-am-team' && <span id="team" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-am-projects' && <span id="projects" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-am-verticals' && (
+              <>
+                <span id="verticals" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="products" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-am-catalog' && (
+              <>
+                <span id="catalog" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="supplies" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-am-facility' && (
+              <>
+                <span id="facility" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="services" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="fleet" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-am-coverage' && (
+              <>
+                <span id="coverage" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="routes" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="contact" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {renderAmSection(sec.id)}
+          </div>
+        );
+      })}
+
+      {/* DYNAMIC CUSTOM SECTIONS */}
+      <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="am-distributors" />
 
       {/* Modal */}
       <QuoteModal
@@ -564,3 +628,4 @@ export const AmDistributorsPage: React.FC = () => {
     </div>
   );
 };
+

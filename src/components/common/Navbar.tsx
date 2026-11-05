@@ -18,21 +18,119 @@ import {
 import { Button } from './Button';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { User, UserCheck } from 'lucide-react';
+import { User, UserCheck, Sparkles } from 'lucide-react';
 import { QuoteModal } from './QuoteModal';
 import { PlanCartModal } from './PlanCartModal';
-import { getPlanCart } from '../../firebase/services';
+import {
+  getPlanCart,
+  getCachedCategories,
+  getCachedProducts,
+  subscribeToCategories,
+  subscribeToProducts
+} from '../../firebase/services';
+import { ProductCategory, Product } from '../../types';
+import { initialCategories, initialProducts } from '../../data/initialData';
 import { NEXALUS_LOGO_BASE64 } from '../../utils/companyLogoBase64';
 
+const getCategoryRepresentativeImage = (cat: ProductCategory, catProducts: Product[]): string => {
+  const productWithImg = catProducts.find(p => p.images && p.images.length > 0 && p.images[0]);
+  if (productWithImg) return productWithImg.images[0];
+
+  const key = (cat.id + ' ' + cat.name + ' ' + (cat.slug || '')).toLowerCase();
+  if (key.includes('cctv') || key.includes('camera') || key.includes('surveillance')) {
+    return '/images/products/cp-dome.jpg';
+  }
+  if (key.includes('fiber') || key.includes('internet') || key.includes('ont') || key.includes('router') || key.includes('broadband')) {
+    return '/images/products/fiber-ont.jpg';
+  }
+  if (key.includes('network') || key.includes('switch') || key.includes('poe')) {
+    return '/images/products/poe-switch.jpg';
+  }
+  if (key.includes('water') || key.includes('dairy') || key.includes('beverage') || key.includes('fmcg')) {
+    return '/images/projects/am-distributors-chiplun.jpg';
+  }
+  if (key.includes('cabling') || key.includes('cable') || key.includes('hardware') || key.includes('rack') || key.includes('infrastructure') || key.includes('electronics')) {
+    return '/images/products/cat6-cable.jpg';
+  }
+  return '/images/products/cp-dome.jpg';
+};
+
+const getCategoryGridClass = (count: number) => {
+  if (count <= 2) return 'grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto';
+  if (count === 3) return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 max-w-4xl mx-auto';
+  if (count === 4) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+  if (count === 5) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5';
+  return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6';
+};
+
 export const Navbar: React.FC = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProductsMegaOpen, setIsProductsMegaOpen] = useState(false);
+  const productsTimeoutRef = useRef<any>(null);
+
+  const [categories, setCategories] = useState<ProductCategory[]>(() => {
+    const list = getCachedCategories('nexalus-llp');
+    return list.length > 0 ? list : initialCategories.filter(c => c.id.includes('nexalus-llp'));
+  });
+
+  const [products, setProducts] = useState<Product[]>(() => {
+    const list = getCachedProducts('nexalus-llp');
+    return list.length > 0 ? list : initialProducts.filter(p => p.id.includes('nexalus-llp'));
+  });
+
+  useEffect(() => {
+    const unsubCats = subscribeToCategories((cats) => {
+      if (cats && cats.length > 0) {
+        setCategories(cats.filter(c => c.id.includes('nexalus-llp') || c.companyId === 'nexalus-llp'));
+      }
+    }, 'nexalus-llp');
+
+    const unsubProds = subscribeToProducts((prods) => {
+      if (prods && prods.length > 0) {
+        setProducts(prods.filter(p => p.id.includes('nexalus-llp') || p.companyId === 'nexalus-llp'));
+      }
+    }, 'nexalus-llp');
+
+    return () => {
+      unsubCats();
+      unsubProds();
+    };
+  }, []);
+
+  const handleProductsEnter = () => {
+    if (productsTimeoutRef.current) clearTimeout(productsTimeoutRef.current);
+    setIsProductsMegaOpen(true);
+  };
+
+  const handleProductsLeave = () => {
+    productsTimeoutRef.current = setTimeout(() => {
+      setIsProductsMegaOpen(false);
+    }, 350);
+  };
+
+  useEffect(() => {
+    setIsProductsMegaOpen(false);
+  }, [location.pathname]);
+
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const { currentUser, logout, isAuthenticated, isCustomer, isAdmin } = useAuth();
   const { success } = useToast();
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const profileDropdownTimeoutRef = useRef<any>(null);
+
+  const handleProfileEnter = () => {
+    if (profileDropdownTimeoutRef.current) clearTimeout(profileDropdownTimeoutRef.current);
+    setIsProfileDropdownOpen(true);
+  };
+
+  const handleProfileLeave = () => {
+    profileDropdownTimeoutRef.current = setTimeout(() => {
+      setIsProfileDropdownOpen(false);
+    }, 300);
+  };
   const [cartCount, setCartCount] = useState<number>(() => {
     try {
       return getPlanCart().length;
@@ -43,6 +141,12 @@ export const Navbar: React.FC = () => {
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
 
   const effectiveCartCount = isAuthenticated ? cartCount : 0;
+
+  const isLinkedToParent = currentUser
+    ? (currentUser.associatedCompanies
+        ? currentUser.associatedCompanies.includes('nexalus-llp')
+        : (!currentUser.primaryCompany || currentUser.primaryCompany === 'nexalus-llp'))
+    : false;
 
   React.useEffect(() => {
     const handleCartUpdate = (e?: any) => {
@@ -96,7 +200,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs relative">
         {/* Main Navigation Bar */}
         <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 gap-2 xl:gap-4">
@@ -231,16 +335,24 @@ export const Navbar: React.FC = () => {
                 <span>Plans</span>
                 <span className="hidden xl:inline">&nbsp;& Pricing</span>
               </Link>
-              <Link
-                to="/products"
-                className={`px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
-                  isActive('/products')
-                    ? 'text-blue-600 bg-blue-50/80'
-                    : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
-                }`}
+              <div
+                className="relative"
+                onMouseEnter={handleProductsEnter}
+                onMouseLeave={handleProductsLeave}
               >
-                Products
-              </Link>
+                <Link
+                  to="/products"
+                  onClick={() => setIsProductsMegaOpen(false)}
+                  className={`inline-flex items-center gap-1 px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
+                    isActive('/products') || isProductsMegaOpen
+                      ? 'text-blue-600 bg-blue-50/80'
+                      : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>Products</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isProductsMegaOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                </Link>
+              </div>
               <Link
                 to="/contact"
                 className={`px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-bold whitespace-nowrap rounded-lg transition-colors ${
@@ -334,12 +446,35 @@ export const Navbar: React.FC = () => {
                   </div>
                 </div>
               ) : isAuthenticated && isCustomer ? (
-                <div className="relative" ref={profileDropdownRef}>
+                !isLinkedToParent ? (
                   <button
                     type="button"
-                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent('open_customer_portal', { detail: { view: 'sso_link' } }));
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 transition-all cursor-pointer shadow-2xs group"
+                    title="Connect your account to Nexalus Innovations LLP"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-amber-400 text-slate-900 font-black text-[10px] flex items-center justify-center">
+                      {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-xs font-bold text-amber-900 max-w-[110px] truncate">
+                      Connect {currentUser?.displayName?.split(' ')[0] || 'Account'}
+                    </span>
+                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-200 text-amber-800">SSO</span>
+                  </button>
+                ) : (
+                <div
+                  className="relative"
+                  ref={profileDropdownRef}
+                  onMouseEnter={handleProfileEnter}
+                  onMouseLeave={handleProfileLeave}
+                >
+                  <Link
+                    to="/account"
+                    onClick={() => setIsProfileDropdownOpen(false)}
                     className="inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200/90 text-slate-800 transition-all cursor-pointer shadow-2xs group focus:outline-none"
-                    title="My Account"
+                    title="My Profile & Customer Portal"
                   >
                     <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 text-white font-bold text-xs flex items-center justify-center shadow-xs">
                       {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
@@ -348,9 +483,9 @@ export const Navbar: React.FC = () => {
                       {currentUser?.displayName || 'Customer'}
                     </span>
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                  </Link>
 
-                  {/* Dropdown Menu (only visible when user clicks) */}
+                  {/* Dropdown Menu (visible on hover or click) */}
                   {isProfileDropdownOpen && (
                     <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
                       {/* Customer Details Header */}
@@ -400,6 +535,7 @@ export const Navbar: React.FC = () => {
                     </div>
                   )}
                 </div>
+              )
               ) : (
                 <button
                   type="button"
@@ -433,6 +569,88 @@ export const Navbar: React.FC = () => {
             </button>
           </div>
         </div>
+
+                {/* Products Mega Dropdown (Dynamic Categories) */}
+        {isProductsMegaOpen && (
+          <div
+            onMouseEnter={handleProductsEnter}
+            onMouseLeave={handleProductsLeave}
+            className="hidden lg:block absolute top-full left-0 right-0 w-full bg-white border-b border-blue-100 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-200 max-h-[calc(100vh-5rem)] overflow-y-auto"
+          >
+            <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+              {/* Header inside Mega Dropdown */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 sm:pb-5 border-b border-slate-100">
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    Product Categories &amp; Hardware Catalog
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    Explore commercial CCTV cameras, high-speed fiber ONTs, enterprise switches, cabling &amp; FMCG distribution.
+                  </p>
+                </div>
+                <Link
+                  to="/products"
+                  onClick={() => setIsProductsMegaOpen(false)}
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors group/all shrink-0"
+                >
+                  <span>View All Products ({products.length})</span>
+                  <ArrowRight className="w-4 h-4 group-hover/all:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+
+              {/* Grid of Active Categories (Strictly filtered to Nexalus Innovations LLP, capped at 5) */}
+              {(() => {
+                const parentCategories = categories.filter(c => c.id.includes('nexalus-llp') || c.companyId === 'nexalus-llp');
+                const visibleCategories = parentCategories.slice(0, 5);
+                return (
+                  <div className={`grid ${getCategoryGridClass(visibleCategories.length)} gap-3 sm:gap-4 pt-4 sm:pt-5`}>
+                    {visibleCategories.map((cat) => {
+                      const catProducts = products.filter(p => (p.categoryId === cat.id || p.categoryName === cat.name) && p.published !== false);
+                      const count = catProducts.length;
+                      const catImg = getCategoryRepresentativeImage(cat, catProducts);
+
+                      return (
+                        <Link
+                          key={cat.id}
+                          to={`/products?category=${cat.id}`}
+                          onClick={() => setIsProductsMegaOpen(false)}
+                          className="group/card p-3 sm:p-3.5 rounded-2xl bg-white hover:bg-blue-50/50 border border-slate-200/90 hover:border-blue-400 shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between cursor-pointer"
+                        >
+                          <div>
+                            <div className="w-full h-28 sm:h-32 rounded-xl bg-slate-50 group-hover/card:bg-white flex items-center justify-center p-2.5 mb-2.5 transition-colors border border-slate-100 overflow-hidden">
+                              <img
+                                src={catImg}
+                                alt={cat.name}
+                                className="max-h-full max-w-full object-contain group-hover/card:scale-110 transition-transform duration-300"
+                                loading="lazy"
+                              />
+                            </div>
+                            <div className="text-xs sm:text-sm font-black text-slate-900 group-hover/card:text-blue-700 transition-colors leading-snug line-clamp-1">
+                              {cat.name}
+                            </div>
+                            {cat.description && (
+                              <p className="text-[11px] sm:text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                                {cat.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="pt-2.5 mt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] sm:text-xs">
+                            <span className="font-bold text-slate-500">
+                              {count} {count === 1 ? 'Product' : 'Products'}
+                            </span>
+                            <span className="font-extrabold text-blue-600 group-hover/card:translate-x-1 transition-transform flex items-center gap-1">
+                              Explore <ArrowRight className="w-3.5 h-3.5" />
+                            </span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
@@ -557,6 +775,34 @@ export const Navbar: React.FC = () => {
                   </button>
                 </div>
               ) : isAuthenticated && isCustomer ? (
+                !isLinkedToParent ? (
+                  <div className="p-3 bg-amber-50/90 border border-amber-300 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-7 h-7 rounded-full bg-amber-400 text-slate-900 font-black text-xs flex items-center justify-center shrink-0">
+                          {(currentUser?.displayName || 'C').charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs font-bold text-slate-900 truncate">
+                          {currentUser?.displayName || 'Customer'}
+                        </span>
+                      </div>
+                      <span className="text-[9px] font-black uppercase text-amber-800 bg-amber-200 px-2 py-0.5 rounded-full border border-amber-300">
+                        SSO Detected
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        window.dispatchEvent(new CustomEvent('open_customer_portal', { detail: { view: 'sso_link' } }));
+                      }}
+                      className="w-full py-2 px-3 rounded-lg bg-[#0b2545] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Connect Account to Parent Company</span>
+                    </button>
+                  </div>
+                ) : (
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
@@ -588,6 +834,7 @@ export const Navbar: React.FC = () => {
                     <span>Sign Out</span>
                   </button>
                 </div>
+              )
               ) : (
                 <button
                   type="button"

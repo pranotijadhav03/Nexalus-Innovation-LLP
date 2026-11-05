@@ -85,9 +85,9 @@ export const ProjectsPage: React.FC = () => {
       {/* Projects List */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="space-y-12">
-          {filtered.map(proj => (
+          {filtered.map((proj, idx) => (
             <div
-              key={proj.id}
+              key={`${proj.id}-${idx}`}
               className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 grid grid-cols-1 lg:grid-cols-12"
             >
               <div className="lg:col-span-5 relative min-h-[260px] lg:min-h-full">

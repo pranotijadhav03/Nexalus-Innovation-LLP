@@ -10,14 +10,15 @@ import {
   getCategories,
   uploadImageFile,
   getCachedProducts,
-  getCachedCategories
+  getCachedCategories,
+  subscribeToProducts,
+  subscribeToCategories
 } from '../../firebase/services';
 import { Product, ProductCategory, BrandId, CompanyScopeId } from '../../types';
 import { AdminOutletContext } from '../../components/admin/AdminLayout';
-import { Input, TextArea, Select } from '../../components/common/Input';
+import { Input, TextArea } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
-import { BrandBadge } from '../../components/common/BrandBadge';
 import {
   Plus,
   Search,
@@ -27,12 +28,14 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Sparkles,
   Upload,
   X,
   Building,
   Shield,
-  ArrowRight
+  ArrowRight,
+  Box,
+  AlertTriangle,
+  Layers
 } from 'lucide-react';
 
 const FMCG_PRESETS = [
@@ -58,18 +61,32 @@ const TECH_PRESETS = [
 ];
 
 export const AdminProductsPage: React.FC = () => {
-  const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, brandScope, canManageBrand } = useAuth();
+  const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, canManageBrand } = useAuth();
   const outletCtx = useOutletContext<AdminOutletContext>();
   const activeConsole = outletCtx?.activeConsole || 'master';
   const activeBrandFilter = outletCtx?.activeBrandFilter || 'corporate';
   const { success, error } = useToast();
 
-  const effectiveBrand: BrandId | 'nexalus' =
+  const currentCompanyScope: CompanyScopeId =
     activeConsole === 'am-distributors' || isAmAdmin
       ? 'am-distributors'
       : activeConsole === 'nexalus-innovations' || isInnovationsAdmin
       ? 'nexalus-innovations'
+      : 'nexalus-llp';
+
+  const currentBrand: BrandId =
+    currentCompanyScope === 'am-distributors'
+      ? 'am-distributors'
+      : currentCompanyScope === 'nexalus-innovations'
+      ? 'nexalus-innovations'
       : 'nexalus';
+
+  const effectiveBrand: 'am-distributors' | 'nexalus-innovations' | 'corporate' =
+    currentCompanyScope === 'am-distributors'
+      ? 'am-distributors'
+      : currentCompanyScope === 'nexalus-innovations'
+      ? 'nexalus-innovations'
+      : 'corporate';
 
   const [products, setProducts] = useState<Product[]>(() =>
     getCachedProducts(effectiveBrand)
@@ -79,6 +96,7 @@ export const AdminProductsPage: React.FC = () => {
   );
   const [search, setSearch] = useState('');
   const [selectedCatFilter, setSelectedCatFilter] = useState('all');
+  const [selectedStockFilter, setSelectedStockFilter] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
   const [isLoading, setIsLoading] = useState(false);
 
   // Modal State
@@ -89,12 +107,12 @@ export const AdminProductsPage: React.FC = () => {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [modelNumber, setModelNumber] = useState('');
-  const [brandId, setBrandId] = useState<BrandId>(
-    isAmAdmin ? 'am-distributors' : 'nexalus-innovations'
-  );
+  const [brandId, setBrandId] = useState<BrandId>(currentBrand);
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<string>('');
+  const [stockQuantity, setStockQuantity] = useState<string>('50');
+  const [lowStockThreshold, setLowStockThreshold] = useState<string>('10');
   const [availability, setAvailability] = useState<'in_stock' | 'out_of_stock' | 'pre_order' | 'contact_for_price'>('in_stock');
   const [featured, setFeatured] = useState(false);
   const [published, setPublished] = useState(true);
@@ -125,35 +143,44 @@ export const AdminProductsPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [activeConsole, activeBrandFilter]);
+    const unsubProds = subscribeToProducts((prods) => {
+      if (prods && prods.length > 0) setProducts(prods);
+    }, effectiveBrand);
+    const unsubCats = subscribeToCategories((cats) => {
+      if (cats && cats.length > 0) setCategories(cats);
+    }, effectiveBrand);
+    return () => {
+      unsubProds();
+      unsubCats();
+    };
+  }, [activeConsole, activeBrandFilter, effectiveBrand]);
 
   const openCreateModal = () => {
     setEditingProduct(null);
     setName('');
     setSlug('');
     setModelNumber('');
-    const defaultBrand: BrandId = isSuperAdmin
-      ? (activeConsole === 'am-distributors'
-          ? 'am-distributors'
-          : activeConsole === 'nexalus-innovations'
-          ? 'nexalus-innovations'
-          : ('nexalus' as any))
-      : (brandScope as BrandId);
-    setBrandId(defaultBrand);
-    const availableCats = categories.filter(c => c.brandId === defaultBrand);
-    setCategoryId(availableCats[0]?.id || '');
+    setBrandId(currentBrand);
+    const availableCats = categories.filter(c => {
+      if (currentCompanyScope === 'am-distributors') return c.brandId === 'am-distributors' || c.id.startsWith('cat-am');
+      if (currentCompanyScope === 'nexalus-innovations') return c.brandId === 'nexalus-innovations' || (c.id.startsWith('cat-nexalus-') && !c.id.includes('llp'));
+      return c.brandId === 'nexalus' || c.id.includes('nexalus-llp');
+    });
+    setCategoryId(availableCats[0]?.id || categories[0]?.id || '');
     setDescription('');
     setPrice('');
+    setStockQuantity('50');
+    setLowStockThreshold('10');
     setAvailability('in_stock');
     setFeatured(false);
     setPublished(true);
     setCustomImageUrl('');
-    const defaultImg = defaultBrand === 'am-distributors'
+    const defaultImg = currentCompanyScope === 'am-distributors'
       ? '/images/products/am-water-jar-20l.jpg'
       : '/images/products/cp-dome.jpg';
     setImages([defaultImg]);
     setSpecs(
-      defaultBrand === 'am-distributors'
+      currentCompanyScope === 'am-distributors'
         ? [
             { key: 'Packaging', value: 'Food-Grade 20L Sealed Container' },
             { key: 'Dispatch Slot', value: 'Direct Depot Dispatch Within 4 Hours' }
@@ -175,11 +202,13 @@ export const AdminProductsPage: React.FC = () => {
     setEditingProduct(prod);
     setName(prod.name);
     setSlug(prod.slug);
-    setModelNumber(prod.modelNumber);
+    setModelNumber(prod.modelNumber || '');
     setBrandId(prod.brandId);
     setCategoryId(prod.categoryId);
     setDescription(prod.description);
     setPrice(prod.price ? String(prod.price) : '');
+    setStockQuantity(prod.stockQuantity !== undefined ? String(prod.stockQuantity) : '25');
+    setLowStockThreshold(prod.lowStockThreshold !== undefined ? String(prod.lowStockThreshold) : '10');
     setAvailability(prod.availability);
     setFeatured(prod.featured);
     setPublished(prod.published);
@@ -212,13 +241,15 @@ export const AdminProductsPage: React.FC = () => {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !modelNumber.trim()) {
-      error('Validation Error', 'Name and Model Number are required.');
+    if (!name.trim()) {
+      error('Validation Error', 'Product title is required.');
       return;
     }
 
+    const targetBrand = editingProduct ? brandId : currentBrand;
+
     // Role safety check
-    if (!canManageBrand(brandId)) {
+    if (!canManageBrand(targetBrand)) {
       error('Permission Denied', 'You cannot create or update products for this brand.');
       return;
     }
@@ -237,20 +268,31 @@ export const AdminProductsPage: React.FC = () => {
         }
       });
 
+      const parsedStock = stockQuantity !== '' ? Math.max(0, parseInt(stockQuantity, 10) || 0) : 0;
+      const parsedThreshold = lowStockThreshold !== '' ? Math.max(0, parseInt(lowStockThreshold, 10) || 0) : 10;
+      const computedAvailability: 'in_stock' | 'out_of_stock' | 'pre_order' | 'contact_for_price' =
+        parsedStock === 0 ? 'out_of_stock' : availability;
+
       const productPayload = {
-        name,
+        name: name.trim(),
         slug: generatedSlug,
-        modelNumber,
-        brandId,
-        categoryId: categoryId || 'cat-general',
+        modelNumber: modelNumber.trim() || undefined,
+        brandId: targetBrand,
+        categoryId: categoryId || (categories[0]?.id || 'cat-general'),
         categoryName: selectedCat ? selectedCat.name : editingProduct?.categoryName || 'General Equipment',
-        description,
+        description: description.trim(),
         price: price ? parseFloat(price) : undefined,
         currency: 'INR',
-        availability,
+        stockQuantity: parsedStock,
+        lowStockThreshold: parsedThreshold,
+        availability: computedAvailability,
         featured,
         published,
-        images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=800&q=80'],
+        images: images.length > 0 ? images : [
+          targetBrand === 'am-distributors'
+            ? '/images/products/am-water-jar-20l.jpg'
+            : '/images/products/cp-dome.jpg'
+        ],
         specifications: specObj
       };
 
@@ -258,9 +300,6 @@ export const AdminProductsPage: React.FC = () => {
         await updateProduct(editingProduct.id, productPayload);
         success('Product Updated', `${name} has been updated in Firestore.`);
       } else {
-        const currentCompanyScope: CompanyScopeId = activeConsole === 'am-distributors' || isAmAdmin
-          ? 'am-distributors'
-          : (activeConsole === 'nexalus-innovations' || isInnovationsAdmin ? 'nexalus-innovations' : 'nexalus-llp');
         await createProduct({ ...productPayload, companyId: currentCompanyScope }, currentCompanyScope);
         success('Product Created', `${name} has been published.`);
       }
@@ -271,6 +310,32 @@ export const AdminProductsPage: React.FC = () => {
       error('Failed to save product', err.message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleQuickStockAdjust = async (productId: string, delta: number) => {
+    const prod = products.find(p => p.id === productId);
+    if (!prod) return;
+    const current = prod.stockQuantity !== undefined ? prod.stockQuantity : 25;
+    const newQty = Math.max(0, current + delta);
+    const newAvailability = newQty === 0 ? 'out_of_stock' : (prod.availability === 'pre_order' ? 'pre_order' : 'in_stock');
+
+    // Optimistic UI update
+    setProducts(prev => prev.map(p => p.id === productId ? {
+      ...p,
+      stockQuantity: newQty,
+      availability: newAvailability
+    } : p));
+
+    try {
+      await updateProduct(productId, {
+        stockQuantity: newQty,
+        availability: newAvailability
+      });
+      success('Stock Updated', `${prod.name}: ${newQty} units in inventory.`);
+    } catch (err: any) {
+      error('Failed to update stock', err.message);
+      loadData();
     }
   };
 
@@ -286,29 +351,73 @@ export const AdminProductsPage: React.FC = () => {
     }
   };
 
+  const handleTogglePublish = async (product: Product) => {
+    const isCurrentlyPublished = product.published !== false;
+    const newPublished = !isCurrentlyPublished;
+    try {
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, published: newPublished } : p));
+      await updateProduct(product.id, { published: newPublished });
+      if (newPublished) {
+        success('Product Published', `"${product.name}" is now live on the public website.`);
+      } else {
+        success('Product Hidden', `"${product.name}" has been hidden from the public website.`);
+      }
+    } catch (err: any) {
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, published: product.published } : p));
+      error('Failed to change visibility', err?.message);
+    }
+  };
+
   const filtered = products.filter(p => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.modelNumber.toLowerCase().includes(search.toLowerCase());
-    const matchesCat = selectedCatFilter === 'all' || p.categoryId === selectedCatFilter;
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || (() => {
+      // For short 2-3 letter terms like "lan", match word boundaries so "lan" does not falsely match "surveil-LAN-ce"
+      if (q.length <= 3) {
+        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(^|[^a-z0-9])${escaped}`, 'i');
+        return regex.test(p.name) || regex.test(p.modelNumber || '') || regex.test(p.categoryName || '');
+      }
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.modelNumber || '').toLowerCase().includes(q) ||
+        (p.categoryName || '').toLowerCase().includes(q)
+      );
+    })();
     
+    const matchesCat = selectedCatFilter === 'all' || p.categoryId === selectedCatFilter || (
+      selectedCatFilter.includes('cctv') && (p.categoryName?.toLowerCase().includes('cctv') || p.categoryId?.includes('cctv'))
+    ) || (
+      selectedCatFilter.includes('fiber') && (p.categoryName?.toLowerCase().includes('fiber') || p.categoryId?.includes('fiber'))
+    ) || (
+      selectedCatFilter.includes('network') && (p.categoryName?.toLowerCase().includes('network') || p.categoryId?.includes('network'))
+    );
+
     let matchesCompany = false;
     if (activeConsole === 'am-distributors' || isAmAdmin) {
-      matchesCompany = p.companyId === 'am-distributors' || p.brandId === 'am-distributors' || p.id.startsWith('prod-am-');
+      matchesCompany = p.id.startsWith('prod-am');
     } else if (activeConsole === 'nexalus-innovations' || isInnovationsAdmin) {
-      matchesCompany = p.companyId === 'nexalus-innovations' ||
-        ['nexalus-innovations', 'cp-plus', 'one-broadband', 'itti-networking'].includes(p.brandId) ||
-        p.id.startsWith('prod-nex-') || p.id.startsWith('prod-cp-') || p.id.startsWith('prod-ob-') || p.id.startsWith('prod-itti-');
+      matchesCompany = p.id.startsWith('prod-nexalus-') && !p.id.includes('llp');
     } else {
-      // Parent Corporate Master (Nexalus Innovations LLP):
-      matchesCompany = p.companyId === 'nexalus-llp' || p.brandId === 'nexalus' || p.id.startsWith('prod-llp-') || p.id.startsWith('prod-corp-');
+      matchesCompany = p.id.includes('nexalus-llp');
     }
 
-    return matchesSearch && matchesCat && matchesCompany;
+    let matchesStock = true;
+    const qty = p.stockQuantity !== undefined ? p.stockQuantity : 25;
+    const thresh = p.lowStockThreshold !== undefined ? p.lowStockThreshold : 10;
+    if (selectedStockFilter === 'in_stock') {
+      matchesStock = qty > thresh && p.availability !== 'out_of_stock';
+    } else if (selectedStockFilter === 'low_stock') {
+      matchesStock = qty > 0 && qty <= thresh && p.availability !== 'out_of_stock';
+    } else if (selectedStockFilter === 'out_of_stock') {
+      matchesStock = qty === 0 || p.availability === 'out_of_stock';
+    }
+
+    return matchesSearch && matchesCat && matchesCompany && matchesStock;
   });
 
-  const nexalusCount = products.filter(p => p.brandId !== 'am-distributors').length;
-  const amCount = products.filter(p => p.brandId === 'am-distributors').length;
+  const parentCount = products.filter(p => p.id.includes('nexalus-llp')).length;
+  const childCount = products.filter(p => p.id.startsWith('prod-nexalus-') && !p.id.includes('llp')).length;
+  const amCount = products.filter(p => p.id.startsWith('prod-am')).length;
 
   return (
     <div className="space-y-6">
@@ -395,18 +504,37 @@ export const AdminProductsPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {/* Category Filter */}
           <select
-            className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700"
+            className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700 font-semibold cursor-pointer"
             value={selectedCatFilter}
             onChange={e => setSelectedCatFilter(e.target.value)}
           >
-            <option value="all">All Categories</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name} ({c.brandId})
-              </option>
-            ))}
+            <option value="all">📁 All Categories</option>
+            {categories
+              .filter(c => {
+                if (currentCompanyScope === 'am-distributors') return c.brandId === 'am-distributors' || c.id.startsWith('cat-am');
+                if (currentCompanyScope === 'nexalus-innovations') return c.brandId === 'nexalus-innovations' || (c.id.startsWith('cat-nexalus-') && !c.id.includes('llp'));
+                return c.brandId === 'nexalus' || c.id.includes('nexalus-llp');
+              })
+              .map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+
+          {/* Stock Level Filter */}
+          <select
+            className="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700 font-semibold cursor-pointer"
+            value={selectedStockFilter}
+            onChange={e => setSelectedStockFilter(e.target.value as any)}
+          >
+            <option value="all">📦 All Stock Levels</option>
+            <option value="in_stock">🟢 In Stock (Healthy)</option>
+            <option value="low_stock">🟡 Low Stock Alerts Only</option>
+            <option value="out_of_stock">🔴 Out of Stock Only</option>
           </select>
         </div>
       </div>
@@ -418,9 +546,9 @@ export const AdminProductsPage: React.FC = () => {
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
               <tr>
                 <th className="py-3.5 px-4">Product / Model</th>
-                <th className="py-3.5 px-4">Brand</th>
                 <th className="py-3.5 px-4">Category</th>
                 <th className="py-3.5 px-4">Est. Price</th>
+                <th className="py-3.5 px-4">Stock &amp; Inventory</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -445,15 +573,13 @@ export const AdminProductsPage: React.FC = () => {
                         <div className="font-bold text-slate-900 truncate max-w-xs">
                           {product.name}
                         </div>
-                        <div className="text-[11px] font-mono text-slate-500">
-                          {product.modelNumber}
-                        </div>
+                        {product.modelNumber && (
+                          <div className="text-[11px] font-mono text-slate-500">
+                            {product.modelNumber}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </td>
-
-                  <td className="py-3.5 px-4">
-                    <BrandBadge brandId={product.brandId} size="sm" />
                   </td>
 
                   <td className="py-3.5 px-4 text-slate-600">
@@ -465,42 +591,119 @@ export const AdminProductsPage: React.FC = () => {
                   </td>
 
                   <td className="py-3.5 px-4">
+                    {(() => {
+                      const qty = product.stockQuantity !== undefined ? product.stockQuantity : 25;
+                      const threshold = product.lowStockThreshold !== undefined ? product.lowStockThreshold : 10;
+                      const isOut = qty === 0 || product.availability === 'out_of_stock';
+                      const isLow = !isOut && qty <= threshold;
+
+                      return (
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide ${
+                                isOut
+                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  : isLow
+                                  ? 'bg-amber-50 text-amber-800 border border-amber-200 animate-pulse'
+                                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  isOut ? 'bg-rose-500' : isLow ? 'bg-amber-500' : 'bg-emerald-500'
+                                }`}
+                              />
+                              {isOut
+                                ? 'Out of Stock (0)'
+                                : isLow
+                                ? `Low Stock (${qty})`
+                                : `${qty} in Stock`}
+                            </span>
+                          </div>
+
+                          {/* Quick 1-Click Inline Stock Adjuster */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleQuickStockAdjust(product.id, -1)}
+                              disabled={qty === 0}
+                              className="w-5 h-5 rounded-md bg-slate-100 hover:bg-slate-200 disabled:opacity-30 text-slate-700 text-xs font-bold flex items-center justify-center cursor-pointer transition-colors"
+                              title="Deduct 1 unit"
+                            >
+                              −
+                            </button>
+                            <span className="text-[11px] font-mono font-bold text-slate-800 px-1 min-w-[24px] text-center">
+                              {qty}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickStockAdjust(product.id, 1)}
+                              className="w-5 h-5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center cursor-pointer transition-colors"
+                              title="Add 1 unit"
+                            >
+                              +
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickStockAdjust(product.id, 10)}
+                              className="px-1.5 h-5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center cursor-pointer transition-colors"
+                              title="Restock +10 units"
+                            >
+                              +10
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </td>
+
+                  <td className="py-3.5 px-4">
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        product.published
+                        product.published !== false
                           ? 'bg-emerald-50 text-emerald-700'
                           : 'bg-slate-100 text-slate-600'
                       }`}
                     >
-                      {product.published ? 'Published' : 'Draft'}
+                      {product.published !== false ? 'Published' : 'Hidden'}
                     </span>
                   </td>
 
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      <a
-                        href={
-                          product.brandId === 'am-distributors'
-                            ? '/brands/am-distributors/products'
-                            : '/products'
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                        title="View product on public store"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </a>
                       <button
+                        type="button"
+                        onClick={() => handleTogglePublish(product)}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          product.published !== false
+                            ? 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50'
+                            : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                        }`}
+                        title={
+                          product.published !== false
+                            ? 'Visible on public site — Click to Hide'
+                            : 'Hidden from public site — Click to Unhide & Publish'
+                        }
+                      >
+                        {product.published !== false ? (
+                          <Eye className="w-4 h-4" />
+                        ) : (
+                          <EyeOff className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => openEditModal(product)}
-                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                         title="Edit Product"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => setDeleteCandidate(product)}
-                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                         title="Delete Product"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -531,11 +734,10 @@ export const AdminProductsPage: React.FC = () => {
               required
             />
             <Input
-              label="Model Number / SKU *"
-              placeholder="CP-UNC-TA41ZL4-MDS"
+              label="Model Number / SKU (Optional)"
+              placeholder="e.g. CP-UNC-TA41ZL4-MDS (or leave blank)"
               value={modelNumber}
               onChange={e => setModelNumber(e.target.value)}
-              required
             />
           </div>
 
@@ -545,21 +747,27 @@ export const AdminProductsPage: React.FC = () => {
                 Operating Company
               </label>
               <div className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between ${
-                activeConsole === 'am-distributors' || isAmAdmin
+                currentCompanyScope === 'am-distributors'
                   ? 'bg-teal-50 border-teal-200 text-teal-900'
+                  : currentCompanyScope === 'nexalus-innovations'
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-900'
                   : 'bg-blue-50 border-blue-200 text-blue-900'
               }`}>
                 <span className="truncate">
-                  {activeConsole === 'am-distributors' || isAmAdmin
+                  {currentCompanyScope === 'am-distributors'
                     ? 'A.M. Distributors Chiplun'
+                    : currentCompanyScope === 'nexalus-innovations'
+                    ? 'Nexalus Innovations'
                     : 'Nexalus Innovations LLP'}
                 </span>
                 <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded shrink-0 ${
-                  activeConsole === 'am-distributors' || isAmAdmin
+                  currentCompanyScope === 'am-distributors'
                     ? 'bg-teal-200 text-teal-800'
+                    : currentCompanyScope === 'nexalus-innovations'
+                    ? 'bg-indigo-200 text-indigo-800'
                     : 'bg-blue-200 text-blue-800'
                 }`}>
-                  {activeConsole === 'am-distributors' || isAmAdmin ? 'Child Unit' : 'Parent Company'}
+                  {currentCompanyScope === 'nexalus-llp' ? 'Parent Company' : 'Child Division'}
                 </span>
               </div>
             </div>
@@ -574,9 +782,11 @@ export const AdminProductsPage: React.FC = () => {
                 onChange={e => setCategoryId(e.target.value)}
               >
                 {(() => {
-                  const matchingCats = (brandId === 'am-distributors')
-                    ? categories.filter(c => c.brandId === 'am-distributors')
-                    : categories.filter(c => c.brandId !== 'am-distributors');
+                  const matchingCats = categories.filter(c => {
+                    if (currentCompanyScope === 'am-distributors') return c.brandId === 'am-distributors' || c.id.startsWith('cat-am');
+                    if (currentCompanyScope === 'nexalus-innovations') return c.brandId === 'nexalus-innovations' || (c.id.startsWith('cat-nexalus-') && !c.id.includes('llp'));
+                    return c.brandId === 'nexalus' || c.id.includes('nexalus-llp');
+                  });
                   const hasCurrentCat = matchingCats.some(c => c.id === categoryId);
                   return (
                     <>
@@ -610,6 +820,89 @@ export const AdminProductsPage: React.FC = () => {
             value={description}
             onChange={e => setDescription(e.target.value)}
           />
+
+          {/* Dedicated Inventory & Stock Management Section */}
+          <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <Box className="w-4 h-4 text-indigo-600" />
+                <span>Inventory &amp; Stock Levels</span>
+              </label>
+              <span
+                className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
+                  parseInt(stockQuantity || '0', 10) === 0
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : parseInt(stockQuantity || '0', 10) <= parseInt(lowStockThreshold || '10', 10)
+                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                    : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                }`}
+              >
+                {parseInt(stockQuantity || '0', 10) === 0
+                  ? 'Out of Stock'
+                  : parseInt(stockQuantity || '0', 10) <= parseInt(lowStockThreshold || '10', 10)
+                  ? 'Low Stock Warning'
+                  : 'In Stock (Healthy)'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Stock Quantity (Units / Jars)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 50"
+                  value={stockQuantity}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setStockQuantity(val);
+                    const num = parseInt(val, 10);
+                    if (num === 0) {
+                      setAvailability('out_of_stock');
+                    } else if (num > 0 && availability === 'out_of_stock') {
+                      setAvailability('in_stock');
+                    }
+                  }}
+                  className="w-full rounded-xl border border-slate-300 bg-white text-xs px-3 py-2 text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Available physical units</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Low Stock Alert Threshold
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 10"
+                  value={lowStockThreshold}
+                  onChange={e => setLowStockThreshold(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white text-xs px-3 py-2 text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Warn when stock falls $\le$ this</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Public Status
+                </label>
+                <select
+                  value={availability}
+                  onChange={e => setAvailability(e.target.value as any)}
+                  className="w-full rounded-xl border border-slate-300 bg-white text-xs px-3 py-2 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+                >
+                  <option value="in_stock">In Stock (Available)</option>
+                  <option value="out_of_stock">Out of Stock</option>
+                  <option value="pre_order">Available on Pre-Order</option>
+                  <option value="contact_for_price">Contact for Stock &amp; Quote</option>
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">Customer-facing badge</p>
+              </div>
+            </div>
+          </div>
 
           {/* Enhanced Image Management Box */}
           <div className="space-y-3 p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl">

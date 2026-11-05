@@ -1,3 +1,27 @@
+
+/* =========================================================================
+   BLURZOOMREVEAL - CSS-ONLY ENTRANCE ANIMATIONS (no JS observer, always visible)
+   ========================================================================= */
+@keyframes bzr-slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes bzr-slide-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes bzr-slide-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes bzr-slide-down {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes bzr-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 @import "tailwindcss";
 
 @layer base {

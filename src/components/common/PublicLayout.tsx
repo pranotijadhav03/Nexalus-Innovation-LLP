@@ -7,23 +7,56 @@ import { PlanOrderModal } from './PlanOrderModal';
 import { FloatingCallButton } from './FloatingCallButton';
 import { FloatingWhatsAppButton } from './FloatingWhatsAppButton';
 import { useAuth } from '../../context/AuthContext';
+import { isCustomerLinkedToCompany } from '../../firebase/services';
 
 export const ScrollToTop: React.FC = () => {
-  const { pathname } = useLocation();
+  const { pathname, search, hash } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant'
-    });
-  }, [pathname]);
+    if (hash) {
+      const targetId = hash.replace(/^#/, '');
+      const scrollToEl = () => {
+        const el = document.getElementById(targetId) ||
+          document.getElementById(`sec-${targetId}`) ||
+          document.getElementById(`sec-inno-${targetId}`) ||
+          document.getElementById(`sec-am-${targetId}`) ||
+          document.getElementById(`section-${targetId}`);
+        if (el) {
+          const yOffset = -80;
+          const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+          return true;
+        }
+        return false;
+      };
+
+      if (!scrollToEl()) {
+        const t1 = setTimeout(scrollToEl, 80);
+        const t2 = setTimeout(scrollToEl, 250);
+        const t3 = setTimeout(scrollToEl, 500);
+        const t4 = setTimeout(scrollToEl, 1000);
+        return () => {
+          clearTimeout(t1);
+          clearTimeout(t2);
+          clearTimeout(t3);
+          clearTimeout(t4);
+        };
+      }
+    } else {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
+      });
+    }
+  }, [pathname, search, hash]);
 
   return null;
 };
 
 export const PublicLayout: React.FC = () => {
-  const { isAuthenticated, isCustomer, isLoading } = useAuth();
+  const location = useLocation();
+  const { currentUser, isAuthenticated, isCustomer, isLoading } = useAuth();
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [modalView, setModalView] = useState<CustomerModalView>('choice');
   const [modalPrompt, setModalPrompt] = useState<string | null>(null);
@@ -31,20 +64,31 @@ export const PublicLayout: React.FC = () => {
   const [selectedPlanForOrder, setSelectedPlanForOrder] = useState<any>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
-  // Trigger popup once per session for unauthenticated visitors after short delay
+  // Trigger popup once per session for unlinked visitors (guests or users signed in under other companies)
   useEffect(() => {
-    if (isLoading || isAuthenticated) return;
+    if (isLoading) return;
+
+    // Check if customer is already linked to parent company
+    const isLinkedToParent = isCustomerLinkedToCompany(currentUser, 'nexalus-llp');
+
+    // If already linked, or an admin is signed in, do not auto-pop
+    if (isLinkedToParent) return;
+    if (currentUser && currentUser.role !== 'customer') return;
 
     try {
-      const dismissed = sessionStorage.getItem('nexalus_customer_choice_dismissed');
+      const dismissKey = currentUser
+        ? ('nexalus_choice_dismissed_nexalus-llp_' + currentUser.uid)
+        : 'nexalus_choice_dismissed_nexalus-llp_guest';
+      const dismissed = sessionStorage.getItem(dismissKey);
       if (!dismissed) {
         const timer = setTimeout(() => {
+          setModalView('choice');
           setIsCustomerModalOpen(true);
         }, 1200);
         return () => clearTimeout(timer);
       }
     } catch {}
-  }, [isAuthenticated, isLoading]);
+  }, [currentUser, isLoading]);
 
   // Listen for global custom event to open customer portal from any link or button
   useEffect(() => {
@@ -116,6 +160,7 @@ export const PublicLayout: React.FC = () => {
         initialView={modalView}
         promptMessage={modalPrompt}
         authContext={modalContext}
+        targetCompanyScope="nexalus-llp"
       />
 
       {/* Global Instant Direct Order Modal (BUY NOW) */}

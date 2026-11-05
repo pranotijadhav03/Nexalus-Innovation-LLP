@@ -290,8 +290,8 @@ export const AdminProjectsPage: React.FC = () => {
                   return proj.brandId === 'nexalus-innovations' || proj.brandId === 'cp-plus' || proj.brandId === 'one-broadband' || proj.brandId === 'itti-networking';
                 }
                 return proj.brandId === 'nexalus';
-              }).map(proj => (
-                <tr key={proj.id} className="hover:bg-slate-50/70 transition-colors">
+              }).map((proj, idx) => (
+                <tr key={`${proj.id}-${idx}`} className="hover:bg-slate-50/70 transition-colors">
                   <td className="py-3.5 px-4 font-bold text-slate-900">
                     <div className="flex items-center gap-3">
                       <img

@@ -26,7 +26,10 @@ import {
   PhoneCall,
   ShoppingCart,
   Trash2,
-  Lock
+  Lock,
+  ChevronDown,
+  Mail,
+  MapPin
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { OurTeamSection } from '../../components/common/OurTeamSection';
@@ -36,7 +39,8 @@ import { BlurZoomReveal } from '../../components/common/BlurZoomReveal';
 import { QuoteModal } from '../../components/common/QuoteModal';
 import { ServiceCard } from '../../components/brand/ServiceCard';
 import { CustomSectionsRenderer } from '../../components/common/CustomSectionsRenderer';
-import { Service, BroadbandPlan, InternetPlan, SiteBanner, CartPlanItem } from '../../types';
+import { TypewriterHeading } from '../../components/common/TypewriterHeading';
+import { Service, BroadbandPlan, InternetPlan, SiteBanner, CartPlanItem, Product, ProductCategory, FAQ } from '../../types';
 import {
   subscribeToBroadbandPlans,
   subscribeToInternetPlans,
@@ -47,9 +51,15 @@ import {
   clearPlanCart,
   getCachedBroadbandPlans,
   getCachedInternetPlans,
-  getCachedBanners
+  getCachedBanners,
+  getCachedFaqs,
+  getCachedProducts,
+  getProducts,
+  subscribeToProducts,
+  getCachedCategories,
+  subscribeToCategories
 } from '../../firebase/services';
-import { initialBanners, DEFAULT_NEXALUS_SLIDES } from '../../data/initialData';
+import { initialBanners, DEFAULT_NEXALUS_SLIDES, DEFAULT_PARENT_SECTIONS } from '../../data/initialData';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -138,6 +148,49 @@ export const HomePage: React.FC = () => {
   // Cart State
   const [cartItems, setCartItems] = useState<CartPlanItem[]>(() => getPlanCart());
 
+  // Parent Company (Nexalus Innovations LLP) Products State: Strictly all 28 parent products
+  const [parentProducts, setParentProducts] = useState<Product[]>(() => getCachedProducts('corporate'));
+  const [parentCategories, setParentCategories] = useState<ProductCategory[]>(() => getCachedCategories('corporate'));
+
+  const cctvCategory = React.useMemo(() => {
+    return parentCategories.find(c => c.id.includes('cctv')) || null;
+  }, [parentCategories]);
+
+  const fiberCategory = React.useMemo(() => {
+    return parentCategories.find(c => c.id.includes('fiber')) || null;
+  }, [parentCategories]);
+
+  const networkCategory = React.useMemo(() => {
+    return parentCategories.find(c => c.id.includes('network')) || null;
+  }, [parentCategories]);
+
+  const cablingCategory = React.useMemo(() => {
+    return parentCategories.find(c => c.id.includes('turnkey') || c.id.includes('infra') || c.id.includes('cabling')) || null;
+  }, [parentCategories]);
+
+  const parentCctvProducts = React.useMemo(() => {
+    return parentProducts.filter(p => p.published !== false && (p.categoryId?.includes('cctv') || p.categoryName?.toLowerCase().includes('cctv'))).slice(0, 3);
+  }, [parentProducts]);
+
+  const parentFiberProducts = React.useMemo(() => {
+    return parentProducts.filter(p => p.published !== false && (p.categoryId?.includes('fiber') || p.categoryName?.toLowerCase().includes('fiber'))).slice(0, 3);
+  }, [parentProducts]);
+
+  const parentNetworkProducts = React.useMemo(() => {
+    return parentProducts.filter(p => 
+      p.published !== false && (
+        p.categoryId?.includes('network') || 
+        p.categoryId?.includes('turnkey') || 
+        p.categoryId?.includes('infra') || 
+        p.categoryId?.includes('lan') ||
+        p.categoryName?.toLowerCase().includes('network') || 
+        p.categoryName?.toLowerCase().includes('cabling') ||
+        p.categoryName?.toLowerCase().includes('hardware') ||
+        p.categoryName?.toLowerCase().includes('lan')
+      )
+    ).slice(0, 3);
+  }, [parentProducts]);
+
   const handleAddToCart = (plan: {
     planId: string;
     providerName: string;
@@ -189,6 +242,9 @@ export const HomePage: React.FC = () => {
     return found || initialBanners.find(b => b.id === 'ban-parent') || initialBanners[0];
   });
 
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+  const [parentFaqs] = useState<FAQ[]>(() => getCachedFaqs('corporate'));
+
   useEffect(() => {
     const unsubBB = subscribeToBroadbandPlans((plans) => {
       setHomeBroadbandPlans(plans);
@@ -203,12 +259,31 @@ export const HomePage: React.FC = () => {
       if (b) setHeroBanner(b);
     }, 'nexalus');
 
+    const unsubCats = subscribeToCategories((cats) => {
+      setParentCategories(cats);
+    }, 'corporate');
+
+    const unsubProds = subscribeToProducts((prods) => {
+      if (prods && prods.length > 0) setParentProducts(prods);
+    }, 'corporate');
+
+    getProducts('corporate', true).then(prods => {
+      if (prods && prods.length > 0) setParentProducts(prods);
+    });
+
     const handleCartUpdate = (e: any) => {
       setCartItems(e.detail || getPlanCart());
     };
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
 
     const handleDataUpdate = (e: any) => {
+      const freshProds = getCachedProducts('corporate');
+      const freshCats = getCachedCategories('corporate');
+      if (freshProds && freshProds.length > 0) setParentProducts(freshProds);
+      if (freshCats && freshCats.length > 0) setParentCategories(freshCats);
+      getProducts('corporate', true).then(prods => {
+        if (prods && prods.length > 0) setParentProducts(prods);
+      });
       if (!e.detail?.key || e.detail.key.includes('plans')) {
         setHomeBroadbandPlans(getCachedBroadbandPlans());
         setHomeOnePlans(getCachedInternetPlans());
@@ -228,6 +303,8 @@ export const HomePage: React.FC = () => {
       unsubBB();
       unsubLegacy();
       unsubBanners();
+      unsubCats();
+      unsubProds();
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
       window.removeEventListener('nexalus_data_update', handleDataUpdate);
       window.removeEventListener('storage', handleDataUpdate);
@@ -243,6 +320,15 @@ export const HomePage: React.FC = () => {
     return heroBanner?.slides && heroBanner.slides.length > 0 ? heroBanner.slides : [];
   }, [heroBanner?.slides]);
 
+  const parentSections = React.useMemo(() => {
+    const list = (heroBanner?.sectionsOrder && heroBanner.sectionsOrder.length > 0)
+      ? heroBanner.sectionsOrder
+      : DEFAULT_PARENT_SECTIONS;
+    const savedIds = new Set(list.map(s => s.id));
+    const missing = DEFAULT_PARENT_SECTIONS.filter(d => !savedIds.has(d.id));
+    return [...list, ...missing].sort((a, b) => a.order - b.order);
+  }, [heroBanner?.sectionsOrder]);
+
   const [heroSlideIdx, setHeroSlideIdx] = useState(0);
 
   // Auto-play slideshow with smooth 3-second interval
@@ -250,7 +336,7 @@ export const HomePage: React.FC = () => {
     if (heroSlides.length <= 1) return;
     const timer = setInterval(() => {
       setHeroSlideIdx(prev => (prev + 1) % heroSlides.length);
-    }, 3000);
+    }, 5500);
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
@@ -298,75 +384,14 @@ export const HomePage: React.FC = () => {
   const currentSecondaryCta = activeSlide?.secondaryCtaText || cleanSecondaryCtaText;
   const currentSecondaryLink = activeSlide?.secondaryCtaLink || (heroBanner?.secondaryCtaLink || '/products');
 
-  // Typewriter effect state
   const brandTarget = 'Nexalus Innovations LLP';
-  const [typedBrand, setTypedBrand] = useState('');
-  const [isBrandDone, setIsBrandDone] = useState(false);
-  const [typedBadge, setTypedBadge] = useState('');
-  const [isBadgeDone, setIsBadgeDone] = useState(false);
-  const [typedTitle, setTypedTitle] = useState('');
-  const [isTitleDone, setIsTitleDone] = useState(false);
 
-  // Typewriter for Brand Name (on initial mount)
-  useEffect(() => {
-    let index = 0;
-    const interval = setInterval(() => {
-      index++;
-      setTypedBrand(brandTarget.slice(0, index));
-      if (index >= brandTarget.length) {
-        setIsBrandDone(true);
-        clearInterval(interval);
-      }
-    }, 40);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Typewriter for Badge (sync with slide changes)
-  useEffect(() => {
-    setTypedBadge('');
-    setIsBadgeDone(false);
-    let index = 0;
-    const target = activeBadgeTarget || '';
-    if (!target) return;
-
-    const interval = setInterval(() => {
-      index++;
-      setTypedBadge(target.slice(0, index));
-      if (index >= target.length) {
-        setIsBadgeDone(true);
-        clearInterval(interval);
-      }
-    }, 25);
-
-    return () => clearInterval(interval);
-  }, [activeBadgeTarget, heroSlideIdx]);
-
-  // Typewriter for Slide Title (sync with slide changes & dynamic updates)
-  useEffect(() => {
-    setTypedTitle('');
-    setIsTitleDone(false);
-    let index = 0;
-    const target = currentHeroTitle || '';
-    if (!target) return;
-
-    const interval = setInterval(() => {
-      index++;
-      setTypedTitle(target.slice(0, index));
-      if (index >= target.length) {
-        setIsTitleDone(true);
-        clearInterval(interval);
-      }
-    }, 28);
-
-    return () => clearInterval(interval);
-  }, [currentHeroTitle, heroSlideIdx]);
-
-  return (
-    <div className="flex flex-col w-full">
-      {/* =========================================================================
-          SLIDE 1: DYNAMIC HERO FULL-WIDTH EDGE-TO-EDGE CAROUSEL BANNER (3S INTERVAL, SMOOTH CROSSFADE)
-          ========================================================================= */}
-      <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 select-none group/hero min-h-[540px] lg:min-h-[640px]">
+  const renderLandingSection = (secId: string) => {
+    switch (secId) {
+      case 'sec-hero':
+        return (
+          <React.Fragment key="sec-hero">
+            <section className="relative w-full overflow-hidden bg-slate-950 border-b border-slate-800 select-none group/hero min-h-[540px] lg:min-h-[640px]">
         {/* Cinematic Multi-Layered Background Cross-Fade (Ultra-smooth 1000ms transition) */}
         <div className="absolute inset-0">
           {heroSlides.length > 0 ? (
@@ -414,9 +439,8 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Decreased fade scrim: keeps text readable while letting background imagery remain visibly clear */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/88 via-[#0f2444]/65 via-42% md:via-36% to-transparent pointer-events-none z-1" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1628]/70 via-transparent to-[#0a1628]/30 pointer-events-none z-1" />
-
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 via-50% to-slate-950/45 pointer-events-none z-1" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-950/40 pointer-events-none z-1" />
         {/* Carousel Arrow Controls (Visible if multiple slides exist) */}
         {heroSlides.length > 1 && (
           <>
@@ -442,32 +466,21 @@ export const HomePage: React.FC = () => {
         {/* Content strictly positioned on the left side with active slide cross-fade */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36 flex items-center min-h-[540px] lg:min-h-[640px]">
           <div className="max-w-4xl lg:max-w-5xl space-y-5 text-white mr-auto transition-all duration-700 ease-out" key={heroSlideIdx}>
-            {/* Top Badges: Brand Name + Announcement Badge (with Active Typewriter Effect) */}
+            {/* Top Badges: Brand Name + Announcement Badge */}
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-600/35 border border-blue-400/50 text-blue-100 text-xs sm:text-sm font-bold tracking-wide backdrop-blur-xs shadow-md">
-                <span>{typedBrand || brandTarget}</span>
-                {!isBrandDone && (
-                  <span className="inline-block w-1.5 h-3 bg-cyan-400 animate-pulse rounded-full" />
-                )}
+                <span>Nexalus Innovations LLP</span>
               </span>
 
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-400/50 text-cyan-200 text-xs sm:text-sm font-semibold tracking-wide shadow-md backdrop-blur-xs min-h-[32px]">
                 <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span>{typedBadge || '\u00A0'}</span>
-                {!isBadgeDone && (
-                  <span className="inline-block w-1.5 h-3 bg-cyan-300 animate-pulse rounded-full" />
-                )}
+                <span>{activeBadgeTarget}</span>
               </div>
             </div>
 
-            {/* Main Headline Title with Dynamic Typewriter Effect */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.85)] min-h-[1.25em]">
-              <span>{typedTitle || '\u00A0'}</span>
-              <span
-                className={`inline-block w-2 sm:w-2.5 h-7 sm:h-11 bg-cyan-400 rounded-xs ml-1.5 align-middle transition-opacity duration-300 ${
-                  isTitleDone ? 'opacity-0' : 'animate-pulse opacity-100'
-                }`}
-              />
+            {/* Main Headline with isolated fast typewriter */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] min-h-[1.2em]">
+              <TypewriterHeading text={currentHeroTitle} />
             </h1>
 
             {/* Subtitle / Description */}
@@ -532,8 +545,12 @@ export const HomePage: React.FC = () => {
           </div>
         )}
       </section>
-
-      {/* =========================================================================
+          </React.Fragment>
+        );
+      case 'sec-brands':
+        return (
+          <React.Fragment key="sec-brands">
+            {/* =========================================================================
           SLIDE 2: OUR BRANDS (WITH OUR BRANDS BACKGROUND IMAGE & ANIMATIONS)
           ========================================================================= */}
       <section className="relative w-full text-slate-900 py-16 sm:py-20 border-b border-slate-200/90 overflow-hidden isolate">
@@ -698,49 +715,51 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* =========================================================================
-          SECTION: OUR TEAM (SLIDING FOCUS SLIDER)
-          ========================================================================= */}
-      {heroBanner?.showTeam !== false && (
-        <OurTeamSection division="corporate" theme="dark" />
-      )}
-
-      {/* =========================================================================
-          COMBINED SECTION: INFRASTRUCTURE COVERAGE SEARCH & VERIFIED PROJECT GALLERY
-          ========================================================================= */}
-      <div id="service-coverage-and-gallery" className="w-full bg-white border-b border-slate-200/90 relative overflow-hidden">
-        {/* Subtle Background Lighting Gradients */}
+          </React.Fragment>
+        );
+      case 'sec-team':case 'sec-team':
+        return (
+          <React.Fragment key="sec-team">
+            <OurTeamSection division="corporate" theme="dark" />
+          </React.Fragment>
+        );
+      case 'sec-search':
+        return (
+          <React.Fragment key="sec-search">
+            
+      <div id="service-coverage-area" className="w-full bg-white border-b border-slate-200/90 relative overflow-hidden">
         <div className="absolute top-1/4 -left-48 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-
         <div className="relative z-10">
-          {/* 1. Find Nexalus Service & Infrastructure in Your Area (Search First) */}
           <AreasCoveredSection
             division="corporate"
             theme="light"
-            className="border-b-0 pb-8 sm:pb-12 pt-16 sm:pt-20"
+            className="pb-8 sm:pb-12 pt-16 sm:pt-20"
           />
-
-          {/* Elegant Integrated Divider between Coverage Search & Verified Project Gallery */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-slate-200" />
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-600/30 ring-4 ring-blue-50" />
-              <div className="flex-1 h-px bg-gradient-to-l from-transparent via-slate-200 to-slate-200" />
-            </div>
-          </div>
-
-          {/* 2. Verified Project Gallery (Immediately Following) */}
+        </div>
+      </div>
+          </React.Fragment>
+        );
+      case 'sec-projects':
+        return (
+          <React.Fragment key="sec-projects">
+            
+      <div id="service-project-gallery" className="w-full bg-white border-b border-slate-200/90 relative overflow-hidden">
+        <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10">
           <ProjectGallerySection
             division="corporate"
             theme="light"
             title="Project Gallery"
-            className="border-b-0 pt-8 sm:pt-12 pb-16 sm:pb-24"
+            className="pt-8 sm:pt-12 pb-16 sm:pb-24"
           />
         </div>
       </div>
-
-      {/* =========================================================================
+          </React.Fragment>
+        );
+      case 'sec-infrastructure':
+        return (
+          <React.Fragment key="sec-infrastructure">
+            {/* =========================================================================
           SECTION 3: INTEGRATED TECHNOLOGY INFRASTRUCTURE (3 PILLARS - RICH CORPORATE BLUE THEME)
           ========================================================================= */}
       <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-24 border-b border-blue-900/40 overflow-hidden">
@@ -982,8 +1001,12 @@ export const HomePage: React.FC = () => {
           2. Fiber Internet & Connectivity (Light Off-White / Blue Background)
           3. Enterprise IT Networking (White Background)
           ========================================================================= */}
-
-      {/* 4.1: CCTV Surveillance (Subtle Faded Architectural CCTV Background) */}
+          </React.Fragment>
+        );
+      case 'sec-cctv':
+        return (
+          <React.Fragment key="sec-cctv">
+            {/* 4.1: CCTV Surveillance (Subtle Faded Architectural CCTV Background) */}
       <section className="relative w-full text-slate-900 py-16 sm:py-20 border-b border-slate-200/90 overflow-hidden isolate">
         {/* CCTV Commercial Photography Background */}
         <div
@@ -1006,145 +1029,92 @@ export const HomePage: React.FC = () => {
             <div className="space-y-2 max-w-3xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold tracking-wider border border-blue-200/60">
                 <Shield className="w-3.5 h-3.5 text-blue-600" />
-                <span>CCTV Surveillance</span>
+                <span>{cctvCategory?.name || 'AI CCTV & Surveillance Systems'}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-                Security &amp; Surveillance
+                {cctvCategory?.name || 'AI CCTV & Surveillance Systems'}
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Explore CCTV cameras and surveillance equipment for commercial, industrial, and institutional environments.
+                {cctvCategory?.description || 'Explore commercial CCTV cameras and surveillance equipment for commercial, industrial, and institutional environments.'}
               </p>
             </div>
           </BlurZoomReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {/* CCTV Card 1 */}
-            <BlurZoomReveal direction="left" xOffset={-50} delay={0} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
-              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
-              <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
-                  <img
-                    src="/images/products/cp-bullet.jpg"
-                    alt="CP-UNC-TA41ZL4-MDS 4MP Smart IR Network Bullet Camera"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
+            {parentCctvProducts.map((product, idx) => (
+              <BlurZoomReveal key={`${product.id}-${idx}`} direction="up" delay={Math.min(idx * 35, 180)} duration={320} className="h-full flex flex-col">
+                <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
+                  <div>
+                    <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                      <img
+                        src={product.images[0] || '/images/products/cp-dome.jpg'}
+                        alt={product.name}
+                        className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (target.src !== '/images/products/cp-dome.jpg') {
+                            target.src = '/images/products/cp-dome.jpg';
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="p-5 sm:p-6 space-y-2.5">
+                      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                        {product.modelNumber ? `Nexalus • Model ${product.modelNumber}` : 'Nexalus Infrastructure'}
+                      </span>
+                      <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                        {product.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-5 sm:p-6 pt-0">
+                    <div className="pt-4 border-t border-slate-100 flex items-center gap-2">
+                      <Link to={`/products?category=${product.categoryId}`} className="block flex-1">
+                        <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                          View Details
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="font-bold bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => setIsQuoteModalOpen(true)}
+                      >
+                        Enquire
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                    CP-PLUS • Model CP-UNC-TA41ZL4-MDS
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                    CP-UNC-TA41ZL4-MDS 4MP Smart IR Network Bullet Camera
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
-                    High-performance 4 Megapixel outdoor network bullet camera featuring motorized varifocal lens, Starlight low-light sensitivity, and perimeter intrusion detection.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
-                  <Link to="/products?brand=cp-plus" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
-                      View Product
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            </BlurZoomReveal>
-
-            {/* CCTV Card 2 */}
-            <BlurZoomReveal direction="center" yOffset={30} delay={120} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
-              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
-              <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
-                  <img
-                    src="/images/products/cp-dome.jpg"
-                    alt="CP-UNC-DA41L3 4MP Full-Color Starlight Fixed Dome Camera"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                    CP-PLUS • Model CP-UNC-DA41L3
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                    CP-UNC-DA41L3 4MP Full-Color Starlight Fixed Dome Camera
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
-                    24/7 Full-Color dome surveillance camera with warm white LED supplemental lighting, built-in microphone for synchronized audio, and vandal-proof dome casing.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
-                  <Link to="/products?brand=cp-plus" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
-                      View Product
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            </BlurZoomReveal>
-
-            {/* CCTV Card 3 */}
-            <BlurZoomReveal direction="right" xOffset={50} delay={240} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
-              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
-              <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
-                  <img
-                    src="/images/products/cp-nvr.jpg"
-                    alt="CP-UNR-416T2-V2 16-Channel 4K Network Video Recorder (NVR)"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                    CP-PLUS • Model CP-UNR-416T2-V2
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                    CP-UNR-416T2-V2 16-Channel 4K Network Video Recorder (NVR)
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
-                    Ultra HD 16-channel standalone network video recorder with 4K HDMI output, dual SATA interfaces up to 20TB storage, and remote cloud surveillance app.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
-                  <Link to="/products?brand=cp-plus" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
-                      View Product
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            </BlurZoomReveal>
+              </BlurZoomReveal>
+            ))}
           </div>
 
           <BlurZoomReveal direction="up" delay={150}>
             <div className="text-center pt-2 sm:pt-4">
-              <Link to="/products?brand=cp-plus">
+              <Link to="/products?category=cat-nexalus-llp-cctv-surveillance">
                 <Button
                   variant="outline"
                   size="md"
                   className="font-bold border-blue-600 text-blue-600 hover:bg-blue-50"
                   icon={<ArrowRight className="w-4 h-4" />}
                 >
-                  View All CCTV Products
+                  View All CCTV Surveillance ({parentCctvProducts.length} Models)
                 </Button>
               </Link>
             </div>
           </BlurZoomReveal>
         </div>
       </section>
-
-      {/* 4.2: Fiber Internet & Connectivity (RICH CORPORATE BLUE THEME) */}
+          </React.Fragment>
+        );
+      case 'sec-fiber':
+        return (
+          <React.Fragment key="sec-fiber">
+            {/* 4.2: Fiber Internet & Connectivity (RICH CORPORATE BLUE THEME) */}
       <section className="relative w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-20 border-b border-blue-900/40 overflow-hidden isolate">
         {/* Swapped Background: Enterprise Networking Gear Blended into Navy Theme */}
         <div
@@ -1167,145 +1137,92 @@ export const HomePage: React.FC = () => {
             <div className="space-y-2 max-w-3xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-semibold tracking-wider border border-teal-400/30">
                 <Wifi className="w-3.5 h-3.5 text-teal-400" />
-                <span>Fiber Internet</span>
+                <span>{fiberCategory?.name || 'High-Speed Fiber Internet & Routers'}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                Fiber Internet &amp; Connectivity
+                {fiberCategory?.name || 'High-Speed Fiber Internet & Routers'}
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Explore fiber connectivity equipment, ONT devices, Wi-Fi solutions, and related networking products.
+                {fiberCategory?.description || 'Explore fiber connectivity equipment, ONT devices, Wi-Fi solutions, and related networking products.'}
               </p>
             </div>
           </BlurZoomReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {/* Fiber Card 1 */}
-            <BlurZoomReveal direction="left" xOffset={-50} delay={0} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
-              <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group h-full">
-              <div>
-                <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
-                  <img
-                    src="/images/products/wifi6-router.jpg"
-                    alt="NexFiber Wi-Fi 6 AX3000 Dual-Band Gigabit ONT Router"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
+            {parentFiberProducts.map((product, idx) => (
+              <BlurZoomReveal key={`${product.id}-${idx}`} direction="up" delay={Math.min(idx * 35, 180)} duration={320} className="h-full flex flex-col">
+                <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group h-full">
+                  <div>
+                    <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
+                      <img
+                        src={product.images[0] || '/images/products/wifi6-router.jpg'}
+                        alt={product.name}
+                        className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (target.src !== '/images/products/wifi6-router.jpg') {
+                            target.src = '/images/products/wifi6-router.jpg';
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="p-5 sm:p-6 space-y-2.5">
+                      <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
+                        {product.modelNumber ? `NexFiber • Model ${product.modelNumber}` : 'NexFiber Internet'}
+                      </span>
+                      <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
+                        {product.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-5 sm:p-6 pt-0">
+                    <div className="pt-4 border-t border-teal-900/40 flex items-center gap-2">
+                      <Link to={`/products?category=${product.categoryId}`} className="block flex-1">
+                        <Button variant="teal" size="sm" className="w-full justify-center font-bold">
+                          View Details
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="outline-white"
+                        size="sm"
+                        className="font-bold border-teal-400/50 text-teal-300 hover:bg-teal-500/20"
+                        onClick={() => setIsQuoteModalOpen(true)}
+                      >
+                        Enquire
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
-                    ONE BROADBAND • Model OB-AX3000-ONT
-                  </span>
-                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
-                    NexFiber Wi-Fi 6 AX3000 Dual-Band Gigabit ONT Router
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
-                    High-speed GPON Optical Network Terminal with built-in Wi-Fi 6, 4 Gigabit Ethernet LAN ports, VoIP FXS port, and OFDMA low-latency technology.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-teal-900/40">
-                  <Link to="/products?brand=one-broadband" className="block w-full">
-                    <Button variant="teal" size="sm" className="w-full justify-center font-bold">
-                      View Product
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            </BlurZoomReveal>
-
-            {/* Fiber Card 2 */}
-            <BlurZoomReveal direction="center" yOffset={30} delay={120} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
-              <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group h-full">
-              <div>
-                <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
-                  <img
-                    src="/images/products/mesh-wifi-v2.jpg"
-                    alt="NexMesh AX3000 Whole-Home Tri-Band Wi-Fi 6 Mesh System (3-Pack)"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
-                    ONE BROADBAND • Model OB-MESH-AX3000-3PK
-                  </span>
-                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
-                    NexMesh AX3000 Whole-Home Tri-Band Wi-Fi 6 Mesh System (3-Pack)
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
-                    Whole-home dead-zone killer mesh Wi-Fi system covering up to 6,000 sq.ft. with seamless single-SSID roaming, gigabit Ethernet backhaul, and zero buffering.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-teal-900/40">
-                  <Link to="/products?brand=one-broadband" className="block w-full">
-                    <Button variant="teal" size="sm" className="w-full justify-center font-bold">
-                      View Product
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            </BlurZoomReveal>
-
-            {/* Fiber Card 3 */}
-            <BlurZoomReveal direction="right" xOffset={50} delay={240} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
-              <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group h-full">
-              <div>
-                <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
-                  <img
-                    src="/images/products/fiber-modem.jpg"
-                    alt="NexFiber Gigabit XPON / GPON Optical Fiber Bridge Modem (ONU)"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider block">
-                    ONE BROADBAND • Model OB-ONU-1000G
-                  </span>
-                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors line-clamp-2 leading-snug">
-                    NexFiber Gigabit XPON / GPON Optical Fiber Bridge Modem (ONU)
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
-                    Ultra-compact high-speed Gigabit XPON/GPON optical network terminal (ONU) with 1 SC/UPC optical port, 1 Gigabit RJ45 LAN port, and lightning surge protection.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-teal-900/40">
-                  <Link to="/products?brand=one-broadband" className="block w-full">
-                    <Button variant="teal" size="sm" className="w-full justify-center font-bold">
-                      View Product
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            </BlurZoomReveal>
+              </BlurZoomReveal>
+            ))}
           </div>
 
           <BlurZoomReveal direction="up" delay={150}>
             <div className="text-center pt-2 sm:pt-4">
-              <Link to="/products?brand=one-broadband">
+              <Link to="/products?category=cat-nexalus-llp-fiber-internet">
                 <Button
                   variant="primary"
                   size="md"
                   className="font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-900/40"
                   icon={<ArrowRight className="w-4 h-4" />}
                 >
-                  View All Internet Products
+                  View All Internet Products ({parentFiberProducts.length} Models)
                 </Button>
               </Link>
             </div>
           </BlurZoomReveal>
         </div>
       </section>
-
-      {/* 4.3: Enterprise IT Networking */}
+          </React.Fragment>
+        );
+      case 'sec-networking':
+        return (
+          <React.Fragment key="sec-networking">
+            {/* 4.3: Enterprise IT Networking */}
       <section className="relative w-full bg-white text-slate-900 py-16 sm:py-20 border-b border-slate-200/90 overflow-hidden isolate">
         {/* Swapped Background: Fiber Internet Commercial Photography Background */}
         <div
@@ -1328,137 +1245,80 @@ export const HomePage: React.FC = () => {
             <div className="text-center max-w-3xl mx-auto space-y-3">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold tracking-wider border border-indigo-200/60 shadow-2xs">
                 <Server className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Enterprise IT Networking</span>
+                <span>{networkCategory?.name || 'Enterprise Networking & Switches'}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-                Enterprise Networking Equipment
+                {networkCategory?.name || 'Enterprise Networking & Switches'}
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl mx-auto">
-                Explore networking hardware for business connectivity, structured infrastructure, and enterprise network deployments.
+                {networkCategory?.description || 'Explore networking hardware for business connectivity, structured infrastructure, and enterprise network deployments.'}
               </p>
             </div>
           </BlurZoomReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {/* Networking Card 1 */}
-            <BlurZoomReveal direction="left" xOffset={-50} delay={0} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
-              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
-              <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
-                  <img
-                    src="/images/products/poe-switch.jpg"
-                    alt="Sophos XGS 2100 Next-Gen Hardware Firewall & UTM Security Gateway"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
+            {parentNetworkProducts.map((product, idx) => (
+              <BlurZoomReveal key={`${product.id}-${idx}`} direction="up" delay={Math.min(idx * 35, 180)} duration={320} className="h-full flex flex-col">
+                <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
+                  <div>
+                    <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
+                      <img
+                        src={product.images[0] || '/images/products/poe-switch.jpg'}
+                        alt={product.name}
+                        className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (target.src !== '/images/products/poe-switch.jpg') {
+                            target.src = '/images/products/poe-switch.jpg';
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="p-5 sm:p-6 space-y-2.5">
+                      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                        {product.modelNumber ? `Nexalus • Model ${product.modelNumber}` : 'Nexalus Infrastructure'}
+                      </span>
+                      <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
+                        {product.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-5 sm:p-6 pt-0">
+                    <div className="pt-4 border-t border-slate-100 flex items-center gap-2">
+                      <Link to={`/products?category=${product.categoryId}`} className="block flex-1">
+                        <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
+                          View Details
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
+                        onClick={() => setIsQuoteModalOpen(true)}
+                      >
+                        Enquire
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                    ITTI • Model ITTI-XGS-2100
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                    Sophos XGS 2100 Next-Gen Hardware Firewall &amp; UTM Security Gateway
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
-                    Enterprise rackmount Next-Gen Firewall powered by Xstream dual-processor architecture with deep packet inspection, TLS 1.3 decryption, and advanced SD-WAN.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
-                  <Link to="/products?brand=itti-networking" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
-                      View Product
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            </BlurZoomReveal>
-
-            {/* Networking Card 2 */}
-            <BlurZoomReveal direction="center" yOffset={30} delay={120} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
-              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
-              <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
-                  <img
-                    src="/images/products/poe-switch.jpg"
-                    alt="ITTI 48-Port Gigabit Layer-3 Managed Core Switch with 4x 10G SFP+ Uplinks"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                    ITTI • Model ITTI-SW-L3-48G
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                    ITTI 48-Port Gigabit Layer-3 Managed Core Switch with 4x 10G SFP+ Uplinks
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
-                    High-density enterprise Layer-3 core switch delivering 176 Gbps switching fabric, OSPF/BGP dynamic routing, static routing, and quad 10-Gigabit optical uplink ports.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
-                  <Link to="/products?brand=itti-networking" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
-                      View Product
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            </BlurZoomReveal>
-
-            {/* Networking Card 3 */}
-            <BlurZoomReveal direction="right" xOffset={50} delay={240} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
-              <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
-              <div>
-                <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
-                  <img
-                    src="/images/products/server-rack.jpg"
-                    alt="ITTI 24U Floor Standing Enterprise Server Rack Cabinet (600x800mm)"
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="p-5 sm:p-6 space-y-2.5">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
-                    ITTI • Model ITTI-RC-24U-800
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
-                    ITTI 24U Floor Standing Enterprise Server Rack Cabinet (600x800mm)
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
-                    Heavy duty 24U network and server cabinet with perforated front and rear mesh doors for optimal thermal airflow, 4-way cooling fan unit, and 800 kg static load capacity.
-                  </p>
-                </div>
-              </div>
-              <div className="p-5 sm:p-6 pt-0">
-                <div className="pt-4 border-t border-slate-100">
-                  <Link to="/products?brand=itti-networking" className="block w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-center font-bold group-hover:border-blue-600 group-hover:text-blue-600">
-                      View Product
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-            </BlurZoomReveal>
+              </BlurZoomReveal>
+            ))}
           </div>
 
           <BlurZoomReveal direction="up" delay={150}>
             <div className="text-center pt-2 sm:pt-4">
-              <Link to="/products?brand=itti-networking">
+              <Link to="/products?category=cat-nexalus-llp-enterprise-networking">
                 <Button
                   variant="outline"
                   size="md"
                   className="font-bold border-indigo-600 text-indigo-600 hover:bg-indigo-50"
                   icon={<ArrowRight className="w-4 h-4" />}
                 >
-                  View All Networking Products
+                  View All Enterprise Networking ({parentNetworkProducts.length} Models)
                 </Button>
               </Link>
             </div>
@@ -1469,7 +1329,12 @@ export const HomePage: React.FC = () => {
 {/* =========================================================================
           SECTION: BROADBAND PLANS & PRICING SHOWCASE (MULTI-PROVIDER)
           ========================================================================= */}
-      <section id="broadband-plans-section" className="w-full bg-slate-900 text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
+          </React.Fragment>
+        );
+      case 'sec-broadband':
+        return (
+          <React.Fragment key="sec-broadband">
+            <section id="broadband-plans-section" className="w-full bg-slate-900 text-white py-16 sm:py-24 border-b border-slate-800 relative overflow-hidden">
         {/* Subtle Background Glow */}
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -1938,28 +1803,29 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
-
-
-
-      {/* =========================================================================
+          </React.Fragment>
+        );
+      case 'sec-where-used':
+        return (
+          <React.Fragment key="sec-where-used">
+            {/* =========================================================================
           SLIDE 6: WHERE OUR SERVICES ARE USED (CLEAN WHITE THEME)
           ========================================================================= */}
       <section className="w-full bg-white py-16 sm:py-24 border-b border-slate-200/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          {/* Section Header */}
           <BlurZoomReveal direction="up" delay={0}>
-            <div className="text-center max-w-3xl mx-auto space-y-3">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-wider border border-blue-200 shadow-2xs">
-                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                <span>Where We Provide Services</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-                Where Our CCTV, Internet &amp; Network Services Are Used
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
-                Nexalus Innovations LLP installs security cameras, high-speed optical fiber internet, and networking setups across these key places:
-              </p>
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-black uppercase tracking-wider border border-blue-200 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <span>Where We Provide Services</span>
             </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
+              Where Our CCTV, Internet &amp; Network Services Are Used
+            </h2>
+            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
+              Nexalus Innovations LLP installs security cameras, high-speed optical fiber internet, and networking setups across these key places:
+            </p>
+          </div>
           </BlurZoomReveal>
 
           {/* 4 Interactive Places Tabs */}
@@ -2100,7 +1966,7 @@ export const HomePage: React.FC = () => {
           </BlurZoomReveal>
 
           {/* Dynamic Place Details Showcase Box */}
-          <BlurZoomReveal direction="up" yOffset={30} delay={140} duration={800} blur={10} scale={0.97}>
+          <BlurZoomReveal direction="up" delay={140}>
             <div className="rounded-3xl bg-white border border-slate-200/90 shadow-2xl shadow-blue-900/10 p-6 sm:p-10 space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left Column: Place Name & How Services Are Used */}
@@ -2357,81 +2223,77 @@ export const HomePage: React.FC = () => {
           </BlurZoomReveal>
         </div>
       </section>
-
-      {/* =========================================================================
+          </React.Fragment>
+        );
+      case 'sec-why-choose':
+        return (
+          <React.Fragment key="sec-why-choose">
+            {/* =========================================================================
           SLIDE 7: WHY ORGANIZATIONS CHOOSE NEXALUS (RICH CORPORATE BLUE THEME)
           ========================================================================= */}
       <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-24 border-b border-blue-900/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="p-8 sm:p-12 rounded-3xl bg-[#0c1c38]/90 border border-blue-900/50 shadow-2xl space-y-10">
-            <BlurZoomReveal direction="up" delay={0}>
-              <div className="max-w-3xl space-y-2">
-                <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">
-                  Verified Value &amp; Engineering Standards
-                </span>
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
-                  Why Organizations Choose Nexalus as Their Infrastructure Partner
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  We eliminate multi-vendor friction by combining surveillance hardware distribution with optical network engineering under one unified contract.
-                </p>
-              </div>
-            </BlurZoomReveal>
+          <BlurZoomReveal direction="up" delay={0}>
+            <div className="max-w-3xl space-y-2">
+              <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">
+                Verified Value &amp; Engineering Standards
+              </span>
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
+                Why Organizations Choose Nexalus as Their Infrastructure Partner
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                We eliminate multi-vendor friction by combining surveillance hardware distribution with optical network engineering under one unified contract.
+              </p>
+            </div>
+          </BlurZoomReveal>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <BlurZoomReveal direction="left" xOffset={-40} delay={0} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
-                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-cyan-400 border border-blue-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                      <Shield className="w-6 h-6" />
-                    </div>
-                    <h4 className="font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">Single Vendor Accountability</h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      No finger-pointing between your internet service provider and security hardware vendor. We own the complete fiber pipe and video stream.
-                    </p>
+              <BlurZoomReveal direction="up" delay={0} className="h-full">
+                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-cyan-400 border border-blue-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                    <Shield className="w-6 h-6" />
                   </div>
+                  <h4 className="font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">Single Vendor Accountability</h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    No finger-pointing between your internet service provider and security hardware vendor. We own the complete fiber pipe and video stream.
+                  </p>
                 </div>
               </BlurZoomReveal>
 
-              <BlurZoomReveal direction="center" yOffset={30} delay={100} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
-                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                      <Award className="w-6 h-6" />
-                    </div>
-                    <h4 className="font-bold text-white text-sm group-hover:text-sky-300 transition-colors">100% Genuine OEM Hardware</h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      Direct authorized systems integrator for commercial 4K cameras, next-gen hardware firewalls, and dedicated optical fiber leased lines. Authentic serial numbers and warranties.
-                    </p>
+              <BlurZoomReveal direction="up" delay={80} className="h-full">
+                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full">
+                  <div className="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                    <Award className="w-6 h-6" />
                   </div>
+                  <h4 className="font-bold text-white text-sm group-hover:text-sky-300 transition-colors">100% Genuine OEM Hardware</h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Direct authorized systems integrator for commercial 4K cameras, next-gen hardware firewalls, and dedicated optical fiber leased lines. Authentic serial numbers and warranties.
+                  </p>
                 </div>
               </BlurZoomReveal>
 
-              <BlurZoomReveal direction="center" yOffset={30} delay={200} duration={800} blur={10} scale={0.92} className="h-full flex flex-col">
-                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                      <Wifi className="w-6 h-6" />
-                    </div>
-                    <h4 className="font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">Precision Fiber Engineering</h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      Pure optical fiber backhaul designed with redundant ring topologies for minimal jitter, OTDR-tested loss, and enterprise uptime reliability.
-                    </p>
+              <BlurZoomReveal direction="up" delay={160} className="h-full">
+                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                    <Wifi className="w-6 h-6" />
                   </div>
+                  <h4 className="font-bold text-white text-sm group-hover:text-cyan-300 transition-colors">Precision Fiber Engineering</h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Pure optical fiber backhaul designed with redundant ring topologies for minimal jitter, OTDR-tested loss, and enterprise uptime reliability.
+                  </p>
                 </div>
               </BlurZoomReveal>
 
-              <BlurZoomReveal direction="right" xOffset={40} delay={300} duration={800} blur={10} scale={0.94} className="h-full flex flex-col">
-                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                      <Server className="w-6 h-6" />
-                    </div>
-                    <h4 className="font-bold text-white text-sm group-hover:text-indigo-300 transition-colors">Quarterly Health Audits (AMC)</h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      Proactive camera lens cleaning, NVR storage health diagnostics, optical loop testing, and certified rapid restoration SLAs.
-                    </p>
+              <BlurZoomReveal direction="up" delay={240} className="h-full">
+                <div className="p-6 rounded-2xl bg-[#09152a]/90 border border-blue-900/60 shadow-lg hover:border-cyan-400/60 transition-all space-y-3 group h-full">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-400/20 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+                    <Server className="w-6 h-6" />
                   </div>
+                  <h4 className="font-bold text-white text-sm group-hover:text-indigo-300 transition-colors">Quarterly Health Audits (AMC)</h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Proactive camera lens cleaning, NVR storage health diagnostics, optical loop testing, and certified rapid restoration SLAs.
+                  </p>
                 </div>
               </BlurZoomReveal>
             </div>
@@ -2444,9 +2306,13 @@ export const HomePage: React.FC = () => {
           ========================================================================= */}
       <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="nexalus" />
 
-
-
-      {/* =========================================================================
+      
+          </React.Fragment>
+        );
+      case 'sec-consultation':
+        return (
+          <React.Fragment key="sec-consultation">
+            {/* =========================================================================
           SLIDE 8: BUSINESS ENQUIRY & SITE SURVEY CTA BANNER (RICH CORPORATE BLUE THEME)
           ========================================================================= */}
       <section className="w-full py-16 sm:py-24 bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white border-b border-blue-900/50">
@@ -2486,6 +2352,122 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+          </React.Fragment>
+        );
+      case 'sec-faq':
+        return (
+          <React.Fragment key="sec-faq">
+            <section className="w-full py-16 sm:py-24 bg-slate-50 border-b border-slate-200">
+              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <BlurZoomReveal direction="up" delay={0}>
+                <div className="text-center space-y-3 mb-12">
+                  <span className="text-xs font-black text-blue-600 uppercase tracking-widest px-3 py-1 bg-blue-50 border border-blue-200 rounded-full inline-block">
+                    Got Questions?
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                    Frequently Asked Questions
+                  </h2>
+                  <p className="text-sm text-slate-600 max-w-xl mx-auto">
+                    Quick answers regarding enterprise broadband, CCTV installation SLAs, network infrastructure and billing.
+                  </p>
+                </div>
+              </BlurZoomReveal>
+
+                <BlurZoomReveal direction="up" delay={80}>
+                  <div className="space-y-3">
+                    {parentFaqs.map((faq) => {
+                      const isOpen = openFaqId === faq.id;
+                      return (
+                        <div
+                          key={faq.id}
+                          className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden transition-all duration-200"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
+                            className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 text-left font-bold text-slate-900 hover:text-blue-600 cursor-pointer"
+                          >
+                            <span className="text-sm sm:text-base">{faq.question}</span>
+                            <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                          </button>
+                          {isOpen && (
+                            <div className="px-4 pb-5 sm:px-5 sm:pb-6 text-xs sm:text-sm text-slate-600 border-t border-slate-100 pt-3 leading-relaxed">
+                              {faq.answer}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </BlurZoomReveal>
+              </div>
+            </section>
+          </React.Fragment>
+        );
+      case 'sec-contact':
+        return null;
+default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex flex-col w-full">
+      {/* 
+=========================================================================
+          DYNAMIC LANDING PAGE SECTIONS (Live Admin Ordering & Visibility)
+          ========================================================================= */}
+      {parentSections.map((sec) => {
+        if (sec.visible === false) return null;
+        return (
+          <div key={sec.id} id={sec.id} className="w-full relative scroll-mt-24">
+            {sec.id === 'sec-hero' && <span id="hero" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-brands' && (
+              <>
+                <span id="our-brands" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="brands" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-team' && <span id="team" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-search' && (
+              <>
+                <span id="coverage" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="service-coverage-area" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-projects' && <span id="projects" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-infrastructure' && (
+              <>
+                <span id="services" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="infrastructure" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-cctv' && <span id="cctv" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-fiber' && <span id="fiber" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-networking' && <span id="networking" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-broadband' && (
+              <>
+                <span id="plans" className="block -mt-24 pt-24 invisible pointer-events-none" />
+                <span id="broadband" className="block -mt-24 pt-24 invisible pointer-events-none" />
+              </>
+            )}
+            {sec.id === 'sec-where-used' && <span id="where-used" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-why-choose' && <span id="why-choose" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-consultation' && <span id="consultation" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {sec.id === 'sec-faq' && <span id="faq" className="block -mt-24 pt-24 invisible pointer-events-none" />}
+            {renderLandingSection(sec.id)}
+          </div>
+        );
+      })}
+
+      {/* 
+=========================================================================
+          DYNAMIC CUSTOM SECTIONS (Configured via Admin Section Visibility)
+          ========================================================================= */}
+      {/* =========================================================================
+          DYNAMIC CUSTOM SECTIONS (Configured via Admin Section Visibility)
+          ========================================================================= */}
+      <CustomSectionsRenderer sections={heroBanner?.customSections} brandId="nexalus" />
 
       {/* Modals */}
       <QuoteModal
@@ -2511,3 +2493,4 @@ export const HomePage: React.FC = () => {
     </div>
   );
 };
+

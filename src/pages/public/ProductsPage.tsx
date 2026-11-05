@@ -1,79 +1,76 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { getProducts, getCategories, getCachedProducts, getCachedCategories } from '../../firebase/services';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { getProducts, getCategories, getCachedProducts, getCachedCategories, subscribeToProducts, subscribeToCategories } from '../../firebase/services';
 import { Product, ProductCategory } from '../../types';
-import { ProductCard } from '../../components/brand/ProductCard';
 import { initialProducts, initialCategories } from '../../data/initialData';
+import { QuoteModal } from '../../components/common/QuoteModal';
+import { WhatsAppShareModal } from '../../components/common/WhatsAppShareModal';
 import {
-  Package,
-  Shield,
-  Wifi,
-  Server,
-  Cpu,
   Search,
-  ArrowUpDown,
   X,
   ArrowRight,
+  SlidersHorizontal,
+  Package,
   Layers,
-  Sparkles
+  CheckCircle2,
+  PhoneCall
 } from 'lucide-react';
-import { Button } from '../../components/common/Button';
-import { QuoteModal } from '../../components/common/QuoteModal';
 
-// Helper to pick category icon
-function getCategoryIcon(cat: ProductCategory) {
-  const name = (cat.name || '').toLowerCase();
-  const slug = (cat.slug || '').toLowerCase();
-  if (name.includes('cctv') || name.includes('camera') || slug.includes('cctv')) {
-    return <Shield className="w-4 h-4 text-cyan-400" />;
+// Badge color & text helper to match Samarth Enterprises aesthetic
+function getProductBadge(product: Product) {
+  const cat = (product.categoryName || '').toLowerCase();
+  const slug = (product.slug || '').toLowerCase();
+
+  if (product.featured) {
+    return 'Featured';
   }
-  if (name.includes('fiber') || name.includes('broadband') || name.includes('internet') || slug.includes('fiber')) {
-    return <Wifi className="w-4 h-4 text-teal-400" />;
+  if (cat.includes('cctv') || slug.includes('cctv')) {
+    return 'Commercial';
   }
-  if (name.includes('network') || name.includes('switch') || slug.includes('network')) {
-    return <Server className="w-4 h-4 text-indigo-400" />;
+  if (cat.includes('fiber') || slug.includes('fiber')) {
+    return 'Broadband';
   }
-  if (name.includes('electronic') || name.includes('cable') || slug.includes('cable')) {
-    return <Cpu className="w-4 h-4 text-amber-400" />;
+  if (cat.includes('network') || slug.includes('network')) {
+    return 'Enterprise';
   }
-  return <Layers className="w-4 h-4 text-blue-400" />;
+  return 'Certified';
 }
 
 export const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const brandParam = searchParams.get('brand');
   const catParam = searchParams.get('category');
 
-  // Categories & Products state with instant sync fallback
+  // Categories & Products state with instant cache fallback (Parent Company Nexalus Innovations LLP)
   const [categories, setCategories] = useState<ProductCategory[]>(() => {
-    const cached = getCachedCategories('nexalus-innovations');
-    const filtered = cached.filter(c => c.brandId !== 'am-distributors');
-    return filtered.length > 0 ? filtered : initialCategories.filter(c => c.brandId !== 'am-distributors');
+    const cached = getCachedCategories('corporate');
+    return cached.length > 0 ? cached : initialCategories.filter(c => c.companyId === 'nexalus-llp');
   });
 
   const [products, setProducts] = useState<Product[]>(() => {
-    const cached = getCachedProducts();
-    const filtered = cached.filter(p => p.brandId !== 'am-distributors');
-    return filtered.length > 0 ? filtered : initialProducts.filter(p => p.brandId !== 'am-distributors');
+    const cached = getCachedProducts('corporate');
+    return cached.length > 0 ? cached : initialProducts.filter(p => p.companyId === 'nexalus-llp');
   });
 
   // Active Category Filter: 'all' or category ID
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'name'>('featured');
-  const [onlyInStock, setOnlyInStock] = useState(false);
+
+  // Modals state
+  const [activeQuoteProduct, setActiveQuoteProduct] = useState<Product | null>(null);
+  const [activeWhatsAppProduct, setActiveWhatsAppProduct] = useState<Product | null>(null);
   const [isBulkQuoteOpen, setIsBulkQuoteOpen] = useState(false);
 
   const loadData = async () => {
     try {
       const [cats, prods] = await Promise.all([
-        getCategories('nexalus-innovations'),
-        getProducts(undefined, true)
+        getCategories('corporate'),
+        getProducts('corporate', true)
       ]);
-      const validCats = cats.filter(c => c.brandId !== 'am-distributors');
-      const validProds = prods.filter(p => p.brandId !== 'am-distributors');
-      if (validCats.length > 0) setCategories(validCats);
-      if (validProds.length > 0) setProducts(validProds);
+      if (cats.length > 0) setCategories(cats);
+      if (prods.length > 0) setProducts(prods);
     } catch {
       // fallback to initialData
     }
@@ -82,9 +79,17 @@ export const ProductsPage: React.FC = () => {
   useEffect(() => {
     loadData();
 
+    const unsubCats = subscribeToCategories((cats) => {
+      if (cats && cats.length > 0) setCategories(cats);
+    }, 'corporate');
+
+    const unsubProds = subscribeToProducts((prods) => {
+      if (prods && prods.length > 0) setProducts(prods);
+    }, 'corporate');
+
     const handleUpdate = () => {
-      const freshCats = getCachedCategories('nexalus-innovations').filter(c => c.brandId !== 'am-distributors');
-      const freshProds = getCachedProducts().filter(p => p.brandId !== 'am-distributors');
+      const freshCats = getCachedCategories('corporate');
+      const freshProds = getCachedProducts('corporate');
       if (freshCats.length > 0) setCategories(freshCats);
       if (freshProds.length > 0) setProducts(freshProds);
       loadData();
@@ -96,6 +101,8 @@ export const ProductsPage: React.FC = () => {
     document.addEventListener('visibilitychange', handleUpdate);
 
     return () => {
+      unsubCats();
+      unsubProds();
       window.removeEventListener('nexalus_data_update', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
       window.removeEventListener('focus', handleUpdate);
@@ -106,7 +113,18 @@ export const ProductsPage: React.FC = () => {
   // Map URL parameters (brand or category) to selectedCategoryId
   useEffect(() => {
     if (catParam) {
-      const matched = categories.find(c => c.id === catParam || c.slug === catParam);
+      let matched = categories.find(c => c.id === catParam || c.slug === catParam);
+      if (!matched) {
+        if (catParam.includes('cctv')) {
+          matched = categories.find(c => c.id.includes('cctv'));
+        } else if (catParam.includes('fiber') || catParam.includes('broadband')) {
+          matched = categories.find(c => c.id.includes('fiber'));
+        } else if (catParam.includes('network') || catParam.includes('switch')) {
+          matched = categories.find(c => c.id.includes('network'));
+        } else if (catParam.includes('infra') || catParam.includes('cabling')) {
+          matched = categories.find(c => c.id.includes('turnkey') || c.id.includes('infra'));
+        }
+      }
       if (matched) {
         setSelectedCategoryId(matched.id);
         return;
@@ -114,21 +132,21 @@ export const ProductsPage: React.FC = () => {
     }
     if (brandParam) {
       if (brandParam === 'cp-plus') {
-        const cat = categories.find(c => c.id === 'cat-cctv-surveillance' || c.name.toLowerCase().includes('cctv'));
+        const cat = categories.find(c => c.id.includes('cctv') || c.name.toLowerCase().includes('cctv'));
         if (cat) {
           setSelectedCategoryId(cat.id);
           return;
         }
       }
       if (brandParam === 'one-broadband') {
-        const cat = categories.find(c => c.id === 'cat-optical-fiber' || c.name.toLowerCase().includes('fiber'));
+        const cat = categories.find(c => c.id.includes('fiber') || c.name.toLowerCase().includes('fiber'));
         if (cat) {
           setSelectedCategoryId(cat.id);
           return;
         }
       }
       if (brandParam === 'itti-networking') {
-        const cat = categories.find(c => c.id === 'cat-enterprise-networking' || c.name.toLowerCase().includes('network'));
+        const cat = categories.find(c => c.id.includes('network') || c.name.toLowerCase().includes('network'));
         if (cat) {
           setSelectedCategoryId(cat.id);
           return;
@@ -160,19 +178,11 @@ export const ProductsPage: React.FC = () => {
     const prodCatName = (product.categoryName || '').trim().toLowerCase();
     if (prodCatName && prodCatName === catName) return true;
 
-    // Umbrella group matching ONLY for canonical root umbrella category IDs (NOT for custom categories)
-    if (category.id === 'cat-cctv-surveillance' &&
-        (product.categoryId === 'cat-cctv-surveillance' || product.brandId === 'cp-plus' || prodCatName.includes('cctv') || prodCatName.includes('camera'))) {
-      return true;
-    }
-    if (category.id === 'cat-optical-fiber' &&
-        (product.categoryId === 'cat-optical-fiber' || product.brandId === 'one-broadband' || prodCatName.includes('fiber') || prodCatName.includes('broadband'))) {
-      return true;
-    }
-    if (category.id === 'cat-enterprise-networking' &&
-        (product.categoryId === 'cat-enterprise-networking' || product.brandId === 'itti-networking' || prodCatName.includes('network') || prodCatName.includes('switch'))) {
-      return true;
-    }
+    if (category.id.includes('cctv') && (product.categoryId?.includes('cctv') || prodCatName.includes('cctv'))) return true;
+    if (category.id.includes('fiber') && (product.categoryId?.includes('fiber') || prodCatName.includes('fiber'))) return true;
+    if (category.id.includes('network') && (product.categoryId?.includes('network') || prodCatName.includes('network'))) return true;
+    if (category.id.includes('infrastructure') && (product.categoryId?.includes('turnkey') || product.categoryId?.includes('infra') || prodCatName.includes('cabling') || prodCatName.includes('hardware'))) return true;
+
     return false;
   };
 
@@ -180,26 +190,17 @@ export const ProductsPage: React.FC = () => {
   const categoryCounts = useMemo(() => {
     const map = new Map<string, number>();
     categories.forEach(cat => {
-      const count = products.filter(p => doesProductBelongToCategory(p, cat)).length;
+      const count = products.filter(p => p.published !== false && doesProductBelongToCategory(p, cat)).length;
       map.set(cat.id, count);
     });
     return map;
   }, [categories, products]);
 
-  // Group products by category
-  const categorizedProducts = useMemo(() => {
-    return categories.map(cat => ({
-      category: cat,
-      products: products.filter(p => doesProductBelongToCategory(p, cat))
-    })).filter(group => group.products.length > 0);
-  }, [categories, products]);
-
-  // Filtered/Searched products
-  const searchedProducts = useMemo(() => {
-    const isFiltered = searchQuery.trim().length > 0 || onlyInStock || sortBy !== 'featured' || selectedCategoryId !== 'all';
-    if (!isFiltered) return [];
-
+  // Filtered & Sorted Products
+  const displayedProducts = useMemo(() => {
     let list = products.filter(product => {
+      if (product.published === false) return false;
+
       // Category filter
       if (selectedCategoryId !== 'all') {
         const cat = categories.find(c => c.id === selectedCategoryId);
@@ -208,21 +209,33 @@ export const ProductsPage: React.FC = () => {
         }
       }
 
-      // In stock filter
-      if (onlyInStock && product.availability !== 'in_stock') return false;
-
       // Search query
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesName = product.name.toLowerCase().includes(q);
-        const matchesModel = product.modelNumber.toLowerCase().includes(q);
-        const matchesCat = product.categoryName.toLowerCase().includes(q);
-        const matchesDesc = product.description.toLowerCase().includes(q);
-        const matchesSpecs = Object.entries(product.specifications || {}).some(
-          ([k, v]) => k.toLowerCase().includes(q) || v.toLowerCase().includes(q)
-        );
+        const q = searchQuery.trim().toLowerCase();
+        let matches = false;
+        if (q.length <= 3) {
+          const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(^|[^a-z0-9])${escaped}`, 'i');
+          matches =
+            regex.test(product.name || '') ||
+            regex.test(product.modelNumber || '') ||
+            regex.test(product.categoryName || '') ||
+            regex.test(product.description || '') ||
+            Object.entries(product.specifications || {}).some(
+              ([k, v]) => regex.test(k) || regex.test(String(v))
+            );
+        } else {
+          matches =
+            (product.name || '').toLowerCase().includes(q) ||
+            (product.modelNumber || '').toLowerCase().includes(q) ||
+            (product.categoryName || '').toLowerCase().includes(q) ||
+            (product.description || '').toLowerCase().includes(q) ||
+            Object.entries(product.specifications || {}).some(
+              ([k, v]) => k.toLowerCase().includes(q) || String(v).toLowerCase().includes(q)
+            );
+        }
 
-        if (!matchesName && !matchesModel && !matchesCat && !matchesDesc && !matchesSpecs) {
+        if (!matches) {
           return false;
         }
       }
@@ -233,306 +246,321 @@ export const ProductsPage: React.FC = () => {
     list.sort((a, b) => {
       if (sortBy === 'price-asc') return (a.price || 0) - (b.price || 0);
       if (sortBy === 'price-desc') return (b.price || 0) - (a.price || 0);
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
       return 0;
     });
 
     return list;
-  }, [products, categories, selectedCategoryId, onlyInStock, searchQuery, sortBy]);
+  }, [products, categories, selectedCategoryId, searchQuery, sortBy]);
 
-  const isSearchActive = searchQuery.trim().length > 0 || onlyInStock || sortBy !== 'featured';
-  const isCategoryTabSelected = selectedCategoryId !== 'all' && !isSearchActive;
+  const selectedCategoryObj = categories.find(c => c.id === selectedCategoryId);
 
   return (
-    <div className="flex flex-col w-full">
-      {/* HERO SECTION */}
-      <section className="w-full bg-[#0a1628] text-white py-14 sm:py-20 border-b border-blue-900/40 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-4xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-cyan-300 text-xs font-black uppercase tracking-wider">
-            <Package className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Nexalus Commercial Hardware Catalog</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-            Commercial Hardware &amp; Equipment Catalog
-          </h1>
-
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
-            Authorized OEM commercial equipment supplied and engineered under <strong className="text-white font-bold">Nexalus Innovations LLP</strong>. Every category features certified enterprise models with direct manufacturer warranty and precision deployment support.
-          </p>
-
-          {/* DYNAMIC CATEGORY TABS */}
-          <div className="flex items-center justify-center gap-2 sm:gap-2.5 pt-4 flex-wrap">
-            <button
-              type="button"
-              onClick={() => handleCategorySelect('all')}
-              className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer ${
-                selectedCategoryId === 'all'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-2 ring-blue-400/50'
-                  : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/80'
-              }`}
-            >
-              All Hardware ({products.length})
-            </button>
-
-            {categories.map(cat => {
-              const count = categoryCounts.get(cat.id) || 0;
-              const isSelected = selectedCategoryId === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => handleCategorySelect(cat.id)}
-                  className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer ${
-                    isSelected
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-2 ring-blue-400/50'
-                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/80'
-                  }`}
-                >
-                  {getCategoryIcon(cat)}
-                  <span>{cat.name} ({count})</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* SEARCH & FILTER CONTROLS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 relative z-20 w-full">
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xl shadow-slate-900/5">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search products by model, name, resolution, ports, or specifications..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-blue-500 focus:bg-white transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+    <div className="flex flex-col w-full bg-[#f8fafc] min-h-screen">
+      {/* 1. TOP BANNER (Samarth Enterprises Style: Dark Navy #09223f with Catalog Pill & Subtitle) */}
+      <section className="w-full bg-[#09223f] text-white py-14 sm:py-16 border-b border-blue-900/40 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-3xl space-y-3">
+            {/* Catalog small pill */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-sky-300 text-xs font-black uppercase tracking-widest">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+              <span>CATALOG</span>
             </div>
 
-            {/* Sorting & Availability Filter */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2 text-xs text-slate-600">
-                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-                <span className="font-semibold text-slate-500">Sort:</span>
-                <select
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value as any)}
-                  className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:border-blue-500 focus:bg-white font-medium"
-                >
-                  <option value="featured">Featured First</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="name">Product Name (A-Z)</option>
-                </select>
-              </div>
+            {/* Main Title */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white">
+              Product Range
+            </h1>
 
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={onlyInStock}
-                  onChange={e => setOnlyInStock(e.target.checked)}
-                  className="w-4 h-4 rounded-sm border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                In Stock Only
-              </label>
-
-              {(isSearchActive || selectedCategoryId !== 'all') && (
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setOnlyInStock(false);
-                    setSortBy('featured');
-                    setSelectedCategoryId('all');
-                    searchParams.delete('category');
-                    searchParams.delete('brand');
-                    setSearchParams(searchParams);
-                  }}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer ml-auto"
-                >
-                  Reset Filters
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PRODUCTS DISPLAY VIEW */}
-      {isSearchActive ? (
-        /* 1. Dynamic Search Results View */
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-6">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-500">
-              Found <strong className="text-slate-900 font-bold">{searchedProducts.length}</strong> matching products
+            {/* Description */}
+            <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-normal pt-1">
+              Explore our comprehensive range of high-performance networking, security surveillance, optical fiber solutions, and enterprise hardware engineered for reliability.
             </p>
           </div>
+        </div>
+      </section>
 
-          {searchedProducts.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center max-w-xl mx-auto space-y-4">
-              <Package className="w-12 h-12 text-slate-300 mx-auto" />
-              <h3 className="text-lg font-bold text-slate-900">No matching products found</h3>
-              <p className="text-xs text-slate-500">
-                We couldn't find any products matching your active search query or filter options.
-              </p>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategoryId('all');
-                  setOnlyInStock(false);
-                  setSortBy('featured');
-                }}
-              >
-                Clear All Filters
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {searchedProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
-        </section>
-      ) : isCategoryTabSelected ? (
-        /* 2. Single Selected Category View */
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full space-y-8">
-          {(() => {
-            const currentCat = categories.find(c => c.id === selectedCategoryId);
-            const catProds = products.filter(p => currentCat && doesProductBelongToCategory(p, currentCat));
-            return (
-              <div className="space-y-8">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-5">
-                  <div className="space-y-2">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-black uppercase tracking-wider border border-blue-200">
-                      {currentCat && getCategoryIcon(currentCat)}
-                      <span>{currentCat?.name}</span>
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                      {currentCat?.name} Catalog
-                    </h2>
-                    {currentCat?.description && (
-                      <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-                        {currentCat.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                      {catProds.length} Certified Models
-                    </span>
-                  </div>
-                </div>
+      {/* 2. MAIN 2-COLUMN CATALOG BODY */}
+      <section className="w-full max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1">
+        <div className="flex flex-col lg:flex-row gap-8 xl:gap-10 items-start">
 
-                {catProds.length === 0 ? (
-                  <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center max-w-md mx-auto space-y-3">
-                    <Package className="w-10 h-10 text-slate-300 mx-auto" />
-                    <p className="text-sm font-bold text-slate-700">No products currently in this category.</p>
-                    <p className="text-xs text-slate-400">Add products to this category from the Admin Console.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {catProds.map(product => (
-                      <ProductCard key={product.id} product={product} />
-                    ))}
-                  </div>
+          {/* LEFT SIDEBAR (Search + Category Filter List) */}
+          <aside className="w-full lg:w-72 xl:w-80 shrink-0 space-y-7 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7.5rem)] lg:overflow-y-auto pr-1 pb-4">
+            {/* Search Input Box */}
+            <div className="space-y-2.5">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-between">
+                <span>SEARCH</span>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-bold cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                )}
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products..."
+                  className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#09223f] focus:border-transparent transition-all shadow-xs"
+                />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 )}
               </div>
-            );
-          })()}
-        </section>
-      ) : (
-        /* 3. All Hardware View (Grouped by every category dynamically) */
-        <div className="w-full flex flex-col pt-8 divide-y divide-slate-100">
-          {categorizedProducts.map((group, index) => {
-            const isDarkTheme = index % 2 === 1;
-            return (
-              <section
-                key={group.category.id}
-                className={`w-full py-14 sm:py-20 border-b border-slate-200/90 ${
-                  isDarkTheme
-                    ? 'bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white'
-                    : 'bg-white text-slate-900'
-                }`}
-              >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-                  {/* Category Header */}
-                  <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 ${
-                    isDarkTheme ? 'border-b border-blue-900/50' : 'border-b border-slate-100'
-                  }`}>
-                    <div className="space-y-2">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border ${
-                        isDarkTheme
-                          ? 'bg-blue-500/20 text-cyan-300 border-blue-400/30'
-                          : 'bg-blue-50 text-blue-700 border-blue-200'
-                      }`}>
-                        {getCategoryIcon(group.category)}
-                        <span>CATEGORY 0{index + 1} &mdash; {group.category.name}</span>
-                      </div>
-                      <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${
-                        isDarkTheme ? 'text-white' : 'text-slate-900'
-                      }`}>
-                        {group.category.name} Equipment
-                      </h2>
-                      {group.category.description && (
-                        <p className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${
-                          isDarkTheme ? 'text-slate-300' : 'text-slate-600'
-                        }`}>
-                          {group.category.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className={`text-xs font-bold px-3.5 py-1.5 rounded-full border ${
-                        isDarkTheme
-                          ? 'bg-blue-900/60 text-cyan-300 border-blue-700/50'
-                          : 'bg-blue-100 text-blue-800 border-blue-200'
-                      }`}>
-                        {group.products.length} Certified Models
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleCategorySelect(group.category.id)}
-                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer ${
-                          isDarkTheme
-                            ? 'bg-white/10 hover:bg-white/20 text-white'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+            </div>
+
+            {/* Category Navigation List */}
+            <div className="space-y-2.5">
+              <label className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                CATEGORY
+              </label>
+              <div className="flex flex-col space-y-1 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
+                {/* All Products Item */}
+                <button
+                  type="button"
+                  onClick={() => handleCategorySelect('all')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                    selectedCategoryId === 'all'
+                      ? 'bg-[#09223f] text-white shadow-xs'
+                      : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="truncate">All Products</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold shrink-0 ml-2 ${
+                      selectedCategoryId === 'all'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {products.length}
+                  </span>
+                </button>
+
+                {/* Individual Categories */}
+                {categories.map((cat) => {
+                  const isSelected = selectedCategoryId === cat.id;
+                  const count = categoryCounts.get(cat.id) || 0;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => handleCategorySelect(cat.id)}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#09223f] text-white shadow-xs'
+                          : 'text-slate-700 hover:bg-slate-100/80 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="truncate text-left">{cat.name}</span>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-bold shrink-0 ml-2 ${
+                          isSelected
+                            ? 'bg-white/20 text-white'
+                            : 'bg-slate-100 text-slate-600'
                         }`}
                       >
-                        <span>View All {group.category.name}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                  {/* Products Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {group.products.map(product => (
-                      <ProductCard key={product.id} product={product} />
-                    ))}
-                  </div>
+            {/* Quick Bulk Inquiry Box */}
+            <div className="bg-gradient-to-br from-blue-50 to-slate-100 rounded-2xl p-5 border border-blue-100/80 space-y-3">
+              <div className="flex items-center gap-2 text-blue-900 font-bold text-sm">
+                <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                <span>Enterprise Inquiries</span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Need bulk hardware procurement or specialized installation across Konkan?
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsBulkQuoteOpen(true)}
+                className="w-full py-2 px-3 bg-white hover:bg-blue-600 hover:text-white border border-blue-200 text-blue-700 font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Request Custom Quote</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </aside>
+
+          {/* RIGHT PRODUCTS AREA */}
+          <main className="flex-1 w-full space-y-6">
+            {/* Top Bar: Showing X Products & Sort Selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+              <div className="text-sm text-slate-600 font-medium">
+                Showing{' '}
+                <span className="font-bold text-slate-900">
+                  {displayedProducts.length}
+                </span>{' '}
+                {displayedProducts.length === 1 ? 'product' : 'products'}
+                {selectedCategoryObj && (
+                  <span className="text-slate-400 ml-1">
+                    in <strong className="text-slate-700 font-semibold">{selectedCategoryObj.name}</strong>
+                  </span>
+                )}
+              </div>
+
+              {/* Sort Selector */}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-white border border-slate-200 text-xs font-bold text-slate-700 py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#09223f] cursor-pointer shadow-xs"
+                >
+                  <option value="featured">Featured First</option>
+                  <option value="name">Product Name (A-Z)</option>
+                  <option value="price-asc">Price (Low to High)</option>
+                  <option value="price-desc">Price (High to Low)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Product Cards Grid (3 Columns on desktop, Samarth Enterprises Style) */}
+            {displayedProducts.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center max-w-md mx-auto space-y-4 my-8 shadow-xs">
+                <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+                  <Package className="w-7 h-7" />
                 </div>
-              </section>
-            );
-          })}
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-slate-800">No matching products found</h3>
+                  <p className="text-xs text-slate-500">
+                    Try adjusting your search query or select another category from the sidebar.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategoryId('all');
+                  }}
+                  className="px-4 py-2 bg-[#09223f] text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-colors cursor-pointer"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
+                {displayedProducts.map((product) => {
+                  const badge = getProductBadge(product);
+                  const displayImage =
+                    (product.images && product.images.length > 0 ? product.images[0] : null) ||
+                    '/images/products/cp-bullet.jpg';
+
+                  return (
+                    <div
+                      key={product.id}
+                      className="group bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-slate-300 transition-all duration-300 flex flex-col justify-between overflow-hidden p-4 sm:p-5 relative"
+                    >
+                      {/* Top Row: Amber Badge */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 tracking-wide">
+                          {badge}
+                        </span>
+                        {product.modelNumber && (
+                          <span className="text-[11px] font-mono text-slate-400 truncate max-w-[120px]">
+                            {product.modelNumber}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Product Image Box (Centered, white background, smooth zoom on hover) */}
+                      <div
+                        onClick={() => navigate('/products/' + product.id)}
+                        className="w-full h-44 sm:h-48 flex items-center justify-center p-3 my-1 bg-white cursor-pointer select-none overflow-hidden"
+                      >
+                        <img
+                          src={displayImage}
+                          alt={product.name}
+                          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/images/products/cp-bullet.jpg';
+                          }}
+                        />
+                      </div>
+
+                      {/* Product Content */}
+                      <div className="space-y-1.5 flex-1 flex flex-col justify-end pt-2">
+                        {/* Category Name */}
+                        <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                          {product.categoryName || 'Commercial Hardware'}
+                        </div>
+
+                        {/* Title */}
+                        <h3
+                          onClick={() => navigate('/products/' + product.id)}
+                          className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors line-clamp-2 leading-snug cursor-pointer"
+                          title={product.name}
+                        >
+                          {product.name}
+                        </h3>
+
+                        {/* Description */}
+                        <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                          {product.description || 'Enterprise-grade certified hardware engineered for high uptime and durability.'}
+                        </p>
+                      </div>
+
+                      {/* Bottom Action Row: Enquire Now Button + Arrow Detail Button */}
+                      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center gap-2">
+                        {/* Enquire Now Button (Navy #09223f) */}
+                        <button
+                          type="button"
+                          onClick={() => setActiveQuoteProduct(product)}
+                          className="flex-1 bg-[#09223f] hover:bg-blue-700 text-white font-bold text-xs sm:text-sm py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-[0.98]"
+                        >
+                          <span>Enquire Now</span>
+                        </button>
+
+                        {/* Arrow Button (View Full Product Details Page) */}
+                        <Link
+                          to={'/products/' + product.id}
+                          title="View Product Details"
+                          className="w-10 h-10 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 hover:text-blue-600 flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95"
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </main>
         </div>
+      </section>
+
+
+
+      {/* QUOTE MODAL */}
+      {activeQuoteProduct && (
+        <QuoteModal
+          isOpen={true}
+          onClose={() => setActiveQuoteProduct(null)}
+          brandId={activeQuoteProduct.brandId}
+          websiteId="nexalus-innovations"
+          websiteName="Nexalus Innovations"
+          sourcePage={`Products Catalog: ${activeQuoteProduct.name}`}
+          itemName={activeQuoteProduct.modelNumber ? `${activeQuoteProduct.name} (${activeQuoteProduct.modelNumber})` : activeQuoteProduct.name}
+          itemType="product"
+        />
       )}
 
       {/* BULK QUOTE MODAL */}
@@ -543,6 +571,15 @@ export const ProductsPage: React.FC = () => {
         itemName="Commercial Equipment Bulk Procurement"
         itemType="product"
       />
+
+      {/* WHATSAPP MODAL */}
+      {activeWhatsAppProduct && (
+        <WhatsAppShareModal
+          isOpen={true}
+          onClose={() => setActiveWhatsAppProduct(null)}
+          product={activeWhatsAppProduct}
+        />
+      )}
     </div>
   );
 };
