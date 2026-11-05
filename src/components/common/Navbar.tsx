@@ -112,7 +112,8 @@ export const Navbar: React.FC = () => {
 
   useEffect(() => {
     setIsProductsMegaOpen(false);
-  }, [location.pathname]);
+    setIsProfileDropdownOpen(false);
+  }, [location.pathname, location.search]);
 
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const { currentUser, logout, isAuthenticated, isCustomer, isAdmin } = useAuth();
@@ -120,6 +121,8 @@ export const Navbar: React.FC = () => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownTimeoutRef = useRef<any>(null);
+  const productsNavRef = useRef<HTMLDivElement>(null);
+  const productsMegaRef = useRef<HTMLDivElement>(null);
 
   const handleProfileEnter = () => {
     if (profileDropdownTimeoutRef.current) clearTimeout(profileDropdownTimeoutRef.current);
@@ -173,14 +176,22 @@ export const Navbar: React.FC = () => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
         setIsProfileDropdownOpen(false);
       }
+      if (
+        productsNavRef.current &&
+        !productsNavRef.current.contains(event.target as Node) &&
+        productsMegaRef.current &&
+        !productsMegaRef.current.contains(event.target as Node)
+      ) {
+        setIsProductsMegaOpen(false);
+      }
     };
-    if (isProfileDropdownOpen) {
+    if (isProfileDropdownOpen || isProductsMegaOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isProfileDropdownOpen]);
+  }, [isProfileDropdownOpen, isProductsMegaOpen]);
 
   const handleSignOut = async () => {
     setIsProfileDropdownOpen(false);
@@ -199,7 +210,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs relative">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs relative">
         {/* Main Navigation Bar */}
         <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 gap-2 xl:gap-4">
@@ -335,6 +346,7 @@ export const Navbar: React.FC = () => {
                 <span className="hidden xl:inline">&nbsp;& Pricing</span>
               </Link>
               <div
+                ref={productsNavRef}
                 className="relative"
                 onMouseEnter={handleProductsEnter}
                 onMouseLeave={handleProductsLeave}
@@ -586,6 +598,7 @@ export const Navbar: React.FC = () => {
                 {/* Products Mega Dropdown (Dynamic Categories) */}
         {isProductsMegaOpen && (
           <div
+            ref={productsMegaRef}
             onMouseEnter={handleProductsEnter}
             onMouseLeave={handleProductsLeave}
             className="hidden lg:block absolute top-full left-0 right-0 w-full bg-white border-b border-blue-100 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-200 max-h-[calc(100vh-5rem)] overflow-y-auto"

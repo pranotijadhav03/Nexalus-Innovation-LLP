@@ -116,6 +116,11 @@ export const AmDistributorsLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    setIsProductsMegaOpen(false);
+    setIsProfileDropdownOpen(false);
+  }, [location.pathname, location.search]);
+
   // Track A.M. Distributors cart item count (distinct products count)
   const [cartCount, setCartCount] = useState<number>(() => {
     try {
@@ -305,7 +310,7 @@ export const AmDistributorsLayout: React.FC = () => {
       )}
 
       {/* Dedicated Brand Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-100 shadow-xs relative">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-emerald-100 shadow-xs relative">
         <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2 xl:gap-4">
           {/* Brand Identity */}
           <Link

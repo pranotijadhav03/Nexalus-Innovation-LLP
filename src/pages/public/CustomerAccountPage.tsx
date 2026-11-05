@@ -1784,7 +1784,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* SIDEBAR NAVIGATION (Desktop Sticky & Mobile Drawer) */}
           <aside
-            className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl lg:shadow-xs lg:sticky lg:top-20 lg:self-start lg:w-64 lg:rounded-2xl border border-slate-200/90 lg:block transition-transform duration-200 max-h-[calc(100vh-6rem)] overflow-y-auto ${
+            className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl lg:shadow-xs lg:sticky lg:top-20 lg:z-10 lg:self-start lg:w-64 lg:rounded-2xl border border-slate-200/90 lg:block transition-transform duration-200 max-h-[calc(100vh-6rem)] overflow-y-auto ${
               isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
             }`}
           >
