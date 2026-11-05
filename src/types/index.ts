@@ -117,6 +117,14 @@ export interface PlanOrder {
   paymentMethod: 'pay_on_installation' | 'online_upi' | 'corporate_invoice';
   paymentStatus: PaymentStatus;
   status: OrderInstallationStatus;
+  items?: Array<{
+    planId?: string;
+    planName: string;
+    providerName?: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
   planSnapshot?: PlanSnapshot;
   paymentDetails?: PlanOrderPaymentDetails;
   receiptNumber?: string;
@@ -711,6 +719,9 @@ export interface ReceiptSettings {
   phone: string;
   email: string;
   website: string;
+  receiptPrefix?: string;
+  receiptTitle?: string;
+  bookingTitle?: string;
   signatoryName: string;
   signatoryTitle: string;
   signatorySubtitle: string;

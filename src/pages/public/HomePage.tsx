@@ -588,7 +588,7 @@ export const HomePage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Division 1: Nexalus Innovations */}
-            <BlurZoomReveal direction="left" xOffset={-50} delay={0} duration={800} className="h-full flex flex-col">
+            <BlurZoomReveal direction="left" xOffset={-50} delay={0} duration={280} className="h-full flex flex-col">
               <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-blue-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
               <Link to="/brands/nexalus-innovations" className="block relative h-64 overflow-hidden bg-slate-100 cursor-pointer">
                 <img
@@ -651,7 +651,7 @@ export const HomePage: React.FC = () => {
             </BlurZoomReveal>
 
             {/* Division 2: A.M. Distributors Chiplun */}
-            <BlurZoomReveal direction="right" xOffset={50} delay={120} duration={800} className="h-full flex flex-col">
+            <BlurZoomReveal direction="right" xOffset={50} delay={120} duration={280} className="h-full flex flex-col">
               <div className="rounded-3xl bg-white border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-teal-400 transition-all duration-300 overflow-hidden flex flex-col justify-between group h-full">
               <Link to="/brands/am-distributors" className="block relative h-64 overflow-hidden bg-slate-100 cursor-pointer">
                 <img
@@ -765,7 +765,7 @@ export const HomePage: React.FC = () => {
       <section className="w-full bg-gradient-to-b from-[#0a1628] via-[#0f2444] to-[#0a1628] text-white py-16 sm:py-24 border-b border-blue-900/40 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Header */}
-          <BlurZoomReveal direction="up" delay={0} duration={700}>
+          <BlurZoomReveal direction="up" delay={0} duration={260}>
             <div className="text-center max-w-3xl mx-auto space-y-3">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-cyan-300 text-xs font-black uppercase tracking-wider border border-blue-400/30">
                 <Cpu className="w-3.5 h-3.5 text-cyan-400" />
@@ -787,7 +787,7 @@ export const HomePage: React.FC = () => {
               direction="left"
               xOffset={-80}
               delay={0}
-              duration={850}
+              duration={280}
               blur={12}
               scale={0.92}
               className="h-full flex flex-col"
@@ -857,7 +857,7 @@ export const HomePage: React.FC = () => {
               direction="center"
               yOffset={35}
               delay={120}
-              duration={850}
+              duration={280}
               blur={12}
               scale={0.90}
               className="h-full flex flex-col"
@@ -927,7 +927,7 @@ export const HomePage: React.FC = () => {
               direction="right"
               xOffset={80}
               delay={240}
-              duration={850}
+              duration={280}
               blur={12}
               scale={0.92}
               className="h-full flex flex-col"
@@ -1042,7 +1042,7 @@ export const HomePage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {parentCctvProducts.map((product, idx) => (
-              <BlurZoomReveal key={`${product.id}-${idx}`} direction="up" delay={Math.min(idx * 35, 180)} duration={320} className="h-full flex flex-col">
+              <BlurZoomReveal key={`${product.id}-${idx}`} direction="up" delay={Math.min(idx * 35, 180)} duration={240} className="h-full flex flex-col">
                 <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
                   <div>
                     <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
@@ -1150,7 +1150,7 @@ export const HomePage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {parentFiberProducts.map((product, idx) => (
-              <BlurZoomReveal key={`${product.id}-${idx}`} direction="up" delay={Math.min(idx * 35, 180)} duration={320} className="h-full flex flex-col">
+              <BlurZoomReveal key={`${product.id}-${idx}`} direction="up" delay={Math.min(idx * 35, 180)} duration={240} className="h-full flex flex-col">
                 <div className="rounded-2xl bg-[#0c1c38]/90 border border-teal-900/50 overflow-hidden shadow-xl hover:shadow-2xl hover:border-teal-400/60 transition-all duration-300 flex flex-col justify-between group h-full">
                   <div>
                     <div className="relative h-52 sm:h-56 bg-[#081222] overflow-hidden p-5 flex items-center justify-center border-b border-teal-900/40">
@@ -1258,7 +1258,7 @@ export const HomePage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {parentNetworkProducts.map((product, idx) => (
-              <BlurZoomReveal key={`${product.id}-${idx}`} direction="up" delay={Math.min(idx * 35, 180)} duration={320} className="h-full flex flex-col">
+              <BlurZoomReveal key={`${product.id}-${idx}`} direction="up" delay={Math.min(idx * 35, 180)} duration={240} className="h-full flex flex-col">
                 <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group h-full">
                   <div>
                     <div className="relative h-52 sm:h-56 bg-slate-50 overflow-hidden p-5 flex items-center justify-center border-b border-slate-100">
@@ -1511,7 +1511,7 @@ export const HomePage: React.FC = () => {
                     xOffset={xOffset}
                     yOffset={yOffset}
                     delay={delay}
-                    duration={800}
+                    duration={280}
                     blur={10}
                     scale={0.94}
                     className="h-full flex flex-col"
@@ -1681,7 +1681,7 @@ export const HomePage: React.FC = () => {
                       xOffset={xOffset}
                       yOffset={yOffset}
                       delay={delay}
-                      duration={800}
+                      duration={280}
                       blur={10}
                       scale={0.94}
                       className="h-full flex flex-col"
@@ -2320,7 +2320,7 @@ export const HomePage: React.FC = () => {
           <div className="relative rounded-3xl bg-[#0c1c38]/90 text-white p-8 sm:p-14 shadow-2xl overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 border border-blue-700/50">
             <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] opacity-15 [background-size:20px_20px] pointer-events-none" />
 
-            <BlurZoomReveal direction="left" xOffset={-40} delay={0} duration={800} blur={10} className="w-full md:w-auto">
+            <BlurZoomReveal direction="left" xOffset={-40} delay={0} duration={280} blur={10} className="w-full md:w-auto">
               <div className="relative space-y-3 text-center md:text-left max-w-xl">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-900/60 text-sky-400 text-xs font-bold border border-blue-700/50 backdrop-blur-xs">
                   <span className="w-2 h-2 rounded-full bg-sky-400 inline-block animate-pulse" />
@@ -2335,7 +2335,7 @@ export const HomePage: React.FC = () => {
               </div>
             </BlurZoomReveal>
 
-            <BlurZoomReveal direction="right" xOffset={40} delay={120} duration={800} scale={0.95} className="shrink-0">
+            <BlurZoomReveal direction="right" xOffset={40} delay={120} duration={280} scale={0.95} className="shrink-0">
               <div className="relative flex flex-col sm:flex-row items-center gap-3 shrink-0">
                 <Link to="/contact">
                   <Button

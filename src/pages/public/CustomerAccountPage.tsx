@@ -8,6 +8,7 @@ import {
   updateCustomerProfile,
   getCustomerEnquiries,
   subscribeToCustomerPlanOrders,
+  getCachedPlanOrders,
   getPlanCart,
   removeFromPlanCart,
   clearPlanCart,
@@ -423,6 +424,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
     }
   });
   const [orderPlanModalItem, setOrderPlanModalItem] = useState<any>(null);
+  const [orderCartItems, setOrderCartItems] = useState<CartPlanItem[] | null>(null);
 
   useEffect(() => {
     const handleCartUpdate = (e: any) => {
@@ -466,13 +468,33 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
   const [docModalOrder, setDocModalOrder] = useState<PlanOrder | null>(null);
   const [docModalType, setDocModalType] = useState<'booking_slip' | 'paid_receipt'>('booking_slip');
 
-  // Real-time listener for customer's broadband orders
+  // Real-time listener for customer's orders across all companies
   useEffect(() => {
+    const syncOrders = () => {
+      try {
+        const cached = getCachedPlanOrders();
+        const cleanEmail = currentUser?.email ? currentUser.email.toLowerCase().trim() : '';
+        const matching = cached.filter((o: PlanOrder) => {
+          if (currentUser?.uid && o.authUid === currentUser.uid) return true;
+          if (cleanEmail && o.email && o.email.toLowerCase().trim() === cleanEmail) return true;
+          return false;
+        });
+        setCustomerOrders(matching);
+      } catch {}
+    };
+
     if (currentUser?.uid) {
+      syncOrders();
       const unsub = subscribeToCustomerPlanOrders(currentUser.uid, currentUser.email, (orders) => {
         setCustomerOrders(orders);
       });
-      return () => unsub();
+      window.addEventListener('nexalus_plan_orders_updated', syncOrders);
+      window.addEventListener('storage', syncOrders);
+      return () => {
+        unsub();
+        window.removeEventListener('nexalus_plan_orders_updated', syncOrders);
+        window.removeEventListener('storage', syncOrders);
+      };
     }
   }, [currentUser?.uid, currentUser?.email]);
 
@@ -485,33 +507,42 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
   // Scoped Customer Orders strictly for this company
   const scopedCustomerOrders = useMemo(() => {
     return customerOrders.filter((order: PlanOrder) => {
-      const orderComp = (order.companyId || '').trim();
-      const orderBrand = (order.brandId || '').trim();
-      const planNameLower = (order.planName || '').toLowerCase();
-      const providerLower = (order.providerName || '').toLowerCase();
-      const isBroadband = Boolean(
-        order.providerName ||
-        planNameLower.includes('airtel') ||
-        planNameLower.includes('bsnl') ||
-        planNameLower.includes('railwire') ||
-        planNameLower.includes('broadband') ||
-        planNameLower.includes('mbps') ||
-        providerLower.includes('airtel') ||
-        providerLower.includes('bsnl') ||
-        providerLower.includes('railwire') ||
-        providerLower.includes('one')
+      const orderComp = (order.companyId || '').toLowerCase().trim();
+      const orderBrand = (order.brandId || '').toLowerCase().trim();
+      const planId = (order.planId || '').toLowerCase().trim();
+      const planName = (order.planName || '').toLowerCase().trim();
+
+      const isAm = (
+        orderComp === 'am-distributors' ||
+        orderComp === 'am' ||
+        orderBrand === 'am-distributors' ||
+        planId.startsWith('prod-am') ||
+        planName.includes('mineral water') ||
+        planName.includes('dairy') ||
+        planName.includes('ice cream') ||
+        planName.includes('butter') ||
+        planName.includes('milk')
+      );
+
+      const isNi = (
+        orderComp === 'nexalus-innovations' ||
+        orderBrand === 'nexalus-innovations' ||
+        planId.startsWith('prod-ni') ||
+        (planId.startsWith('prod-nexalus-') && !planId.includes('llp')) ||
+        planName.includes('cctv') ||
+        planName.includes('surveillance') ||
+        planName.includes('switch') ||
+        planName.includes('router') ||
+        planName.includes('camera')
       );
 
       if (effectiveScope === 'am-distributors') {
-        if (isBroadband) return false;
-        return orderComp === 'am-distributors' || orderComp === 'am' || orderBrand === 'am-distributors';
+        return isAm;
       }
       if (effectiveScope === 'nexalus-innovations') {
-        if (isBroadband || orderComp === 'nexalus-llp' || orderComp === 'corporate') return false;
-        return orderComp === 'nexalus-innovations' || orderBrand === 'nexalus-innovations';
+        return isNi;
       }
-      if (isBroadband) return true;
-      return orderComp === 'nexalus-llp' || orderComp === 'corporate' || !orderComp;
+      return !isAm && !isNi;
     });
   }, [customerOrders, effectiveScope]);
 
@@ -1725,58 +1756,17 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
 
   return (
     <div className="min-h-screen bg-slate-100/70 pb-16 font-sans">
-      {/* Multi-Company Portal Switcher */}
-      <div className="bg-white/95 backdrop-blur-xs border-b border-slate-200 py-2.5 px-4 sm:px-6 lg:px-8 shadow-2xs">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5 text-slate-600 font-bold">
-            <button
-              type="button"
-              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-              className="lg:hidden p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 cursor-pointer"
-              title="Toggle Menu"
-            >
-              <Menu className="w-4 h-4" />
-            </button>
-            <Building className="w-3.5 h-3.5 text-slate-400" />
-            <span>Active Portal:</span>
-            <span className="text-slate-900 font-extrabold">{companyMeta.name}</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            <Link
-              to="/account"
-              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all text-xs ${
-                effectiveScope === 'nexalus-llp'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
-              }`}
-            >
-              <Wifi className="w-3.5 h-3.5" />
-              <span>Nexalus Broadband</span>
-            </Link>
-            <Link
-              to="/brands/nexalus-innovations/account"
-              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all text-xs ${
-                effectiveScope === 'nexalus-innovations'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Nexalus Innovations</span>
-            </Link>
-            <Link
-              to="/brands/am-distributors/account"
-              className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all text-xs ${
-                effectiveScope === 'am-distributors'
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
-              }`}
-            >
-              <Package className="w-3.5 h-3.5" />
-              <span>A.M. Distributors</span>
-            </Link>
-          </div>
-        </div>
+      {/* Mobile Drawer Trigger (Only on small screens) */}
+      <div className="lg:hidden bg-white/95 backdrop-blur-xs border-b border-slate-200 py-2.5 px-4 flex items-center justify-between text-xs shadow-2xs">
+        <button
+          type="button"
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-bold border border-slate-200 cursor-pointer"
+        >
+          <Menu className="w-4 h-4" />
+          <span>Account Menu</span>
+        </button>
+        <span className="text-slate-500 font-semibold">{companyMeta.shortName}</span>
       </div>
 
       {/* Main Layout: 12-Section Sidebar + Content */}
@@ -3278,7 +3268,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
                           <Button
                             variant="primary"
                             size="sm"
-                            onClick={() => setOrderPlanModalItem(scopedCartItems[0])}
+                            onClick={() => setOrderCartItems(scopedCartItems)}
                             icon={<Zap className="w-4 h-4" />}
                             className={`font-bold shadow-md ${
                               effectiveScope === 'am-distributors'
@@ -4031,14 +4021,21 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
 
       {/* PLAN ORDER & INSTANT CHECKOUT MODAL */}
       <PlanOrderModal
-        isOpen={Boolean(orderPlanModalItem)}
-        onClose={() => setOrderPlanModalItem(null)}
+        isOpen={Boolean(orderPlanModalItem || (orderCartItems && orderCartItems.length > 0))}
+        onClose={() => {
+          setOrderPlanModalItem(null);
+          setOrderCartItems(null);
+        }}
         plan={orderPlanModalItem}
+        items={orderCartItems || (orderPlanModalItem ? [orderPlanModalItem] : undefined)}
+        companyId={effectiveScope}
         onOrderSuccess={(orderId) => {
           if (orderPlanModalItem?.id) {
             removeFromPlanCart(orderPlanModalItem.id);
           }
           setOrderPlanModalItem(null);
+          setOrderCartItems(null);
+          setActiveSection('broadband_orders');
         }}
       />
 

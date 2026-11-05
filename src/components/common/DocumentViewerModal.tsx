@@ -26,7 +26,8 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
   order,
   documentType
 }) => {
-  const [settings, setSettings] = useState<ReceiptSettings>(() => getCachedReceiptSettings());
+  const compId = order?.companyId || (order?.brandId === 'am-distributors' ? 'am-distributors' : order?.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
+  const [settings, setSettings] = useState<ReceiptSettings>(() => getCachedReceiptSettings(compId));
   const [activeType, setActiveType] = useState<DocumentType>(() => {
     if (order?.paymentStatus === 'paid') return 'paid_receipt';
     return documentType;
@@ -41,13 +42,15 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
   }, [isOpen, order?.id, order?.paymentStatus, documentType]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && order) {
+      const cId = order.companyId || (order.brandId === 'am-distributors' ? 'am-distributors' : order.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
+      setSettings(getCachedReceiptSettings(cId));
       const unsub = subscribeReceiptSettings((newSettings) => {
         setSettings(newSettings);
-      });
+      }, cId);
       return () => unsub();
     }
-  }, [isOpen]);
+  }, [isOpen, order?.id, order?.companyId, order?.brandId]);
 
   if (!isOpen || !order) return null;
 
@@ -77,7 +80,10 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     website: settings.website || VERIFIED_COMPANY_DETAILS.website
   };
   const priceFormatted = formatIndianCurrency(order.price);
-  const receiptNo = order.receiptNumber || order.paymentDetails?.receiptNumber || `RCP-NEX-${order.id.replace('ORD-PLN-', '')}`;
+  const isAm = compId === 'am-distributors' || compId === 'am';
+  const isNi = compId === 'nexalus-innovations';
+  const defaultPrefix = isAm ? 'B2B-CHL' : isNi ? 'NEX-TECH' : 'RCP-NEX';
+  const receiptNo = order.receiptNumber || order.paymentDetails?.receiptNumber || `${settings.receiptPrefix || defaultPrefix}-${order.id.replace('ORD-PLN-', '')}`;
   const docNumber = isPaid ? receiptNo : `BKG-${order.id.replace('ORD-PLN-', '')}`;
   const docDate = formatDateIndian(isPaid ? (order.paymentDetails?.collectedAt || order.updatedAt) : order.createdAt);
   const paymentModeLabel = (order.paymentMethod || 'cash_on_installation').replace(/_/g, ' ').toUpperCase();
@@ -202,7 +208,9 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
               <div className="md:text-right flex flex-col md:items-end justify-between self-stretch">
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white font-mono">
-                    {isViewingReceipt ? 'OFFICIAL PAYMENT RECEIPT' : 'BOOKING SLIP'}
+                    {isViewingReceipt
+                      ? (settings.receiptTitle || (isAm ? 'B2B DELIVERY CHALLAN & INVOICE' : isNi ? 'COMMERCIAL TAX INVOICE' : 'OFFICIAL PAYMENT RECEIPT'))
+                      : (settings.bookingTitle || (isAm ? 'WHOLESALE DISPATCH CONFIRMATION' : isNi ? 'PROCUREMENT CONFIRMATION' : 'BOOKING SLIP'))}
                   </h2>
                   <div className="mt-1">
                     <span className={`inline-block text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${

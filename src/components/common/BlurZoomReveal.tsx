@@ -3,36 +3,35 @@ import React, { useEffect, useRef, useState } from 'react';
 export interface BlurZoomRevealProps {
   children: React.ReactNode;
   className?: string;
-  delay?: number;        // Milliseconds delay for staggered entrance (e.g. 0, 60, 120)
-  duration?: number;     // Animation duration in ms (default: 600)
-  blur?: number;         // Blur px before enter (default: 4)
-  scale?: number;        // Scale before reveal (default: 0.97)
+  delay?: number;        // Milliseconds delay for staggered entrance (e.g. 0, 40, 80)
+  duration?: number;     // Animation duration in ms (default: 260 for instant snappy feel)
+  blur?: number;         // Blur px before enter (default: 2)
+  scale?: number;        // Scale before reveal (default: 0.99)
   xOffset?: number;      // Horizontal slide px before reveal
-  yOffset?: number;      // Vertical slide px before reveal (default: 28)
+  yOffset?: number;      // Vertical slide px before reveal (default: 12)
   direction?: 'left' | 'right' | 'up' | 'down' | 'center' | 'none';
-  threshold?: number;    // Viewport intersection threshold (default: 0.05)
+  threshold?: number;    // Viewport intersection threshold (default: 0.01)
   once?: boolean;        // Stay revealed after first entrance (default: true)
   initialOpacity?: number;
 }
 
 /**
- * BlurZoomReveal — Professional scroll-triggered fade-up entrance animation.
+ * BlurZoomReveal — Professional, ultra-fast scroll-triggered entrance animation.
  *
- * Each element smoothly glides up and fades in as the user scrolls it into view.
- * Uses IntersectionObserver for real scroll events.
- * Transition is always defined so every entrance is silky smooth.
+ * Silky smooth and near-instant: reveals contents promptly as soon as they scroll
+ * into view with zero perceptible lag.
  */
 export const BlurZoomReveal: React.FC<BlurZoomRevealProps> = ({
   children,
   className = '',
   delay = 0,
-  duration = 600,
-  blur = 4,
-  scale = 0.97,
+  duration = 260,
+  blur = 2,
+  scale = 0.99,
   xOffset,
-  yOffset = 28,
+  yOffset = 12,
   direction = 'up',
-  threshold = 0.05,
+  threshold = 0.01,
   once = true,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -60,8 +59,8 @@ export const BlurZoomReveal: React.FC<BlurZoomRevealProps> = ({
       },
       {
         threshold,
-        // Start animation when element is within 40px of entering viewport
-        rootMargin: '0px 0px -40px 0px',
+        // Trigger reveal slightly before reaching viewport so content is instantly visible on entry
+        rootMargin: '100px 0px 0px 0px',
       }
     );
 

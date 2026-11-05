@@ -21,19 +21,23 @@ import {
   Sparkles,
   ArrowRight,
   Plus,
-  Minus
+  Minus,
+  Truck,
+  Package,
+  Layers,
+  ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { submitPlanOrder } from '../../firebase/services';
-import { PlanOrder, BrandId } from '../../types';
+import { submitPlanOrder, clearPlanCart } from '../../firebase/services';
+import { PlanOrder, BrandId, CartPlanItem } from '../../types';
 import { Button } from './Button';
 import { DocumentViewerModal } from './DocumentViewerModal';
 
 export interface PlanOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  plan: {
+  plan?: {
     planId?: string;
     planName: string;
     providerName: string;
@@ -45,6 +49,8 @@ export interface PlanOrderModalProps {
     quantity?: number;
     unitPrice?: number;
   } | null;
+  items?: CartPlanItem[]; // Multi-item cart checkout!
+  companyId?: string;
   onOrderSuccess?: (orderId: string) => void;
 }
 
@@ -52,6 +58,8 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   isOpen,
   onClose,
   plan,
+  items,
+  companyId,
   onOrderSuccess
 }) => {
   const { currentUser, isCustomer } = useAuth();
@@ -64,26 +72,70 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [pincode, setPincode] = useState('');
-  const [preferredSlot, setPreferredSlot] = useState('Immediate / Next Working Day');
+  const [preferredSlot, setPreferredSlot] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PlanOrder['paymentMethod']>('pay_on_installation');
   const [notes, setNotes] = useState('');
   const [orderQty, setOrderQty] = useState(1);
+
+  // Multi-item cart local state
+  const [cartItemsState, setCartItemsState] = useState<CartPlanItem[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<PlanOrder | null>(null);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && plan) {
-      setOrderQty(Math.max(1, (plan as any)?.quantity || 1));
-    }
-  }, [isOpen, plan]);
+  // Determine active company identity
+  const isMultiItem = Boolean(items && items.length > 0);
+  const effectiveCompanyId =
+    companyId ||
+    (items && items[0]?.companyId) ||
+    plan?.companyId ||
+    (plan?.brandId === 'am-distributors'
+      ? 'am-distributors'
+      : plan?.brandId === 'nexalus-innovations'
+      ? 'nexalus-innovations'
+      : 'nexalus-llp');
 
+  const isAm = effectiveCompanyId === 'am-distributors' || effectiveCompanyId === 'am';
+  const isNi = effectiveCompanyId === 'nexalus-innovations';
+
+  // Set default slot according to company
+  useEffect(() => {
+    if (isAm) {
+      setPreferredSlot('Daily 4:00 AM Morning Dispatch');
+    } else if (isNi) {
+      setPreferredSlot('Next Working Day Site Delivery & Inspection');
+    } else {
+      setPreferredSlot('Immediate / Next Working Day');
+    }
+  }, [isAm, isNi]);
+
+  // Sync items when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (items && items.length > 0) {
+        setCartItemsState(items.map(it => ({ ...it, quantity: it.quantity || 1 })));
+      } else if (plan) {
+        setOrderQty(Math.max(1, (plan as any)?.quantity || 1));
+      }
+    }
+  }, [isOpen, items, plan]);
+
+  // Price calculations
   const rawPrice = typeof plan?.price === 'number' ? plan.price : parseFloat(String(plan?.price)) || 0;
-  const unitPrice = typeof (plan as any)?.unitPrice === 'number' && (plan as any).unitPrice > 0
-    ? (plan as any).unitPrice
-    : ((plan as any)?.quantity && (plan as any).quantity > 1 ? rawPrice / (plan as any).quantity : rawPrice);
-  const totalCalculatedPrice = unitPrice * orderQty;
+  const unitPrice =
+    typeof (plan as any)?.unitPrice === 'number' && (plan as any).unitPrice > 0
+      ? (plan as any).unitPrice
+      : (plan as any)?.quantity && (plan as any).quantity > 1
+      ? rawPrice / (plan as any).quantity
+      : rawPrice;
+
+  const multiTotal = cartItemsState.reduce(
+    (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 1),
+    0
+  );
+  const singleTotal = unitPrice * orderQty;
+  const grandTotal = isMultiItem ? multiTotal : singleTotal;
 
   // Auto-close and redirect to Customer Login if accessed without Customer session
   useEffect(() => {
@@ -99,16 +151,18 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
           detail: {
             view: 'choice',
             context: 'buy_now',
-            prompt: plan
-              ? `Please register or log in to buy ${plan.providerName} - ${plan.planName} (${plan.speed}).`
+            prompt: isAm
+              ? 'Please log in to your wholesale partner account to place your depot order.'
+              : isNi
+              ? 'Please log in to your account to procure commercial IT hardware.'
               : 'Please register or log in to complete your broadband order.'
           }
         })
       );
     }
-  }, [isOpen, isCustomerLoggedIn, plan, onClose]);
+  }, [isOpen, isCustomerLoggedIn, plan, isAm, isNi, onClose]);
 
-  // Pre-fill user profile only if logged in as a verified customer
+  // Pre-fill user profile
   useEffect(() => {
     if (isCustomerLoggedIn && currentUser) {
       if (currentUser.displayName) setCustomerName(currentUser.displayName);
@@ -117,15 +171,9 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
       if (currentUser.deliveryAddress) {
         if (currentUser.deliveryAddress.address) setAddress(currentUser.deliveryAddress.address);
         if (currentUser.deliveryAddress.city) setCity(currentUser.deliveryAddress.city);
-        if (currentUser.deliveryAddress.postcode) setPincode(currentUser.deliveryAddress.postcode.replace(/\D/g, '').slice(0, 6));
+        if (currentUser.deliveryAddress.postcode)
+          setPincode(currentUser.deliveryAddress.postcode.replace(/\D/g, '').slice(0, 6));
       }
-    } else {
-      setCustomerName('');
-      setPhone('');
-      setEmail('');
-      setAddress('');
-      setCity('');
-      setPincode('');
     }
   }, [currentUser, isCustomerLoggedIn, isOpen]);
 
@@ -145,23 +193,25 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
     }
   }, [isOpen, currentUser]);
 
-  if (!isOpen || !plan) return null;
+  if (!isOpen || (!plan && (!items || items.length === 0))) return null;
+
+  const updateCartItemQty = (index: number, delta: number) => {
+    setCartItemsState(prev => {
+      const copy = [...prev];
+      const cur = copy[index];
+      if (!cur) return prev;
+      const nextQty = Math.max(1, (cur.quantity || 1) + delta);
+      copy[index] = { ...cur, quantity: nextQty };
+      return copy;
+    });
+  };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isCustomerLoggedIn) {
-      error('Login Required', 'Please register or log in to buy this plan.');
+      error('Login Required', 'Please register or log in to complete your order.');
       onClose();
-      window.dispatchEvent(
-        new CustomEvent('open_customer_portal', {
-          detail: {
-            view: 'choice',
-            context: 'buy_now',
-            prompt: `Please register or log in to buy ${plan.providerName} - ${plan.planName} (${plan.speed}).`
-          }
-        })
-      );
       return;
     }
 
@@ -169,7 +219,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
     const cleanPin = pincode.replace(/\D/g, '');
 
     if (!customerName.trim()) {
-      error('Validation Error', 'Please enter your full name.');
+      error('Validation Error', 'Please enter your full name or registered business name.');
       return;
     }
 
@@ -179,27 +229,67 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
     }
 
     if (!address.trim() || !city.trim()) {
-      error('Validation Error', 'Please provide complete installation address and city.');
+      error('Validation Error', 'Please provide complete delivery / installation address and city.');
       return;
     }
 
     const emailToSave = email.trim() ? email.trim().toLowerCase() : `${cleanPhone}@customer.nexalus.com`;
-    const pinToSave = cleanPin || '415605';
+    const pinToSave = cleanPin || (isAm ? '415605' : '416415');
 
     setIsSubmitting(true);
     try {
+      const effectivePlanId = isMultiItem
+        ? cartItemsState[0].planId
+        : plan?.planId || 'prod-custom';
+
+      const effectivePlanName = isMultiItem
+        ? cartItemsState.length === 1
+          ? cartItemsState[0].planName
+          : `${cartItemsState[0].planName} (+${cartItemsState.length - 1} more)`
+        : plan?.planName || 'Selected Item';
+
+      const effectiveProviderName = isMultiItem
+        ? cartItemsState[0].providerName || (isAm ? 'A.M. Distributors' : isNi ? 'Nexalus Innovations' : 'Nexalus Innovations LLP')
+        : plan?.providerName || (isAm ? 'A.M. Distributors' : isNi ? 'Nexalus Innovations' : 'Nexalus Innovations LLP');
+
+      const totalQuantity = isMultiItem
+        ? cartItemsState.reduce((sum, it) => sum + (it.quantity || 1), 0)
+        : orderQty;
+
+      const orderItemsSnapshot = isMultiItem
+        ? cartItemsState.map(it => ({
+            planId: it.planId,
+            planName: it.planName,
+            providerName: it.providerName,
+            quantity: it.quantity || 1,
+            unitPrice: Number(it.price) || 0,
+            totalPrice: (Number(it.price) || 0) * (it.quantity || 1)
+          }))
+        : [
+            {
+              planId: plan?.planId || '',
+              planName: plan?.planName || '',
+              providerName: plan?.providerName || '',
+              quantity: orderQty,
+              unitPrice: unitPrice,
+              totalPrice: singleTotal
+            }
+          ];
+
       const res = await submitPlanOrder({
         authUid: currentUser?.uid,
-        planId: plan.planId,
-        planName: plan.planName,
-        providerName: plan.providerName,
-        speed: plan.speed,
-        price: totalCalculatedPrice,
-        quantity: orderQty,
-        unitPrice: unitPrice,
-        billingPeriod: plan.billingPeriod || 'monthly',
-        brandId: ((plan as any)?.brandId || 'nexalus') as any,
-        companyId: ((plan as any)?.companyId || 'nexalus-llp') as any,
+        planId: effectivePlanId,
+        planName: effectivePlanName,
+        providerName: effectiveProviderName,
+        speed: isMultiItem
+          ? `${cartItemsState.length} product(s) wholesale procurement`
+          : plan?.speed || 'Standard',
+        price: grandTotal,
+        quantity: totalQuantity,
+        unitPrice: isMultiItem ? Number(grandTotal) / Math.max(1, totalQuantity) : unitPrice,
+        billingPeriod: plan?.billingPeriod || 'order',
+        brandId: (isAm ? 'am-distributors' : isNi ? 'nexalus-innovations' : 'nexalus') as any,
+        companyId: (isAm ? 'am-distributors' : isNi ? 'nexalus-innovations' : 'nexalus-llp') as any,
         customerName: customerName.trim(),
         phone: cleanPhone,
         email: emailToSave,
@@ -210,52 +300,101 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
         paymentMethod,
         paymentStatus: 'pending',
         notes: notes.trim(),
+        items: orderItemsSnapshot as any,
         planSnapshot: {
-          id: plan.planId || '',
-          name: plan.planName,
-          providerId: (plan as any).providerId || 'nexalus',
-          providerName: plan.providerName,
-          speed: plan.speed,
-          price: typeof plan.price === 'number' ? plan.price : parseFloat(String(plan.price)) || 0,
+          id: effectivePlanId || 'prod-custom',
+          name: effectivePlanName,
+          providerId: isAm ? 'am-distributors' : isNi ? 'nexalus-innovations' : 'nexalus',
+          providerName: effectiveProviderName,
+          speed: isMultiItem ? `${cartItemsState.length} Items` : plan?.speed || 'Standard',
+          price: grandTotal,
           currency: 'INR',
-          billingPeriod: plan.billingPeriod || 'monthly'
+          billingPeriod: 'order'
         }
       });
 
       if (res.success) {
         setCompletedOrder(res.order);
-        success('Order Confirmed!', `Broadband Order #${res.id} placed successfully.`);
+        // Clear this company's cart items on successful order
+        clearPlanCart(effectiveCompanyId, currentUser?.uid);
+        success('Order Confirmed!', `Order #${res.id} placed successfully.`);
         if (onOrderSuccess) onOrderSuccess(res.id);
       } else {
-        error('Order Error', 'Could not record plan order. Please try again.');
+        error('Order Error', 'Could not record order. Please try again.');
       }
     } catch (err: any) {
-      error('Error', err.message || 'Failed to submit plan booking.');
+      error('Error', err.message || 'Failed to submit order.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[999] overflow-y-auto bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[999] overflow-y-auto bg-slate-950/80 backdrop-blur-sm p-3 sm:p-4 md:p-6 flex min-h-full items-start sm:items-center justify-center py-6 sm:py-10 animate-in fade-in duration-200">
       <div
-        className="relative bg-white w-full max-w-xl rounded-[28px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200/90 overflow-hidden transform transition-all my-auto"
+        className="relative bg-white w-full max-w-2xl rounded-[28px] shadow-2xl border border-slate-200/90 overflow-hidden transform transition-all my-auto max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
-        {/* Top Luxury Header */}
-        <div className="bg-gradient-to-r from-slate-950 via-[#0a1633] to-slate-950 px-6 py-5 text-white flex items-center justify-between border-b border-blue-900/40 relative">
-          <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500" />
+        {/* Top Header Scoped by Company */}
+        <div
+          className={`px-6 py-5 text-white flex items-center justify-between border-b relative shrink-0 z-20 ${
+            isAm
+              ? 'bg-gradient-to-r from-teal-950 via-emerald-950 to-slate-950 border-teal-800/40'
+              : isNi
+              ? 'bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 border-indigo-800/40'
+              : 'bg-gradient-to-r from-slate-950 via-[#0a1633] to-slate-950 border-blue-900/40'
+          }`}
+        >
+          <div
+            className={`absolute top-0 left-0 right-0 h-[2.5px] ${
+              isAm
+                ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400'
+                : isNi
+                ? 'bg-gradient-to-r from-indigo-400 via-purple-500 to-blue-500'
+                : 'bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500'
+            }`}
+          />
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 flex items-center justify-center shadow-inner">
-              <Zap className="w-5 h-5 text-cyan-300" />
+            <div
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-inner border ${
+                isAm
+                  ? 'bg-teal-500/15 border-teal-400/30 text-teal-300'
+                  : isNi
+                  ? 'bg-indigo-500/15 border-indigo-400/30 text-indigo-300'
+                  : 'bg-cyan-500/15 border-cyan-400/30 text-cyan-300'
+              }`}
+            >
+              {isAm ? (
+                <Truck className="w-5 h-5 text-teal-300" />
+              ) : isNi ? (
+                <ShieldCheck className="w-5 h-5 text-indigo-300" />
+              ) : (
+                <Zap className="w-5 h-5 text-cyan-300" />
+              )}
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-cyan-400 flex items-center gap-1.5">
+              <div
+                className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
+                  isAm ? 'text-teal-300' : isNi ? 'text-indigo-300' : 'text-cyan-400'
+                }`}
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Official Broadband Provisioning</span>
+                <span>
+                  {isAm
+                    ? 'B2B Wholesale Cold-Chain Dispatch'
+                    : isNi
+                    ? 'Enterprise Hardware Procurement'
+                    : 'Official Broadband Provisioning'}
+                </span>
               </div>
               <h3 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight mt-0.5">
-                {completedOrder ? 'Order Confirmed' : 'Instant Plan Booking & Checkout'}
+                {completedOrder
+                  ? 'Order Confirmed'
+                  : isAm
+                  ? 'Wholesale Order & Delivery Checkout'
+                  : isNi
+                  ? 'Hardware Procurement & Checkout'
+                  : 'Instant Plan Booking & Checkout'}
               </h3>
             </div>
           </div>
@@ -271,43 +410,49 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
 
         {/* ORDER SUCCESS VIEW */}
         {completedOrder ? (
-          <div className="p-6 sm:p-8 space-y-6 text-center">
+          <div className="p-6 sm:p-8 space-y-6 text-center overflow-y-auto flex-1 overscroll-contain">
             <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm animate-bounce">
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
             <div className="space-y-1.5">
               <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                Booking Confirmed
+                Order Received
               </span>
               <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-                Plan Order Received!
+                {isAm
+                  ? 'Wholesale Dispatch Order Placed!'
+                  : isNi
+                  ? 'Hardware Order Confirmed!'
+                  : 'Plan Order Received!'}
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                Thank you, <strong>{completedOrder.customerName}</strong>. Your connection order has been recorded in Firebase and dispatched to our regional optical engineering desk.
+                Thank you, <strong>{completedOrder.customerName}</strong>. Your order has been recorded in our system and dispatched to operations.
               </p>
             </div>
 
             {/* Summary Box */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2.5">
               <div className="flex justify-between border-b border-slate-200/80 pb-2 font-bold text-slate-900">
-                <span>Selected Plan:</span>
-                <span className="text-blue-700">{completedOrder.providerName} - {completedOrder.planName} ({completedOrder.speed})</span>
+                <span>Order ID:</span>
+                <span className="font-mono text-indigo-700">{completedOrder.id}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Tariff:</span>
-                <span className="font-extrabold text-slate-900">₹{completedOrder.price} / {completedOrder.billingPeriod}</span>
+                <span>Total Amount:</span>
+                <span className="font-extrabold text-slate-900">₹{completedOrder.price.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Installation City:</span>
-                <span className="font-semibold text-slate-800">{completedOrder.city} ({completedOrder.pincode})</span>
+                <span>Total Items / Qty:</span>
+                <span className="font-semibold text-slate-800">{completedOrder.quantity || 1} units</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Payment Mode:</span>
-                <span className="font-semibold text-slate-800">{completedOrder.paymentMethod.replace(/_/g, ' ').toUpperCase()}</span>
+                <span>Delivery City:</span>
+                <span className="font-semibold text-slate-800">
+                  {completedOrder.city} ({completedOrder.pincode})
+                </span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Scheduled Slot:</span>
+                <span>Scheduled Route / Slot:</span>
                 <span className="font-semibold text-slate-800">{completedOrder.preferredSlot}</span>
               </div>
             </div>
@@ -316,169 +461,146 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
               <button
                 type="button"
                 onClick={() => setIsDocModalOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-blue-600/25 transition-all cursor-pointer"
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white font-bold text-xs shadow-md transition-all cursor-pointer ${
+                  isAm
+                    ? 'bg-teal-700 hover:bg-teal-800 shadow-teal-700/25'
+                    : isNi
+                    ? 'bg-indigo-700 hover:bg-indigo-800 shadow-indigo-700/25'
+                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/25'
+                }`}
               >
                 <FileText className="w-4 h-4" />
-                <span>Download / Print Booking Slip</span>
+                <span>{isAm ? 'View & Download Delivery Challan' : 'View & Download Official Receipt'}</span>
               </button>
-              <a
-                href={`https://wa.me/919158886444?text=Hello%20Nexalus,%20I%20just%20placed%20Broadband%20Plan%20Order%20${completedOrder.id}%20for%20${encodeURIComponent(completedOrder.planName)}.%20Please%20confirm%20my%20installation.`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
-              >
-                <span>Track on WhatsApp</span>
-              </a>
-              <Button
-                variant="outline"
-                size="md"
-                onClick={onClose}
-                className="w-full sm:w-auto"
-              >
+              <Button variant="outline" size="md" onClick={onClose} className="w-full sm:w-auto">
                 Close Window
               </Button>
             </div>
           </div>
-        ) : !isCustomerLoggedIn ? (
-          /* AUTHENTICATION REQUIRED VIEW */
-          <div className="p-6 sm:p-8 space-y-6 text-center animate-in fade-in">
-            <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-sm">
-              <Lock className="w-8 h-8" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider">
-                <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
-                <span>Verified Customer Account Required</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Customer Login Required to Buy
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-                {currentUser && currentUser.role !== 'customer'
-                  ? `You are currently logged in with an administrative profile (${currentUser.email}). Broadband plan purchases require a verified Customer account. Please log in or register with your Customer profile.`
-                  : `Direct Buy Now without an account is restricted. To proceed with ordering ${plan.providerName} - ${plan.planName} (${plan.speed}), please register your customer account and log in.`}
-              </p>
-            </div>
-
-            {/* Plan preview */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-1.5 max-w-md mx-auto">
-              <div className="flex justify-between items-center text-slate-800 font-bold">
-                <span>Selected Plan:</span>
-                <span className="text-blue-700">{plan.providerName} - {plan.planName}</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-600">
-                <span>Speed & Tariff:</span>
-                <span className="font-extrabold text-slate-900">{plan.speed} • ₹{plan.price}/{plan.billingPeriod || 'mo'}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 max-w-md mx-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
-                  } catch {}
-                  onClose();
-                  window.dispatchEvent(
-                    new CustomEvent('open_customer_portal', {
-                      detail: {
-                        view: 'register',
-                        context: 'buy_now',
-                        prompt: `Please register your customer account to complete booking for ${plan.providerName} - ${plan.planName}.`
-                      }
-                    })
-                  );
-                }}
-                className="py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>Register New Account</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
-                  } catch {}
-                  onClose();
-                  window.dispatchEvent(
-                    new CustomEvent('open_customer_portal', {
-                      detail: {
-                        view: 'login',
-                        context: 'buy_now',
-                        prompt: `Please log in to your account to complete booking for ${plan.providerName} - ${plan.planName}.`
-                      }
-                    })
-                  );
-                }}
-                className="py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs shadow-md shadow-slate-900/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Login to Existing Account</span>
-              </button>
-            </div>
-          </div>
         ) : (
           /* MODERN ORDER CHECKOUT FORM */
-          <form onSubmit={handleSubmitOrder} noValidate className="p-5 sm:p-7 space-y-4">
-            {/* Modern Telecom Hero Plan Summary Card */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-indigo-50/70 border border-blue-200/80 shadow-xs relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1 min-w-0">
-                <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-blue-700 bg-white/90 border border-blue-200/90 px-2.5 py-1 rounded-full shadow-2xs">
-                  <Wifi className="w-3 h-3 text-blue-600" />
-                  <span>{plan.providerName}</span>
-                </div>
-                <h4 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
-                  {plan.planName}
-                </h4>
-                <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-blue-600">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span>{plan.speed} Symmetrical Fiber</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:items-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-blue-100/80 w-full sm:w-auto">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase text-slate-500">Qty:</span>
-                  <div className="flex items-center rounded-lg border border-slate-300 bg-white p-0.5 shadow-2xs">
-                    <button
-                      type="button"
-                      onClick={() => setOrderQty(prev => Math.max(1, prev - 1))}
-                      className="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="w-7 text-center font-black text-xs text-slate-900">
-                      {orderQty}
+          <form onSubmit={handleSubmitOrder} noValidate className="p-5 sm:p-7 space-y-4 overflow-y-auto flex-1 overscroll-contain">
+            {/* Multi-Item or Single Item Summary Header */}
+            {isMultiItem ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-1">
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4 text-slate-500" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-700">
+                      Wholesale Cart Items ({cartItemsState.length} distinct products)
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setOrderQty(prev => prev + 1)}
-                      className="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
                   </div>
+                  <span className="text-xs font-bold text-slate-500">
+                    Total Qty: <strong className="text-slate-900">{cartItemsState.reduce((sum, it) => sum + (it.quantity || 1), 0)}</strong>
+                  </span>
                 </div>
 
-                <div className="text-left sm:text-right">
-                  <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none">
-                    ₹{totalCalculatedPrice.toLocaleString('en-IN')}
+                <div className="space-y-2 max-h-48 overflow-y-auto p-3 bg-slate-50/90 rounded-2xl border border-slate-200 divide-y divide-slate-100">
+                  {cartItemsState.map((it, idx) => {
+                    const price = Number(it.price) || 0;
+                    const qty = Number(it.quantity) || 1;
+                    const subtotal = price * qty;
+                    return (
+                      <div key={it.id || idx} className="pt-2 first:pt-0 flex items-center justify-between gap-3 text-xs">
+                        <div className="min-w-0 flex-1">
+                          <h5 className="font-extrabold text-slate-900 truncate">{it.planName}</h5>
+                          <p className="text-[11px] text-slate-500">
+                            ₹{price.toLocaleString('en-IN')} each {it.providerName ? `• ${it.providerName}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <div className="flex items-center rounded-lg border border-slate-300 bg-white p-0.5 shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={() => updateCartItemQty(idx, -1)}
+                              className="w-5 h-5 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="w-6 text-center font-black text-xs text-slate-900">
+                              {qty}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateCartItemQty(idx, 1)}
+                              className="w-5 h-5 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <span className="font-black text-slate-900 min-w-16 text-right">
+                            ₹{subtotal.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Grand Total Row */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-between shadow-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-300 block">Total Order Value</span>
+                    <span className="text-xs text-slate-400">All wholesale supplies &amp; items included</span>
                   </div>
-                  {orderQty > 1 && (
-                    <div className="text-[10px] font-semibold text-slate-500 mt-0.5">
-                      (₹{unitPrice.toLocaleString('en-IN')} × {orderQty})
-                    </div>
-                  )}
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                    / {plan.billingPeriod || 'procurement'}
+                  <div className="text-right">
+                    <span className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                      ₹{grandTotal.toLocaleString('en-IN')}
+                    </span>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : plan ? (
+              /* Single Plan/Product Summary Card */
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/90 border border-slate-200/80 shadow-xs relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1 min-w-0">
+                  <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded-full shadow-2xs">
+                    <span>{plan.providerName}</span>
+                  </div>
+                  <h4 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
+                    {plan.planName}
+                  </h4>
+                  <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    <span>{plan.speed}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:items-end gap-1.5 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/80 w-full sm:w-auto">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase text-slate-500">Qty:</span>
+                    <div className="flex items-center rounded-lg border border-slate-300 bg-white p-0.5 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setOrderQty(prev => Math.max(1, prev - 1))}
+                        className="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="w-7 text-center font-black text-xs text-slate-900">{orderQty}</span>
+                      <button
+                        type="button"
+                        onClick={() => setOrderQty(prev => prev + 1)}
+                        className="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="text-left sm:text-right">
+                    <div className="text-2xl font-black text-slate-900 tracking-tight leading-none">
+                      ₹{grandTotal.toLocaleString('en-IN')}
+                    </div>
+                    {orderQty > 1 && (
+                      <div className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                        (₹{unitPrice.toLocaleString('en-IN')} × {orderQty})
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {/* Customer Inputs */}
             <div className="space-y-3 pt-1">
@@ -486,13 +608,13 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Your Full Name <span className="text-rose-500">*</span>
+                    {isAm ? 'Partner / Business Name' : 'Your Full Name'} <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
-                      placeholder="e.g. Anand Shinde"
+                      placeholder={isAm ? 'e.g. Sanket Lohar / Hotel Sagar' : 'e.g. Anand Shinde'}
                       value={customerName}
                       onChange={e => setCustomerName(e.target.value)}
                       required
@@ -506,22 +628,24 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                       Mobile / WhatsApp <span className="text-rose-500">*</span>
                     </label>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                      phone.length === 10
-                        ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
-                        : phone.length > 0
-                        ? 'text-amber-700 bg-amber-50 border border-amber-200'
-                        : 'text-slate-400'
-                    }`}>
-                      {phone.length === 10
-                        ? '✓ 10 digits valid'
-                        : `${phone.length}/10 digits`}
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                        phone.length === 10
+                          ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                          : phone.length > 0
+                          ? 'text-amber-700 bg-amber-50 border border-amber-200'
+                          : 'text-slate-400'
+                      }`}
+                    >
+                      {phone.length === 10 ? '✓ 10 digits valid' : `${phone.length}/10 digits`}
                     </span>
                   </div>
                   <div className="relative">
-                    <Phone className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
-                      phone.length === 10 ? 'text-emerald-600' : 'text-slate-400'
-                    }`} />
+                    <Phone
+                      className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
+                        phone.length === 10 ? 'text-emerald-600' : 'text-slate-400'
+                      }`}
+                    />
                     <input
                       type="tel"
                       inputMode="numeric"
@@ -559,7 +683,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
-                    placeholder="name@example.com (optional)"
+                    placeholder="email@example.com"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-900 shadow-2xs"
@@ -567,33 +691,38 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                 </div>
               </div>
 
-              {/* Row 3: Installation Address */}
+              {/* Row 3: Address */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Installation Address / Flat / Building <span className="text-rose-500">*</span>
+                  {isAm ? 'Delivery / Depot Dispatch Address' : isNi ? 'Site / Installation Address' : 'Installation Address / Flat / Building'}{' '}
+                  <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="e.g. Flat 402, Royal Palms, Chiplun MIDC Road"
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <textarea
+                    rows={2}
+                    placeholder={
+                      isAm
+                        ? 'Shop / Hotel / Commercial unit, Road, Landmark'
+                        : 'Flat / Office / Floor No., Building Name, Street'
+                    }
                     value={address}
                     onChange={e => setAddress(e.target.value)}
                     required
-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-900 shadow-2xs"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-900 shadow-2xs resize-none"
                   />
                 </div>
               </div>
 
               {/* Row 4: City and PIN */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    City <span className="text-rose-500">*</span>
+                    City / Town <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter city (e.g. Sangli, Chiplun)"
+                    placeholder={isAm ? 'e.g. Chiplun' : 'e.g. Sangli'}
                     value={city}
                     onChange={e => setCity(e.target.value)}
                     required
@@ -608,7 +737,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                   <input
                     type="text"
                     inputMode="numeric"
-                    placeholder="e.g. 416416"
+                    placeholder={isAm ? 'e.g. 415605' : 'e.g. 416415'}
                     value={pincode}
                     onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     maxLength={6}
@@ -621,16 +750,32 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Preferred Setup Slot
+                    {isAm ? 'Preferred Dispatch Slot' : 'Preferred Setup Slot'}
                   </label>
                   <select
                     value={preferredSlot}
                     onChange={e => setPreferredSlot(e.target.value)}
                     className="w-full px-3.5 py-2.5 text-xs bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-800 shadow-2xs cursor-pointer"
                   >
-                    <option value="Immediate / Next Working Day">Immediate / Next Working Day</option>
-                    <option value="Weekend Priority Installation">Weekend Priority Installation</option>
-                    <option value="Within 3 Working Days">Within 3 Working Days</option>
+                    {isAm ? (
+                      <>
+                        <option value="Daily 4:00 AM Morning Dispatch">Daily 4:00 AM Morning Dispatch</option>
+                        <option value="1:00 PM Afternoon Route">1:00 PM Afternoon Route</option>
+                        <option value="Immediate Direct Depot Dispatch">Immediate Direct Depot Dispatch</option>
+                      </>
+                    ) : isNi ? (
+                      <>
+                        <option value="Next Working Day Site Delivery & Inspection">Next Working Day Site Delivery</option>
+                        <option value="Immediate Priority Dispatch">Immediate Priority Dispatch</option>
+                        <option value="Scheduled Enterprise AMC Deployment">Scheduled Enterprise AMC Deployment</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Immediate / Next Working Day">Immediate / Next Working Day</option>
+                        <option value="Weekend Priority Installation">Weekend Priority Installation</option>
+                        <option value="Within 3 Working Days">Within 3 Working Days</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -643,9 +788,25 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                     onChange={e => setPaymentMethod(e.target.value as any)}
                     className="w-full px-3.5 py-2.5 text-xs bg-slate-50/90 hover:bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:bg-white transition-all font-medium text-slate-800 shadow-2xs cursor-pointer"
                   >
-                    <option value="pay_on_installation">Pay on Installation (Tested)</option>
-                    <option value="online_upi">UPI / Online QR on Setup</option>
-                    <option value="corporate_invoice">Corporate / GST Invoicing</option>
+                    {isAm ? (
+                      <>
+                        <option value="cash_on_installation">Cash on Delivery (COD) / Depot Handover</option>
+                        <option value="corporate_invoice">B2B Delivery Challan (Trade Credit)</option>
+                        <option value="online_upi">UPI / Online QR on Delivery</option>
+                      </>
+                    ) : isNi ? (
+                      <>
+                        <option value="pay_on_installation">Pay on Delivery &amp; Physical Testing</option>
+                        <option value="corporate_invoice">GST Tax Invoice (Corporate Billing)</option>
+                        <option value="online_upi">UPI / Bank Transfer (RTGS / NEFT)</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="pay_on_installation">Pay on Installation (Tested)</option>
+                        <option value="online_upi">UPI / Online QR on Setup</option>
+                        <option value="corporate_invoice">Corporate / GST Invoicing</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>
@@ -655,13 +816,25 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
             <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3.5">
               <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Zero Advance Risk • Pay After Optical Feasibility</span>
+                <span>
+                  {isAm
+                    ? 'FSSAI & GST Compliant Depot • Verified Cold-Chain Dispatch'
+                    : isNi
+                    ? 'OEM Certified Hardware • Installation Support Included'
+                    : 'Zero Advance Risk • Pay After Optical Feasibility'}
+                </span>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto py-3 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-98 text-white font-black text-xs sm:text-sm shadow-md shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className={`w-full sm:w-auto py-3 px-6 rounded-xl active:scale-98 text-white font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${
+                  isAm
+                    ? 'bg-teal-700 hover:bg-teal-800 shadow-teal-700/30'
+                    : isNi
+                    ? 'bg-indigo-700 hover:bg-indigo-800 shadow-indigo-700/30'
+                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/30'
+                }`}
               >
                 {isSubmitting ? (
                   <>
@@ -670,7 +843,7 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
                   </>
                 ) : (
                   <>
-                    <Zap className="w-4 h-4 text-cyan-300 fill-cyan-300/30" />
+                    <Zap className="w-4 h-4 text-amber-300 fill-amber-300/30" />
                     <span>Confirm &amp; Place Order</span>
                   </>
                 )}
@@ -679,11 +852,12 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
           </form>
         )}
       </div>
+
       <DocumentViewerModal
         isOpen={isDocModalOpen}
         onClose={() => setIsDocModalOpen(false)}
         order={completedOrder}
-        documentType="booking_slip"
+        documentType={completedOrder?.paymentStatus === 'paid' ? 'paid_receipt' : 'booking_slip'}
       />
     </div>
   );

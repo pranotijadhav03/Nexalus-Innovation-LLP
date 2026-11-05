@@ -5,7 +5,8 @@ import {
   updateReceiptSettings,
   getCachedReceiptSettings,
   subscribeReceiptSettings,
-  DEFAULT_RECEIPT_SETTINGS
+  DEFAULT_RECEIPT_SETTINGS,
+  getDefaultReceiptSettings
 } from '../../firebase/services';
 import { ReceiptSettings } from '../../types';
 import { Button } from '../../components/common/Button';
@@ -33,7 +34,8 @@ import { VERIFIED_COMPANY_DETAILS } from '../../utils/documentGenerator';
 
 export const AdminReceiptSettingsPage: React.FC = () => {
   const { success, error } = useToast();
-  const [settings, setSettings] = useState<ReceiptSettings>(() => getCachedReceiptSettings());
+  const [selectedCompany, setSelectedCompany] = useState<'nexalus-llp' | 'am-distributors' | 'nexalus-innovations'>('nexalus-llp');
+  const [settings, setSettings] = useState<ReceiptSettings>(() => getCachedReceiptSettings('nexalus-llp'));
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingSign, setIsUploadingSign] = useState(false);
@@ -42,12 +44,13 @@ export const AdminReceiptSettingsPage: React.FC = () => {
 
   useEffect(() => {
     setIsLoading(true);
+    setSettings(getCachedReceiptSettings(selectedCompany));
     const unsub = subscribeReceiptSettings((s) => {
       setSettings(s);
       setIsLoading(false);
-    });
+    }, selectedCompany);
     return () => unsub();
-  }, []);
+  }, [selectedCompany]);
 
   const handleChange = (field: keyof ReceiptSettings, value: any) => {
     setSettings((prev: ReceiptSettings) => ({
@@ -64,7 +67,7 @@ export const AdminReceiptSettingsPage: React.FC = () => {
     };
     setSettings(updated);
     try {
-      await updateReceiptSettings({ [field]: nextVal });
+      await updateReceiptSettings({ [field]: nextVal }, selectedCompany);
       const labelMap: Record<string, string> = {
         showSignatory: 'Authorized Signatory Box',
         showInstallationPremises: 'Service & Installation Premises',
@@ -122,7 +125,7 @@ export const AdminReceiptSettingsPage: React.FC = () => {
             ctx.drawImage(img, 0, 0, width, height);
             const optimizedBase64 = canvas.toDataURL('image/png');
             setSettings(prev => ({ ...prev, signatureImageUrl: optimizedBase64 }));
-            await updateReceiptSettings({ signatureImageUrl: optimizedBase64 });
+            await updateReceiptSettings({ signatureImageUrl: optimizedBase64 }, selectedCompany);
             success('Signature Uploaded', 'Official signature graphic uploaded and synced across all receipts.');
           }
           setIsUploadingSign(false);
@@ -146,7 +149,7 @@ export const AdminReceiptSettingsPage: React.FC = () => {
   const handleRemoveSignature = async () => {
     setSettings(prev => ({ ...prev, signatureImageUrl: '' }));
     try {
-      await updateReceiptSettings({ signatureImageUrl: '' });
+      await updateReceiptSettings({ signatureImageUrl: '' }, selectedCompany);
       success('Signature Removed', 'Receipts will now use the typed signatory designation.');
     } catch (err: any) {
       error('Remove Failed', err?.message);
@@ -173,7 +176,7 @@ export const AdminReceiptSettingsPage: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await updateReceiptSettings(settings);
+      await updateReceiptSettings(settings, selectedCompany);
       success('Template Updated', 'Receipt and booking slip contents have been saved and applied.');
     } catch (err: any) {
       error('Save Failed', err?.message || 'Could not update receipt settings.');
@@ -186,11 +189,12 @@ export const AdminReceiptSettingsPage: React.FC = () => {
     if (!window.confirm('Reset all receipt and booking slip template contents to official defaults?')) {
       return;
     }
-    setSettings(DEFAULT_RECEIPT_SETTINGS);
+    const def = getDefaultReceiptSettings(selectedCompany);
+    setSettings(def);
     setIsSaving(true);
     try {
-      await updateReceiptSettings(DEFAULT_RECEIPT_SETTINGS);
-      success('Settings Reset', 'Template contents restored to official corporate defaults.');
+      await updateReceiptSettings(def, selectedCompany);
+      success('Settings Reset', `Template contents restored to official defaults for ${selectedCompany}.`);
     } catch (err: any) {
       error('Reset Failed', err?.message);
     } finally {
@@ -200,6 +204,46 @@ export const AdminReceiptSettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Company Scope Selector */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <Building className="w-5 h-5 text-indigo-600" />
+          <div>
+            <span className="text-xs font-black uppercase tracking-wider text-slate-800 block">
+              Active Company Document Scope
+            </span>
+            <span className="text-[11px] text-slate-500">
+              Edits and templates are strictly scoped to the selected company
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { id: 'nexalus-llp', label: 'Nexalus Innovations LLP', badge: 'Parent Broadband' },
+            { id: 'am-distributors', label: 'A.M. Distributors Chiplun', badge: 'Child Depot' },
+            { id: 'nexalus-innovations', label: 'Nexalus Innovations', badge: 'Child Tech' }
+          ].map(comp => (
+            <button
+              key={comp.id}
+              type="button"
+              onClick={() => setSelectedCompany(comp.id as any)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                selectedCompany === comp.id
+                  ? 'bg-slate-900 text-white shadow-md'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+              }`}
+            >
+              <span>${comp.label}</span>
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase ${
+                selectedCompany === comp.id ? 'bg-white/20 text-white' : 'bg-white text-slate-500 border border-slate-200'
+              }`}>
+                ${comp.badge}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>

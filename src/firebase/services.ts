@@ -4469,52 +4469,132 @@ export const DEFAULT_RECEIPT_SETTINGS: ReceiptSettings = {
   ]
 };
 
-export function getCachedReceiptSettings(): ReceiptSettings {
-  const cached = getLocalItem<ReceiptSettings>(STORAGE_KEYS.RECEIPT_SETTINGS, DEFAULT_RECEIPT_SETTINGS);
-  if (cached.showSignatory === undefined) {
-    cached.showSignatory = false;
+export const DEFAULT_RECEIPT_SETTINGS_AM: ReceiptSettings = {
+  companyName: 'A.M. Distributors Chiplun',
+  tagline: 'Packaged Mineral Water, Dairy Products & Cold-Chain Logistics Hub',
+  showTagline: true,
+  address: 'Chiplun Regional Cold-Chain Depot & Logistics Hub, MIDC Kherdi',
+  city: 'Chiplun',
+  state: 'Maharashtra',
+  pincode: '415605',
+  phone: '+91 9158886444',
+  email: 'depot@amdistributors.com',
+  website: 'https://nexalusinnovations.com/brands/am-distributors',
+  signatoryName: 'Authorized Depot Manager',
+  signatoryTitle: 'Depot Logistics & Dispatch Desk',
+  signatorySubtitle: 'A.M. Distributors Chiplun Cold-Chain Hub',
+  signatureImageUrl: '',
+  showSignatory: false,
+  bookingSlipNotice: 'This document confirms wholesale depot order dispatch scheduling. Payment and quantity reconciliation take place upon delivery. Official B2B DELIVERY CHALLAN & INVOICE issued with dispatch.',
+  paidReceiptNotice: 'A.M. Distributors Chiplun confirms receipt of wholesale payment. Delivery challan and tax compliance are documented on record.',
+  footerNote: 'FSSAI & GST Compliant Depot • A.M. Distributors Chiplun.',
+  showInstallationPremises: true,
+  showPaymentInfo: true,
+  showOfficialNotice: true,
+  showGstRow: true,
+  gstRate: 5,
+  gstNumber: '27AAACN0000A1Z5',
+  gstInclusive: true,
+  customTerms: [
+    'All commercial dairy products, pasteurized milk, butter, and ice cream are transported strictly under -18°C cold-chain.',
+    'Packaged 20L natural mineral water dispenser jars are reusable food-grade assets and subject to returnable container deposit cycle.',
+    'Wholesale delivery challans are FSSAI and GST compliant.'
+  ]
+};
+
+export const DEFAULT_RECEIPT_SETTINGS_NI: ReceiptSettings = {
+  companyName: 'Nexalus Innovations',
+  tagline: 'AI CCTV Surveillance, Enterprise Networking & Smart Security Solutions',
+  showTagline: true,
+  address: 'Shop No.5, Sankalp Enclave Chowk, 100 Feet Rd, Vishrambag',
+  city: 'Sangli',
+  state: 'Maharashtra',
+  pincode: '416415',
+  phone: '+91 9158886444',
+  email: 'cctv@nexalusinnovations.com',
+  website: 'https://nexalusinnovations.com/brands/nexalus-innovations',
+  signatoryName: 'Technical Operations Head',
+  signatoryTitle: 'Enterprise Hardware & Optical Desk',
+  signatorySubtitle: 'Nexalus Innovations Technical Support Desk',
+  signatureImageUrl: '',
+  showSignatory: false,
+  bookingSlipNotice: 'This document confirms commercial procurement of AI CCTV cameras, enterprise switches, and networking hardware. On-site engineer testing and physical deployment will proceed on schedule.',
+  paidReceiptNotice: 'Nexalus Innovations confirms receipt of hardware procurement payment in full. Warranty and service terms are active from receipt date.',
+  footerNote: 'Official Enterprise Technology Partner • Nexalus Innovations.',
+  showInstallationPremises: true,
+  showPaymentInfo: true,
+  showOfficialNotice: true,
+  showGstRow: true,
+  gstRate: 18,
+  gstNumber: '27AABCN8888B1Z2',
+  gstInclusive: true,
+  customTerms: [
+    'Commercial CCTV cameras and networking hardware are covered under manufacturer warranty.',
+    'On-site installation, optical testing, and configuration performed by certified engineers.',
+    'Payment terms: 100% on delivery and installation verification.'
+  ]
+};
+
+export function getDefaultReceiptSettings(companyId?: string): ReceiptSettings {
+  if (companyId === 'am-distributors' || companyId === 'am') return DEFAULT_RECEIPT_SETTINGS_AM;
+  if (companyId === 'nexalus-innovations') return DEFAULT_RECEIPT_SETTINGS_NI;
+  return DEFAULT_RECEIPT_SETTINGS;
+}
+
+export function getReceiptSettingsKeys(companyId?: string): { storageKey: string; docName: string } {
+  if (companyId === 'am-distributors' || companyId === 'am') {
+    return { storageKey: STORAGE_KEYS.RECEIPT_SETTINGS + '_am', docName: 'receiptSettings_am' };
   }
-  if (cached.showTagline === undefined) {
-    cached.showTagline = false;
+  if (companyId === 'nexalus-innovations') {
+    return { storageKey: STORAGE_KEYS.RECEIPT_SETTINGS + '_ni', docName: 'receiptSettings_ni' };
   }
-  if (!cached.signatoryName) {
-    cached.signatoryName = 'Authorized Signatory';
-  }
-  if (!cached.signatoryTitle) {
-    cached.signatoryTitle = 'Authorized Signatory';
-  }
-  if (!cached.signatorySubtitle) {
-    cached.signatorySubtitle = 'Nexalus Innovations LLP Operations Desk';
-  }
+  return { storageKey: STORAGE_KEYS.RECEIPT_SETTINGS, docName: 'receiptSettings' };
+}
+
+export function getCachedReceiptSettings(companyId?: string): ReceiptSettings {
+  const { storageKey } = getReceiptSettingsKeys(companyId);
+  const def = getDefaultReceiptSettings(companyId);
+  const cached = getLocalItem<ReceiptSettings>(storageKey, def);
+  if (cached.showSignatory === undefined) cached.showSignatory = false;
+  if (cached.showTagline === undefined) cached.showTagline = def.showTagline;
+  if (!cached.signatoryName) cached.signatoryName = def.signatoryName;
+  if (!cached.signatoryTitle) cached.signatoryTitle = def.signatoryTitle;
+  if (!cached.signatorySubtitle) cached.signatorySubtitle = def.signatorySubtitle;
+  if (!cached.companyName) cached.companyName = def.companyName;
+  if (!cached.address) cached.address = def.address;
   return cached;
 }
 
-export async function getReceiptSettings(): Promise<ReceiptSettings> {
+export async function getReceiptSettings(companyId?: string): Promise<ReceiptSettings> {
+  const { storageKey, docName } = getReceiptSettingsKeys(companyId);
   if (isFirebaseConfigured && db) {
     try {
-      const docRef = doc(db, 'systemSettings', 'receiptSettings');
+      const docRef = doc(db, 'systemSettings', docName);
       const snap = await withTimeout(getDoc(docRef), 1200);
       if (snap.exists()) {
         const data = snap.data() as ReceiptSettings;
-        setLocalItem(STORAGE_KEYS.RECEIPT_SETTINGS, data, false);
+        setLocalItem(storageKey, data, false);
         return data;
       }
     } catch (e) {
       console.warn('Firestore getReceiptSettings error:', e);
     }
   }
-  return getCachedReceiptSettings();
+  return getCachedReceiptSettings(companyId);
 }
 
 /**
- * Real-time subscription to receipt settings across all tabs and Firestore
+ * Real-time subscription to receipt settings scoped by company across all tabs and Firestore
  */
-export function subscribeReceiptSettings(callback: (settings: ReceiptSettings) => void): () => void {
-  // Fire callback immediately with current cached settings
-  callback(getCachedReceiptSettings());
+export function subscribeReceiptSettings(
+  callback: (settings: ReceiptSettings) => void,
+  companyId?: string
+): () => void {
+  const { storageKey, docName } = getReceiptSettingsKeys(companyId);
+  callback(getCachedReceiptSettings(companyId));
 
   const handleLocalUpdate = () => {
-    callback(getCachedReceiptSettings());
+    callback(getCachedReceiptSettings(companyId));
   };
   window.addEventListener('nexalus_data_update', handleLocalUpdate);
   window.addEventListener('storage', handleLocalUpdate);
@@ -4522,11 +4602,11 @@ export function subscribeReceiptSettings(callback: (settings: ReceiptSettings) =
   let unsubFirestore: (() => void) | null = null;
   if (isFirebaseConfigured && db) {
     try {
-      const docRef = doc(db, 'systemSettings', 'receiptSettings');
+      const docRef = doc(db, 'systemSettings', docName);
       unsubFirestore = onSnapshot(docRef, (snap) => {
         if (snap.exists()) {
           const data = snap.data() as ReceiptSettings;
-          setLocalItem(STORAGE_KEYS.RECEIPT_SETTINGS, data, false);
+          setLocalItem(storageKey, data, false);
           callback(data);
         }
       }, (err) => {
@@ -4546,8 +4626,12 @@ export function subscribeReceiptSettings(callback: (settings: ReceiptSettings) =
   };
 }
 
-export async function updateReceiptSettings(updates: Partial<ReceiptSettings>): Promise<ReceiptSettings> {
-  const current = getCachedReceiptSettings();
+export async function updateReceiptSettings(
+  updates: Partial<ReceiptSettings>,
+  companyId?: string
+): Promise<ReceiptSettings> {
+  const { storageKey, docName } = getReceiptSettingsKeys(companyId);
+  const current = getCachedReceiptSettings(companyId);
   const updated: ReceiptSettings = {
     ...current,
     ...updates
@@ -4555,15 +4639,15 @@ export async function updateReceiptSettings(updates: Partial<ReceiptSettings>): 
 
   if (isFirebaseConfigured && db) {
     try {
-      const docRef = doc(db, 'systemSettings', 'receiptSettings');
+      const docRef = doc(db, 'systemSettings', docName);
       await setDoc(docRef, { ...updated, updatedAt: new Date().toISOString() }, { merge: true });
     } catch (e: any) {
       console.warn('Firestore updateReceiptSettings warning:', e);
     }
   }
 
-  setLocalItem(STORAGE_KEYS.RECEIPT_SETTINGS, updated);
-  await addAuditLog('UPDATE_SETTINGS', 'Updated official receipt and booking slip template contents', 'nexalus-innovations');
-  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: 'receipt_settings' } }));
+  setLocalItem(storageKey, updated);
+  await addAuditLog('UPDATE_SETTINGS', `Updated official receipt and booking slip template contents (${companyId || 'nexalus-llp'})`, (companyId === 'am-distributors' || companyId === 'am' ? 'am-distributors' : 'nexalus-innovations'));
+  window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: 'receipt_settings', companyId } }));
   return updated;
 }
