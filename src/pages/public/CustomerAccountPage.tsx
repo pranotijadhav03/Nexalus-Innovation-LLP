@@ -3693,7 +3693,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
       {/* MODAL 1: PAYMENT RECEIPT (Exact view from login.mp4) */}
       {/* ===================================================================== */}
       {isInvoiceModalOpen && selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6">
             {/* Invoice Top Header */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-200">
@@ -3812,7 +3812,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
       {/* MODAL 2: CREATE SUPPORT TICKET (Scoped by Company) */}
       {/* ===================================================================== */}
       {isNewTicketModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
@@ -3923,7 +3923,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
       {/* MODAL 3: PAST QUOTES & INQUIRIES */}
       {/* ===================================================================== */}
       {showInquiriesModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-3xl max-w-xl w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-200 p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900">
@@ -3959,7 +3959,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({ brandS
       )}
       {/* MODAL: OTT PACK CHECKOUT & CONFIRMATION */}
       {ottModalPack && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 p-6 sm:p-7 space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">

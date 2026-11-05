@@ -83,7 +83,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
   const paymentModeLabel = (order.paymentMethod || 'cash_on_installation').replace(/_/g, ' ').toUpperCase();
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
       <div
         className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[94vh]"
         onClick={e => e.stopPropagation()}

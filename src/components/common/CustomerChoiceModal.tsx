@@ -433,11 +433,11 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[999] overflow-y-auto bg-slate-950/80 backdrop-blur-sm p-3 sm:p-4 md:p-6 flex min-h-full items-start sm:items-center justify-center py-6 sm:py-10 animate-in fade-in duration-200">
       <div
         className={`relative bg-white w-full ${
           view === 'choice' || view === 'sso_link' ? 'max-w-4xl' : view === 'register' ? 'max-w-3xl' : 'max-w-xl'
-        } rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden transform transition-all my-auto`}
+        } rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden transform transition-all my-auto max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] flex flex-col`}
         onClick={e => e.stopPropagation()}
       >
         <style>{`
@@ -482,13 +482,13 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
           type="button"
           onClick={handleDismiss}
           aria-label="Close dialog"
-          className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer border border-slate-200/70 hover:scale-105"
+          className="absolute top-4 right-4 sm:top-5 sm:right-5 z-30 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center transition-all cursor-pointer border border-slate-200/80 hover:scale-105 shadow-xs"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Modal Body Content */}
-        <div className="relative z-10 p-5 sm:p-8 md:p-9 max-h-[85vh] overflow-y-auto">
+        <div className="relative z-10 p-5 sm:p-8 md:p-9 overflow-y-auto flex-1 overscroll-contain">
           {resetSent && (
             <div className="mb-5 p-4 bg-gradient-to-r from-blue-50 via-indigo-50/80 to-emerald-50 border-2 border-blue-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-800 shadow-md shadow-blue-900/5 animate-in slide-in-from-top-2">
               <div className="flex items-start gap-3 min-w-0">
