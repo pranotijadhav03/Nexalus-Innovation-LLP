@@ -210,7 +210,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs relative">
+      <header className="sticky top-0 z-[100] bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs relative">
         {/* Main Navigation Bar */}
         <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 gap-2 xl:gap-4">
@@ -597,12 +597,17 @@ export const Navbar: React.FC = () => {
 
                 {/* Products Mega Dropdown (Dynamic Categories) */}
         {isProductsMegaOpen && (
-          <div
-            ref={productsMegaRef}
-            onMouseEnter={handleProductsEnter}
-            onMouseLeave={handleProductsLeave}
-            className="hidden lg:block absolute top-full left-0 right-0 w-full bg-white border-b border-blue-100 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-200 max-h-[calc(100vh-5rem)] overflow-y-auto"
-          >
+          <>
+            <div
+              className="hidden lg:block fixed inset-0 top-20 bg-slate-900/20 backdrop-blur-2xs z-40 transition-opacity"
+              onClick={() => setIsProductsMegaOpen(false)}
+            />
+            <div
+              ref={productsMegaRef}
+              onMouseEnter={handleProductsEnter}
+              onMouseLeave={handleProductsLeave}
+              className="hidden lg:block absolute top-full left-0 right-0 w-full bg-white border-b border-blue-100 shadow-2xl z-50 animate-in fade-in slide-in-from-top-1 duration-200 max-h-[calc(100vh-5rem)] overflow-y-auto"
+            >
             <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
               {/* Header inside Mega Dropdown */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 sm:pb-5 border-b border-slate-100">
@@ -676,6 +681,7 @@ export const Navbar: React.FC = () => {
               })()}
             </div>
           </div>
+          </>
         )}
 
         {/* Mobile Navigation Drawer */}
