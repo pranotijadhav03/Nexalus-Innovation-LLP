@@ -18,9 +18,8 @@ import {
 import { Button } from './Button';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { User, UserCheck, Sparkles } from 'lucide-react';
+import { User, UserCheck, Sparkles, Package } from 'lucide-react';
 import { QuoteModal } from './QuoteModal';
-import { PlanCartModal } from './PlanCartModal';
 import {
   getPlanCart,
   getScopedPlanCart,
@@ -139,7 +138,6 @@ export const Navbar: React.FC = () => {
       return 0;
     }
   });
-  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
 
   const effectiveCartCount = isAuthenticated ? cartCount : 0;
 
@@ -155,7 +153,7 @@ export const Navbar: React.FC = () => {
       setCartCount(Array.isArray(items) ? items.length : 0);
     };
     const handleOpenCart = () => {
-      setIsCartModalOpen(true);
+      navigate('/account?section=my_cart');
     };
 
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
@@ -368,12 +366,11 @@ export const Navbar: React.FC = () => {
 
             {/* Desktop Actions */}
             <div className="hidden lg:flex items-center gap-2 xl:gap-2.5 shrink-0 ml-auto">
-              {/* Broadband Cart Badge Icon (Visible only if authenticated customer with items) */}
-              <button
-                type="button"
-                onClick={() => setIsCartModalOpen(true)}
+              {/* Scoped Cart Badge Icon - Navigates directly to Customer Profile My Cart Section */}
+              <Link
+                to="/account?section=my_cart"
                 className="relative inline-flex items-center justify-center p-1.5 xl:p-2 rounded-xl text-slate-700 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                title="Open Broadband Cart"
+                title="Open My Cart"
               >
                 <ShoppingCart className="w-4 h-4 xl:w-5 xl:h-5" />
                 {effectiveCartCount > 0 && (
@@ -381,7 +378,7 @@ export const Navbar: React.FC = () => {
                     {effectiveCartCount}
                   </span>
                 )}
-              </button>
+              </Link>
 
               {/* Administrator Action */}
               {isAuthenticated && isAdmin ? (
@@ -523,6 +520,21 @@ export const Navbar: React.FC = () => {
                         >
                           <User className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                           <span className="truncate">My Profile &amp; Subscriber Portal</span>
+                        </Link>
+                        <Link
+                          to="/account?section=my_cart"
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="w-full py-2 px-3 rounded-xl hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-between transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <ShoppingCart className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                            <span className="truncate">My Cart</span>
+                          </div>
+                          {cartCount > 0 && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-black rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                              {cartCount}
+                            </span>
+                          )}
                         </Link>
                         <button
                           type="button"
@@ -724,24 +736,21 @@ export const Navbar: React.FC = () => {
             </Link>
 
             <div className="pt-3 flex flex-col gap-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setIsCartModalOpen(true);
-                }}
+              <Link
+                to="/account?section=my_cart"
+                onClick={() => setIsMobileMenuOpen(false)}
                 className="w-full flex items-center justify-between py-2.5 px-3 rounded-xl text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200 cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="w-4 h-4 text-orange-500" />
-                  <span>Broadband Cart</span>
+                  <span>My Cart</span>
                 </div>
                 {cartCount > 0 && (
                   <span className="px-2 py-0.5 rounded-full bg-orange-500 text-white font-extrabold text-[10px]">
                     {cartCount} item{cartCount > 1 ? 's' : ''}
                   </span>
                 )}
-              </button>
+              </Link>
 
               {isAuthenticated && isAdmin ? (
                 <div className="p-3 bg-gradient-to-br from-slate-50 to-blue-50/50 border border-blue-200/80 rounded-xl space-y-2.5">
@@ -871,32 +880,6 @@ export const Navbar: React.FC = () => {
       <QuoteModal
         isOpen={isQuoteModalOpen}
         onClose={() => setIsQuoteModalOpen(false)}
-      />
-
-      {/* Global Plan Cart Modal */}
-      <PlanCartModal
-        isOpen={isCartModalOpen}
-        onClose={() => setIsCartModalOpen(false)}
-        onProceedToOrder={(plan) => {
-          if (!isCustomer) {
-            try {
-              sessionStorage.setItem('nexalus_pending_order_plan', JSON.stringify(plan));
-            } catch {}
-            window.dispatchEvent(
-              new CustomEvent('open_customer_portal', {
-                detail: {
-                  view: 'choice',
-                  context: 'cart_checkout',
-                  prompt: 'Customer Login Required: Please register or log in with your verified Customer account to complete your broadband booking.'
-                }
-              })
-            );
-            return;
-          }
-          window.dispatchEvent(
-            new CustomEvent('open_plan_order_direct', { detail: plan })
-          );
-        }}
       />
     </>
   );
