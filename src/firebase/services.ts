@@ -337,13 +337,13 @@ export function getCachedProducts(brandId?: BrandId | CompanyScopeId | 'corporat
 
   if (brandId && brandId !== 'all') {
     if (brandId === 'am-distributors' || (brandId as any) === 'am') {
-      return products.filter(p => p.id.startsWith('prod-am') || p.companyId === 'am-distributors');
+      return products.filter(p => p.id.startsWith('prod-am') || p.companyId === 'am-distributors' || p.brandId === 'am-distributors');
     }
     if (brandId === 'nexalus-innovations') {
-      return products.filter(p => (p.id.startsWith('prod-nexalus-') && !p.id.includes('llp')) || p.companyId === 'nexalus-innovations');
+      return products.filter(p => ((p.id.startsWith('prod-nexalus-') && !p.id.includes('llp')) || p.companyId === 'nexalus-innovations' || p.brandId === 'nexalus-innovations') && !p.id.includes('llp') && p.companyId !== 'nexalus-llp');
     }
-    // Parent company: Nexalus Innovations LLP (ONLY products with nexalus-llp in ID or companyId)
-    return products.filter(p => p.id.includes('nexalus-llp') || p.companyId === 'nexalus-llp');
+    // Parent company: Nexalus Innovations LLP (ONLY products with nexalus-llp in ID or companyId or brandId)
+    return products.filter(p => p.id.includes('nexalus-llp') || p.companyId === 'nexalus-llp' || p.brandId === 'nexalus');
   }
   return products;
 }
@@ -989,6 +989,8 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     } as Product;
     setLocalItem(STORAGE_KEYS.PRODUCTS, [updated, ...products]);
   }
+  // Immediate cross-tab and in-tab broadcast
+  notifyDataUpdate(STORAGE_KEYS.PRODUCTS);
 
   await addAuditLog('UPDATE_PRODUCT', `Updated product: ${updated.name || id}`, updated.brandId);
   return updated;
@@ -1023,6 +1025,7 @@ export async function deleteProduct(id: string): Promise<boolean> {
 
   const updated = products.filter(p => p.id !== id);
   setLocalItem(STORAGE_KEYS.PRODUCTS, updated);
+  notifyDataUpdate(STORAGE_KEYS.PRODUCTS);
   await addAuditLog('DELETE_PRODUCT', `Deleted product: ${target.name}`, target.brandId);
   return true;
 }

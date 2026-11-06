@@ -210,8 +210,8 @@ export const AdminProductsPage: React.FC = () => {
     setStockQuantity(prod.stockQuantity !== undefined ? String(prod.stockQuantity) : '25');
     setLowStockThreshold(prod.lowStockThreshold !== undefined ? String(prod.lowStockThreshold) : '10');
     setAvailability(prod.availability);
-    setFeatured(prod.featured);
-    setPublished(prod.published);
+    setFeatured(Boolean(prod.featured));
+    setPublished(prod.published !== false);
     setCustomImageUrl('');
     setImages(prod.images.length > 0 ? prod.images : [
       prod.brandId === 'am-distributors'
@@ -278,6 +278,7 @@ export const AdminProductsPage: React.FC = () => {
         slug: generatedSlug,
         modelNumber: modelNumber.trim() || undefined,
         brandId: targetBrand,
+        companyId: currentCompanyScope,
         categoryId: categoryId || (categories[0]?.id || 'cat-general'),
         categoryName: selectedCat ? selectedCat.name : editingProduct?.categoryName || 'General Equipment',
         description: description.trim(),
@@ -287,7 +288,7 @@ export const AdminProductsPage: React.FC = () => {
         lowStockThreshold: parsedThreshold,
         availability: computedAvailability,
         featured,
-        published,
+        published: published !== false,
         images: images.length > 0 ? images : [
           targetBrand === 'am-distributors'
             ? '/images/products/am-water-jar-20l.jpg'

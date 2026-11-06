@@ -50,7 +50,7 @@ export const NexalusInnovationsProductsPage: React.FC = () => {
     const handleUpdate = () => {
       const freshProds = getCachedProducts('nexalus-innovations');
       const freshCats = getCachedCategories('nexalus-innovations');
-      if (freshProds && freshProds.length > 0) setTechProducts(freshProds);
+      setTechProducts(freshProds);
       if (freshCats && freshCats.length > 0) setCategories(freshCats);
       loadData();
     };
@@ -113,9 +113,25 @@ export const NexalusInnovationsProductsPage: React.FC = () => {
     let list = techProducts.filter(p => {
       if (p.published === false) return false;
 
-      // Category filter
-      if (selectedCategoryId !== 'all' && p.categoryId !== selectedCategoryId) {
-        return false;
+      // Robust category matching across id, slug, and categoryName
+      if (selectedCategoryId !== 'all') {
+        const catObj = categories.find(c => c.id === selectedCategoryId || c.slug === selectedCategoryId);
+        const pCat = (p.categoryId || '').toLowerCase();
+        const pCatName = (p.categoryName || '').toLowerCase();
+        const selCat = selectedCategoryId.toLowerCase();
+        const catObjName = (catObj?.name || '').toLowerCase();
+        const catObjSlug = (catObj?.slug || '').toLowerCase();
+
+        const matchesCat =
+          p.categoryId === selectedCategoryId ||
+          (catObj && p.categoryId === catObj.id) ||
+          (catObj && p.categoryId === catObj.slug) ||
+          (catObjName && pCatName === catObjName) ||
+          pCat.includes(selCat) ||
+          selCat.includes(pCat) ||
+          (catObjSlug && pCat.includes(catObjSlug));
+
+        if (!matchesCat) return false;
       }
 
       // Search filter

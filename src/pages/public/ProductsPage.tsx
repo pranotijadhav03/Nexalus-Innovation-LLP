@@ -169,7 +169,7 @@ export const ProductsPage: React.FC = () => {
       const freshCats = getCachedCategories('corporate');
       const freshProds = getCachedProducts('corporate');
       if (freshCats.length > 0) setCategories(freshCats);
-      if (freshProds.length > 0) setProducts(freshProds);
+      setProducts(freshProds);
       loadData();
     };
 
@@ -251,10 +251,17 @@ export const ProductsPage: React.FC = () => {
 
   // Helper to match a product to a category
   const doesProductBelongToCategory = (product: Product, category: ProductCategory): boolean => {
-    if (product.categoryId === category.id) return true;
+    if (product.categoryId === category.id || product.categoryId === category.slug) return true;
     const catName = category.name.trim().toLowerCase();
     const prodCatName = (product.categoryName || '').trim().toLowerCase();
     if (prodCatName && prodCatName === catName) return true;
+
+    const pCat = (product.categoryId || '').toLowerCase();
+    const catId = (category.id || '').toLowerCase();
+    const catSlug = (category.slug || '').toLowerCase();
+
+    if (pCat && catId && (pCat.includes(catId) || catId.includes(pCat))) return true;
+    if (pCat && catSlug && (pCat.includes(catSlug) || catSlug.includes(pCat))) return true;
 
     if (category.id.includes('cctv') && (product.categoryId?.includes('cctv') || prodCatName.includes('cctv'))) return true;
     if (category.id.includes('fiber') && (product.categoryId?.includes('fiber') || prodCatName.includes('fiber'))) return true;

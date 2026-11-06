@@ -74,13 +74,12 @@ export const AmDistributorsProductsPage: React.FC = () => {
     // Listen for real-time cross-tab updates when admin creates/edits/deletes products or categories
     const handleUpdate = () => {
       const freshProds = getCachedProducts('am-distributors');
-      if (freshProds && freshProds.length > 0) {
-        setProducts(freshProds);
-      }
+      setProducts(freshProds);
       const freshCats = getCachedCategories('am-distributors');
       if (freshCats && freshCats.length > 0) {
         setCategories(freshCats);
       }
+      loadData();
     };
 
     window.addEventListener('nexalus_data_update', handleUpdate);
@@ -99,10 +98,24 @@ export const AmDistributorsProductsPage: React.FC = () => {
     return products.filter(p => {
       if (p.published === false) return false;
 
-      // Category filter
+      // Robust category matching across id, slug, and categoryName
       if (selectedCategory !== 'all') {
-        const matchesCategory = p.categoryId === selectedCategory ||
-          p.categoryId.toLowerCase().includes(selectedCategory.toLowerCase());
+        const catObj = categories.find(c => c.id === selectedCategory || c.slug === selectedCategory);
+        const pCat = (p.categoryId || '').toLowerCase();
+        const pCatName = (p.categoryName || '').toLowerCase();
+        const selCat = selectedCategory.toLowerCase();
+        const catObjName = (catObj?.name || '').toLowerCase();
+        const catObjSlug = (catObj?.slug || '').toLowerCase();
+
+        const matchesCategory =
+          p.categoryId === selectedCategory ||
+          (catObj && p.categoryId === catObj.id) ||
+          (catObj && p.categoryId === catObj.slug) ||
+          (catObjName && pCatName === catObjName) ||
+          pCat.includes(selCat) ||
+          selCat.includes(pCat) ||
+          (catObjSlug && pCat.includes(catObjSlug));
+
         if (!matchesCategory) return false;
       }
 
@@ -263,9 +276,21 @@ export const AmDistributorsProductsPage: React.FC = () => {
           </button>
 
           {categories.map(cat => {
-            const count = products.filter(
-              p => p.categoryId === cat.id || p.categoryId.toLowerCase().includes(cat.id.toLowerCase())
-            ).length;
+            const count = products.filter(p => {
+              if (p.published === false) return false;
+              const pCat = (p.categoryId || '').toLowerCase();
+              const pCatName = (p.categoryName || '').toLowerCase();
+              const catId = (cat.id || '').toLowerCase();
+              const catSlug = (cat.slug || '').toLowerCase();
+              const catName = (cat.name || '').toLowerCase();
+              return (
+                p.categoryId === cat.id ||
+                p.categoryId === cat.slug ||
+                (catName && pCatName === catName) ||
+                (catId && pCat.includes(catId)) ||
+                (catSlug && pCat.includes(catSlug))
+              );
+            }).length;
             const isSelected = selectedCategory === cat.id || selectedCategory === cat.slug;
 
             return (
