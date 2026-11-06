@@ -299,6 +299,18 @@ export function getCachedProducts(brandId?: BrandId | CompanyScopeId | 'corporat
     setLocalItem(STORAGE_KEYS.PRODUCTS, initialProducts, false);
   }
 
+  // Deduplicate products strictly by id to eliminate duplicate React key errors
+  const uniqueProductsMap = new Map<string, Product>();
+  products.forEach(p => {
+    if (p && p.id && !uniqueProductsMap.has(p.id)) {
+      uniqueProductsMap.set(p.id, p);
+    }
+  });
+  if (uniqueProductsMap.size !== products.length) {
+    products = Array.from(uniqueProductsMap.values());
+    setLocalItem(STORAGE_KEYS.PRODUCTS, products, false);
+  }
+
   // Ensure all recent and existing products have explicit inventory fields populated
   let needsSync = false;
   products = products.map(p => {
@@ -909,7 +921,11 @@ export async function createProduct(
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
   const cleanSlug = rawSlug.replace(/^prod-(nexalus-llp|nexalus|am|llp|nex|cp|ob|itti)-/, '');
-  const id = `prod-${companyKey}-${cleanSlug || 'item'}`;
+  const existingProducts = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
+  let id = `prod-${companyKey}-${cleanSlug || 'item'}`;
+  if (existingProducts.some(p => p.id === id)) {
+    id = `${id}-${Date.now().toString(36).slice(-4)}-${Math.floor(Math.random() * 900 + 100)}`;
+  }
 
   const now = new Date().toISOString();
   const companyName = compId === 'am-distributors'
@@ -937,8 +953,8 @@ export async function createProduct(
     }
   }
 
-  const existingProducts = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
-  setLocalItem(STORAGE_KEYS.PRODUCTS, [newProduct, ...existingProducts]);
+  const updatedList = [newProduct, ...existingProducts.filter(p => p.id !== id)];
+  setLocalItem(STORAGE_KEYS.PRODUCTS, updatedList);
   await addAuditLog('CREATE_PRODUCT', `Added product: ${newProduct.name}${newProduct.modelNumber ? ` (${newProduct.modelNumber})` : ''}`, newProduct.brandId);
   return newProduct;
 }
