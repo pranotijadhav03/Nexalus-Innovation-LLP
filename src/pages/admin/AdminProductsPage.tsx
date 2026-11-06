@@ -645,14 +645,6 @@ export const AdminProductsPage: React.FC = () => {
                             >
                               +
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => handleQuickStockAdjust(product.id, 10)}
-                              className="px-1.5 h-5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-bold flex items-center justify-center cursor-pointer transition-colors"
-                              title="Restock +10 units"
-                            >
-                              +10
-                            </button>
                           </div>
                         </div>
                       );
