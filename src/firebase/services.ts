@@ -2061,15 +2061,27 @@ export async function submitPlanOrder(
     }
   }
 
-  // Admin In-App Notification
+  // Admin In-App Notification (Strictly Scoped by Entity)
   const notifId = 'notif-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+  const detectedCompany = resolveNotificationCompany({
+    companyId: newOrder.companyId,
+    brandId: newOrder.brandId,
+    title: newOrder.planName,
+    message: `${newOrder.planName} ${newOrder.speed} ${newOrder.customerName}`
+  });
+  const notifTitle = detectedCompany === 'am-distributors'
+    ? 'New A.M. Depot Order'
+    : detectedCompany === 'nexalus-innovations'
+    ? 'New Tech & Security Order'
+    : 'New Broadband Order';
+
   const adminNotif: AdminNotification = {
     id: notifId,
     type: 'order_created',
-    title: newOrder.companyId === 'am-distributors' ? 'New A.M. Depot Order' : newOrder.companyId === 'nexalus-innovations' ? 'New Tech Order' : 'New Broadband Order',
+    title: notifTitle,
     message: `Order #${id} placed by ${newOrder.customerName} for ${newOrder.planName} (${newOrder.speed}). Status: ${newOrder.paymentStatus.toUpperCase()}`,
     orderId: id,
-    companyId: newOrder.companyId || (newOrder.brandId === 'am-distributors' ? 'am-distributors' : newOrder.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp'),
+    companyId: detectedCompany,
     brandId: newOrder.brandId,
     read: false,
     createdAt: now
@@ -2457,15 +2469,27 @@ export async function recordPlanOrderPayment(
     receiptNumber
   });
 
-  // Admin In-App Notification (Scoped with companyId)
+  // Admin In-App Notification (Strictly Scoped with companyId)
   const notifId = 'notif-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+  const detectedPaymentComp = resolveNotificationCompany({
+    companyId: existing.companyId,
+    brandId: existing.brandId,
+    title: existing.planName,
+    message: `${existing.planName} ${existing.speed}`
+  });
+  const notifPaymentTitle = detectedPaymentComp === 'am-distributors'
+    ? 'A.M. Depot Payment Confirmed'
+    : detectedPaymentComp === 'nexalus-innovations'
+    ? 'Tech & Security Payment Confirmed'
+    : 'Broadband Payment Confirmed';
+
   const adminNotif: AdminNotification = {
     id: notifId,
     type: 'payment_collected',
-    title: 'Payment Confirmed',
+    title: notifPaymentTitle,
     message: `₹${paymentData.amount} received for Order #${orderId} by ${adminUser.name || adminUser.email} (${paymentData.method.toUpperCase()}). Receipt: ${receiptNumber}`,
     orderId,
-    companyId: existing.companyId || (existing.brandId === 'am-distributors' ? 'am-distributors' : existing.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp'),
+    companyId: detectedPaymentComp,
     brandId: existing.brandId,
     read: false,
     createdAt: now
@@ -2525,6 +2549,56 @@ export async function deletePlanOrder(orderId: string): Promise<boolean> {
 // ----------------------------------------------------
 // ADMIN NOTIFICATION SERVICES
 // ----------------------------------------------------
+export function resolveNotificationCompany(n: Partial<AdminNotification>): 'am-distributors' | 'nexalus-innovations' | 'nexalus-llp' {
+  // 1. Check explicit fields
+  const comp = (n.companyId || n.brandId || '').toLowerCase();
+  if (comp === 'am-distributors' || comp === 'am') return 'am-distributors';
+  if (comp === 'nexalus-innovations' || comp === 'ni' || comp === 'innovations') return 'nexalus-innovations';
+
+  // 2. Deep keyword check in title, message, plan/order info
+  const text = `${n.title || ''} ${n.message || ''}`.toLowerCase();
+  
+  if (
+    text.includes('ice cream') ||
+    text.includes('mineral water') ||
+    text.includes('water bottle') ||
+    text.includes('milk') ||
+    text.includes('butter') ||
+    text.includes('dairy') ||
+    text.includes('depot') ||
+    text.includes('fmcg') ||
+    text.includes('cold-chain') ||
+    text.includes('cold chain') ||
+    text.includes('chiplun') ||
+    text.includes('a.m. distributor') ||
+    text.includes('am distributor') ||
+    text.includes('am depot') ||
+    text.includes('crazy ice') ||
+    text.includes('fssai')
+  ) {
+    return 'am-distributors';
+  }
+
+  if (
+    text.includes('cctv') ||
+    text.includes('surveillance') ||
+    text.includes('camera') ||
+    text.includes('poe') ||
+    text.includes('switch') ||
+    text.includes('nvr') ||
+    text.includes('dvr') ||
+    text.includes('biometric') ||
+    text.includes('smart security') ||
+    text.includes('tech & security') ||
+    text.includes('tech order') ||
+    text.includes('networking')
+  ) {
+    return 'nexalus-innovations';
+  }
+
+  return 'nexalus-llp';
+}
+
 export function getCachedAdminNotifications(): AdminNotification[] {
   return getLocalItem<AdminNotification[]>(STORAGE_KEYS.ADMIN_NOTIFICATIONS, []);
 }
@@ -2583,7 +2657,7 @@ export async function markAdminNotificationRead(notificationId: string): Promise
 export async function clearAllAdminNotifications(scopedCompanyId?: string): Promise<void> {
   const notifs = getCachedAdminNotifications().map(n => {
     if (!scopedCompanyId) return { ...n, read: true };
-    const comp = n.companyId || (n.brandId === 'am-distributors' ? 'am-distributors' : n.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
+    const comp = resolveNotificationCompany(n);
     return comp === scopedCompanyId ? { ...n, read: true } : n;
   });
   setLocalItem(STORAGE_KEYS.ADMIN_NOTIFICATIONS, notifs);

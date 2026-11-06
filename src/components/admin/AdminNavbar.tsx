@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { subscribeToAdminNotifications, markAdminNotificationRead, clearAllAdminNotifications } from '../../firebase/services';
+import {
+  subscribeToAdminNotifications,
+  markAdminNotificationRead,
+  clearAllAdminNotifications,
+  resolveNotificationCompany
+} from '../../firebase/services';
 import { AdminNotification } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { AdminConsoleMode } from './AdminLayout';
@@ -71,14 +76,12 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
       }
     }
 
-    const notifComp = n.companyId || (n.brandId === 'am-distributors' ? 'am-distributors' : n.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
-    if (isAmConsole) {
-      return notifComp === 'am-distributors';
-    }
-    if (isInnovationsConsole) {
-      return notifComp === 'nexalus-innovations';
-    }
-    return notifComp === 'nexalus-llp' || (!n.companyId && !n.brandId);
+    // STRICT COMPANY SCOPING: Each admin console ONLY sees its own company's notifications.
+    // Deep content resolution ensures that any notification referencing Ice Cream, Dairy, FMCG, Water, or Chiplun
+    // goes exclusively to A.M. Distributors, CCTV/Networking goes exclusively to Nexalus Innovations,
+    // and Broadband goes exclusively to Parent (Nexalus LLP).
+    const notifCompany = resolveNotificationCompany(n);
+    return notifCompany === activeCompanyScope;
   });
 
   const unreadCount = scopedNotifications.filter(n => !n.read).length;
@@ -270,40 +273,56 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
                     No notifications in the past 48 hours. New orders and payment confirmations will appear here in real-time.
                   </div>
                 ) : (
-                  scopedNotifications.slice(0, 15).map(n => (
-                    <div
-                      key={n.id}
-                      onClick={() => {
-                        markAdminNotificationRead(n.id);
-                        setIsNotifOpen(false);
-                        navigate('/admin/orders');
-                      }}
-                      className={`p-3 hover:bg-slate-50 transition-colors cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''}`}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                          n.type === 'payment_collected'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {n.type === 'payment_collected' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <ShoppingCart className="w-3.5 h-3.5" />}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1.5">
-                            <h4 className="text-xs font-bold text-slate-900 truncate">{n.title}</h4>
-                            {!n.read && (
-                              <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" title="Unread" />
-                            )}
+                  scopedNotifications.slice(0, 15).map(n => {
+                    const notifCompany = resolveNotificationCompany(n);
+                    // Normalize misleading legacy titles
+                    const displayTitle = (n.title === 'New Broadband Order' && notifCompany === 'am-distributors')
+                      ? 'New A.M. Depot Order'
+                      : (n.title === 'New Broadband Order' && notifCompany === 'nexalus-innovations')
+                      ? 'New Tech & Security Order'
+                      : n.title;
+
+                    const ordersUrl = activeCompanyScope === 'am-distributors'
+                      ? '/admin/orders?console=am-distributors'
+                      : activeCompanyScope === 'nexalus-innovations'
+                      ? '/admin/orders?console=nexalus-innovations'
+                      : '/admin/orders';
+
+                    return (
+                      <div
+                        key={n.id}
+                        onClick={() => {
+                          markAdminNotificationRead(n.id);
+                          setIsNotifOpen(false);
+                          navigate(ordersUrl);
+                        }}
+                        className={`p-3 hover:bg-slate-50 transition-colors cursor-pointer ${!n.read ? 'bg-blue-50/50' : ''}`}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                            n.type === 'payment_collected'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {n.type === 'payment_collected' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <ShoppingCart className="w-3.5 h-3.5" />}
                           </div>
-                          <p className="text-[11px] text-slate-600 mt-0.5 leading-snug line-clamp-2">{n.message}</p>
-                          <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
-                            <Clock className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span>{formatNotificationDateTime(n.createdAt)}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1.5">
+                              <h4 className="text-xs font-bold text-slate-900 truncate">{displayTitle}</h4>
+                              {!n.read && (
+                                <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" title="Unread" />
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-600 mt-0.5 leading-snug line-clamp-2">{n.message}</p>
+                            <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                              <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span>{formatNotificationDateTime(n.createdAt)}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
@@ -312,7 +331,12 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
                   type="button"
                   onClick={() => {
                     setIsNotifOpen(false);
-                    navigate('/admin/orders');
+                    const ordersUrl = activeCompanyScope === 'am-distributors'
+                      ? '/admin/orders?console=am-distributors'
+                      : activeCompanyScope === 'nexalus-innovations'
+                      ? '/admin/orders?console=nexalus-innovations'
+                      : '/admin/orders';
+                    navigate(ordersUrl);
                   }}
                   className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
                 >

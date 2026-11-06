@@ -86,15 +86,29 @@ export const PlanOrderModal: React.FC<PlanOrderModalProps> = ({
 
   // Determine active company identity
   const isMultiItem = Boolean(items && items.length > 0);
-  const effectiveCompanyId =
+
+  // URL path check
+  const path = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
+  const isPathAm = path.includes('/am-distributors');
+  const isPathNi = path.includes('/nexalus-innovations');
+
+  // Content inspection for foolproof company scoping
+  const itemNames = (items?.map(i => `${i.planName || ''} ${i.providerName || ''}`).join(' ') || '').toLowerCase();
+  const planNames = `${plan?.planName || ''} ${(plan as any)?.name || ''} ${plan?.providerName || ''}`.toLowerCase();
+  const allNames = `${itemNames} ${planNames}`;
+  const isContentAm = allNames.includes('ice cream') || allNames.includes('mineral water') || allNames.includes('milk') || allNames.includes('butter') || allNames.includes('dairy') || allNames.includes('chiplun') || allNames.includes('am distributor');
+  const isContentNi = allNames.includes('cctv') || allNames.includes('camera') || allNames.includes('surveillance') || allNames.includes('poe') || allNames.includes('switch') || allNames.includes('networking');
+
+  const effectiveCompanyId = (
     companyId ||
     (items && items[0]?.companyId) ||
     plan?.companyId ||
-    (plan?.brandId === 'am-distributors'
+    (plan?.brandId === 'am-distributors' || isPathAm || isContentAm
       ? 'am-distributors'
-      : plan?.brandId === 'nexalus-innovations'
+      : plan?.brandId === 'nexalus-innovations' || isPathNi || isContentNi
       ? 'nexalus-innovations'
-      : 'nexalus-llp');
+      : 'nexalus-llp')
+  );
 
   const isAm = effectiveCompanyId === 'am-distributors' || effectiveCompanyId === 'am';
   const isNi = effectiveCompanyId === 'nexalus-innovations';
