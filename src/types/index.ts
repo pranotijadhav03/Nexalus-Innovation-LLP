@@ -140,6 +140,8 @@ export interface AdminNotification {
   title: string;
   message: string;
   orderId: string;
+  companyId?: string;
+  brandId?: string;
   read: boolean;
   createdAt: string;
   readAt?: string;

@@ -2047,9 +2047,11 @@ export async function submitPlanOrder(
   const adminNotif: AdminNotification = {
     id: notifId,
     type: 'order_created',
-    title: 'New Broadband Order',
+    title: newOrder.companyId === 'am-distributors' ? 'New A.M. Depot Order' : newOrder.companyId === 'nexalus-innovations' ? 'New Tech Order' : 'New Broadband Order',
     message: `Order #${id} placed by ${newOrder.customerName} for ${newOrder.planName} (${newOrder.speed}). Status: ${newOrder.paymentStatus.toUpperCase()}`,
     orderId: id,
+    companyId: newOrder.companyId || (newOrder.brandId === 'am-distributors' ? 'am-distributors' : newOrder.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp'),
+    brandId: newOrder.brandId,
     read: false,
     createdAt: now
   };
@@ -2444,6 +2446,8 @@ export async function recordPlanOrderPayment(
     title: 'Payment Confirmed',
     message: `₹${paymentData.amount} received for Order #${orderId} by ${adminUser.name || adminUser.email} (${paymentData.method.toUpperCase()}). Receipt: ${receiptNumber}`,
     orderId,
+    companyId: existing.companyId || (existing.brandId === 'am-distributors' ? 'am-distributors' : existing.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp'),
+    brandId: existing.brandId,
     read: false,
     createdAt: now
   };
@@ -2557,8 +2561,12 @@ export async function markAdminNotificationRead(notificationId: string): Promise
   }
 }
 
-export async function clearAllAdminNotifications(): Promise<void> {
-  const notifs = getCachedAdminNotifications().map(n => ({ ...n, read: true }));
+export async function clearAllAdminNotifications(scopedCompanyId?: string): Promise<void> {
+  const notifs = getCachedAdminNotifications().map(n => {
+    if (!scopedCompanyId) return { ...n, read: true };
+    const comp = n.companyId || (n.brandId === 'am-distributors' ? 'am-distributors' : n.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
+    return comp === scopedCompanyId ? { ...n, read: true } : n;
+  });
   setLocalItem(STORAGE_KEYS.ADMIN_NOTIFICATIONS, notifs);
   window.dispatchEvent(new CustomEvent('nexalus_admin_notifications_updated', { detail: notifs }));
 }
@@ -3275,6 +3283,9 @@ export async function getUsers(): Promise<AdminUser[]> {
               deliveryAddress: sanitized.deliveryAddress,
               assignedBrandId: sanitized.assignedBrandId,
               active: sanitized.active !== false,
+              primaryCompany: sanitized.primaryCompany || 'nexalus-llp',
+              associatedCompanies: sanitized.associatedCompanies || (sanitized.primaryCompany ? [sanitized.primaryCompany] : ['nexalus-llp']),
+              companyProfiles: sanitized.companyProfiles || {},
               createdAt: sanitized.createdAt || new Date().toISOString(),
               lastLogin: sanitized.lastLogin
             });
@@ -3795,10 +3806,13 @@ export function isCustomerLinkedToCompany(user?: AdminUser | null, scope?: Compa
   if (!user) return false;
   const target: CompanyScopeId = scope || 'nexalus-llp';
   if (Array.isArray(user.associatedCompanies) && user.associatedCompanies.length > 0) {
-    return user.associatedCompanies.includes(target);
+    if (user.associatedCompanies.includes(target)) return true;
   }
-  if (user.primaryCompany) {
-    return user.primaryCompany === target;
+  if (user.primaryCompany && user.primaryCompany === target) {
+    return true;
+  }
+  if (user.companyProfiles && user.companyProfiles[target]) {
+    return true;
   }
   return target === 'nexalus-llp';
 }
@@ -3809,7 +3823,7 @@ export async function linkCustomerToCompany(
   customAddress?: CustomerDeliveryAddress
 ): Promise<AdminUser> {
   const users = await getUsers();
-  let user = users.find(u => u.uid === uid);
+  let user = users.find(u => u.uid === uid || ((u as any).id === uid));
   const now = new Date().toISOString();
   const compName = getCompanyFriendlyName(targetCompany);
   const compPrefix = targetCompany === 'am-distributors' ? 'AM-DEPOT-' : targetCompany === 'nexalus-innovations' ? 'TECH-' : 'CUST-';
@@ -3872,7 +3886,17 @@ export async function linkCustomerToCompany(
   }
 
   // Update local storage cache
-  const updatedUsers = users.map(u => (u.uid === uid ? updatedUser : u));
+  let matched = false;
+  const updatedUsers = users.map(u => {
+    if (u.uid === uid || (u as any).id === uid || (user?.email && u.email?.toLowerCase() === user.email?.toLowerCase())) {
+      matched = true;
+      return updatedUser;
+    }
+    return u;
+  });
+  if (!matched) {
+    updatedUsers.push(updatedUser);
+  }
   setLocalItem(STORAGE_KEYS.USERS, updatedUsers);
   try {
     localStorage.setItem('nexalus_active_user_session_v3', JSON.stringify(updatedUser));
@@ -4591,10 +4615,21 @@ export function subscribeReceiptSettings(
   companyId?: string
 ): () => void {
   const { storageKey, docName } = getReceiptSettingsKeys(companyId);
+  let lastDispatchedJson = JSON.stringify(getCachedReceiptSettings(companyId));
   callback(getCachedReceiptSettings(companyId));
 
-  const handleLocalUpdate = () => {
-    callback(getCachedReceiptSettings(companyId));
+  const handleLocalUpdate = (e?: any) => {
+    // Only react if event is relevant to receipt settings or this specific storageKey
+    const evtKey = e?.detail?.key;
+    if (evtKey && evtKey !== storageKey && evtKey !== 'receipt_settings' && evtKey !== 'systemSettings') {
+      return;
+    }
+    const fresh = getCachedReceiptSettings(companyId);
+    const freshJson = JSON.stringify(fresh);
+    if (freshJson !== lastDispatchedJson) {
+      lastDispatchedJson = freshJson;
+      callback(fresh);
+    }
   };
   window.addEventListener('nexalus_data_update', handleLocalUpdate);
   window.addEventListener('storage', handleLocalUpdate);

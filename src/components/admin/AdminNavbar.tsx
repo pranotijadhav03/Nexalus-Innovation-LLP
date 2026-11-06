@@ -48,7 +48,28 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
     return () => unsub();
   }, []);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const isAmConsole = activeConsole === 'am-distributors' || isAmAdmin;
+  const isInnovationsConsole = activeConsole === 'nexalus-innovations' || isInnovationsAdmin;
+
+  // Filter notifications strictly by active console company scope so child notifications never leak to parent and vice-versa
+  const activeCompanyScope = isAmConsole
+    ? 'am-distributors'
+    : isInnovationsConsole
+    ? 'nexalus-innovations'
+    : 'nexalus-llp';
+
+  const scopedNotifications = notifications.filter(n => {
+    const notifComp = n.companyId || (n.brandId === 'am-distributors' ? 'am-distributors' : n.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
+    if (isAmConsole) {
+      return notifComp === 'am-distributors';
+    }
+    if (isInnovationsConsole) {
+      return notifComp === 'nexalus-innovations';
+    }
+    return notifComp === 'nexalus-llp' || (!n.companyId && !n.brandId);
+  });
+
+  const unreadCount = scopedNotifications.filter(n => !n.read).length;
 
   // Close notifications on outside click
   useEffect(() => {
@@ -65,8 +86,6 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const isAmConsole = activeConsole === 'am-distributors' || isAmAdmin;
-  const isInnovationsConsole = activeConsole === 'nexalus-innovations' || isInnovationsAdmin;
 
   const currentConsoleInfo = isAmConsole
     ? {
@@ -163,10 +182,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
               <span>
                 {currentConsoleInfo.subName}
               </span>
-              <span className="text-slate-300 hidden sm:inline">•</span>
-              <span className="text-indigo-600 font-bold hidden sm:flex items-center gap-0.5">
-                <Database className="w-2.5 h-2.5" /> Firestore Online
-              </span>
+              
             </div>
           </div>
         </div>
@@ -204,10 +220,10 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
                     </span>
                   )}
                 </div>
-                {notifications.length > 0 && (
+                {scopedNotifications.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => clearAllAdminNotifications()}
+                    onClick={() => clearAllAdminNotifications(activeCompanyScope)}
                     className="text-[10px] font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
                   >
                     Clear All
@@ -216,12 +232,12 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
               </div>
 
               <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-                {notifications.length === 0 ? (
+                {scopedNotifications.length === 0 ? (
                   <div className="p-6 text-center text-xs text-slate-400">
                     No notifications yet. New broadband orders and payment confirmations will appear here in real-time.
                   </div>
                 ) : (
-                  notifications.slice(0, 15).map(n => (
+                  scopedNotifications.slice(0, 15).map(n => (
                     <div
                       key={n.id}
                       onClick={() => {

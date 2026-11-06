@@ -151,12 +151,17 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
 
   React.useEffect(() => {
     if (isOpen) {
+      if (currentUser && isCustomer && isCustomerLinkedToCompany(currentUser, effectiveScope)) {
+        // Already fully signed in & linked to this company; dismiss choice modal
+        handleDismiss();
+        return;
+      }
       setView(initialView);
       setFormError(null);
       setRegPassword('');
       setRegConfirmPassword('');
     }
-  }, [isOpen, initialView]);
+  }, [isOpen, initialView, currentUser, isCustomer, effectiveScope]);
 
   const handleSsoLinkConfirm = async () => {
     if (!currentUser) return;
@@ -357,8 +362,19 @@ export const CustomerChoiceModal: React.FC<CustomerChoiceModalProps> = ({
     try {
       const result = await loginCustomer(emailClean, loginPassword);
       if (result.success) {
+        let authUser = (result as any)?.user || currentUser;
+        if (effectiveScope !== 'nexalus-llp' && !isCustomerLinkedToCompany(authUser, effectiveScope)) {
+          try {
+            const linkRes = await linkCompanyAccount(effectiveScope);
+            if (linkRes.success && linkRes.user) {
+              authUser = linkRes.user;
+            }
+          } catch (e) {
+            console.warn('Auto-link on portal login error:', e);
+          }
+        }
         success('Welcome Back', 'You are now signed in to the customer portal.');
-        handleAuthSuccess((result as any)?.user);
+        handleAuthSuccess(authUser);
       } else {
         setFormError(result.error || 'Invalid email or password.');
       }

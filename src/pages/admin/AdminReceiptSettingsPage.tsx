@@ -68,7 +68,10 @@ export const AdminReceiptSettingsPage: React.FC = () => {
     setIsLoading(true);
     setSettings(getCachedReceiptSettings(selectedCompany));
     const unsub = subscribeReceiptSettings((s) => {
-      setSettings(s);
+      setSettings(prev => {
+        if (JSON.stringify(prev) === JSON.stringify(s)) return prev;
+        return s;
+      });
       setIsLoading(false);
     }, selectedCompany);
     return () => unsub();
@@ -226,46 +229,6 @@ export const AdminReceiptSettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Company Scope Selector */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <Building className="w-5 h-5 text-indigo-600" />
-          <div>
-            <span className="text-xs font-black uppercase tracking-wider text-slate-800 block">
-              Active Company Document Scope
-            </span>
-            <span className="text-[11px] text-slate-500">
-              Edits and templates are strictly scoped to the selected company
-            </span>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {[
-            { id: 'nexalus-llp', label: 'Nexalus Innovations LLP', badge: 'Parent Broadband' },
-            { id: 'am-distributors', label: 'A.M. Distributors Chiplun', badge: 'Child Depot' },
-            { id: 'nexalus-innovations', label: 'Nexalus Innovations', badge: 'Child Tech' }
-          ].map(comp => (
-            <button
-              key={comp.id}
-              type="button"
-              onClick={() => setSelectedCompany(comp.id as any)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                selectedCompany === comp.id
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
-              }`}
-            >
-              <span>${comp.label}</span>
-              <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase ${
-                selectedCompany === comp.id ? 'bg-white/20 text-white' : 'bg-white text-slate-500 border border-slate-200'
-              }`}>
-                ${comp.badge}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
@@ -472,10 +435,14 @@ export const AdminReceiptSettingsPage: React.FC = () => {
                 <select
                   value={settings.gstInclusive !== false ? 'inclusive' : 'exclusive'}
                   onChange={e => handleChange('gstInclusive', e.target.value === 'inclusive')}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-colors"
+                  className="w-full px-3.5 py-2.5 text-xs font-semibold text-slate-900 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-2xs"
                 >
-                  <option value="inclusive">Inclusive in Tariff (Standard)</option>
-                  <option value="exclusive">Extra / Added on Top</option>
+                  <option value="inclusive" className="bg-white text-slate-900 py-1.5 font-medium">
+                    Inclusive in Tariff (Standard - built into total)
+                  </option>
+                  <option value="exclusive" className="bg-white text-slate-900 py-1.5 font-medium">
+                    Extra / Added on Top (GST calculated &amp; added at checkout)
+                  </option>
                 </select>
               </div>
             </div>
@@ -505,22 +472,22 @@ export const AdminReceiptSettingsPage: React.FC = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
               <Input
-                label="Doc Number Prefix *"
+                label="Doc Prefix Code *"
                 placeholder="e.g. B2B-CHL, RCP-NEX, NEX-TECH"
                 value={settings.receiptPrefix || (selectedCompany === 'am-distributors' ? 'B2B-CHL' : selectedCompany === 'nexalus-innovations' ? 'NEX-TECH' : 'RCP-NEX')}
                 onChange={e => handleChange('receiptPrefix', e.target.value.toUpperCase().trim())}
                 required
               />
               <Input
-                label="Paid Document / Challan Title"
+                label="Paid Document Title"
                 placeholder="e.g. B2B WHOLESALE DELIVERY CHALLAN"
                 value={settings.receiptTitle || ''}
                 onChange={e => handleChange('receiptTitle', e.target.value)}
               />
               <Input
-                label="Booking / Dispatch Title"
+                label="Booking Slip Title"
                 placeholder="e.g. WHOLESALE DISPATCH CONFIRMATION"
                 value={settings.bookingTitle || ''}
                 onChange={e => handleChange('bookingTitle', e.target.value)}
