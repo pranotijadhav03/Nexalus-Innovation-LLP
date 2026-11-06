@@ -58,7 +58,19 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
     ? 'nexalus-innovations'
     : 'nexalus-llp';
 
+  // 48 hours (2 days) frontend retention cutoff in milliseconds
+  const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
   const scopedNotifications = notifications.filter(n => {
+    // Frontend 2-day filter: keep notifications strictly within the last 48 hours without modifying DB
+    if (n.createdAt) {
+      const createdTime = new Date(n.createdAt).getTime();
+      if (!isNaN(createdTime) && (now - createdTime) > TWO_DAYS_MS) {
+        return false;
+      }
+    }
+
     const notifComp = n.companyId || (n.brandId === 'am-distributors' ? 'am-distributors' : n.brandId === 'nexalus-innovations' ? 'nexalus-innovations' : 'nexalus-llp');
     if (isAmConsole) {
       return notifComp === 'am-distributors';
@@ -70,6 +82,27 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
   });
 
   const unreadCount = scopedNotifications.filter(n => !n.read).length;
+
+  const formatNotificationDateTime = (isoDate: string) => {
+    if (!isoDate) return '';
+    try {
+      const d = new Date(isoDate);
+      if (isNaN(d.getTime())) return '';
+      const dateStr = d.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+      const timeStr = d.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      return `${dateStr} • ${timeStr}`;
+    } catch {
+      return '';
+    }
+  };
 
   // Close notifications on outside click
   useEffect(() => {
@@ -234,7 +267,7 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
               <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
                 {scopedNotifications.length === 0 ? (
                   <div className="p-6 text-center text-xs text-slate-400">
-                    No notifications yet. New broadband orders and payment confirmations will appear here in real-time.
+                    No notifications in the past 48 hours. New orders and payment confirmations will appear here in real-time.
                   </div>
                 ) : (
                   scopedNotifications.slice(0, 15).map(n => (
@@ -256,13 +289,17 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({
                           {n.type === 'payment_collected' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <ShoppingCart className="w-3.5 h-3.5" />}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-1.5">
                             <h4 className="text-xs font-bold text-slate-900 truncate">{n.title}</h4>
-                            <span className="text-[9px] text-slate-400 font-mono">
-                              {new Date(n.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
+                            {!n.read && (
+                              <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" title="Unread" />
+                            )}
                           </div>
                           <p className="text-[11px] text-slate-600 mt-0.5 leading-snug line-clamp-2">{n.message}</p>
+                          <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                            <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{formatNotificationDateTime(n.createdAt)}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
