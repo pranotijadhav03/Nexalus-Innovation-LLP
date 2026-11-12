@@ -3549,6 +3549,7 @@ export async function provisionAdminAccount(data: {
   role: UserRole;
   password?: string;
   assignedBrandId?: BrandId | 'all';
+  companyScope?: CompanyScopeId;
   active?: boolean;
   sendResetEmail?: boolean;
   phone?: string;
@@ -3560,6 +3561,24 @@ export async function provisionAdminAccount(data: {
   const assignedBrandId = data.assignedBrandId || (role === 'am_admin' ? 'am-distributors' : role === 'super_admin' ? 'all' : 'nexalus-innovations');
   const active = data.active !== false;
   const now = new Date().toISOString();
+
+  const compScope: CompanyScopeId = data.companyScope || (
+    role === 'am_admin' || assignedBrandId === 'am-distributors'
+      ? 'am-distributors'
+      : role === 'innovations_admin' || assignedBrandId === 'nexalus-innovations'
+      ? 'nexalus-innovations'
+      : 'nexalus-llp'
+  );
+  const compPrefix = compScope === 'am-distributors' ? 'AM-DEPOT-' : compScope === 'nexalus-innovations' ? 'TECH-' : 'SUB-';
+  const subscriberId = compPrefix + Math.floor(100000 + Math.random() * 900000);
+
+  const deliveryAddrObj: CustomerDeliveryAddress = {
+    address: data.deliveryAddress?.address || '',
+    city: data.deliveryAddress?.city || (compScope === 'am-distributors' ? 'Chiplun' : 'Sangli'),
+    state: data.deliveryAddress?.state || 'Maharashtra',
+    postcode: data.deliveryAddress?.postcode || (compScope === 'am-distributors' ? '415605' : '416415'),
+    country: data.deliveryAddress?.country || 'India'
+  };
 
   let authUid = '';
   let resetEmailSent = false;
@@ -3600,10 +3619,22 @@ export async function provisionAdminAccount(data: {
         email: cleanEmail,
         role,
         assignedBrandId,
+        primaryCompany: compScope,
+        associatedCompanies: [compScope],
+        subscriberId,
+        companyProfiles: {
+          [compScope]: {
+            companyScope: compScope,
+            companyName: getCompanyFriendlyName(compScope),
+            joinedAt: now,
+            subscriberId,
+            deliveryAddress: deliveryAddrObj
+          }
+        },
         active,
         createdAt: now,
         ...(data.phone ? { phone: data.phone } : {}),
-        ...(data.deliveryAddress ? { deliveryAddress: { ...data.deliveryAddress, country: data.deliveryAddress.country || 'India' } } : {})
+        deliveryAddress: deliveryAddrObj
       };
 
       await setDoc(doc(db, 'users', authUid), {
@@ -3623,7 +3654,7 @@ export async function provisionAdminAccount(data: {
 
       await addAuditLog(
         'CREATE_USER',
-        `Provisioned admin account via Firebase Auth: ${cleanEmail} (${role})`,
+        `Provisioned ${role} account via Firebase Auth: ${cleanEmail} for ${getCompanyFriendlyName(compScope)}`,
         undefined
       );
 
@@ -3650,12 +3681,26 @@ export async function provisionAdminAccount(data: {
     email: cleanEmail,
     role,
     assignedBrandId,
+    primaryCompany: compScope,
+    associatedCompanies: [compScope],
+    subscriberId,
+    companyProfiles: {
+      [compScope]: {
+        companyScope: compScope,
+        companyName: getCompanyFriendlyName(compScope),
+        joinedAt: now,
+        subscriberId,
+        deliveryAddress: deliveryAddrObj
+      }
+    },
     active,
-    createdAt: now
+    createdAt: now,
+    ...(data.phone ? { phone: data.phone } : {}),
+    deliveryAddress: deliveryAddrObj
   };
   const users = await getUsers();
   setLocalItem(STORAGE_KEYS.USERS, [...users, fallbackUser]);
-  await addAuditLog('CREATE_USER', `Created offline admin record: ${fallbackUser.email} (${fallbackUser.role})`);
+  await addAuditLog('CREATE_USER', `Created offline ${fallbackUser.role} record: ${fallbackUser.email} for ${getCompanyFriendlyName(compScope)}`);
   return { user: fallbackUser, resetEmailSent: false };
 }
 
@@ -3898,16 +3943,70 @@ export function getCompanyFriendlyName(scope?: string): string {
 export function isCustomerLinkedToCompany(user?: AdminUser | null, scope?: CompanyScopeId): boolean {
   if (!user) return false;
   const target: CompanyScopeId = scope || 'nexalus-llp';
+
+  // 1. Array of associated companies (standard modern format)
   if (Array.isArray(user.associatedCompanies) && user.associatedCompanies.length > 0) {
-    if (user.associatedCompanies.includes(target)) return true;
+    return user.associatedCompanies.includes(target);
   }
-  if (user.primaryCompany && user.primaryCompany === target) {
-    return true;
+
+  // 2. Explicit primaryCompany tag
+  if (user.primaryCompany) {
+    return user.primaryCompany === target;
   }
+
+  // 3. Company profiles map
   if (user.companyProfiles && user.companyProfiles[target]) {
     return true;
   }
-  return target === 'nexalus-llp';
+
+  // 4. Assigned brand (for staff or admin users)
+  if (user.assignedBrandId) {
+    if (target === 'am-distributors' && user.assignedBrandId === 'am-distributors') return true;
+    if (target === 'nexalus-innovations' && user.assignedBrandId === 'nexalus-innovations') return true;
+    if (target === 'nexalus-llp' && (user.assignedBrandId === 'all' || user.assignedBrandId === 'nexalus' || user.assignedBrandId === 'one-broadband')) return true;
+  }
+
+  // 5. Intelligent legacy resolution for mock / seed records without modern tags
+  const subId = (user.subscriberId || '').toUpperCase();
+  const city = (user.deliveryAddress?.city || '').toLowerCase();
+  const plan = ((user.planName || '') + ' ' + (user.associatedLco || '')).toLowerCase();
+
+  if (target === 'am-distributors') {
+    return (
+      subId.startsWith('AM-') ||
+      city === 'chiplun' ||
+      plan.includes('mineral water') ||
+      plan.includes('ice cream') ||
+      plan.includes('depot') ||
+      plan.includes('dairy')
+    );
+  }
+
+  if (target === 'nexalus-innovations') {
+    return (
+      subId.startsWith('TECH-') ||
+      subId.startsWith('CCTV-') ||
+      plan.includes('cctv') ||
+      plan.includes('surveillance') ||
+      plan.includes('camera') ||
+      plan.includes('security')
+    );
+  }
+
+  if (target === 'nexalus-llp') {
+    return (
+      subId.startsWith('SUB-') ||
+      subId.startsWith('CUST-') ||
+      plan.includes('broadband') ||
+      plan.includes('fiber') ||
+      plan.includes('one broadband') ||
+      plan.includes('airtel') ||
+      plan.includes('bsnl') ||
+      (!subId.startsWith('AM-') && !subId.startsWith('TECH-') && city !== 'chiplun')
+    );
+  }
+
+  return false;
 }
 
 export async function linkCustomerToCompany(

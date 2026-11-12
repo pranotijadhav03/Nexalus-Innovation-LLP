@@ -7,9 +7,10 @@ import {
   updateUser,
   deleteUser,
   provisionAdminAccount,
-  getCachedUsers
+  getCachedUsers,
+  isCustomerLinkedToCompany
 } from '../../firebase/services';
-import { AdminUser, BrandId, UserRole } from '../../types';
+import { AdminUser, BrandId, UserRole, CompanyScopeId } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
@@ -43,15 +44,39 @@ import {
 } from 'lucide-react';
 
 export const AdminUsersPage: React.FC = () => {
-  const { isSuperAdmin, currentUser } = useAuth();
+  const { isSuperAdmin, isInnovationsAdmin, isAmAdmin, currentUser } = useAuth();
   const { success, error } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Tab: 'customers' or 'staff'
   const activeTab = searchParams.get('tab') === 'staff' ? 'staff' : 'customers';
   const setActiveTab = (tab: 'customers' | 'staff') => {
-    setSearchParams({ tab });
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', tab);
+    setSearchParams(params);
   };
+
+  // Determine active console scope
+  const consoleParam = searchParams.get('console');
+  const effectiveConsole: 'master' | 'nexalus-innovations' | 'am-distributors' =
+    isAmAdmin || consoleParam === 'am-distributors'
+      ? 'am-distributors'
+      : isInnovationsAdmin || consoleParam === 'nexalus-innovations'
+      ? 'nexalus-innovations'
+      : 'master';
+
+  const isAmConsole = effectiveConsole === 'am-distributors';
+  const isInnovationsConsole = effectiveConsole === 'nexalus-innovations';
+  const isMasterConsole = effectiveConsole === 'master';
+
+  const activeCompanyScope: CompanyScopeId = isAmConsole
+    ? 'am-distributors'
+    : isInnovationsConsole
+    ? 'nexalus-innovations'
+    : 'nexalus-llp';
+
+  // For Master Console: allow super-admin to view All or filter by operating entity
+  const [masterScopeFilter, setMasterScopeFilter] = useState<'all' | CompanyScopeId>('all');
 
   const [users, setUsers] = useState<AdminUser[]>(() => getCachedUsers());
   const [isLoading, setIsLoading] = useState(false);
@@ -123,26 +148,49 @@ export const AdminUsersPage: React.FC = () => {
     return () => window.removeEventListener('nexalus_data_update', handleUpdate);
   }, []);
 
-  // Separate customers and staff (strictly newest first / descending order)
+  // Separate customers and staff with strict company scoping
   const customerUsers = useMemo(() => {
     return users
-      .filter(u => u.role === 'customer')
+      .filter(u => {
+        if (u.role !== 'customer') return false;
+        if (isAmConsole) {
+          return isCustomerLinkedToCompany(u, 'am-distributors');
+        }
+        if (isInnovationsConsole) {
+          return isCustomerLinkedToCompany(u, 'nexalus-innovations');
+        }
+        // Corporate Master Console:
+        if (masterScopeFilter === 'all') return true;
+        return isCustomerLinkedToCompany(u, masterScopeFilter);
+      })
       .sort((a, b) => {
         const timeA = new Date(a.createdAt || a.lastLogin || 0).getTime();
         const timeB = new Date(b.createdAt || b.lastLogin || 0).getTime();
         return timeB - timeA;
       });
-  }, [users]);
+  }, [users, isAmConsole, isInnovationsConsole, masterScopeFilter]);
 
   const staffUsers = useMemo(() => {
     return users
-      .filter(u => u.role !== 'customer')
+      .filter(u => {
+        if (u.role === 'customer') return false;
+        if (isAmConsole) {
+          return u.role === 'am_admin' || u.assignedBrandId === 'am-distributors';
+        }
+        if (isInnovationsConsole) {
+          return u.role === 'innovations_admin' || u.assignedBrandId === 'nexalus-innovations';
+        }
+        if (masterScopeFilter === 'all') return true;
+        if (masterScopeFilter === 'am-distributors') return u.role === 'am_admin' || u.assignedBrandId === 'am-distributors';
+        if (masterScopeFilter === 'nexalus-innovations') return u.role === 'innovations_admin' || u.assignedBrandId === 'nexalus-innovations';
+        return u.role === 'super_admin' || u.assignedBrandId === 'nexalus' || u.assignedBrandId === 'all';
+      })
       .sort((a, b) => {
         const timeA = new Date(a.createdAt || a.lastLogin || 0).getTime();
         const timeB = new Date(b.createdAt || b.lastLogin || 0).getTime();
         return timeB - timeA;
       });
-  }, [users]);
+  }, [users, isAmConsole, isInnovationsConsole, masterScopeFilter]);
 
   // Filtered Customers
   const filteredCustomers = useMemo(() => {
@@ -213,12 +261,12 @@ export const AdminUsersPage: React.FC = () => {
     setShowPassword(false);
     setPhone('');
     setAddress('');
-    setCity('Sangli');
-    setPincode('416415');
+    setCity(isAmConsole ? 'Chiplun' : 'Sangli');
+    setPincode(isAmConsole ? '415605' : '416415');
     if (mode === 'customer') {
       setRole('customer');
     } else {
-      setRole('innovations_admin');
+      setRole(isAmConsole ? 'am_admin' : 'innovations_admin');
     }
     generateRandomPassword();
     setIsAddModalOpen(true);
@@ -238,8 +286,14 @@ export const AdminUsersPage: React.FC = () => {
     setIsProvisioning(true);
     try {
       const targetEmail = email.trim().toLowerCase();
+      const targetCompany: CompanyScopeId = isAmConsole
+        ? 'am-distributors'
+        : isInnovationsConsole
+        ? 'nexalus-innovations'
+        : 'nexalus-llp';
+
       const assignedBrand: BrandId | 'all' =
-        role === 'am_admin'
+        role === 'am_admin' || isAmConsole
           ? 'am-distributors'
           : role === 'super_admin'
           ? 'all'
@@ -250,7 +304,8 @@ export const AdminUsersPage: React.FC = () => {
             address: address.trim(),
             city: city.trim(),
             state: 'Maharashtra',
-            postcode: pincode.trim()
+            postcode: pincode.trim(),
+            country: 'India'
           }
         : undefined;
 
@@ -260,6 +315,7 @@ export const AdminUsersPage: React.FC = () => {
         password: password.trim(),
         role,
         assignedBrandId: assignedBrand,
+        companyScope: targetCompany,
         active: true,
         sendResetEmail: false,
         phone: phone.trim() || undefined,
@@ -302,7 +358,13 @@ export const AdminUsersPage: React.FC = () => {
 
   const handleCopyCredentials = () => {
     if (!createdCredentials) return;
-    const loginUrl = `${window.location.origin}/login`;
+    const loginUrl = createdCredentials.isCustomer
+      ? isAmConsole
+        ? `${window.location.origin}/brands/am-distributors/account`
+        : isInnovationsConsole
+        ? `${window.location.origin}/brands/nexalus-innovations/account`
+        : `${window.location.origin}/account`
+      : `${window.location.origin}/login`;
     const text = `--- NEXALUS PORTAL CREDENTIALS ---
 Name: ${createdCredentials.name}
 Role: ${createdCredentials.role}
@@ -478,7 +540,29 @@ Login URL: ${loginUrl}
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {isMasterConsole ? (
+                <select
+                  value={masterScopeFilter}
+                  onChange={e => setMasterScopeFilter(e.target.value as any)}
+                  className="text-xs py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-blue-500 font-medium text-slate-700"
+                >
+                  <option value="all">All Operating Entities</option>
+                  <option value="nexalus-llp">Nexalus Innovations LLP (Broadband)</option>
+                  <option value="nexalus-innovations">Nexalus Innovations (Tech &amp; CCTV)</option>
+                  <option value="am-distributors">A.M. Distributors Chiplun (Depot)</option>
+                </select>
+              ) : (
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                  isAmConsole
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                }`}>
+                  <Building className="w-3.5 h-3.5" />
+                  <span>{isAmConsole ? 'A.M. Distributors Chiplun' : 'Nexalus Innovations'}</span>
+                </span>
+              )}
+
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value as any)}
@@ -498,7 +582,7 @@ Login URL: ${loginUrl}
                 <Users className="w-10 h-10 text-slate-300 mx-auto" />
                 <h3 className="text-sm font-bold text-slate-800">No Customers Found</h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  {searchTerm ? 'No registered customers match your search.' : 'No customer accounts registered yet.'}
+                  {searchTerm ? 'No registered customers match your search.' : `No customer accounts registered yet for ${isAmConsole ? 'A.M. Distributors Chiplun' : isInnovationsConsole ? 'Nexalus Innovations' : 'Nexalus Innovations LLP'}.`}
                 </p>
                 <Button size="sm" variant="teal" onClick={() => openCreateModal('customer')} icon={<UserPlus className="w-4 h-4" />}>
                   Register First Customer
@@ -519,10 +603,20 @@ Login URL: ${loginUrl}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredCustomers.map(cust => (
+                    {filteredCustomers.map(cust => {
+                      const scopedSubscriberId = cust.companyProfiles?.[activeCompanyScope]?.subscriberId || cust.subscriberId;
+                      const scopedAddress = cust.companyProfiles?.[activeCompanyScope]?.deliveryAddress || cust.deliveryAddress;
+                      return (
                       <tr key={cust.uid} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-4 px-4 sm:px-6">
-                          <div className="font-bold text-slate-900">{cust.displayName}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="font-bold text-slate-900">{cust.displayName}</div>
+                            {scopedSubscriberId && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                {scopedSubscriberId}
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 font-mono">
                             <Mail className="w-3 h-3 text-slate-400" /> {cust.email}
                           </div>
@@ -537,11 +631,11 @@ Login URL: ${loginUrl}
                         </td>
 
                         <td className="py-4 px-4">
-                          {cust.deliveryAddress?.city ? (
+                          {scopedAddress?.city ? (
                             <div className="space-y-0.5">
-                              <div className="font-semibold text-slate-800 truncate max-w-xs">{cust.deliveryAddress.address || cust.deliveryAddress.city}</div>
+                              <div className="font-semibold text-slate-800 truncate max-w-xs">{scopedAddress.address || scopedAddress.city}</div>
                               <div className="text-[11px] text-slate-500">
-                                {cust.deliveryAddress.city}{cust.deliveryAddress.postcode ? ` - ${cust.deliveryAddress.postcode}` : ''}
+                                {scopedAddress.city}{scopedAddress.postcode ? ` - ${scopedAddress.postcode}` : ''}
                               </div>
                             </div>
                           ) : (
@@ -613,7 +707,8 @@ Login URL: ${loginUrl}
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    );
+                  })}
                   </tbody>
                 </table>
               </div>
@@ -946,7 +1041,15 @@ Login URL: ${loginUrl}
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-500 font-sans font-bold">Portal URL:</span>
-                <span className="text-blue-700 underline">{window.location.origin}/login</span>
+                <span className="text-blue-700 underline truncate max-w-[240px]">
+                  {createdCredentials.isCustomer
+                    ? isAmConsole
+                      ? `${window.location.origin}/brands/am-distributors/account`
+                      : isInnovationsConsole
+                      ? `${window.location.origin}/brands/nexalus-innovations/account`
+                      : `${window.location.origin}/account`
+                    : `${window.location.origin}/login`}
+                </span>
               </div>
             </div>
 
@@ -1015,18 +1118,43 @@ Login URL: ${loginUrl}
               </div>
             </div>
 
-            {/* Delivery Address */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] block">
-                Primary Delivery Address (Customer Portal)
-              </span>
-              <div className="text-slate-800 font-medium">
-                {inspectCustomer.deliveryAddress?.address || 'No street address provided'}
+            {/* Scoped Company & Subscriber Info */}
+            <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <span className="font-bold text-slate-500 uppercase text-[10px] block">Customer / Partner ID</span>
+                <span className="font-mono font-black text-blue-900 text-sm">
+                  {inspectCustomer.companyProfiles?.[activeCompanyScope]?.subscriberId || inspectCustomer.subscriberId || 'None Assigned'}
+                </span>
               </div>
-              <div className="text-slate-600">
-                City: <strong className="text-slate-900">{inspectCustomer.deliveryAddress?.city || 'Unspecified'}</strong> • PIN: <strong className="text-slate-900">{inspectCustomer.deliveryAddress?.postcode || 'None'}</strong> • State: {inspectCustomer.deliveryAddress?.state || 'Maharashtra'}
+              <div>
+                <span className="font-bold text-slate-500 uppercase text-[10px] block">Operating Scope Access</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {(inspectCustomer.associatedCompanies || [inspectCustomer.primaryCompany || 'nexalus-llp']).map(c => (
+                    <span key={c} className="px-2 py-0.5 rounded text-[10px] font-bold bg-white text-blue-800 border border-blue-300">
+                      {c === 'am-distributors' ? 'A.M. Distributors Chiplun' : c === 'nexalus-innovations' ? 'Nexalus Innovations' : 'Nexalus Innovations LLP'}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
+
+            {/* Delivery Address */}
+            {(() => {
+              const scopedAddr = inspectCustomer.companyProfiles?.[activeCompanyScope]?.deliveryAddress || inspectCustomer.deliveryAddress;
+              return (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] block">
+                    {isAmConsole ? 'A.M. Distributors Chiplun Depot Delivery Address' : isInnovationsConsole ? 'Tech & Security Installation Address' : 'Primary Delivery Address (Customer Portal)'}
+                  </span>
+                  <div className="text-slate-800 font-medium">
+                    {scopedAddr?.address || 'No street address provided'}
+                  </div>
+                  <div className="text-slate-600">
+                    City: <strong className="text-slate-900">{scopedAddr?.city || 'Unspecified'}</strong> • PIN: <strong className="text-slate-900">{scopedAddr?.postcode || 'None'}</strong> • State: {scopedAddr?.state || 'Maharashtra'}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Timestamps */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
