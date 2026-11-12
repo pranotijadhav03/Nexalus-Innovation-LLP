@@ -50,7 +50,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-type ProviderTab = 'airtel' | 'bsnl' | 'railwire' | 'one-broadband';
+type ProviderTab = string;
 
 // Helper to robustly extract numeric speed in Mbps from display text or numeric field
 function getEffectiveSpeed(p: { speedNumeric?: number; speed?: string }): number {
@@ -327,6 +327,19 @@ export const PlansPricingPage: React.FC = () => {
           buttonVariant: 'teal' as const,
           description: 'Pure symmetrical optical fiber FTTH with Gigabit Wi-Fi 6 router setup.'
         };
+      default: {
+        const found = providers.find(p => p.id === tab);
+        return {
+          name: found ? found.name : String(tab).toUpperCase(),
+          short: found ? found.name.split(' ')[0] : String(tab).toUpperCase(),
+          color: 'from-indigo-600 via-purple-600 to-indigo-700',
+          badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+          accent: 'text-indigo-600',
+          border: 'hover:border-indigo-500',
+          buttonVariant: 'primary' as const,
+          description: found?.description || 'High-speed gigabit optical fiber broadband service with zero throttling.'
+        };
+      }
     }
   };
 
@@ -370,44 +383,37 @@ export const PlansPricingPage: React.FC = () => {
         {/* Provider Selector Tabs & Cart Trigger */}
         <div className="bg-white p-2 rounded-2xl border border-slate-200/90 shadow-sm flex flex-wrap gap-2 items-center justify-between">
           <div className="flex flex-wrap gap-2 items-center">
-            <button
-              type="button"
-              onClick={() => { setActiveTab('airtel'); setSelectedDurationFilter('all'); setSelectedBsnlCategory('all'); }}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'airtel'
-                  ? 'bg-red-600 text-white shadow-md shadow-red-500/20'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${activeTab === 'airtel' ? 'bg-white' : 'bg-red-500'}`} />
-              <span>Airtel Xstream</span>
-            </button>
+            {providers.filter(p => p.enabled !== false).map((p) => {
+              const isSelected = activeTab === p.id;
+              let activeBg = 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20';
+              let dotColor = 'bg-indigo-500';
+              if (p.id === 'airtel') {
+                activeBg = 'bg-red-600 text-white shadow-md shadow-red-500/20';
+                dotColor = 'bg-red-500';
+              } else if (p.id === 'bsnl') {
+                activeBg = 'bg-blue-600 text-white shadow-md shadow-blue-500/20';
+                dotColor = 'bg-blue-500';
+              } else if (p.id === 'railwire') {
+                activeBg = 'bg-orange-600 text-white shadow-md shadow-orange-500/20';
+                dotColor = 'bg-orange-500';
+              }
 
-            <button
-              type="button"
-              onClick={() => { setActiveTab('bsnl'); setSelectedDurationFilter('all'); setSelectedBsnlCategory('all'); }}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'bsnl'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${activeTab === 'bsnl' ? 'bg-white' : 'bg-blue-500'}`} />
-              <span>BSNL Bharat Fiber</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => { setActiveTab('railwire'); setSelectedDurationFilter('all'); setSelectedBsnlCategory('all'); }}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'railwire'
-                  ? 'bg-orange-600 text-white shadow-md shadow-orange-500/20'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${activeTab === 'railwire' ? 'bg-white' : 'bg-orange-500'}`} />
-              <span>RailWire Retail</span>
-            </button>
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => { setActiveTab(p.id); setSelectedDurationFilter('all'); setSelectedBsnlCategory('all'); }}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    isSelected
+                      ? activeBg
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : dotColor}`} />
+                  <span>{p.name}</span>
+                </button>
+              );
+            })}
 
             <button
               type="button"

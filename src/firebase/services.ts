@@ -546,8 +546,12 @@ export function getCachedBroadbandPlans(providerId?: string): BroadbandPlan[] {
   return plans;
 }
 
-export function getCachedBroadbandProviders(): BroadbandProvider[] {
-  return getLocalItem<BroadbandProvider[]>(STORAGE_KEYS.BROADBAND_PROVIDERS, initialBroadbandProviders);
+export function getCachedBroadbandProviders(enabledOnly = false): BroadbandProvider[] {
+  let providers = getLocalItem<BroadbandProvider[]>(STORAGE_KEYS.BROADBAND_PROVIDERS, initialBroadbandProviders);
+  if (enabledOnly) {
+    providers = providers.filter(p => p.enabled);
+  }
+  return providers.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 }
 
 export function getCachedBanners(brandId?: BrandId | 'nexalus'): SiteBanner[] {
@@ -1283,6 +1287,83 @@ export async function updateBroadbandProvider(
   );
 
   return updated;
+}
+
+export async function deleteBroadbandProvider(id: string): Promise<boolean> {
+  if (isFirebaseConfigured && db) {
+    try {
+      await deleteDoc(doc(db, 'broadbandProviders', id));
+    } catch (e) {
+      console.warn('Firestore deleteBroadbandProvider error:', e);
+    }
+  }
+
+  const providers = getLocalItem<BroadbandProvider[]>(STORAGE_KEYS.BROADBAND_PROVIDERS, initialBroadbandProviders);
+  const target = providers.find(p => p.id === id);
+  const updated = providers.filter(p => p.id !== id);
+  setLocalItem(STORAGE_KEYS.BROADBAND_PROVIDERS, updated);
+
+  await addAuditLog(
+    'DELETE_BROADBAND_PROVIDER',
+    `Deleted broadband provider: ${target ? target.name : id}`,
+    'general'
+  );
+
+  return true;
+}
+
+export function subscribeToBroadbandProviders(
+  callback: (providers: BroadbandProvider[]) => void,
+  enabledOnly = false
+): () => void {
+  let unsubFirestore: (() => void) | null = null;
+
+  const emitProviders = async () => {
+    try {
+      const providers = await getBroadbandProviders(enabledOnly);
+      callback(providers);
+    } catch (e) {
+      console.warn('Error in subscribeToBroadbandProviders:', e);
+    }
+  };
+
+  callback(getCachedBroadbandProviders(enabledOnly));
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const constraints: any[] = [];
+      if (enabledOnly) constraints.push(where('enabled', '==', true));
+      const q = constraints.length > 0
+        ? query(collection(db, 'broadbandProviders'), ...constraints)
+        : collection(db, 'broadbandProviders');
+
+      unsubFirestore = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          const list = snapshot.docs.map(d => d.data() as BroadbandProvider);
+          list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+          setLocalItem(STORAGE_KEYS.BROADBAND_PROVIDERS, list, false);
+          callback(list);
+        } else {
+          emitProviders();
+        }
+      }, () => emitProviders());
+    } catch (e) {
+      emitProviders();
+    }
+  }
+
+  const handleUpdate = (e: any) => {
+    if (e.detail?.key === STORAGE_KEYS.BROADBAND_PROVIDERS) {
+      emitProviders();
+    }
+  };
+
+  window.addEventListener('nexalus_data_update', handleUpdate);
+
+  return () => {
+    if (unsubFirestore) unsubFirestore();
+    window.removeEventListener('nexalus_data_update', handleUpdate);
+  };
 }
 
 // 2. PLANS
