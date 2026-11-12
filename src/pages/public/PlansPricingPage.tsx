@@ -132,20 +132,27 @@ export const PlansPricingPage: React.FC = () => {
       }
     }, true);
 
-    const handleDataUpdate = () => {
-      getBroadbandProviders(true).then(provList => {
-        if (isMounted) setProviders(provList);
-      });
+    const handleDataUpdate = (e?: any) => {
+      const key = e?.detail?.key;
+      if (!key || key.includes('plans')) {
+        const cached = getCachedBroadbandPlans();
+        if (isMounted) setBroadbandPlans(cached.filter(p => p.published !== false));
+      }
+      if (!key || key.includes('providers')) {
+        getBroadbandProviders(true).then(provList => {
+          if (isMounted) setProviders(provList);
+        });
+      }
     };
     window.addEventListener('nexalus_data_update', handleDataUpdate);
-
+    window.addEventListener('focus', handleDataUpdate);
 
     return () => {
       isMounted = false;
       unsubBroadband();
       unsubLegacy();
       window.removeEventListener('nexalus_data_update', handleDataUpdate);
-
+      window.removeEventListener('focus', handleDataUpdate);
     };
   }, []);
 

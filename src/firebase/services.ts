@@ -1557,6 +1557,11 @@ export async function updateBroadbandPlan(
     throw new Error(`Invalid plan update: ${validation.errors.map(e => e.message).join(' ')}`);
   }
 
+  // 1. Instantly update local cache and broadcast across all tabs (0ms immediate UI update)
+  plans[index] = updated;
+  setLocalItem(STORAGE_KEYS.BROADBAND_PLANS, plans);
+
+  // 2. Persist to Cloud Firestore asynchronously
   if (isFirebaseConfigured && db) {
     try {
       await setDoc(doc(db, 'broadbandPlans', id), sanitizeForFirestore({ ...updated, updatedAt: now }), { merge: true });
@@ -1564,9 +1569,6 @@ export async function updateBroadbandPlan(
       console.warn('Firestore updateBroadbandPlan error:', e);
     }
   }
-
-  plans[index] = updated;
-  setLocalItem(STORAGE_KEYS.BROADBAND_PLANS, plans);
 
   await addAuditLog(
     'UPDATE_BROADBAND_PLAN',
@@ -3807,14 +3809,29 @@ export function subscribeToBroadbandPlans(
 ): () => void {
   let unsubFirestore: (() => void) | null = null;
 
-  const emitPlans = async () => {
+  const emitCached = () => {
     try {
-      const plans = await getBroadbandPlans(options);
+      let plans = getCachedBroadbandPlans(options?.providerId);
+      if (options?.publishedOnly) {
+        plans = plans.filter(p => p.published);
+      }
+      if (options?.city) {
+        const cityQuery = options.city.toLowerCase();
+        plans = plans.filter(p =>
+          !p.city ||
+          p.city.toLowerCase() === 'all' ||
+          p.city.toLowerCase().includes(cityQuery) ||
+          (p.cities && p.cities.some((c: string) => c.toLowerCase().includes(cityQuery)))
+        );
+      }
       callback(plans);
     } catch (e) {
-      console.warn('Error fetching broadband plans in subscriber:', e);
+      console.warn('Error reading cached broadband plans in subscriber:', e);
     }
   };
+
+  // 1. Immediately emit cached plans synchronously for zero-lag UI
+  emitCached();
 
   if (isFirebaseConfigured && db) {
     try {
@@ -3847,24 +3864,24 @@ export function subscribeToBroadbandPlans(
           return (a.speedNumeric ?? 0) - (b.speedNumeric ?? 0);
         });
         if (!options?.city && !options?.providerId) {
-          setLocalItem(STORAGE_KEYS.BROADBAND_PLANS, results);
+          setLocalItem(STORAGE_KEYS.BROADBAND_PLANS, results, false);
         }
         callback(results);
       }, (err) => {
         console.warn('Firestore onSnapshot error, falling back to local updates:', err);
-        emitPlans();
+        emitCached();
       });
     } catch (e) {
       console.warn('Could not attach Firestore onSnapshot for broadbandPlans:', e);
-      emitPlans();
+      emitCached();
     }
   } else {
-    emitPlans();
+    emitCached();
   }
 
   const handleUpdate = (e: any) => {
     if (e.detail?.key === STORAGE_KEYS.BROADBAND_PLANS) {
-      emitPlans();
+      emitCached();
     }
   };
 
