@@ -131,7 +131,8 @@ export const AmDistributorsLayout: React.FC = () => {
   });
 
   React.useEffect(() => {
-    const syncCart = () => {
+    const syncCart = (e?: StorageEvent | any) => {
+      if (e && e.key && !e.key.includes('cart')) return;
       try {
         const count = getScopedPlanCart('am-distributors', currentUser?.uid).length;
         setCartCount(count);

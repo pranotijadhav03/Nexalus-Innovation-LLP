@@ -277,26 +277,25 @@ export const HomePage: React.FC = () => {
     window.addEventListener('nexalus_plan_cart_updated', handleCartUpdate);
 
     const handleDataUpdate = (e: any) => {
-      const freshProds = getCachedProducts('corporate');
-      const freshCats = getCachedCategories('corporate');
-      if (freshProds && freshProds.length > 0) setParentProducts(freshProds);
-      if (freshCats && freshCats.length > 0) setParentCategories(freshCats);
-      getProducts('corporate', true).then(prods => {
-        if (prods && prods.length > 0) setParentProducts(prods);
-      });
-      if (!e.detail?.key || e.detail.key.includes('plans')) {
+      const key = e.detail?.key;
+      if (!key) return;
+      if (key.includes('products') || key.includes('categories')) {
+        const freshProds = getCachedProducts('corporate');
+        const freshCats = getCachedCategories('corporate');
+        if (freshProds && freshProds.length > 0) setParentProducts(freshProds);
+        if (freshCats && freshCats.length > 0) setParentCategories(freshCats);
+      }
+      if (key.includes('plans')) {
         setHomeBroadbandPlans(getCachedBroadbandPlans());
         setHomeOnePlans(getCachedInternetPlans());
       }
-      if (!e.detail?.key || e.detail.key === 'nexalus_site_banners' || e.detail.key.includes('banners')) {
+      if (key === 'nexalus_site_banners' || key.includes('banners')) {
         const list = getCachedBanners('nexalus');
         const found = list.find(b => b.id === 'ban-parent' || b.brandId === 'nexalus');
         if (found) setHeroBanner(found);
       }
     };
     window.addEventListener('nexalus_data_update', handleDataUpdate);
-
-    window.addEventListener('storage', handleDataUpdate);
     window.addEventListener('focus', handleDataUpdate);
 
     return () => {
@@ -307,7 +306,6 @@ export const HomePage: React.FC = () => {
       unsubProds();
       window.removeEventListener('nexalus_plan_cart_updated', handleCartUpdate);
       window.removeEventListener('nexalus_data_update', handleDataUpdate);
-      window.removeEventListener('storage', handleDataUpdate);
       window.removeEventListener('focus', handleDataUpdate);
     };
   }, []);

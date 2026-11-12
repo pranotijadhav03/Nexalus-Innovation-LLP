@@ -157,7 +157,8 @@ export const NexalusInnovationsLayout: React.FC = () => {
   });
 
   React.useEffect(() => {
-    const syncCart = () => {
+    const syncCart = (e?: StorageEvent | any) => {
+      if (e && e.key && !e.key.includes('cart')) return;
       try {
         const count = getScopedPlanCart('nexalus-innovations', currentUser?.uid).length;
         setCartCount(count);

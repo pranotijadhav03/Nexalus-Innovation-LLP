@@ -85,13 +85,27 @@ export const AmDistributorsPage: React.FC = () => {
       console.warn('Could not fetch A.M. products from Firestore:', err);
     });
 
-    window.addEventListener('nexalus_data_update', refreshData);
-    window.addEventListener('storage', refreshData);
+    let refreshTimer: any = null;
+    const debouncedRefresh = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        refreshData();
+      }, 120);
+    };
+
+    const handleUpdate = (e: any) => {
+      const key = e.detail?.key;
+      if (!key || key.includes('banners') || key.includes('products')) {
+        debouncedRefresh();
+      }
+    };
+
+    window.addEventListener('nexalus_data_update', handleUpdate);
 
     return () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
       unsub();
-      window.removeEventListener('nexalus_data_update', refreshData);
-      window.removeEventListener('storage', refreshData);
+      window.removeEventListener('nexalus_data_update', handleUpdate);
     };
   }, []);
 

@@ -105,33 +105,45 @@ export function withTimeout<T>(promise: Promise<T>, ms = 1200): Promise<T> {
 }
 
 // Cross-Tab & Cross-Window Real-Time Broadcast Synchronization
-const tabSyncChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window
+const hasBroadcastChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window;
+const tabSyncChannel = hasBroadcastChannel
   ? new BroadcastChannel('nexalus_tab_sync_channel')
   : null;
 
 if (tabSyncChannel) {
   tabSyncChannel.onmessage = (event) => {
-    if (event.data?.type === 'nexalus_data_update') {
-      window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: event.data.key } }));
+    if (event.data?.type === 'nexalus_data_update' && event.data?.key) {
+      window.dispatchEvent(new CustomEvent('nexalus_data_update', { 
+        detail: { key: event.data.key, source: 'remote' } 
+      }));
     }
   };
-}
-
-if (typeof window !== 'undefined') {
+} else if (typeof window !== 'undefined') {
+  // Fallback ONLY when BroadcastChannel is not supported by the environment
   window.addEventListener('storage', (event) => {
     if (event.key && event.key.startsWith('nexalus_')) {
-      window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key: event.key } }));
+      window.dispatchEvent(new CustomEvent('nexalus_data_update', { 
+        detail: { key: event.key, source: 'remote' } 
+      }));
     }
   });
 }
 
+// Throttle event notifications per key to prevent storming / CPU spin loops across tabs
 const lastNotifyTimes = new Map<string, number>();
 
 function notifyDataUpdate(key: string): void {
   const now = Date.now();
+  const lastTime = lastNotifyTimes.get(key) || 0;
+  // If notification for this exact key fired less than 200ms ago, skip to eliminate ping-pong storms
+  if (now - lastTime < 200) {
+    return;
+  }
+  lastNotifyTimes.set(key, now);
+
   try {
     // 1. Dispatch event to current tab
-    window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key } }));
+    window.dispatchEvent(new CustomEvent('nexalus_data_update', { detail: { key, source: 'local' } }));
     // 2. Broadcast immediately across all open tabs/windows
     tabSyncChannel?.postMessage({ type: 'nexalus_data_update', key, timestamp: now });
   } catch (err) {
@@ -286,7 +298,7 @@ if (typeof window !== 'undefined' && window.localStorage) {
 export function getCachedProducts(brandId?: BrandId | CompanyScopeId | 'corporate' | 'all'): Product[] {
   let products = getLocalItem<Product[]>(STORAGE_KEYS.PRODUCTS, initialProducts);
   
-  // Guard against any obsolete products in storage
+  // Guard against any obsolete products in storage (purely in-memory, no write loops)
   const hasInvalid = !Array.isArray(products) || products.some(p => 
     !p || typeof p.id !== 'string' || (
       !p.id.includes('nexalus-llp') && 
@@ -296,7 +308,6 @@ export function getCachedProducts(brandId?: BrandId | CompanyScopeId | 'corporat
   );
   if (hasInvalid || products.length === 0) {
     products = initialProducts;
-    setLocalItem(STORAGE_KEYS.PRODUCTS, initialProducts, false);
   }
 
   // Deduplicate products strictly by id to eliminate duplicate React key errors
@@ -308,14 +319,11 @@ export function getCachedProducts(brandId?: BrandId | CompanyScopeId | 'corporat
   });
   if (uniqueProductsMap.size !== products.length) {
     products = Array.from(uniqueProductsMap.values());
-    setLocalItem(STORAGE_KEYS.PRODUCTS, products, false);
   }
 
-  // Ensure all recent and existing products have explicit inventory fields populated
-  let needsSync = false;
+  // Ensure all recent and existing products have explicit inventory fields populated in memory
   products = products.map(p => {
     if (p.stockQuantity === undefined || p.lowStockThreshold === undefined) {
-      needsSync = true;
       const isAm = p.id.startsWith('prod-am') || p.brandId === 'am-distributors';
       const defaultStock = isAm ? 120 : 25;
       const defaultThresh = isAm ? 20 : 8;
@@ -330,10 +338,6 @@ export function getCachedProducts(brandId?: BrandId | CompanyScopeId | 'corporat
     }
     return p;
   });
-
-  if (needsSync) {
-    setLocalItem(STORAGE_KEYS.PRODUCTS, products, false);
-  }
 
   if (brandId && brandId !== 'all') {
     if (brandId === 'am-distributors' || (brandId as any) === 'am') {
@@ -376,18 +380,16 @@ export function subscribeToProducts(
   }
 
   const handleUpdate = (e: any) => {
-    if (!e.detail || e.detail.key === STORAGE_KEYS.PRODUCTS) {
+    if (e.detail?.key === STORAGE_KEYS.PRODUCTS) {
       emitCached();
     }
   };
 
   window.addEventListener('nexalus_data_update', handleUpdate);
-  window.addEventListener('storage', handleUpdate);
 
   return () => {
     if (unsubFirestore) unsubFirestore();
     window.removeEventListener('nexalus_data_update', handleUpdate);
-    window.removeEventListener('storage', handleUpdate);
   };
 }
 
@@ -411,11 +413,10 @@ export function isObsoleteCategoryId(id: string): boolean {
 export function getCachedCategories(brandId?: BrandId | CompanyScopeId | 'corporate' | 'all'): ProductCategory[] {
   let categories = getLocalItem<ProductCategory[]>(STORAGE_KEYS.CATEGORIES, initialCategories);
   
-  // Guard against any obsolete categories in storage
+  // Guard against any obsolete categories in storage (purely in-memory, zero write side-effects)
   categories = categories.filter(c => c && typeof c.id === 'string' && !isObsoleteCategoryId(c.id));
   if (categories.length === 0) {
     categories = initialCategories;
-    setLocalItem(STORAGE_KEYS.CATEGORIES, initialCategories, false);
   }
 
   if (brandId && brandId !== 'all') {
@@ -459,18 +460,16 @@ export function subscribeToCategories(
   }
 
   const handleUpdate = (e: any) => {
-    if (!e.detail || e.detail.key === STORAGE_KEYS.CATEGORIES) {
+    if (e.detail?.key === STORAGE_KEYS.CATEGORIES) {
       emitCached();
     }
   };
 
   window.addEventListener('nexalus_data_update', handleUpdate);
-  window.addEventListener('storage', handleUpdate);
 
   return () => {
     if (unsubFirestore) unsubFirestore();
     window.removeEventListener('nexalus_data_update', handleUpdate);
-    window.removeEventListener('storage', handleUpdate);
   };
 }
 
@@ -478,7 +477,6 @@ export function getCachedServices(brandId?: BrandId | 'nexalus' | 'corporate' | 
   let services = getLocalItem<Service[]>(STORAGE_KEYS.SERVICES, initialServices);
   if (!services.some(s => s.id === 'srv-nex-2') || services.length < initialServices.length) {
     services = initialServices;
-    setLocalItem(STORAGE_KEYS.SERVICES, initialServices, false);
   }
   if (brandId && brandId !== 'all') {
     if (brandId === 'nexalus-innovations') {
@@ -1627,7 +1625,6 @@ export function getCachedSolutionRequirements(brandId?: BrandId | 'general' | 'a
   let solutions = getLocalItem<SolutionRequirement[]>(STORAGE_KEYS.SOLUTION_REQUIREMENTS, initialSolutionRequirements);
   if (!solutions || solutions.length === 0) {
     solutions = initialSolutionRequirements;
-    setLocalItem(STORAGE_KEYS.SOLUTION_REQUIREMENTS, initialSolutionRequirements, false);
   }
   if (brandId && brandId !== 'all') {
     solutions = solutions.filter(s => s.brandId === brandId || s.brandId === 'general' || s.brandId === 'all');
@@ -3330,24 +3327,16 @@ export function subscribeToBanners(
   }
 
   const handleUpdate = (e: any) => {
-    if (!e.detail || e.detail.key === STORAGE_KEYS.BANNERS || e.detail.key === 'nexalus_site_banners') {
-      emitCached();
-    }
-  };
-
-  const handleStorage = (e: StorageEvent) => {
-    if (!e.key || e.key === STORAGE_KEYS.BANNERS || e.key === 'nexalus_site_banners') {
+    if (e.detail?.key === STORAGE_KEYS.BANNERS || e.detail?.key === 'nexalus_site_banners') {
       emitCached();
     }
   };
 
   window.addEventListener('nexalus_data_update', handleUpdate);
-  window.addEventListener('storage', handleStorage);
 
   return () => {
     if (unsubFirestore) unsubFirestore();
     window.removeEventListener('nexalus_data_update', handleUpdate);
-    window.removeEventListener('storage', handleStorage);
   };
 }
 
@@ -3769,24 +3758,16 @@ export function subscribeToBroadbandPlans(
   }
 
   const handleUpdate = (e: any) => {
-    if (!e.detail || e.detail.key === STORAGE_KEYS.BROADBAND_PLANS) {
-      emitPlans();
-    }
-  };
-
-  const handleStorage = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEYS.BROADBAND_PLANS) {
+    if (e.detail?.key === STORAGE_KEYS.BROADBAND_PLANS) {
       emitPlans();
     }
   };
 
   window.addEventListener('nexalus_data_update', handleUpdate);
-  window.addEventListener('storage', handleStorage);
 
   return () => {
     if (unsubFirestore) unsubFirestore();
     window.removeEventListener('nexalus_data_update', handleUpdate);
-    window.removeEventListener('storage', handleStorage);
   };
 }
 
@@ -3828,24 +3809,16 @@ export function subscribeToInternetPlans(
   }
 
   const handleUpdate = (e: any) => {
-    if (!e.detail || e.detail.key === STORAGE_KEYS.PLANS) {
-      emitPlans();
-    }
-  };
-
-  const handleStorage = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEYS.PLANS) {
+    if (e.detail?.key === STORAGE_KEYS.PLANS) {
       emitPlans();
     }
   };
 
   window.addEventListener('nexalus_data_update', handleUpdate);
-  window.addEventListener('storage', handleStorage);
 
   return () => {
     if (unsubFirestore) unsubFirestore();
     window.removeEventListener('nexalus_data_update', handleUpdate);
-    window.removeEventListener('storage', handleStorage);
   };
 }
 
@@ -4617,34 +4590,24 @@ export function subscribeToTeamMembers(
 
   // 4. Same-tab live update listener
   const handleUpdate = (e: any) => {
-    if (!e.detail || e.detail.key === 'team' || e.detail.key === STORAGE_KEYS.TEAM) {
+    if (e.detail?.key === 'team' || e.detail?.key === STORAGE_KEYS.TEAM) {
       emitMembers();
       syncFresh();
     }
   };
 
-  // 5. Cross-tab storage listener (Fires instantly when admin saves in another tab)
-  const handleStorage = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEYS.TEAM || !e.key) {
-      emitMembers();
-      syncFresh();
-    }
-  };
-
-  // 6. Window focus listener (Fires immediately when user switches to tab)
+  // 5. Window focus listener (Fires immediately when user switches to tab)
   const handleFocus = () => {
     emitMembers();
     syncFresh();
   };
 
   window.addEventListener('nexalus_data_update', handleUpdate);
-  window.addEventListener('storage', handleStorage);
   window.addEventListener('focus', handleFocus);
 
   return () => {
     if (unsubFirestore) unsubFirestore();
     window.removeEventListener('nexalus_data_update', handleUpdate);
-    window.removeEventListener('storage', handleStorage);
     window.removeEventListener('focus', handleFocus);
   };
 }
@@ -4824,7 +4787,6 @@ export function subscribeReceiptSettings(
     }
   };
   window.addEventListener('nexalus_data_update', handleLocalUpdate);
-  window.addEventListener('storage', handleLocalUpdate);
 
   let unsubFirestore: (() => void) | null = null;
   if (isFirebaseConfigured && db) {
@@ -4846,7 +4808,6 @@ export function subscribeReceiptSettings(
 
   return () => {
     window.removeEventListener('nexalus_data_update', handleLocalUpdate);
-    window.removeEventListener('storage', handleLocalUpdate);
     if (unsubFirestore) {
       unsubFirestore();
     }

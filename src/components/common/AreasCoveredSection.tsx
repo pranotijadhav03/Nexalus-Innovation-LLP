@@ -119,7 +119,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
     };
 
     window.addEventListener('nexalus_data_update', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
+
 
     // Click outside listener for suggestions dropdown
     const handleClickOutside = (e: MouseEvent) => {
@@ -132,7 +132,7 @@ export const AreasCoveredSection: React.FC<AreasCoveredSectionProps> = ({
     return () => {
       isMounted = false;
       window.removeEventListener('nexalus_data_update', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
+
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [division]);

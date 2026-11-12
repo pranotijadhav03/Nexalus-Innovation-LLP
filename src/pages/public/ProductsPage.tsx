@@ -174,7 +174,7 @@ export const ProductsPage: React.FC = () => {
     };
 
     window.addEventListener('nexalus_data_update', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
+
     window.addEventListener('focus', handleUpdate);
     document.addEventListener('visibilitychange', handleUpdate);
 
@@ -182,7 +182,7 @@ export const ProductsPage: React.FC = () => {
       unsubCats();
       unsubProds();
       window.removeEventListener('nexalus_data_update', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
+
       window.removeEventListener('focus', handleUpdate);
       document.removeEventListener('visibilitychange', handleUpdate);
     };

@@ -138,14 +138,14 @@ export const PlansPricingPage: React.FC = () => {
       });
     };
     window.addEventListener('nexalus_data_update', handleDataUpdate);
-    window.addEventListener('storage', handleDataUpdate);
+
 
     return () => {
       isMounted = false;
       unsubBroadband();
       unsubLegacy();
       window.removeEventListener('nexalus_data_update', handleDataUpdate);
-      window.removeEventListener('storage', handleDataUpdate);
+
     };
   }, []);
 

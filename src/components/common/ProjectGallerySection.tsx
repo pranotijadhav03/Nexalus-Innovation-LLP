@@ -73,13 +73,13 @@ export const ProjectGallerySection: React.FC<ProjectGallerySectionProps> = ({
       else setCategories(getProjectCategories());
     };
     window.addEventListener('nexalus_project_categories_updated', handleCatUpdate);
-    window.addEventListener('storage', handleUpdate);
+
 
     return () => {
       isMounted = false;
       window.removeEventListener('nexalus_data_update', handleUpdate);
       window.removeEventListener('nexalus_project_categories_updated', handleCatUpdate);
-      window.removeEventListener('storage', handleUpdate);
+
     };
   }, [division]);
 
