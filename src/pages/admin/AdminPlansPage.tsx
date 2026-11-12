@@ -947,26 +947,41 @@ export const AdminPlansPage: React.FC = () => {
         maxWidth="4xl"
       >
         <form onSubmit={handleSavePlan} className="space-y-5 max-h-[75vh] overflow-y-auto px-2 py-1">
-          <Input
-            label="Plan Display Name"
-            placeholder="e.g. Fiber Basic with Free Wi-Fi"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            required
-            disabled={isSaving}
-          />
+          <div>
+            <Input
+              label="Plan Display Name (Card Title Heading)"
+              placeholder="e.g. Airtel 31 Mbps (6 Months)"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              disabled={isSaving}
+            />
+            <p className="text-[11px] text-slate-500 mt-1">
+              Card title heading displayed prominently under the speed banner on public tariffs.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
-              label="Speed Display Text"
+              label="Speed Display Text (e.g. 31 Mbps)"
               placeholder="e.g. 100 Mbps"
               value={speed}
               onChange={e => {
                 const val = e.target.value;
+                const prevSpeed = speed;
                 setSpeed(val);
                 const numMatch = val.match(/(\d+)/);
                 if (numMatch) {
                   setSpeedNumeric(numMatch[1]);
+                }
+                if (prevSpeed && prevSpeed.trim() && val.trim() && name.includes(prevSpeed)) {
+                  setName(name.replace(prevSpeed, val));
+                }
+                if (prevSpeed && prevSpeed.trim() && val.trim() && description.includes(prevSpeed)) {
+                  setDescription(description.replace(new RegExp(prevSpeed, 'g'), val));
+                }
+                if (prevSpeed && prevSpeed.trim() && val.trim() && Array.isArray(features)) {
+                  setFeatures(prev => prev.map(f => f.includes(prevSpeed) ? f.replace(new RegExp(prevSpeed, 'g'), val) : f));
                 }
               }}
               required

@@ -540,8 +540,32 @@ export function getCachedInternetPlans(): InternetPlan[] {
   return getLocalItem<InternetPlan[]>(STORAGE_KEYS.PLANS, initialInternetPlans);
 }
 
+export function alignPlanSpeedWithDetails(p: BroadbandPlan): BroadbandPlan {
+  if (p && p.speed && p.name) {
+    const speedNumMatch = p.speed.match(/(\d+)/);
+    const nameNumMatch = p.name.match(/(\d+)\s*Mbps/i);
+    if (speedNumMatch && nameNumMatch && speedNumMatch[1] !== nameNumMatch[1]) {
+      const oldNum = nameNumMatch[1];
+      const newNum = speedNumMatch[1];
+      const oldText = `${oldNum} Mbps`;
+      const newText = `${newNum} Mbps`;
+      const newName = p.name.replace(new RegExp(oldText, 'gi'), newText);
+      const newDesc = p.description ? p.description.replace(new RegExp(oldText, 'gi'), newText) : p.description;
+      const newFeats = Array.isArray(p.features) ? p.features.map(f => f.replace(new RegExp(oldText, 'gi'), newText)) : p.features;
+      return {
+        ...p,
+        name: newName,
+        description: newDesc,
+        features: newFeats
+      };
+    }
+  }
+  return p;
+}
+
 export function getCachedBroadbandPlans(providerId?: string): BroadbandPlan[] {
-  const plans = getLocalItem<BroadbandPlan[]>(STORAGE_KEYS.BROADBAND_PLANS, initialBroadbandPlans);
+  let plans = getLocalItem<BroadbandPlan[]>(STORAGE_KEYS.BROADBAND_PLANS, initialBroadbandPlans);
+  plans = plans.map(alignPlanSpeedWithDetails);
   if (providerId) return plans.filter(p => p.providerId === providerId);
   return plans;
 }
@@ -1384,17 +1408,17 @@ export async function getBroadbandPlans(
         : collection(db, 'broadbandPlans');
       const snapshot = await withTimeout(getDocs(q), 1200);
       if (!snapshot.empty) {
-        let results = snapshot.docs.map(d => d.data() as BroadbandPlan);
+        let results = snapshot.docs.map(d => alignPlanSpeedWithDetails(d.data() as BroadbandPlan));
         if (options?.city) {
           const cityQuery = options.city.toLowerCase();
           results = results.filter(p =>
             !p.city ||
             p.city.toLowerCase() === 'all' ||
             p.city.toLowerCase().includes(cityQuery) ||
-            (p.cities && p.cities.some(c => c.toLowerCase().includes(cityQuery)))
+            (p.cities && p.cities.some((c: string) => c.toLowerCase().includes(cityQuery)))
           );
         }
-        return results.sort((a, b) => {
+        return results.map(alignPlanSpeedWithDetails).sort((a, b) => {
           if (a.displayOrder !== b.displayOrder) {
             return (a.displayOrder || 0) - (b.displayOrder || 0);
           }
@@ -1406,7 +1430,7 @@ export async function getBroadbandPlans(
     }
   }
 
-  let plans = getLocalItem<BroadbandPlan[]>(STORAGE_KEYS.BROADBAND_PLANS, initialBroadbandPlans);
+  let plans = getLocalItem<BroadbandPlan[]>(STORAGE_KEYS.BROADBAND_PLANS, initialBroadbandPlans).map(alignPlanSpeedWithDetails);
   if (options?.providerId) {
     plans = plans.filter(p => p.providerId === options.providerId);
   }
@@ -1419,7 +1443,7 @@ export async function getBroadbandPlans(
       !p.city ||
       p.city.toLowerCase() === 'all' ||
       p.city.toLowerCase().includes(cityQuery) ||
-      (p.cities && p.cities.some(c => c.toLowerCase().includes(cityQuery)))
+      (p.cities && p.cities.some((c: string) => c.toLowerCase().includes(cityQuery)))
     );
   }
   return plans.sort((a, b) => {
@@ -1535,7 +1559,7 @@ export async function updateBroadbandPlan(
 
   if (isFirebaseConfigured && db) {
     try {
-      await updateDoc(doc(db, 'broadbandPlans', id), sanitizeForFirestore({ ...updates, updatedAt: now }));
+      await setDoc(doc(db, 'broadbandPlans', id), sanitizeForFirestore({ ...updated, updatedAt: now }), { merge: true });
     } catch (e) {
       console.warn('Firestore updateBroadbandPlan error:', e);
     }
@@ -3806,14 +3830,14 @@ export function subscribeToBroadbandPlans(
         : collection(db, 'broadbandPlans');
 
       unsubFirestore = onSnapshot(q, (snapshot) => {
-        let results = snapshot.docs.map(d => d.data() as BroadbandPlan);
+        let results = snapshot.docs.map(d => alignPlanSpeedWithDetails(d.data() as BroadbandPlan));
         if (options?.city) {
           const cityQuery = options.city.toLowerCase();
           results = results.filter(p =>
             !p.city ||
             p.city.toLowerCase() === 'all' ||
             p.city.toLowerCase().includes(cityQuery) ||
-            (p.cities && p.cities.some(c => c.toLowerCase().includes(cityQuery)))
+            (p.cities && p.cities.some((c: string) => c.toLowerCase().includes(cityQuery)))
           );
         }
         results.sort((a, b) => {
